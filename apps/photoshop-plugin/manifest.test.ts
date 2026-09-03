@@ -12,6 +12,12 @@ describe("Photoshop plugin manifest", () => {
       localFileSystem: "request",
       launchProcess: { schemes: ["https"] }
     });
+    expect(manifest.entrypoints[0]).toMatchObject({
+      type: "panel",
+      minimumSize: { width: 230, height: 200 },
+      preferredDockedSize: { width: 400, height: 760 },
+      preferredFloatingSize: { width: 420, height: 800 }
+    });
     expect(manifest.main).toBe("index.html");
   });
 

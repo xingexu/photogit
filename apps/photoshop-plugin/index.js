@@ -196,8 +196,10 @@ function createReviewCard(review, compact) {
   card.className = "review-card";
   const statusClass = review.mergeable ? "ready" : "blocked";
   const statusLabel = review.mergeable ? "Ready to merge" : "Review conflicts";
+  const mergeClass = review.mergeable ? "button-primary" : "button-disabled";
+  const mergeLabel = review.mergeable ? "Merge" : "Blocked";
   const changes = review.changes.length ? review.changes.join("\n") : "No file-level differences.";
-  card.innerHTML = `<div class="review-title"><strong>${escapeHtml(review.branch)}</strong><span>${review.ahead} ahead</span></div><div class="review-meta"><span class="${statusClass}">${statusLabel}</span><span>·</span><span>${review.changeCount} ${review.changeCount === 1 ? "file" : "files"}</span></div><div class="review-files" hidden>${escapeHtml(changes)}</div><div class="review-actions"><div class="button button-quiet button-small compare-action" role="button" tabindex="0">Compare</div><div class="button button-primary button-small merge-action" role="button" tabindex="0" data-mergeable="${review.mergeable ? "true" : "false"}" ${review.mergeable ? "" : "aria-disabled=\"true\""}>Merge</div></div>`;
+  card.innerHTML = `<div class="review-title"><strong>${escapeHtml(review.branch)}</strong><span>${review.ahead} ahead</span></div><div class="review-meta"><span class="${statusClass}">${statusLabel}</span><span>·</span><span>${review.changeCount} ${review.changeCount === 1 ? "file" : "files"}</span></div><div class="review-files" hidden>${escapeHtml(changes)}</div><div class="review-actions"><div class="button button-quiet button-small compare-action" role="button" tabindex="0">Compare</div><div class="button ${mergeClass} button-small merge-action" role="button" tabindex="0" data-mergeable="${review.mergeable ? "true" : "false"}" ${review.mergeable ? "" : "aria-disabled=\"true\""}>${mergeLabel}</div></div>`;
   const details = card.querySelector(".review-files");
   const compareAction = card.querySelector(".compare-action");
   const mergeAction = card.querySelector(".merge-action");
