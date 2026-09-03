@@ -8,31 +8,28 @@
   </head>
   <body>
     <main class="panel-root">
-      <div class="light-field light-field-top" aria-hidden="true"></div>
-      <div class="light-field light-field-bottom" aria-hidden="true"></div>
-
-      <header class="app-header glass">
+      <header class="app-header">
         <div class="pg-mark" aria-label="PhotoGit"><span>P</span><span>g</span></div>
         <div class="app-title">
-          <span class="brand-name">PHOTOGIT</span>
-          <h1>GIT FOR PHOTOSHOP</h1>
+          <h1>PhotoGit</h1>
+          <span class="brand-name">Git for Photoshop</span>
         </div>
-        <button id="refresh" class="icon-button" aria-label="Refresh workspace" title="Refresh workspace">
+        <div id="refresh" class="icon-button" role="button" tabindex="0" aria-label="Refresh workspace" title="Refresh workspace">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6v5h-5"/><path d="M18.2 15.4A7 7 0 1 1 18.5 8L20 11"/></svg>
-        </button>
+        </div>
       </header>
 
-      <section id="onboarding" class="onboarding glass">
+      <section id="onboarding" class="onboarding">
         <div class="pg-mark onboarding-mark" aria-hidden="true"><span>P</span><span>g</span></div>
         <p class="overline">Version control inside Photoshop</p>
         <h2>Connect your project</h2>
         <p class="supporting-copy">Choose a PhotoGit folder once to start tracking exact PSD checkpoints, semantic edits, and design branches.</p>
-        <button id="choose-project" class="button button-primary button-wide">Choose project folder</button>
+        <div id="choose-project" class="button button-primary button-wide" role="button" tabindex="0">Choose project folder</div>
         <p id="pairing-help" class="fine-print">Run the one-time helper setup from the README first.</p>
       </section>
 
       <section id="workspace" class="workspace" hidden>
-        <section class="context-panel glass" aria-label="Current Photoshop context">
+        <section class="context-panel" aria-label="Current Photoshop context">
           <div class="connection-row">
             <span class="workspace-id"><small>Project</small><strong id="project-status">No project selected</strong></span>
             <span id="helper-status" class="connection-state warning">Not checked</span>
@@ -49,21 +46,21 @@
           </div>
         </section>
 
-        <nav class="section-nav glass" aria-label="PhotoGit sections">
-          <button id="changes-tab" class="active" aria-selected="true"><span>Changes</span><span id="changes-count" class="nav-count">0</span></button>
-          <button id="history-tab" aria-selected="false"><span>History</span><span id="history-count" class="nav-count">0</span></button>
-          <button id="branches-tab" aria-selected="false"><span>Branches</span><span id="branches-count" class="nav-count">0</span></button>
-          <button id="activity-tab" aria-selected="false"><span>Activity</span><span id="activity-count" class="nav-count">0</span></button>
+        <nav class="section-nav" aria-label="PhotoGit sections">
+          <div id="changes-tab" class="active" role="button" tabindex="0" aria-selected="true"><span>Changes</span><span id="changes-count" class="nav-count">0</span></div>
+          <div id="history-tab" role="button" tabindex="0" aria-selected="false"><span>History</span><span id="history-count" class="nav-count">0</span></div>
+          <div id="branches-tab" role="button" tabindex="0" aria-selected="false"><span>Branches</span><span id="branches-count" class="nav-count">0</span></div>
+          <div id="activity-tab" role="button" tabindex="0" aria-selected="false"><span>Activity</span><span id="activity-count" class="nav-count">0</span></div>
         </nav>
 
-        <section id="changes-view" class="view-panel glass">
+        <section id="changes-view" class="view-panel">
           <div class="view-heading">
-            <div><p class="overline">Working tree</p><h2>Changes</h2></div>
-            <button id="rescan" class="quiet-button">Scan again</button>
+            <div><p class="overline">Working file</p><h2>Changes</h2></div>
+            <div id="rescan" class="quiet-button" role="button" tabindex="0">Scan again</div>
           </div>
           <div class="change-summary">
             <strong id="changes-total">0</strong>
-            <span>semantic edits since the latest checkpoint</span>
+            <span>edits since the latest version</span>
           </div>
           <div id="changes" class="list change-list"></div>
           <section id="changes-empty" class="empty-state">
@@ -76,22 +73,22 @@
             <div class="composer-rule" aria-hidden="true"></div>
             <div class="panel-heading">
               <div>
-                <p class="overline">New checkpoint</p>
-                <h2>Save this design</h2>
+                <p class="overline">Checkpoint</p>
+                <h2>Save a version</h2>
               </div>
-              <span class="artifact-label">PSD + PREVIEW + DATA</span>
+              <span class="artifact-label">PSD · PREVIEW</span>
             </div>
-            <label class="field-label" for="message">Version message</label>
+            <label class="field-label" for="message">Describe this version</label>
             <input id="message" type="text" placeholder="What changed?" aria-label="Save-version message">
             <div class="capture-actions">
-              <button id="scan" class="button button-secondary">
+              <div id="scan" class="button button-secondary" role="button" tabindex="0">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6v5h-5"/><path d="M18.2 15.4A7 7 0 1 1 18.5 8L20 11"/></svg>
-                Review
-              </button>
-              <button id="save-version" class="button button-primary">
+                Review changes
+              </div>
+              <div id="save-version" class="button button-primary" role="button" tabindex="0">
                 Save version
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-5-5 5 5-5 5"/></svg>
-              </button>
+              </div>
             </div>
             <div class="progress-track" aria-hidden="true"><span></span></div>
             <sp-progressbar id="progress" indeterminate hidden aria-label="PhotoGit operation in progress"></sp-progressbar>
@@ -99,7 +96,7 @@
           </section>
         </section>
 
-        <section id="history-view" class="view-panel glass" hidden>
+        <section id="history-view" class="view-panel" hidden>
           <div class="view-heading">
             <div><p class="overline">All checkpoints</p><h2>History</h2></div>
             <span class="view-meta" id="history-total">0 versions</span>
@@ -115,7 +112,7 @@
           </section>
         </section>
 
-        <section id="branches-view" class="view-panel glass" hidden>
+        <section id="branches-view" class="view-panel" hidden>
           <div class="view-heading">
             <div><p class="overline">Design directions</p><h2>Branches</h2></div>
             <span class="view-meta">Exact PSD states</span>
@@ -132,34 +129,34 @@
           <label class="field-label" for="new-branch-name">Start a new direction</label>
           <div class="new-branch-row">
             <input id="new-branch-name" type="text" placeholder="Branch name" aria-label="New branch name">
-            <button id="new-branch" class="button button-primary">Create</button>
+            <div id="new-branch" class="button button-primary" role="button" tabindex="0">Create</div>
           </div>
           <p class="fine-print left">Switching opens that branch’s exact PSD snapshot without overwriting your current document.</p>
         </section>
 
-        <section id="activity-view" class="view-panel glass" hidden>
+        <section id="activity-view" class="view-panel" hidden>
           <div class="view-heading">
             <div><p class="overline">Operation log</p><h2>Activity</h2></div>
-            <button id="clear-activity" class="quiet-button">Clear</button>
+            <div id="clear-activity" class="quiet-button" role="button" tabindex="0">Clear</div>
           </div>
           <div id="activity" class="activity" role="log" aria-live="polite">Ready.</div>
         </section>
 
-        <section class="sync-panel glass" aria-label="Repository sync">
+        <section class="sync-panel" aria-label="Repository sync">
           <div class="sync-copy">
-            <span class="overline">Remote</span>
+            <span class="overline">Repository</span>
             <strong id="sync-status">Ready</strong>
           </div>
           <div class="sync-actions">
-            <button id="pull" class="text-action">
+            <div id="pull" class="text-action" role="button" tabindex="0">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m-4-4 4 4 4-4"/><path d="M5 19h14"/></svg>
               Pull
-            </button>
-            <button id="show-status" class="text-action">Status</button>
-            <button id="push" class="text-action">
+            </div>
+            <div id="show-status" class="text-action" role="button" tabindex="0">Status</div>
+            <div id="push" class="text-action" role="button" tabindex="0">
               Push
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V5m-4 4 4-4 4 4"/><path d="M5 19h14"/></svg>
-            </button>
+            </div>
           </div>
         </section>
       </section>

@@ -48,7 +48,21 @@ document.addEventListener("DOMContentLoaded", async () => {
   await refreshWorkspace();
 });
 
-function bind(id, event, handler) { document.getElementById(id).addEventListener(event, handler); }
+function bind(id, event, handler) {
+  const element = document.getElementById(id);
+  const invoke = (inputEvent) => {
+    if (element.getAttribute("aria-disabled") === "true") return;
+    return handler(inputEvent);
+  };
+  element.addEventListener(event, invoke);
+  if (event === "click" && element.getAttribute("role") === "button") {
+    element.addEventListener("keydown", (keyEvent) => {
+      if (keyEvent.key !== "Enter" && keyEvent.key !== " ") return;
+      keyEvent.preventDefault();
+      invoke(keyEvent);
+    });
+  }
+}
 
 async function chooseProject() {
   const folder = await storage.localFileSystem.getFolder();
@@ -398,7 +412,11 @@ function busy(active) {
   busyNow = active;
   document.getElementById("progress").hidden = !active;
   document.querySelector(".capture-panel").classList.toggle("is-busy", active);
-  for (const id of ["save-version", "scan", "rescan", "pull", "push", "show-status", "new-branch", "refresh"]) document.getElementById(id).disabled = active;
+  for (const id of ["save-version", "scan", "rescan", "pull", "push", "show-status", "new-branch", "refresh"]) {
+    const control = document.getElementById(id);
+    control.setAttribute("aria-disabled", active ? "true" : "false");
+    control.tabIndex = active ? -1 : 0;
+  }
 }
 function show(message, error) { const result = document.getElementById("result"); result.textContent = message; result.className = error ? "error" : "success"; }
 function log(message) {
