@@ -12,10 +12,10 @@
       <div class="light-field light-field-bottom" aria-hidden="true"></div>
 
       <header class="app-header glass">
-        <div class="pg-mark" aria-label="PhotoGit">Pg</div>
+        <div class="pg-mark" aria-label="PhotoGit"><span>P</span><span>g</span></div>
         <div class="app-title">
-          <h1>PhotoGit</h1>
-          <p id="project-status">No project selected</p>
+          <span class="brand-name">PHOTOGIT</span>
+          <h1>GIT FOR PHOTOSHOP</h1>
         </div>
         <button id="refresh" class="icon-button" aria-label="Refresh workspace" title="Refresh workspace">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6v5h-5"/><path d="M18.2 15.4A7 7 0 1 1 18.5 8L20 11"/></svg>
@@ -23,8 +23,8 @@
       </header>
 
       <section id="onboarding" class="onboarding glass">
-        <div class="pg-mark onboarding-mark" aria-hidden="true">Pg</div>
-        <p class="overline">Photoshop version control</p>
+        <div class="pg-mark onboarding-mark" aria-hidden="true"><span>P</span><span>g</span></div>
+        <p class="overline">Version control inside Photoshop</p>
         <h2>Connect your project</h2>
         <p class="supporting-copy">Choose a PhotoGit folder once to start tracking exact PSD checkpoints, semantic edits, and design branches.</p>
         <button id="choose-project" class="button button-primary button-wide">Choose project folder</button>
@@ -34,7 +34,7 @@
       <section id="workspace" class="workspace" hidden>
         <section class="context-panel glass" aria-label="Current Photoshop context">
           <div class="connection-row">
-            <span class="overline">Workspace</span>
+            <span class="workspace-id"><small>Project</small><strong id="project-status">No project selected</strong></span>
             <span id="helper-status" class="connection-state warning">Not checked</span>
           </div>
           <div class="context-grid">
@@ -49,49 +49,6 @@
           </div>
         </section>
 
-        <section class="capture-panel glass">
-          <div class="panel-heading">
-            <div>
-              <p class="overline">New checkpoint</p>
-              <h2>Save the current design</h2>
-            </div>
-            <span class="artifact-label">PSD · PNG · DATA</span>
-          </div>
-          <label class="field-label" for="message">Version message</label>
-          <input id="message" type="text" placeholder="What changed?" aria-label="Save-version message">
-          <div class="capture-actions">
-            <button id="scan" class="button button-secondary">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6v5h-5"/><path d="M18.2 15.4A7 7 0 1 1 18.5 8L20 11"/></svg>
-              Review
-            </button>
-            <button id="save-version" class="button button-primary">
-              Save version
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-5-5 5 5-5 5"/></svg>
-            </button>
-          </div>
-          <div class="progress-track" aria-hidden="true"><span></span></div>
-          <sp-progressbar id="progress" indeterminate hidden aria-label="PhotoGit operation in progress"></sp-progressbar>
-          <p id="result" role="status" aria-live="polite"></p>
-        </section>
-
-        <section class="sync-panel glass" aria-label="Repository sync">
-          <div class="sync-copy">
-            <span class="overline">Sync</span>
-            <strong id="sync-status">Ready</strong>
-          </div>
-          <div class="sync-actions">
-            <button id="pull" class="text-action">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m-4-4 4 4 4-4"/><path d="M5 19h14"/></svg>
-              Pull
-            </button>
-            <button id="show-status" class="text-action">Status</button>
-            <button id="push" class="text-action">
-              Push
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V5m-4 4 4-4 4 4"/><path d="M5 19h14"/></svg>
-            </button>
-          </div>
-        </section>
-
         <nav class="section-nav glass" aria-label="PhotoGit sections">
           <button id="changes-tab" class="active" aria-selected="true"><span>Changes</span><span id="changes-count" class="nav-count">0</span></button>
           <button id="history-tab" aria-selected="false"><span>History</span><span id="history-count" class="nav-count">0</span></button>
@@ -101,7 +58,7 @@
 
         <section id="changes-view" class="view-panel glass">
           <div class="view-heading">
-            <div><p class="overline">Document review</p><h2>Changes</h2></div>
+            <div><p class="overline">Working tree</p><h2>Changes</h2></div>
             <button id="rescan" class="quiet-button">Scan again</button>
           </div>
           <div class="change-summary">
@@ -113,6 +70,32 @@
             <span class="empty-symbol" aria-hidden="true">✓</span>
             <strong>No unsaved design changes</strong>
             <p>Review the document after editing to see layer-level differences here.</p>
+          </section>
+
+          <section class="capture-panel checkpoint-composer">
+            <div class="composer-rule" aria-hidden="true"></div>
+            <div class="panel-heading">
+              <div>
+                <p class="overline">New checkpoint</p>
+                <h2>Save this design</h2>
+              </div>
+              <span class="artifact-label">PSD + PREVIEW + DATA</span>
+            </div>
+            <label class="field-label" for="message">Version message</label>
+            <input id="message" type="text" placeholder="What changed?" aria-label="Save-version message">
+            <div class="capture-actions">
+              <button id="scan" class="button button-secondary">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6v5h-5"/><path d="M18.2 15.4A7 7 0 1 1 18.5 8L20 11"/></svg>
+                Review
+              </button>
+              <button id="save-version" class="button button-primary">
+                Save version
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-5-5 5 5-5 5"/></svg>
+              </button>
+            </div>
+            <div class="progress-track" aria-hidden="true"><span></span></div>
+            <sp-progressbar id="progress" indeterminate hidden aria-label="PhotoGit operation in progress"></sp-progressbar>
+            <p id="result" role="status" aria-live="polite"></p>
           </section>
         </section>
 
@@ -160,6 +143,24 @@
             <button id="clear-activity" class="quiet-button">Clear</button>
           </div>
           <div id="activity" class="activity" role="log" aria-live="polite">Ready.</div>
+        </section>
+
+        <section class="sync-panel glass" aria-label="Repository sync">
+          <div class="sync-copy">
+            <span class="overline">Remote</span>
+            <strong id="sync-status">Ready</strong>
+          </div>
+          <div class="sync-actions">
+            <button id="pull" class="text-action">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m-4-4 4 4 4-4"/><path d="M5 19h14"/></svg>
+              Pull
+            </button>
+            <button id="show-status" class="text-action">Status</button>
+            <button id="push" class="text-action">
+              Push
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V5m-4 4 4-4 4 4"/><path d="M5 19h14"/></svg>
+            </button>
+          </div>
         </section>
       </section>
     </main>

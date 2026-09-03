@@ -2,7 +2,7 @@
   "manifestVersion": 5,
   "id": "com.photogit.development",
   "name": "PhotoGit",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "main": "index.html",
   "host": {
     "app": "PS",
@@ -19,8 +19,8 @@
       "label": { "default": "PhotoGit" },
       "minimumSize": { "width": 230, "height": 200 },
       "maximumSize": { "width": 2000, "height": 2000 },
-      "preferredDockedSize": { "width": 230, "height": 300 },
-      "preferredFloatingSize": { "width": 230, "height": 300 },
+      "preferredDockedSize": { "width": 320, "height": 640 },
+      "preferredFloatingSize": { "width": 360, "height": 680 },
       "icons": [
         { "width": 23, "height": 23, "path": "icons/photogit-dark.png", "scale": [1, 2], "theme": ["darkest", "dark", "medium"], "species": ["generic"] },
         { "width": 23, "height": 23, "path": "icons/photogit-light.png", "scale": [1, 2], "theme": ["lightest", "light"], "species": ["generic"] }

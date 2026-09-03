@@ -1,6 +1,9 @@
 const mount = document.getElementById("plugin-panel");
-const wait = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
-if (new URLSearchParams(location.search).has("panel")) document.body.classList.add("panel-only");
+const demoParams = new URLSearchParams(location.search);
+const timeScale = Math.max(1, Number(demoParams.get("timeScale")) || 1);
+const wait = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds * timeScale));
+if (demoParams.has("panel")) document.body.classList.add("panel-only");
+if (timeScale > 1) document.body.classList.add("recording");
 
 let versions = [
   { message: "Refined hero typography", author: "Zach", date: "Today", shortId: "90511bb" },
@@ -22,7 +25,8 @@ async function boot() {
   mount.innerHTML = "";
   mount.appendChild(document.importNode(parsed.querySelector(".panel-root"), true));
   setupDemoPanel();
-  if (new URLSearchParams(location.search).has("autoplay")) autoplay();
+  if (demoParams.has("panel")) openPhotoGit();
+  if (demoParams.has("autoplay")) autoplay();
   else document.querySelector(".demo-caption").classList.add("visible");
 }
 
@@ -55,6 +59,25 @@ function setupDemoPanel() {
   bind("clear-activity", clearActivity);
   byId("branch-picker").addEventListener("change", switchBranch);
   byId("history-search").addEventListener("input", renderHistory);
+  document.getElementById("plugins-menu-trigger").addEventListener("click", togglePluginsMenu);
+  document.getElementById("open-photogit").addEventListener("click", openPhotoGit);
+  document.getElementById("pg-dock-tab").addEventListener("click", openPhotoGit);
+}
+
+function togglePluginsMenu() {
+  const trigger = document.getElementById("plugins-menu-trigger");
+  const menu = document.getElementById("plugins-menu");
+  const opening = menu.hidden;
+  menu.hidden = !opening;
+  trigger.classList.toggle("active", opening);
+  trigger.setAttribute("aria-expanded", opening ? "true" : "false");
+}
+
+function openPhotoGit() {
+  document.getElementById("plugins-menu").hidden = true;
+  document.getElementById("plugins-menu-trigger").classList.remove("active");
+  document.getElementById("plugins-menu-trigger").setAttribute("aria-expanded", "false");
+  document.getElementById("right-rail").classList.remove("panel-closed");
 }
 
 function replaceDemoDropdown() {
@@ -77,14 +100,16 @@ function renderChanges() {
   byId("changes-count").textContent = String(changes.length);
   byId("changes-total").textContent = String(changes.length);
   byId("changes-empty").hidden = changes.length > 0;
-  changes.forEach((change) => {
+  changes.forEach((change, index) => {
     const row = document.createElement("div");
     row.className = "list-row change-row";
     row.tabIndex = 0;
     row.innerHTML = `<span class="row-glyph" aria-hidden="true">${domainIcon(change.domain)}</span><span class="row-copy"><strong>${change.layerName}</strong><span>${change.summary}</span></span><span class="change-domain">${change.domain}</span>`;
     row.addEventListener("click", () => {
       document.querySelectorAll(".layer").forEach((layer) => layer.classList.remove("active"));
-      document.querySelector(".layer").classList.add("active");
+      document.querySelectorAll(".layer")[index]?.classList.add("active");
+      container.querySelectorAll(".change-row").forEach((entry) => entry.classList.remove("selected-change"));
+      row.classList.add("selected-change");
       flashResult(`Selected “${change.layerName}” in Photoshop.`);
     });
     container.appendChild(row);
@@ -108,7 +133,7 @@ function renderHistory() {
 }
 
 async function scan() {
-  await simulateBusy("Reviewing Photoshop layers…", 650);
+  await simulateBusy("Reviewing Photoshop layers…", 420);
   renderChanges();
   addActivity(`Found ${changes.length} semantic layer changes.`);
   flashResult(`Found ${changes.length} semantic layer changes.`);
@@ -117,7 +142,7 @@ async function scan() {
 async function saveVersion() {
   const message = byId("message").value.trim();
   if (!message) return flashResult("Describe what changed before saving.", true);
-  await simulateBusy("Saving exact PSD, preview, and semantic data…", 900);
+  await simulateBusy("Saving exact PSD, preview, and semantic data…", 620);
   versions.unshift({ message, author: "Zach", date: "Just now", shortId: "c84f2a7" });
   changes = [];
   byId("message").value = "";
@@ -205,12 +230,12 @@ function setCaption(step, heading, copy) {
 async function moveCursor(target) {
   const cursor = document.getElementById("demo-cursor");
   target.scrollIntoView({ block: "center", behavior: "smooth" });
-  await wait(520);
+  await wait(260);
   const rect = target.getBoundingClientRect();
   cursor.style.left = `${rect.left + rect.width * 0.62}px`;
   cursor.style.top = `${rect.top + rect.height * 0.55}px`;
   cursor.style.opacity = "1";
-  await wait(760);
+  await wait(420);
 }
 
 async function clickWithCursor(target) {
@@ -220,58 +245,75 @@ async function clickWithCursor(target) {
   void cursor.offsetWidth;
   cursor.classList.add("click");
   target.click();
-  await wait(500);
+  await wait(320);
 }
 
-async function typeMessage(value) {
-  const field = byId("message");
+async function typeInto(field, value) {
   await moveCursor(field);
   field.focus();
   field.value = "";
   for (const character of value) {
     field.value += character;
-    await wait(42);
+    field.dispatchEvent(new Event("input", { bubbles: true }));
+    await wait(24);
   }
 }
 
 async function autoplay() {
   const caption = document.querySelector(".demo-caption");
-  await wait(500);
+  await wait(450);
   caption.classList.add("visible");
-  await wait(1250);
+  await wait(700);
 
-  setCaption("01", "Review every meaningful change", "Layer edits are mapped into readable content, appearance, and structure updates.");
+  setCaption("00", "Open PhotoGit in Photoshop", "Plugins → PhotoGit opens the dockable sidebar beside the document.");
+  await clickWithCursor(document.getElementById("plugins-menu-trigger"));
+  await wait(420);
+  document.getElementById("open-photogit").classList.add("hovered");
+  await clickWithCursor(document.getElementById("open-photogit"));
+  await wait(850);
+
+  setCaption("01", "Review live layer changes", "Readable content, appearance, and structure edits map back to Photoshop layers.");
+  await clickWithCursor(mount.querySelector(".change-row"));
+  await wait(450);
   await clickWithCursor(byId("scan"));
-  await wait(1000);
+  await wait(650);
 
-  setCaption("02", "Create one dependable checkpoint", "A single action stores the PSD, preview, semantic data, and design intent.");
-  await typeMessage("Polished campaign hero");
+  setCaption("02", "Save a complete checkpoint", "One version stores the PSD, preview, semantic data, and design intent.");
+  await typeInto(byId("message"), "Polished campaign hero");
   await clickWithCursor(byId("save-version"));
-  await wait(1250);
+  await wait(750);
 
-  setCaption("03", "Find any previous decision", "History is a dedicated searchable view, not an afterthought.");
+  setCaption("03", "Search the full history", "Find an earlier decision by message, author, date, or checkpoint ID.");
   await moveCursor(byId("history-search"));
-  byId("history-search").value = "hero";
-  byId("history-search").dispatchEvent(new Event("input", { bubbles: true }));
-  await wait(1200);
+  await typeInto(byId("history-search"), "hero");
+  await wait(700);
 
-  setCaption("04", "Keep directions organized", "Branches have their own workspace with a clear current state.");
+  setCaption("04", "Branch without duplicating files", "Create and switch design directions from the same docked panel.");
   await clickWithCursor(byId("branches-tab"));
+  await typeInto(byId("new-branch-name"), "campaign-type-b");
+  await clickWithCursor(byId("new-branch"));
+  await wait(450);
   const select = byId("branch-picker");
   await moveCursor(select);
   select.value = "homepage-experiment";
   select.dispatchEvent(new Event("change", { bubbles: true }));
-  await wait(1000);
+  await wait(600);
 
+  setCaption("05", "Sync with the remote", "Check status, pull shared work, and push the current branch without leaving Photoshop.");
+  await clickWithCursor(byId("show-status"));
+  await clickWithCursor(byId("pull"));
+  await clickWithCursor(byId("push"));
+  await wait(500);
+
+  setCaption("06", "See every operation", "Activity keeps saves, branch switches, and sync actions transparent.");
   await clickWithCursor(byId("activity-tab"));
-  setCaption("05", "See exactly what PhotoGit did", "The activity view keeps every operation transparent.");
-  await wait(1400);
+  await wait(1000);
 
   document.querySelector(".demo-caption").classList.remove("visible");
   document.getElementById("demo-cursor").style.opacity = "0";
   const finale = document.getElementById("demo-finale");
   finale.hidden = false;
-  await wait(80);
+  await wait(60);
   finale.classList.add("visible");
 }
 
