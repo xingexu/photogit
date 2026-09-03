@@ -15,6 +15,8 @@ const HELPER_HEALTH_TIMEOUT_MS = 5000;
 let projectFolder = null;
 let helperToken = null;
 let busyNow = false;
+let historyEntries = [];
+let activityEntryCount = 0;
 
 document.addEventListener("DOMContentLoaded", async () => {
   const folderToken = localStorage.getItem("photogit.projectFolderToken");
@@ -30,6 +32,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   bind("choose-project", "click", chooseProject);
   bind("refresh", "click", refreshWorkspace);
   bind("scan", "click", scanChanges);
+  bind("rescan", "click", scanChanges);
   bind("save-version", "click", saveVersion);
   bind("pull", "click", pull);
   bind("push", "click", push);
@@ -38,6 +41,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   bind("branch-picker", "change", switchBranch);
   bind("changes-tab", "click", () => selectTab("changes"));
   bind("history-tab", "click", () => selectTab("history"));
+  bind("branches-tab", "click", () => selectTab("branches"));
+  bind("activity-tab", "click", () => selectTab("activity"));
+  bind("history-search", "input", filterHistory);
+  bind("clear-activity", "click", clearActivity);
   await refreshWorkspace();
 });
 
@@ -93,6 +100,8 @@ async function refreshWorkspace() {
 async function loadStatus(existingResult) {
   const result = existingResult || await callHelper("status");
   document.getElementById("branch-name").textContent = result.branch;
+  document.getElementById("branch-name-detail").textContent = result.branch;
+  setSyncStatus(result.changeCount ? "Local changes" : "Up to date");
   if (result.changeCount) log(`${result.changeCount} project file change(s) detected.`);
 }
 
@@ -109,20 +118,35 @@ async function loadBranches(existingResult) {
     menu.appendChild(item);
   });
   document.getElementById("branch-name").textContent = result.current;
+  document.getElementById("branch-name-detail").textContent = result.current;
+  document.getElementById("branches-count").textContent = String(result.branches.length);
 }
 
 async function loadHistory(existingResult) {
   const result = existingResult || await callHelper("history");
+  historyEntries = result.versions;
+  document.getElementById("history-count").textContent = String(historyEntries.length);
+  document.getElementById("history-total").textContent = `${historyEntries.length} ${historyEntries.length === 1 ? "version" : "versions"}`;
+  filterHistory();
+}
+
+function renderHistory(versions) {
   const container = document.getElementById("history");
+  const empty = document.getElementById("history-empty");
   container.innerHTML = "";
-  document.getElementById("history-count").textContent = String(result.versions.length);
-  for (const version of result.versions) {
+  empty.hidden = versions.length > 0;
+  for (const version of versions) {
     const row = document.createElement("div");
     row.className = "list-row history-row";
-    row.innerHTML = `<span class="history-dot" aria-hidden="true">${historyIcon()}</span><span class="row-copy"><strong>${escapeHtml(version.message)}</strong><span>${escapeHtml(version.author)} · ${escapeHtml(version.date.slice(0, 10))}</span></span><span class="commit-id">${escapeHtml(version.shortId)}</span>`;
+    row.innerHTML = `<span class="history-marker" aria-hidden="true">${historyIcon()}</span><span class="row-copy"><strong>${escapeHtml(version.message)}</strong><span>${escapeHtml(version.author)} · ${escapeHtml(version.date.slice(0, 10))}</span></span><span class="commit-id">${escapeHtml(version.shortId)}</span>`;
     container.appendChild(row);
   }
-  if (!result.versions.length) container.innerHTML = '<div class="empty-state">No saved versions yet.</div>';
+}
+
+function filterHistory() {
+  const query = document.getElementById("history-search").value.trim().toLowerCase();
+  if (!query) return renderHistory(historyEntries);
+  renderHistory(historyEntries.filter((version) => [version.message, version.shortId, version.author, version.date].some((value) => String(value).toLowerCase().includes(query))));
 }
 
 async function scanChanges() {
@@ -158,10 +182,12 @@ async function saveVersion() {
       capture: captureDocument(doc)
     });
     document.getElementById("message").value = "";
+    document.getElementById("history-search").value = "";
     renderChanges([]);
     log(`Saved ${result.shortId}: ${message}`);
     show(`Saved version ${result.shortId}.`, false);
     await Promise.all([loadStatus(), loadBranches(), loadHistory()]);
+    selectTab("history");
   });
 }
 
@@ -172,6 +198,7 @@ async function pull() {
     await openSnapshot();
     log(`Pulled ${result.branch} and opened its PSD snapshot.`);
     await refreshWorkspace();
+    setSyncStatus("Pulled just now");
     show(`Pulled ${result.branch} successfully.`, false);
   });
 }
@@ -181,6 +208,7 @@ async function push() {
   return run("Sharing versions…", async () => {
     const result = await callHelper("push");
     log(`Shared branch ${result.branch}.`);
+    setSyncStatus("Pushed just now");
     show("Changes shared successfully.", false);
   });
 }
@@ -190,6 +218,7 @@ async function showProjectStatus() {
   return run("Checking project…", async () => {
     const result = await callHelper("status");
     log(`${result.branch}: ${result.changeCount ? `${result.changeCount} project file change(s)` : "clean"}.`);
+    setSyncStatus(result.changeCount ? "Local changes" : "Up to date");
     show(result.changeCount ? "Project files have unsaved changes." : "Project is clean.", result.changeCount > 0);
   });
 }
@@ -289,6 +318,7 @@ function renderChanges(changes) {
   const empty = document.getElementById("changes-empty");
   container.innerHTML = "";
   document.getElementById("changes-count").textContent = String(changes.length);
+  document.getElementById("changes-total").textContent = String(changes.length);
   empty.hidden = changes.length > 0;
   for (const change of changes) {
     const row = document.createElement("div");
@@ -316,11 +346,13 @@ async function selectPhotoshopLayer(photoshopId) {
 }
 
 function selectTab(name) {
-  const changes = name === "changes";
-  document.getElementById("changes-view").hidden = !changes;
-  document.getElementById("history-view").hidden = changes;
-  document.getElementById("changes-tab").className = changes ? "active" : "";
-  document.getElementById("history-tab").className = changes ? "" : "active";
+  for (const section of ["changes", "history", "branches", "activity"]) {
+    const active = section === name;
+    document.getElementById(`${section}-view`).hidden = !active;
+    const tab = document.getElementById(`${section}-tab`);
+    tab.className = active ? "active" : "";
+    tab.setAttribute("aria-selected", active ? "true" : "false");
+  }
 }
 
 async function run(label, action) {
@@ -361,15 +393,27 @@ function textStyleFingerprint(textItem) { try { const style = textItem.character
 function unsupportedReason(kind) { return ["normal", "pixel", "text", "group"].some((value) => kind.includes(value)) ? null : `Unsupported ${kind} properties are preserved in the PSD snapshot.`; }
 function createRequestId() { return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`; }
 function escapeHtml(value) { return String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char])); }
-function setHelper(label, ok) { const element = document.getElementById("helper-status"); element.textContent = label; element.className = `status-pill ${ok ? "ok" : "warning"}`; }
+function setHelper(label, ok) { const element = document.getElementById("helper-status"); element.textContent = label; element.className = `connection-state ${ok ? "ok" : "warning"}`; }
 function busy(active) {
   busyNow = active;
   document.getElementById("progress").hidden = !active;
-  document.querySelector(".commit-card").classList.toggle("is-busy", active);
-  for (const id of ["save-version", "scan", "pull", "push", "show-status", "new-branch", "refresh"]) document.getElementById(id).disabled = active;
+  document.querySelector(".capture-panel").classList.toggle("is-busy", active);
+  for (const id of ["save-version", "scan", "rescan", "pull", "push", "show-status", "new-branch", "refresh"]) document.getElementById(id).disabled = active;
 }
 function show(message, error) { const result = document.getElementById("result"); result.textContent = message; result.className = error ? "error" : "success"; }
-function log(message) { const activity = document.getElementById("activity"); const stamp = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }); activity.textContent = `[${stamp}] ${message}\n${activity.textContent}`.slice(0, 4000); }
+function log(message) {
+  const activity = document.getElementById("activity");
+  const stamp = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  activity.textContent = `[${stamp}] ${message}\n${activity.textContent === "Ready." ? "" : activity.textContent}`.slice(0, 4000);
+  activityEntryCount += 1;
+  document.getElementById("activity-count").textContent = String(activityEntryCount);
+}
+function clearActivity() {
+  document.getElementById("activity").textContent = "Ready.";
+  activityEntryCount = 0;
+  document.getElementById("activity-count").textContent = "0";
+}
+function setSyncStatus(label) { document.getElementById("sync-status").textContent = label; }
 function domainClass(domain) {
   const value = String(domain || "").toLowerCase();
   if (value.includes("text")) return "text";

@@ -1,6 +1,7 @@
 const mount = document.getElementById("plugin-panel");
 const wait = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 if (new URLSearchParams(location.search).has("panel")) document.body.classList.add("panel-only");
+
 let versions = [
   { message: "Refined hero typography", author: "Zach", date: "Today", shortId: "90511bb" },
   { message: "Established campaign direction", author: "Zach", date: "Today", shortId: "e3889c1" },
@@ -11,6 +12,7 @@ let changes = [
   { domain: "appearance", layerName: "Gradient sphere", summary: "Opacity changed from 82% to 100%" },
   { domain: "structure", layerName: "CTA group", summary: "Layer moved above Supporting copy" }
 ];
+let activityEntries = 0;
 
 boot();
 
@@ -30,21 +32,29 @@ function setupDemoPanel() {
   byId("project-status").textContent = "photogit-demo";
   byId("document-name").textContent = "document.psd";
   byId("branch-name").textContent = "live-option-b";
+  byId("branch-name-detail").textContent = "live-option-b";
   byId("helper-status").textContent = "Connected";
-  byId("helper-status").className = "status-pill ok";
+  byId("helper-status").className = "connection-state ok";
+  byId("sync-status").textContent = "Up to date";
   replaceDemoDropdown();
   renderChanges();
   renderHistory();
+  byId("branches-count").textContent = "3";
   bind("changes-tab", () => selectTab("changes"));
   bind("history-tab", () => selectTab("history"));
+  bind("branches-tab", () => selectTab("branches"));
+  bind("activity-tab", () => selectTab("activity"));
   bind("scan", scan);
+  bind("rescan", scan);
   bind("save-version", saveVersion);
-  bind("pull", () => flashResult("Pulled live-option-b successfully."));
-  bind("push", () => flashResult("Changes shared successfully."));
+  bind("pull", () => sync("Pulled live-option-b successfully.", "Pulled just now"));
+  bind("push", () => sync("Changes shared successfully.", "Pushed just now"));
   bind("show-status", () => flashResult(changes.length ? `${changes.length} semantic changes ready to save.` : "Project is clean."));
   bind("refresh", () => flashResult("Workspace refreshed."));
   bind("new-branch", createBranch);
+  bind("clear-activity", clearActivity);
   byId("branch-picker").addEventListener("change", switchBranch);
+  byId("history-search").addEventListener("input", renderHistory);
 }
 
 function replaceDemoDropdown() {
@@ -65,12 +75,13 @@ function renderChanges() {
   const container = byId("changes");
   container.innerHTML = "";
   byId("changes-count").textContent = String(changes.length);
+  byId("changes-total").textContent = String(changes.length);
   byId("changes-empty").hidden = changes.length > 0;
   changes.forEach((change) => {
     const row = document.createElement("div");
     row.className = "list-row change-row";
     row.tabIndex = 0;
-    row.innerHTML = `<span class="row-glyph ${domainClass(change.domain)}" aria-hidden="true">${domainIcon(change.domain)}</span><span class="row-copy"><strong>${change.layerName}</strong><span>${change.summary}</span></span><span class="change-domain">${change.domain}</span>`;
+    row.innerHTML = `<span class="row-glyph" aria-hidden="true">${domainIcon(change.domain)}</span><span class="row-copy"><strong>${change.layerName}</strong><span>${change.summary}</span></span><span class="change-domain">${change.domain}</span>`;
     row.addEventListener("click", () => {
       document.querySelectorAll(".layer").forEach((layer) => layer.classList.remove("active"));
       document.querySelector(".layer").classList.add("active");
@@ -81,56 +92,75 @@ function renderChanges() {
 }
 
 function renderHistory() {
+  const query = byId("history-search").value.trim().toLowerCase();
+  const matching = versions.filter((version) => !query || [version.message, version.shortId, version.author, version.date].some((value) => value.toLowerCase().includes(query)));
   const container = byId("history");
   container.innerHTML = "";
   byId("history-count").textContent = String(versions.length);
-  versions.forEach((version) => {
+  byId("history-total").textContent = `${versions.length} versions`;
+  byId("history-empty").hidden = matching.length > 0;
+  matching.forEach((version) => {
     const row = document.createElement("div");
     row.className = "list-row history-row";
-    row.innerHTML = `<span class="history-dot" aria-hidden="true">${historyIcon()}</span><span class="row-copy"><strong>${version.message}</strong><span>${version.author} · ${version.date}</span></span><span class="commit-id">${version.shortId}</span>`;
+    row.innerHTML = `<span class="history-marker" aria-hidden="true">${historyIcon()}</span><span class="row-copy"><strong>${version.message}</strong><span>${version.author} · ${version.date}</span></span><span class="commit-id">${version.shortId}</span>`;
     container.appendChild(row);
   });
 }
 
 async function scan() {
-  await simulateBusy("Scanning Photoshop layers…", 650);
+  await simulateBusy("Reviewing Photoshop layers…", 650);
   renderChanges();
+  addActivity(`Found ${changes.length} semantic layer changes.`);
   flashResult(`Found ${changes.length} semantic layer changes.`);
 }
 
 async function saveVersion() {
   const message = byId("message").value.trim();
   if (!message) return flashResult("Describe what changed before saving.", true);
-  await simulateBusy("Saving exact PSD and preview…", 900);
+  await simulateBusy("Saving exact PSD, preview, and semantic data…", 900);
   versions.unshift({ message, author: "Zach", date: "Just now", shortId: "c84f2a7" });
   changes = [];
   byId("message").value = "";
+  byId("history-search").value = "";
   renderChanges();
   renderHistory();
-  byId("activity").textContent = `[Now] Saved c84f2a7: ${message}\n[Now] Captured exact PSD snapshot and preview.\n${byId("activity").textContent}`;
+  addActivity(`Saved c84f2a7: ${message}`);
   flashResult("Saved version c84f2a7.");
+  selectTab("history");
 }
 
 function createBranch() {
   const input = byId("new-branch-name");
-  if (!input.value.trim()) return flashResult("Enter a new branch name.", true);
+  const name = input.value.trim();
+  if (!name) return flashResult("Enter a new branch name.", true);
   const option = document.createElement("option");
-  option.value = input.value.trim();
-  option.textContent = input.value.trim();
+  option.value = name;
+  option.textContent = name;
   byId("branch-picker").appendChild(option);
-  byId("branch-picker").value = option.value;
-  byId("branch-name").textContent = option.value;
+  byId("branch-picker").value = name;
+  byId("branch-name").textContent = name;
+  byId("branch-name-detail").textContent = name;
+  byId("branches-count").textContent = String(byId("branch-picker").options.length);
   input.value = "";
-  flashResult(`Created branch ${option.value}.`);
+  addActivity(`Created and switched to ${name}.`);
+  flashResult(`Created branch ${name}.`);
 }
 
 function switchBranch(event) {
   byId("branch-name").textContent = event.target.value;
+  byId("branch-name-detail").textContent = event.target.value;
+  addActivity(`Switched to ${event.target.value}.`);
   flashResult(`Switched to ${event.target.value}.`);
 }
 
+function sync(message, status) {
+  byId("sync-status").textContent = status;
+  addActivity(message);
+  flashResult(message);
+}
+
 async function simulateBusy(label, duration) {
-  const card = mount.querySelector(".commit-card");
+  const card = mount.querySelector(".capture-panel");
   card.classList.add("is-busy");
   byId("result").textContent = label;
   byId("result").className = "";
@@ -143,12 +173,26 @@ function flashResult(message, error = false) {
   byId("result").className = error ? "error" : "success";
 }
 
+function addActivity(message) {
+  const stamp = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  byId("activity").textContent = `[${stamp}] ${message}\n${byId("activity").textContent === "Ready." ? "" : byId("activity").textContent}`;
+  activityEntries += 1;
+  byId("activity-count").textContent = String(activityEntries);
+}
+
+function clearActivity() {
+  byId("activity").textContent = "Ready.";
+  activityEntries = 0;
+  byId("activity-count").textContent = "0";
+}
+
 function selectTab(name) {
-  const showingChanges = name === "changes";
-  byId("changes-view").hidden = !showingChanges;
-  byId("history-view").hidden = showingChanges;
-  byId("changes-tab").className = showingChanges ? "active" : "";
-  byId("history-tab").className = showingChanges ? "" : "active";
+  ["changes", "history", "branches", "activity"].forEach((section) => {
+    const active = section === name;
+    byId(`${section}-view`).hidden = !active;
+    byId(`${section}-tab`).className = active ? "active" : "";
+    byId(`${section}-tab`).setAttribute("aria-selected", active ? "true" : "false");
+  });
 }
 
 function setCaption(step, heading, copy) {
@@ -194,33 +238,34 @@ async function autoplay() {
   const caption = document.querySelector(".demo-caption");
   await wait(500);
   caption.classList.add("visible");
-  await wait(1450);
+  await wait(1250);
 
-  setCaption("01", "See what changed", "PhotoGit translates Photoshop edits into clear, semantic updates.");
+  setCaption("01", "Review every meaningful change", "Layer edits are mapped into readable content, appearance, and structure updates.");
   await clickWithCursor(byId("scan"));
+  await wait(1000);
+
+  setCaption("02", "Create one dependable checkpoint", "A single action stores the PSD, preview, semantic data, and design intent.");
+  await typeMessage("Polished campaign hero");
+  await clickWithCursor(byId("save-version"));
+  await wait(1250);
+
+  setCaption("03", "Find any previous decision", "History is a dedicated searchable view, not an afterthought.");
+  await moveCursor(byId("history-search"));
+  byId("history-search").value = "hero";
+  byId("history-search").dispatchEvent(new Event("input", { bubbles: true }));
   await wait(1200);
 
-  setCaption("02", "Name the idea, not the file", "One checkpoint stores the exact PSD, a preview, and its intent.");
-  await typeMessage("Polished campaign hero");
-  await wait(350);
-  await clickWithCursor(byId("save-version"));
-  await wait(1550);
-
-  setCaption("03", "A history designers can read", "Every visual direction stays named, dated, and recoverable.");
-  await clickWithCursor(byId("history-tab"));
-  await wait(1550);
-
-  setCaption("04", "Branch without breaking flow", "Explore another direction, then return to any exact Photoshop state.");
+  setCaption("04", "Keep directions organized", "Branches have their own workspace with a clear current state.");
+  await clickWithCursor(byId("branches-tab"));
   const select = byId("branch-picker");
   await moveCursor(select);
   select.value = "homepage-experiment";
   select.dispatchEvent(new Event("change", { bubbles: true }));
-  document.getElementById("demo-cursor").classList.add("click");
-  await wait(1250);
+  await wait(1000);
 
-  setCaption("05", "Share when it is ready", "Push the complete design history to your team.");
-  await clickWithCursor(byId("push"));
-  await wait(1700);
+  await clickWithCursor(byId("activity-tab"));
+  setCaption("05", "See exactly what PhotoGit did", "The activity view keeps every operation transparent.");
+  await wait(1400);
 
   document.querySelector(".demo-caption").classList.remove("visible");
   document.getElementById("demo-cursor").style.opacity = "0";
@@ -232,7 +277,6 @@ async function autoplay() {
 
 function bind(id, handler) { byId(id).addEventListener("click", handler); }
 function byId(id) { return mount.querySelector(`#${id}`); }
-function domainClass(domain) { return domain; }
 function domainIcon(domain) {
   if (domain === "text") return '<svg viewBox="0 0 24 24"><path d="M5 6h14M12 6v13m-4 0h8"/></svg>';
   if (domain === "appearance") return '<svg viewBox="0 0 24 24"><path d="M12 4c4.4 0 8 3.1 8 7 0 3-2.2 4-4 4h-1.2c-.9 0-1.4 1-.9 1.8.8 1.3-.2 3.2-2.3 3.2C7.4 20 4 16.4 4 12s3.6-8 8-8Z"/><circle cx="8" cy="10" r=".8"/><circle cx="11" cy="7.5" r=".8"/><circle cx="15" cy="8.5" r=".8"/></svg>';

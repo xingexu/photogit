@@ -8,7 +8,7 @@ This repository is under active development toward a public v1.0 release on Sept
 
 ![PhotoGit running beside a Photoshop document](artifacts/photogit-ui.png)
 
-The Photoshop panel keeps semantic changes, named checkpoints, design branches, and team sharing in one compact workflow. [Watch the 22-second product demonstration](artifacts/photogit-demo.mp4).
+The monochrome Photoshop panel maps the workflow into four focused views: semantic Changes, searchable History, design Branches, and a transparent Activity log. [Watch the 22-second product demonstration](artifacts/photogit-demo.mp4).
 
 ## Current vertical slice
 
