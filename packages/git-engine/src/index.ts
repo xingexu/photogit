@@ -19,6 +19,8 @@ export class GitCommandError extends Error {
 
 export type VersionEntry = { id: string; shortId: string; author: string; date: string; message: string };
 export type BranchEntry = { name: string; current: boolean };
+export type ReviewEntry = { branch: string; ahead: number; behind: number; changeCount: number; changes: string[]; mergeable: boolean };
+export type RepositoryInfo = { remoteUrl: string | null; provider: "github" | "local" | "other"; currentBranch: string; baseBranch: string };
 
 export class GitRepository {
   readonly root: string;
@@ -110,6 +112,87 @@ export class GitRepository {
     await this.run(["push", "--set-upstream", remote, branch]);
   }
 
+  async repositoryInfo(remote = "origin"): Promise<RepositoryInfo> {
+    assertRemoteName(remote);
+    await this.assertRepository();
+    const [remoteUrl, currentBranch, baseBranch] = await Promise.all([
+      this.run(["remote", "get-url", remote], { allowFailure: true }),
+      this.currentBranch(),
+      this.defaultBaseBranch(remote)
+    ]);
+    return {
+      remoteUrl: remoteUrl || null,
+      provider: !remoteUrl ? "local" : githubRepositoryUrl(remoteUrl) ? "github" : isLocalRemote(remoteUrl) ? "local" : "other",
+      currentBranch,
+      baseBranch
+    };
+  }
+
+  async reviews(limit = 8): Promise<ReviewEntry[]> {
+    await this.assertRepository();
+    const current = await this.currentBranch();
+    const branches = (await this.branches()).filter((branch) => !branch.current).slice(0, Math.max(1, limit));
+    const reviews = await Promise.all(branches.map(async ({ name }) => {
+      const [aheadText, behindText, changed, mergeTree] = await Promise.all([
+        this.run(["rev-list", "--count", `${current}..${name}`], { allowFailure: true }),
+        this.run(["rev-list", "--count", `${name}..${current}`], { allowFailure: true }),
+        this.run(["diff", "--name-only", `${current}...${name}`], { allowFailure: true }),
+        this.run(["merge-tree", "--write-tree", current, name], { allowFailure: true })
+      ]);
+      const changes = changed.split("\n").filter(Boolean);
+      return {
+        branch: name,
+        ahead: Number.parseInt(aheadText || "0", 10) || 0,
+        behind: Number.parseInt(behindText || "0", 10) || 0,
+        changeCount: changes.length,
+        changes: changes.slice(0, 12),
+        mergeable: /^[a-f0-9]{40,64}(?:\n|$)/i.test(mergeTree)
+      };
+    }));
+    return reviews.sort((left, right) => right.ahead - left.ahead || left.branch.localeCompare(right.branch));
+  }
+
+  async mergeBranch(name: string): Promise<void> {
+    assertBranchName(name);
+    await this.assertCleanForCheckout();
+    const current = await this.currentBranch();
+    if (current === name) throw new Error("Choose another branch to merge into the current design.");
+    if (!(await this.branches()).some((branch) => branch.name === name)) throw new Error(`Branch ${name} does not exist in this project.`);
+    try {
+      await this.run(["merge", "--no-ff", "--no-edit", name]);
+    } catch {
+      await this.run(["merge", "--abort"], { allowFailure: true });
+      throw new Error(`PhotoGit could not merge ${name} automatically. The merge was safely aborted; review its conflicting design changes first.`);
+    }
+  }
+
+  async conflicts(): Promise<string[]> {
+    const changes = await this.status();
+    return changes.filter((line) => /^(?:DD|AU|UD|UA|DU|AA|UU)/.test(line)).map((line) => line.slice(3).trim());
+  }
+
+  async tags(): Promise<string[]> {
+    await this.assertRepository();
+    const output = await this.run(["for-each-ref", "--sort=-creatordate", "--format=%(refname:short)", "refs/tags"]);
+    return output.split("\n").filter(Boolean);
+  }
+
+  async createTag(name: string): Promise<void> {
+    assertTagName(name);
+    await this.assertRepository();
+    await this.run(["tag", name]);
+  }
+
+  async pullRequestUrl(base?: string, remote = "origin"): Promise<string> {
+    if (base) assertBranchName(base);
+    const info = await this.repositoryInfo(remote);
+    const repositoryUrl = info.remoteUrl ? githubRepositoryUrl(info.remoteUrl) : null;
+    if (!repositoryUrl) throw new Error("Pull requests need a GitHub remote. Add a GitHub origin, then try again.");
+    if (info.currentBranch === "detached") throw new Error("Switch to a branch before opening a pull request.");
+    const baseBranch = base || info.baseBranch;
+    return `${repositoryUrl}/compare/${encodeURIComponent(baseBranch)}...${encodeURIComponent(info.currentBranch)}?expand=1`;
+  }
+
   async history(limit = 30): Promise<VersionEntry[]> {
     await this.assertRepository();
     const format = "%H%x1f%h%x1f%an%x1f%aI%x1f%s%x1e";
@@ -176,6 +259,13 @@ export class GitRepository {
     if (meaningful.length) throw new Error("The current design has unsaved project changes. Save a version before switching or getting updates.");
   }
 
+  private async defaultBaseBranch(remote: string): Promise<string> {
+    const symbolic = await this.run(["symbolic-ref", "--quiet", "--short", `refs/remotes/${remote}/HEAD`], { allowFailure: true });
+    if (symbolic.startsWith(`${remote}/`)) return symbolic.slice(remote.length + 1);
+    const names = (await this.branches()).map((branch) => branch.name);
+    return names.includes("main") ? "main" : names.includes("master") ? "master" : names[0] || "main";
+  }
+
   private async unstage(paths: string[]): Promise<void> {
     const hasHead = Boolean(await this.run(["rev-parse", "--verify", "HEAD"], { allowFailure: true }));
     if (hasHead) await this.run(["restore", "--staged", "--", ...paths], { allowFailure: true });
@@ -231,6 +321,30 @@ export function assertRemoteName(name: string): void {
 
 export function assertCommitIdentifier(value: string): void {
   if (!/^[A-Fa-f0-9]{4,64}$/.test(value) && !/^[A-Za-z0-9][A-Za-z0-9._\/-]{0,199}$/.test(value)) throw new Error(`Invalid version ID: ${value}`);
+}
+
+export function assertTagName(name: string): void {
+  if (!/^(?![-.])(?!.*(?:\.\.|\/\.|\.lock(?:\/|$)))[A-Za-z0-9][A-Za-z0-9._\/-]{0,99}$/.test(name) || name.endsWith("/") || name.endsWith(".")) {
+    throw new Error(`Invalid tag name: ${name}`);
+  }
+}
+
+function githubRepositoryUrl(remoteUrl: string): string | null {
+  const ssh = remoteUrl.match(/^git@github\.com:([^/]+)\/(.+?)(?:\.git)?$/i);
+  if (ssh) {
+    const [, owner = "", repository = ""] = ssh;
+    return `https://github.com/${owner}/${repository.replace(/\.git$/i, "")}`;
+  }
+  const https = remoteUrl.match(/^https?:\/\/github\.com\/([^/]+)\/(.+?)(?:\.git)?\/?$/i);
+  if (https) {
+    const [, owner = "", repository = ""] = https;
+    return `https://github.com/${owner}/${repository.replace(/\.git$/i, "")}`;
+  }
+  return null;
+}
+
+function isLocalRemote(remoteUrl: string): boolean {
+  return remoteUrl.startsWith("/") || remoteUrl.startsWith("file://") || /^[A-Za-z]:[\\/]/.test(remoteUrl);
 }
 
 export async function usingProjectLock<T>(root: string, action: () => Promise<T>, staleAfterMs = 5 * 60_000): Promise<T> {

@@ -89,6 +89,24 @@ async function executeRequest(payload: HelperRequest, helperConfig: HelperConfig
     await repository.push();
     return { branch: await repository.currentBranch() };
   }
+  if (payload.operation === "reviews") {
+    const [reviews, conflicts, repositoryInfo, tags] = await Promise.all([
+      repository.reviews(),
+      repository.conflicts(),
+      repository.repositoryInfo(),
+      repository.tags()
+    ]);
+    return { reviews, conflicts, repository: repositoryInfo, tags };
+  }
+  if (payload.operation === "mergeBranch") {
+    await repository.mergeBranch(payload.branch!);
+    return { branch: await repository.currentBranch(), snapshotPath: join(projectRoot, "snapshot", "document.psd") };
+  }
+  if (payload.operation === "createTag") {
+    await repository.createTag(payload.tag!);
+    return { tag: payload.tag };
+  }
+  if (payload.operation === "pullRequestLink") return { url: await repository.pullRequestUrl(payload.base) };
   if (payload.operation !== "capture") throw coded("UNKNOWN_OPERATION", "Unknown helper operation.");
 
   for (const path of [payload.snapshotPath, payload.previewPath]) {

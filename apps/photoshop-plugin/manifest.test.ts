@@ -9,7 +9,8 @@ describe("Photoshop plugin manifest", () => {
     expect(manifest.manifestVersion).toBe(5);
     expect(manifest.host).toMatchObject({ app: "PS", minVersion: "24.2.0" });
     expect(manifest.requiredPermissions).toEqual({
-      localFileSystem: "request"
+      localFileSystem: "request",
+      launchProcess: { schemes: ["https"] }
     });
     expect(manifest.main).toBe("index.html");
   });

@@ -17,4 +17,11 @@ describe("helper protocol", () => {
     expect(envelope.request.operation).toBe("status");
     expect(() => parseBridgeEnvelope({ token: "short", request: envelope.request })).toThrow(/token/i);
   });
+  it("validates review-tool arguments", () => {
+    const base = { protocolVersion: PROTOCOL_VERSION, requestId: "request-123", projectRoot: "/tmp/project" };
+    expect(parseHelperRequest({ ...base, operation: "mergeBranch", branch: "feature/review" }).operation).toBe("mergeBranch");
+    expect(parseHelperRequest({ ...base, operation: "createTag", tag: "v1.0.0" }).operation).toBe("createTag");
+    expect(() => parseHelperRequest({ ...base, operation: "mergeBranch" })).toThrow("branch name");
+    expect(() => parseHelperRequest({ ...base, operation: "createTag" })).toThrow("tag name");
+  });
 });

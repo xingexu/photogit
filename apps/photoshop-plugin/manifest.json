@@ -10,7 +10,10 @@
     "data": { "apiVersion": 2 }
   },
   "requiredPermissions": {
-    "localFileSystem": "request"
+    "localFileSystem": "request",
+    "launchProcess": {
+      "schemes": ["https"]
+    }
   },
   "entrypoints": [
     {

@@ -1,10 +1,10 @@
 const { app, core } = require("photoshop");
-const { storage, entrypoints } = require("uxp");
+const { storage, entrypoints, shell } = require("uxp");
 
 entrypoints.setup({
   panels: {
     photogitPanel: {
-      show() {}
+      show() { syncDocumentLabel(); }
     }
   }
 });
@@ -16,7 +16,10 @@ let projectFolder = null;
 let helperToken = null;
 let busyNow = false;
 let historyEntries = [];
+let reviewEntries = [];
+let repositoryDetails = null;
 let activityEntryCount = 0;
+let toastTimer = null;
 
 document.addEventListener("DOMContentLoaded", async () => {
   const folderToken = localStorage.getItem("photogit.projectFolderToken");
@@ -31,6 +34,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
   bind("choose-project", "click", chooseProject);
   bind("refresh", "click", refreshWorkspace);
+  bind("global-search", "click", openHistorySearch);
+  bind("header-menu", "click", toggleToolsMenu);
   bind("scan", "click", scanChanges);
   bind("rescan", "click", scanChanges);
   bind("save-version", "click", saveVersion);
@@ -42,9 +47,21 @@ document.addEventListener("DOMContentLoaded", async () => {
   bind("changes-tab", "click", () => selectTab("changes"));
   bind("history-tab", "click", () => selectTab("history"));
   bind("branches-tab", "click", () => selectTab("branches"));
+  bind("reviews-tab", "click", () => selectTab("reviews"));
   bind("activity-tab", "click", () => selectTab("activity"));
   bind("history-search", "input", filterHistory);
   bind("clear-activity", "click", clearActivity);
+  bind("open-reviews", "click", () => selectTab("reviews"));
+  bind("new-pull-request", "click", openPullRequest);
+  bind("tools-toggle", "click", toggleToolsMenu);
+  bind("tool-new-branch", "click", openNewBranch);
+  bind("tool-new-pr", "click", openPullRequest);
+  bind("tool-conflicts", "click", openConflicts);
+  bind("tool-create-tag", "click", openTagSheet);
+  bind("tool-settings", "click", openRepositorySettings);
+  bind("close-tag-sheet", "click", closeTagSheet);
+  bind("create-tag", "click", createTag);
+  window.setInterval(syncDocumentLabel, 1000);
   await refreshWorkspace();
 });
 
@@ -55,7 +72,7 @@ function bind(id, event, handler) {
     return handler(inputEvent);
   };
   element.addEventListener(event, invoke);
-  if (event === "click" && element.getAttribute("role") === "button") {
+  if (event === "click" && ["button", "tab"].includes(element.getAttribute("role"))) {
     element.addEventListener("keydown", (keyEvent) => {
       if (keyEvent.key !== "Enter" && keyEvent.key !== " ") return;
       keyEvent.preventDefault();
@@ -94,8 +111,7 @@ async function loadPairing() {
 }
 
 async function refreshWorkspace() {
-  const doc = app.documents.length ? app.activeDocument : null;
-  document.getElementById("document-name").textContent = doc ? doc.name : "None open";
+  syncDocumentLabel();
   document.getElementById("project-status").textContent = projectFolder ? projectFolder.name : "No project selected";
   document.getElementById("onboarding").hidden = Boolean(projectFolder && helperToken);
   document.getElementById("workspace").hidden = !projectFolder;
@@ -105,9 +121,9 @@ async function refreshWorkspace() {
   }
   try {
     const status = await callHelper("status", {}, HELPER_HEALTH_TIMEOUT_MS);
-    setHelper("Connected", true);
+    setHelper("Synced", true);
     await loadStatus(status);
-    await Promise.all([loadBranches(), loadHistory()]);
+    await Promise.all([loadBranches(), loadHistory(), loadReviews()]);
   } catch { setHelper("Offline", false); }
 }
 
@@ -115,7 +131,7 @@ async function loadStatus(existingResult) {
   const result = existingResult || await callHelper("status");
   document.getElementById("branch-name").textContent = result.branch;
   document.getElementById("branch-name-detail").textContent = result.branch;
-  setSyncStatus(result.changeCount ? "Local changes" : "Up to date");
+  setSyncStatus(result.changeCount ? "Changes" : "Synced");
   if (result.changeCount) log(`${result.changeCount} project file change(s) detected.`);
 }
 
@@ -142,6 +158,59 @@ async function loadHistory(existingResult) {
   document.getElementById("history-count").textContent = String(historyEntries.length);
   document.getElementById("history-total").textContent = `${historyEntries.length} ${historyEntries.length === 1 ? "version" : "versions"}`;
   filterHistory();
+}
+
+async function loadReviews(existingResult) {
+  const result = existingResult || await callHelper("reviews");
+  repositoryDetails = result.repository;
+  reviewEntries = result.reviews.filter((review) => review.ahead > 0 || review.changeCount > 0);
+  document.getElementById("reviews-count").textContent = String(reviewEntries.length);
+  document.getElementById("review-provider").textContent = result.repository.provider === "github"
+    ? `GitHub · ${result.repository.baseBranch} ← ${result.repository.currentBranch}`
+    : `Local reviews · merging into ${result.repository.currentBranch}`;
+  renderReviews(reviewEntries, result.conflicts || []);
+  renderReviewPreview(reviewEntries[0] || null);
+}
+
+function renderReviews(reviews, conflicts) {
+  const container = document.getElementById("reviews");
+  const empty = document.getElementById("reviews-empty");
+  container.innerHTML = "";
+  empty.hidden = reviews.length > 0;
+  for (const review of reviews) container.appendChild(createReviewCard(review, false));
+  const conflictPanel = document.getElementById("conflict-panel");
+  conflictPanel.hidden = conflicts.length === 0;
+  document.getElementById("conflicts").textContent = conflicts.length ? conflicts.join("\n") : "";
+}
+
+function renderReviewPreview(review) {
+  const section = document.getElementById("review-preview");
+  const container = document.getElementById("review-preview-content");
+  container.innerHTML = "";
+  section.hidden = !review;
+  if (review) container.appendChild(createReviewCard(review, true));
+}
+
+function createReviewCard(review, compact) {
+  const card = document.createElement("article");
+  card.className = "review-card";
+  const statusClass = review.mergeable ? "ready" : "blocked";
+  const statusLabel = review.mergeable ? "Ready to merge" : "Review conflicts";
+  const changes = review.changes.length ? review.changes.join("\n") : "No file-level differences.";
+  card.innerHTML = `<div class="review-title"><strong>${escapeHtml(review.branch)}</strong><span>${review.ahead} ahead</span></div><div class="review-meta"><span class="${statusClass}">${statusLabel}</span><span>·</span><span>${review.changeCount} ${review.changeCount === 1 ? "file" : "files"}</span></div><div class="review-files" hidden>${escapeHtml(changes)}</div><div class="review-actions"><div class="button button-quiet button-small compare-action" role="button" tabindex="0">Compare</div><div class="button button-primary button-small merge-action" role="button" tabindex="0" data-mergeable="${review.mergeable ? "true" : "false"}" ${review.mergeable ? "" : "aria-disabled=\"true\""}>Merge</div></div>`;
+  const details = card.querySelector(".review-files");
+  const compareAction = card.querySelector(".compare-action");
+  const mergeAction = card.querySelector(".merge-action");
+  const compare = () => { details.hidden = !details.hidden; };
+  const merge = () => {
+    if (review.mergeable) mergeReview(review.branch);
+  };
+  compareAction.addEventListener("click", compare);
+  mergeAction.addEventListener("click", merge);
+  activateOnKeyboard(compareAction, compare);
+  activateOnKeyboard(mergeAction, merge);
+  if (compact) card.querySelector(".review-files").hidden = true;
+  return card;
 }
 
 function renderHistory(versions) {
@@ -200,7 +269,7 @@ async function saveVersion() {
     renderChanges([]);
     log(`Saved ${result.shortId}: ${message}`);
     show(`Saved version ${result.shortId}.`, false);
-    await Promise.all([loadStatus(), loadBranches(), loadHistory()]);
+    await Promise.all([loadStatus(), loadBranches(), loadHistory(), loadReviews()]);
     selectTab("history");
   });
 }
@@ -212,7 +281,7 @@ async function pull() {
     await openSnapshot();
     log(`Pulled ${result.branch} and opened its PSD snapshot.`);
     await refreshWorkspace();
-    setSyncStatus("Pulled just now");
+    setSyncStatus("Synced");
     show(`Pulled ${result.branch} successfully.`, false);
   });
 }
@@ -222,7 +291,8 @@ async function push() {
   return run("Sharing versions…", async () => {
     const result = await callHelper("push");
     log(`Shared branch ${result.branch}.`);
-    setSyncStatus("Pushed just now");
+    setSyncStatus("Synced");
+    await loadReviews();
     show("Changes shared successfully.", false);
   });
 }
@@ -232,7 +302,7 @@ async function showProjectStatus() {
   return run("Checking project…", async () => {
     const result = await callHelper("status");
     log(`${result.branch}: ${result.changeCount ? `${result.changeCount} project file change(s)` : "clean"}.`);
-    setSyncStatus(result.changeCount ? "Local changes" : "Up to date");
+    setSyncStatus(result.changeCount ? "Changes" : "Synced");
     show(result.changeCount ? "Project files have unsaved changes." : "Project is clean.", result.changeCount > 0);
   });
 }
@@ -246,7 +316,7 @@ async function createBranch() {
     await callHelper("createBranch", { branch: name });
     input.value = "";
     log(`Created and switched to ${name}.`);
-    await loadBranches();
+    await Promise.all([loadBranches(), loadReviews()]);
     show(`Created branch ${name}.`, false);
   });
 }
@@ -262,6 +332,95 @@ async function switchBranch(event) {
     await refreshWorkspace();
     show(`Switched to ${branch}.`, false);
   });
+}
+
+async function mergeReview(branch) {
+  if (!ensureReady()) return;
+  return run(`Merging ${branch}…`, async () => {
+    await callHelper("mergeBranch", { branch });
+    await openSnapshot();
+    log(`Merged ${branch} into ${document.getElementById("branch-name").textContent}.`);
+    await refreshWorkspace();
+    selectTab("history");
+    show(`Merged ${branch} and opened the resulting PSD snapshot.`, false);
+  });
+}
+
+async function openPullRequest() {
+  closeToolsMenu();
+  if (!ensureReady()) return;
+  return run("Preparing pull request…", async () => {
+    const result = await callHelper("pullRequestLink", { base: repositoryDetails?.baseBranch });
+    const error = await shell.openExternal(result.url, "PhotoGit is opening GitHub so you can review and submit this pull request.");
+    if (error) throw new Error(error);
+    log(`Opened a GitHub pull request from ${repositoryDetails?.currentBranch || "the current branch"}.`);
+    show("Opened the pull-request review in GitHub.", false);
+  });
+}
+
+function openHistorySearch() {
+  selectTab("history");
+  document.getElementById("history-search").focus();
+}
+
+function toggleToolsMenu() {
+  const menu = document.getElementById("tools-menu");
+  menu.hidden = !menu.hidden;
+  document.getElementById("tools-toggle").setAttribute("aria-expanded", menu.hidden ? "false" : "true");
+  document.getElementById("tag-sheet").hidden = true;
+}
+
+function closeToolsMenu() {
+  document.getElementById("tools-menu").hidden = true;
+  document.getElementById("tools-toggle").setAttribute("aria-expanded", "false");
+}
+
+function openNewBranch() {
+  closeToolsMenu();
+  selectTab("branches");
+  document.getElementById("new-branch-name").focus();
+}
+
+async function openConflicts() {
+  closeToolsMenu();
+  selectTab("reviews");
+  if (!ensureReady()) return;
+  return run("Checking conflicts…", async () => {
+    await loadReviews();
+    const panel = document.getElementById("conflict-panel");
+    show(panel.hidden ? "No unresolved merge conflicts." : "Review the conflicting project files below.", !panel.hidden);
+  });
+}
+
+function openTagSheet() {
+  closeToolsMenu();
+  document.getElementById("tag-sheet").hidden = false;
+  document.getElementById("tag-name").focus();
+}
+
+function closeTagSheet() { document.getElementById("tag-sheet").hidden = true; }
+
+async function createTag() {
+  const input = document.getElementById("tag-name");
+  const tag = input.value.trim();
+  if (!tag) return show("Enter a tag such as v1.0.0.", true);
+  return run(`Creating ${tag}…`, async () => {
+    await callHelper("createTag", { tag });
+    input.value = "";
+    closeTagSheet();
+    await loadReviews();
+    log(`Created repository tag ${tag}.`);
+    show(`Created tag ${tag}.`, false);
+  });
+}
+
+function openRepositorySettings() {
+  closeToolsMenu();
+  selectTab("activity");
+  const provider = repositoryDetails?.provider || "unknown";
+  const remote = repositoryDetails?.remoteUrl || "No remote configured";
+  log(`Repository provider: ${provider}. Remote: ${remote}.`);
+  showProjectStatus();
 }
 
 async function openSnapshot() {
@@ -360,11 +519,12 @@ async function selectPhotoshopLayer(photoshopId) {
 }
 
 function selectTab(name) {
-  for (const section of ["changes", "history", "branches", "activity"]) {
+  closeToolsMenu();
+  for (const section of ["changes", "history", "branches", "reviews", "activity"]) {
     const active = section === name;
     document.getElementById(`${section}-view`).hidden = !active;
     const tab = document.getElementById(`${section}-tab`);
-    tab.className = active ? "active" : "";
+    tab.classList.toggle("active", active);
     tab.setAttribute("aria-selected", active ? "true" : "false");
   }
 }
@@ -400,6 +560,21 @@ async function removeEntry(folder, name) {
 
 function delay(milliseconds) { return new Promise((resolve) => setTimeout(resolve, milliseconds)); }
 
+function syncDocumentLabel() {
+  const label = document.getElementById("document-name");
+  if (!label) return;
+  const doc = app.documents.length ? app.activeDocument : null;
+  label.textContent = doc ? doc.name : "None open";
+}
+
+function activateOnKeyboard(element, handler) {
+  element.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    if (element.getAttribute("aria-disabled") !== "true") handler(event);
+  });
+}
+
 function bounds(value) { return { left: number(value?.left), top: number(value?.top), right: number(value?.right), bottom: number(value?.bottom) }; }
 function number(value, fallback = 0) { const candidate = typeof value === "object" && value !== null && "value" in value ? value.value : value; return Number.isFinite(Number(candidate)) ? Number(candidate) : fallback; }
 function normalizeEnum(value) { return String(value ?? "unknown").replace(/^.*\./, "").toLowerCase(); }
@@ -407,18 +582,33 @@ function textStyleFingerprint(textItem) { try { const style = textItem.character
 function unsupportedReason(kind) { return ["normal", "pixel", "text", "group"].some((value) => kind.includes(value)) ? null : `Unsupported ${kind} properties are preserved in the PSD snapshot.`; }
 function createRequestId() { return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`; }
 function escapeHtml(value) { return String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char])); }
-function setHelper(label, ok) { const element = document.getElementById("helper-status"); element.textContent = label; element.className = `connection-state ${ok ? "ok" : "warning"}`; }
+function setHelper(label, ok) {
+  const element = document.getElementById("helper-status");
+  element.className = `repo-state ${ok ? "ok" : "warning"}`;
+  document.getElementById("repo-sync-status").textContent = label;
+}
 function busy(active) {
   busyNow = active;
   document.getElementById("progress").hidden = !active;
   document.querySelector(".capture-panel").classList.toggle("is-busy", active);
-  for (const id of ["save-version", "scan", "rescan", "pull", "push", "show-status", "new-branch", "refresh"]) {
+  for (const id of ["save-version", "scan", "rescan", "pull", "push", "show-status", "new-branch", "refresh", "new-pull-request", "create-tag", "tools-toggle", "header-menu"]) {
     const control = document.getElementById(id);
     control.setAttribute("aria-disabled", active ? "true" : "false");
     control.tabIndex = active ? -1 : 0;
   }
+  for (const control of document.querySelectorAll(".merge-action")) control.setAttribute("aria-disabled", active || control.dataset.mergeable !== "true" ? "true" : "false");
 }
-function show(message, error) { const result = document.getElementById("result"); result.textContent = message; result.className = error ? "error" : "success"; }
+function show(message, error) {
+  const result = document.getElementById("result");
+  result.textContent = message;
+  result.className = error ? "error" : "success";
+  const toast = document.getElementById("toast");
+  toast.textContent = message;
+  toast.className = error ? "toast error" : "toast";
+  toast.hidden = false;
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { toast.hidden = true; }, error ? 5200 : 3200);
+}
 function log(message) {
   const activity = document.getElementById("activity");
   const stamp = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
@@ -431,7 +621,7 @@ function clearActivity() {
   activityEntryCount = 0;
   document.getElementById("activity-count").textContent = "0";
 }
-function setSyncStatus(label) { document.getElementById("sync-status").textContent = label; }
+function setSyncStatus(label) { document.getElementById("repo-sync-status").textContent = label; }
 function domainClass(domain) {
   const value = String(domain || "").toLowerCase();
   if (value.includes("text")) return "text";

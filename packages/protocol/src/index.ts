@@ -26,11 +26,13 @@ export type StatusRequest = {
 
 export type ProjectActionRequest = {
   protocolVersion: typeof PROTOCOL_VERSION;
-  operation: "history" | "branches" | "refresh" | "createBranch" | "switchBranch" | "pull" | "push";
+  operation: "history" | "branches" | "refresh" | "createBranch" | "switchBranch" | "pull" | "push" | "reviews" | "mergeBranch" | "createTag" | "pullRequestLink";
   requestId: string;
   projectRoot: string;
   capture?: DocumentCapture;
   branch?: string;
+  tag?: string;
+  base?: string;
 };
 
 export type HelperResponse<T = unknown> = {
@@ -49,7 +51,7 @@ export type BridgeEnvelope = {
 export function parseHelperRequest(value: unknown): HelperRequest {
   if (!isRecord(value)) throw new Error("Request body must be an object.");
   if (value.protocolVersion !== PROTOCOL_VERSION) throw new Error(`Protocol version ${String(value.protocolVersion)} is not supported.`);
-  const operations = ["capture", "status", "history", "branches", "refresh", "createBranch", "switchBranch", "pull", "push"];
+  const operations = ["capture", "status", "history", "branches", "refresh", "createBranch", "switchBranch", "pull", "push", "reviews", "mergeBranch", "createTag", "pullRequestLink"];
   if (typeof value.operation !== "string" || !operations.includes(value.operation)) throw new Error("Unknown helper operation.");
   if (typeof value.requestId !== "string" || value.requestId.length < 8 || value.requestId.length > 100) throw new Error("Invalid request ID.");
   if (typeof value.projectRoot !== "string" || value.projectRoot.length === 0) throw new Error("A project root is required.");
@@ -58,7 +60,9 @@ export function parseHelperRequest(value: unknown): HelperRequest {
     if (!isRecord(value.capture) || !isRecord(value.capture.document) || !Array.isArray(value.capture.layers)) throw new Error("Invalid Photoshop capture payload.");
   }
   if (value.operation === "refresh" && (!isRecord(value.capture) || !isRecord(value.capture.document) || !Array.isArray(value.capture.layers))) throw new Error("Refresh requires a Photoshop capture payload.");
-  if ((value.operation === "createBranch" || value.operation === "switchBranch") && (typeof value.branch !== "string" || value.branch.length === 0)) throw new Error("This operation requires a branch name.");
+  if (["createBranch", "switchBranch", "mergeBranch"].includes(value.operation) && (typeof value.branch !== "string" || value.branch.length === 0)) throw new Error("This operation requires a branch name.");
+  if (value.operation === "createTag" && (typeof value.tag !== "string" || value.tag.length === 0)) throw new Error("This operation requires a tag name.");
+  if (value.operation === "pullRequestLink" && value.base !== undefined && (typeof value.base !== "string" || value.base.length === 0)) throw new Error("The pull-request base branch is invalid.");
   return value as HelperRequest;
 }
 
