@@ -1,0 +1,191 @@
+.demo-page {
+  min-width: 1180px;
+  min-height: 760px;
+  overflow: hidden;
+  color: #f4f5f7;
+  background:
+    radial-gradient(circle at 72% 11%, rgba(77, 127, 255, 0.16), transparent 31%),
+    radial-gradient(circle at 22% 100%, rgba(151, 77, 255, 0.13), transparent 38%),
+    #08090c;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
+}
+
+.demo-window {
+  position: absolute;
+  inset: 26px 28px 30px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 15px;
+  background: #1c1d20;
+  box-shadow: 0 34px 90px rgba(0, 0, 0, 0.58), 0 0 0 1px rgba(0, 0, 0, 0.6);
+}
+
+.photoshop-titlebar {
+  display: flex;
+  align-items: center;
+  height: 42px;
+  padding: 0 13px;
+  border-bottom: 1px solid #0d0e10;
+  background: linear-gradient(#343538, #292a2d);
+}
+.traffic-lights { display: flex; gap: 7px; width: 72px; }
+.traffic-lights i { width: 12px; height: 12px; border-radius: 50%; background: #ff5f57; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.15); }
+.traffic-lights i:nth-child(2) { background: #febc2e; }
+.traffic-lights i:nth-child(3) { background: #28c840; }
+.ps-app-badge { display: grid; place-items: center; width: 25px; height: 25px; margin-right: 10px; border: 1px solid #31a8ff; color: #31a8ff; background: #001e36; font-size: 11px; font-weight: 700; }
+.photoshop-title { flex: 1; color: #d2d3d5; font-size: 11px; text-align: center; }
+.window-tools { display: flex; justify-content: flex-end; gap: 5px; width: 72px; }
+.window-tools span { width: 18px; height: 4px; border-radius: 10px; background: #4c4d51; }
+
+.photoshop-menubar {
+  display: flex;
+  align-items: center;
+  gap: 25px;
+  height: 34px;
+  padding: 0 56px;
+  border-bottom: 1px solid #101114;
+  color: #c9cacf;
+  background: #2a2b2e;
+  font-size: 11px;
+}
+.photoshop-workspace { display: grid; grid-template-columns: 46px 1fr 368px; height: calc(100% - 76px); }
+.tool-rail { display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 9px 4px; border-right: 1px solid #101114; background: #292a2d; }
+.tool-rail button { display: grid; place-items: center; width: 31px; height: 31px; padding: 0; border: 0; border-radius: 4px; color: #c7c9ce; background: transparent; font: 15px/1 system-ui; }
+.tool-rail button.selected { color: white; background: #55575d; }
+.swatches { position: relative; width: 31px; height: 33px; margin-top: auto; margin-bottom: 8px; }
+.swatches i { position: absolute; display: block; width: 22px; height: 22px; border: 2px solid #e7e7e7; background: #ea3a7b; }
+.swatches i:last-child { right: 0; bottom: 0; z-index: -1; background: #24157a; }
+
+.canvas-stage {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  overflow: hidden;
+  background-color: #17181b;
+  background-image: linear-gradient(45deg, #1b1c1f 25%, transparent 25%), linear-gradient(-45deg, #1b1c1f 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #1b1c1f 75%), linear-gradient(-45deg, transparent 75%, #1b1c1f 75%);
+  background-size: 18px 18px;
+  background-position: 0 0, 0 9px, 9px -9px, -9px 0;
+}
+.stage-topline { position: absolute; top: 0; right: 0; left: 0; display: flex; justify-content: space-between; height: 31px; padding: 8px 13px; border-bottom: 1px solid #0f1012; color: #b7b9bf; background: rgba(37, 38, 41, 0.95); font-size: 10px; }
+.stage-zoom { color: #8f9299; }
+.stage-status { position: absolute; right: 0; bottom: 0; left: 0; display: flex; gap: 26px; height: 26px; padding: 6px 13px; border-top: 1px solid #0f1012; color: #8b8e96; background: rgba(37, 38, 41, 0.95); font-size: 9px; }
+.artboard {
+  position: relative;
+  width: min(68vw, 760px);
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  color: #f9f9fb;
+  background: #13121a;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.52);
+}
+.art-grid { position: absolute; inset: 0; opacity: 0.14; background-image: linear-gradient(rgba(255,255,255,.18) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.18) 1px, transparent 1px); background-size: 54px 54px; }
+.art-glow { position: absolute; border-radius: 50%; filter: blur(1px); }
+.art-glow.one { top: -29%; right: -12%; width: 62%; height: 92%; background: radial-gradient(circle at 38% 46%, #ffa2dc 0, #ef2486 28%, #722de6 58%, transparent 72%); box-shadow: 0 0 80px #a725ff; }
+.art-glow.two { right: 12%; bottom: -37%; width: 46%; height: 77%; background: radial-gradient(circle at 50% 45%, #6fe6ff 0, #276dff 33%, #2522a8 57%, transparent 72%); box-shadow: 0 0 64px #1b6fff; }
+.art-kicker { position: absolute; top: 8%; left: 7%; color: #c6c2d6; font-size: clamp(8px, .72vw, 11px); font-weight: 650; letter-spacing: .22em; }
+.art-title { position: absolute; top: 19%; left: 7%; font-size: clamp(44px, 5vw, 78px); font-weight: 720; line-height: .82; letter-spacing: -.07em; }
+.art-title em { color: transparent; -webkit-text-stroke: 1.5px #f8d5ff; font-style: normal; }
+.art-copy { position: absolute; bottom: 20%; left: 7.5%; width: 24%; color: #ada8bd; font-size: clamp(8px, .76vw, 11px); line-height: 1.55; }
+.art-chip { position: absolute; bottom: 8%; left: 7%; padding: 10px 13px; border: 1px solid rgba(255,255,255,.32); border-radius: 99px; background: rgba(255,255,255,.08); backdrop-filter: blur(12px); font-size: clamp(7px, .65vw, 10px); font-weight: 650; letter-spacing: .08em; }
+.art-chip b { margin-left: 8px; color: #ff92d0; }
+.art-orbit { position: absolute; top: 19%; right: 12%; width: 39%; height: 52%; border: 1px solid rgba(255,255,255,.34); border-radius: 50%; transform: rotate(-18deg); }
+.art-orbit::after { content: ""; position: absolute; top: 8%; left: 14%; width: 8px; height: 8px; border-radius: 50%; background: white; box-shadow: 0 0 17px white; }
+
+.right-rail { min-width: 0; overflow: hidden; border-left: 1px solid #0d0e10; background: #232427; }
+.mini-panel { border-bottom: 1px solid #101114; background: #292a2e; }
+.mini-panel header { display: flex; justify-content: space-between; height: 30px; padding: 8px 11px; color: #dcdee3; font-size: 10px; font-weight: 620; }
+.layers-panel { height: 128px; }
+.layer { display: flex; align-items: center; gap: 7px; height: 29px; padding: 3px 10px; color: #aeb1b8; font-size: 9px; }
+.layer.active { color: white; background: #45464b; }
+.layer span { flex: 1; }
+.layer b { color: #81848c; font-weight: 400; }
+.thumb { display: block; width: 22px; height: 19px; border: 1px solid #111; background: linear-gradient(135deg, #45257e, #c935b3); }
+.thumb.pink { background: linear-gradient(135deg, #ef3f89, #582cb5); }
+.thumb.blue { background: linear-gradient(135deg, #6de4ff, #294be3); }
+
+.plugin-panel { height: calc(100% - 128px); overflow-y: auto; background: #111317; scrollbar-width: thin; scrollbar-color: #474a52 transparent; }
+.plugin-panel .panel-root { min-width: 0; min-height: 100%; padding: 10px; }
+.plugin-panel .topbar { position: sticky; top: 0; z-index: 5; }
+.panel-loading { display: grid; place-items: center; height: 100%; color: #888c95; font-size: 11px; }
+.demo-select {
+  min-width: 0;
+  width: 100%;
+  height: 34px;
+  padding: 0 29px 0 10px;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: 10px;
+  color: #f0f2f6;
+  background: #292c33;
+  font: 10px -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.demo-caption {
+  position: fixed;
+  z-index: 20;
+  bottom: 48px;
+  left: 70px;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  max-width: 390px;
+  padding: 10px 16px 10px 10px;
+  border-radius: 18px;
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity .45s ease, transform .45s ease;
+}
+.demo-caption.visible { opacity: 1; transform: translateY(0); }
+.demo-caption > span { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 11px; color: white; background: linear-gradient(145deg, #4cabff, #6550f8); font-size: 10px; font-weight: 750; box-shadow: inset 0 1px 0 rgba(255,255,255,.3); }
+.demo-caption div { display: flex; flex-direction: column; }
+.demo-caption strong { font-size: 12px; font-weight: 650; }
+.demo-caption small { margin-top: 2px; color: #adb3bf; font-size: 9px; }
+
+.demo-cursor { position: fixed; z-index: 30; top: 50%; left: 65%; width: 24px; height: 24px; pointer-events: none; opacity: 0; transition: left .72s cubic-bezier(.2,.8,.2,1), top .72s cubic-bezier(.2,.8,.2,1), opacity .2s ease; }
+.demo-cursor::before { content: ""; position: absolute; width: 14px; height: 19px; background: white; clip-path: polygon(0 0, 100% 70%, 59% 73%, 80% 100%, 66% 100%, 47% 76%, 17% 100%); filter: drop-shadow(0 2px 2px rgba(0,0,0,.8)); }
+.demo-cursor span { position: absolute; top: 7px; left: 5px; width: 8px; height: 8px; border: 1px solid white; border-radius: 50%; opacity: 0; }
+.demo-cursor.click span { animation: cursor-click .48s ease-out; }
+
+.demo-finale {
+  position: fixed;
+  z-index: 50;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  text-align: center;
+  background: radial-gradient(circle at 50% 45%, rgba(35, 116, 255, .24), transparent 30%), rgba(8, 9, 13, .91);
+  backdrop-filter: blur(20px);
+  opacity: 0;
+  transition: opacity .7s ease;
+}
+.demo-finale.visible { opacity: 1; }
+.finale-mark { display: grid; place-items: center; width: 60px; height: 60px; margin: 0 auto 20px; border: 1px solid rgba(255,255,255,.25); border-radius: 20px; color: white; background: linear-gradient(145deg, #64b4ff, #197eff 55%, #7559ff); box-shadow: 0 15px 42px rgba(33, 113, 255, .36), inset 0 1px 0 rgba(255,255,255,.35); font-size: 18px; font-weight: 760; }
+.demo-finale h1 { font-size: clamp(42px, 5vw, 72px); line-height: .98; letter-spacing: -.055em; }
+.demo-finale p { margin-top: 16px; color: #9da5b3; font-size: 14px; letter-spacing: .05em; }
+
+@keyframes cursor-click {
+  0% { opacity: .8; transform: scale(.4); }
+  100% { opacity: 0; transform: scale(2.7); }
+}
+
+@media (max-width: 1250px) {
+  .photoshop-workspace { grid-template-columns: 42px 1fr 344px; }
+  .photoshop-menubar { gap: 18px; }
+  .demo-window { inset: 18px; }
+}
+
+.panel-only { min-width: 320px; min-height: 100vh; overflow: visible; background: #111317; }
+.panel-only .demo-window { position: static; width: 390px; overflow: visible; border: 0; border-radius: 0; box-shadow: none; background: #111317; }
+.panel-only .photoshop-titlebar,
+.panel-only .photoshop-menubar,
+.panel-only .tool-rail,
+.panel-only .canvas-stage,
+.panel-only .mini-panel,
+.panel-only .demo-caption,
+.panel-only .demo-cursor,
+.panel-only .demo-finale { display: none !important; }
+.panel-only .photoshop-workspace { display: block; height: auto; }
+.panel-only .right-rail { overflow: visible; border: 0; background: #111317; }
+.panel-only .plugin-panel { height: auto; overflow: visible; }
+.panel-only .plugin-panel .panel-root { padding: 12px; }
+.panel-only .plugin-panel .topbar { position: static; }

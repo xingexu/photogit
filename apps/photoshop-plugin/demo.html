@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>PhotoGit — Photoshop demonstration</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="demo.css">
+    <script src="demo.js" defer></script>
+  </head>
+  <body class="demo-page">
+    <div class="demo-window">
+      <header class="photoshop-titlebar">
+        <div class="traffic-lights" aria-hidden="true"><i></i><i></i><i></i></div>
+        <div class="ps-app-badge">Ps</div>
+        <span class="photoshop-title">document.psd @ 100% (RGB/8)</span>
+        <div class="window-tools" aria-hidden="true"><span></span><span></span><span></span></div>
+      </header>
+      <div class="photoshop-menubar" aria-hidden="true">
+        <span>File</span><span>Edit</span><span>Image</span><span>Layer</span><span>Type</span><span>Select</span><span>Filter</span><span>View</span><span>Plugins</span>
+      </div>
+
+      <main class="photoshop-workspace">
+        <aside class="tool-rail" aria-hidden="true">
+          <button class="selected">⌁</button><button>⌖</button><button>▧</button><button>◯</button><button>✎</button><button>T</button><button>⌁</button><button>◫</button>
+          <div class="swatches"><i></i><i></i></div>
+        </aside>
+
+        <section class="canvas-stage">
+          <div class="stage-topline">
+            <span>document.psd</span>
+            <span class="stage-zoom">100%</span>
+          </div>
+          <div class="artboard">
+            <div class="art-glow one"></div>
+            <div class="art-glow two"></div>
+            <div class="art-grid"></div>
+            <div class="art-kicker">AUTUMN / 26</div>
+            <div class="art-title">Make the<br><em>ordinary</em><br>unmissable.</div>
+            <div class="art-copy">A study in contrast, scale, and electric color.</div>
+            <div class="art-chip">EXPLORE THE SERIES <b>↗</b></div>
+            <div class="art-orbit"></div>
+          </div>
+          <div class="stage-status"><span>100%</span><span>14.8 MB / 22.4 MB</span></div>
+        </section>
+
+        <aside class="right-rail">
+          <section class="mini-panel layers-panel" aria-hidden="true">
+            <header>Layers <span>⋯</span></header>
+            <div class="layer active"><i class="thumb purple"></i><span>Hero typography</span><b>⌄</b></div>
+            <div class="layer"><i class="thumb pink"></i><span>Gradient sphere</span><b>⌄</b></div>
+            <div class="layer"><i class="thumb blue"></i><span>CTA group</span><b>⌄</b></div>
+          </section>
+          <section id="plugin-panel" class="plugin-panel" aria-label="PhotoGit plugin demonstration">
+            <div class="panel-loading">Loading PhotoGit…</div>
+          </section>
+        </aside>
+      </main>
+    </div>
+
+    <div class="demo-caption glass-surface" aria-live="polite">
+      <span id="demo-step">01</span>
+      <div><strong id="demo-heading">A focused Photoshop workflow</strong><small id="demo-copy">Everything important stays in one compact panel.</small></div>
+    </div>
+    <div id="demo-cursor" class="demo-cursor" aria-hidden="true"><span></span></div>
+    <div id="demo-finale" class="demo-finale" hidden>
+      <div class="finale-mark">PG</div>
+      <h1>Design freely.<br>Version confidently.</h1>
+      <p>PhotoGit for Photoshop</p>
+    </div>
+  </body>
+</html>

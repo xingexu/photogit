@@ -1,0 +1,13 @@
+{
+  "files": [],
+  "references": [
+    { "path": "packages/schema" },
+    { "path": "packages/serializer" },
+    { "path": "packages/differ" },
+    { "path": "packages/merge-engine" },
+    { "path": "packages/git-engine" },
+    { "path": "packages/protocol" },
+    { "path": "cli" },
+    { "path": "apps/desktop-helper" }
+  ]
+}

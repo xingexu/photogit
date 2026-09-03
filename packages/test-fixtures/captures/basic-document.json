@@ -1,0 +1,54 @@
+{
+  "document": {
+    "documentId": "42",
+    "name": "launch-poster.psd",
+    "width": 1920,
+    "height": 1080,
+    "resolution": 72,
+    "mode": "rgb",
+    "bitDepth": 8,
+    "colorProfile": "sRGB IEC61966-2.1"
+  },
+  "layers": [
+    {
+      "photoshopId": 100,
+      "parentPhotoshopId": null,
+      "childrenPhotoshopIds": [101],
+      "name": "Hero",
+      "kind": "group",
+      "order": 0,
+      "appearance": {
+        "visible": true,
+        "opacity": 100,
+        "fillOpacity": 100,
+        "blendMode": "normal",
+        "clipped": false,
+        "locks": { "all": false, "pixels": false, "position": false, "transparentPixels": false },
+        "bounds": { "left": 0, "top": 0, "right": 1920, "bottom": 700 },
+        "boundsWithoutEffects": { "left": 0, "top": 0, "right": 1920, "bottom": 700 }
+      },
+      "text": null,
+      "content": { "fingerprint": null, "opaque": false, "reason": null }
+    },
+    {
+      "photoshopId": 101,
+      "parentPhotoshopId": 100,
+      "childrenPhotoshopIds": [],
+      "name": "Launch day",
+      "kind": "text",
+      "order": 0,
+      "appearance": {
+        "visible": true,
+        "opacity": 100,
+        "fillOpacity": 100,
+        "blendMode": "normal",
+        "clipped": false,
+        "locks": { "all": false, "pixels": false, "position": false, "transparentPixels": false },
+        "bounds": { "left": 120, "top": 160, "right": 920, "bottom": 300 },
+        "boundsWithoutEffects": { "left": 120, "top": 160, "right": 920, "bottom": 300 }
+      },
+      "text": { "contents": "PhotoGit launches", "styleFingerprint": "geist-96-bold" },
+      "content": { "fingerprint": null, "opaque": false, "reason": null }
+    }
+  ]
+}

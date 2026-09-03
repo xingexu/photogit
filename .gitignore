@@ -1,0 +1,16 @@
+node_modules/
+dist/
+coverage/
+*.log
+.DS_Store
+.env
+.env.*
+!.env.example
+release/
+*.ccx
+*.tsbuildinfo
+photogit-demo/
+photogit-demo-remote.git/
+.demo-helper.json
+.uxp-generated-probe/
+artifacts/demo-frames-*/
