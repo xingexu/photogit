@@ -16,6 +16,10 @@ let changes = [
   { domain: "structure", layerName: "CTA group", summary: "Layer moved above Supporting copy" }
 ];
 let activityEntries = 0;
+const demoReviews = [
+  { branch: "campaign-type-b", ahead: 3, changeCount: 8, mergeable: true },
+  { branch: "homepage-experiment", ahead: 2, changeCount: 5, mergeable: false }
+];
 
 boot();
 
@@ -37,16 +41,18 @@ function setupDemoPanel() {
   byId("document-name").textContent = "document.psd";
   byId("branch-name").textContent = "live-option-b";
   byId("branch-name-detail").textContent = "live-option-b";
-  byId("helper-status").textContent = "Connected";
-  byId("helper-status").className = "connection-state ok";
-  byId("sync-status").textContent = "Up to date";
+  byId("helper-status").className = "repo-state ok";
+  byId("repo-sync-status").textContent = "Synced";
+  byId("sync-status").textContent = "Sync";
   replaceDemoDropdown();
   renderChanges();
   renderHistory();
+  renderReviews();
   byId("branches-count").textContent = "3";
   bind("changes-tab", () => selectTab("changes"));
   bind("history-tab", () => selectTab("history"));
   bind("branches-tab", () => selectTab("branches"));
+  bind("reviews-tab", () => selectTab("reviews"));
   bind("activity-tab", () => selectTab("activity"));
   bind("scan", scan);
   bind("rescan", scan);
@@ -57,11 +63,70 @@ function setupDemoPanel() {
   bind("refresh", () => flashResult("Workspace refreshed."));
   bind("new-branch", createBranch);
   bind("clear-activity", clearActivity);
+  bind("global-search", () => { selectTab("history"); byId("history-search").focus(); });
+  bind("header-menu", toggleToolsMenu);
+  bind("tools-toggle", toggleToolsMenu);
+  bind("tool-new-branch", () => { closeToolsMenu(); selectTab("branches"); byId("new-branch-name").focus(); });
+  bind("tool-new-pr", () => { closeToolsMenu(); selectTab("reviews"); });
+  bind("tool-conflicts", () => { closeToolsMenu(); selectTab("reviews"); flashResult("Review the conflicting files before merging.", true); });
+  bind("tool-create-tag", openTagSheet);
+  bind("tool-settings", () => { closeToolsMenu(); selectTab("activity"); addActivity("Repository settings inspected."); });
+  bind("close-tag-sheet", closeTagSheet);
+  bind("create-tag", createTag);
+  bind("open-reviews", () => selectTab("reviews"));
+  bind("new-pull-request", () => flashResult("Pull-request review opened in GitHub."));
   byId("branch-picker").addEventListener("change", switchBranch);
   byId("history-search").addEventListener("input", renderHistory);
+  ["message", "history-search", "new-branch-name", "tag-name"].forEach(bindFieldState);
   document.getElementById("plugins-menu-trigger").addEventListener("click", togglePluginsMenu);
   document.getElementById("open-photogit").addEventListener("click", openPhotoGit);
   document.getElementById("pg-dock-tab").addEventListener("click", openPhotoGit);
+}
+
+function bindFieldState(id) {
+  const field = byId(id);
+  const sync = () => field.closest(".field-shell")?.classList.toggle("has-value", Boolean(field.value));
+  field.addEventListener("input", sync);
+  sync();
+}
+
+function toggleToolsMenu() {
+  const menu = byId("tools-menu");
+  const opening = menu.hidden;
+  menu.hidden = !opening;
+  menu.classList.toggle("is-open", opening);
+  byId("header-menu").setAttribute("aria-expanded", opening ? "true" : "false");
+  byId("tools-toggle").setAttribute("aria-expanded", opening ? "true" : "false");
+}
+
+function closeToolsMenu() {
+  byId("tools-menu").hidden = true;
+  byId("tools-menu").classList.remove("is-open");
+  byId("header-menu").setAttribute("aria-expanded", "false");
+  byId("tools-toggle").setAttribute("aria-expanded", "false");
+}
+
+function openTagSheet() {
+  closeToolsMenu();
+  byId("tag-sheet").hidden = false;
+  byId("tag-sheet").classList.add("is-open");
+  byId("tag-name").focus();
+}
+
+function closeTagSheet() {
+  byId("tag-sheet").hidden = true;
+  byId("tag-sheet").classList.remove("is-open");
+}
+
+function createTag() {
+  const input = byId("tag-name");
+  const tag = input.value.trim();
+  if (!tag) return flashResult("Enter a tag such as v1.0.0.", true);
+  input.value = "";
+  input.closest(".field-shell")?.classList.remove("has-value");
+  closeTagSheet();
+  addActivity(`Created repository tag ${tag}.`);
+  flashResult(`Created tag ${tag}.`);
 }
 
 function togglePluginsMenu() {
@@ -132,6 +197,37 @@ function renderHistory() {
   });
 }
 
+function renderReviews() {
+  const container = byId("reviews");
+  container.innerHTML = "";
+  byId("reviews-count").textContent = String(demoReviews.length);
+  byId("review-provider").textContent = "GitHub · main ← live-option-b";
+  for (const review of demoReviews) container.appendChild(createDemoReviewCard(review));
+  byId("reviews-empty").hidden = demoReviews.length > 0;
+  const preview = byId("review-preview");
+  preview.hidden = false;
+  const previewContent = byId("review-preview-content");
+  previewContent.innerHTML = "";
+  previewContent.appendChild(createDemoReviewCard(demoReviews[0]));
+}
+
+function createDemoReviewCard(review) {
+  const card = document.createElement("article");
+  card.className = "review-card";
+  card.innerHTML = `<div class="review-title"><strong>${review.branch}</strong><span>${review.ahead} ahead</span></div><div class="review-meta"><span class="${review.mergeable ? "ready" : "blocked"}">${review.mergeable ? "Ready to merge" : "Review conflicts"}</span><span>·</span><span>${review.changeCount} files</span></div><div class="review-files" aria-hidden="true">document.psd\npreview.png</div><div class="review-actions"><div class="button button-quiet button-small compare-action" role="button" tabindex="0" aria-expanded="false">Compare</div><div class="button ${review.mergeable ? "button-primary" : "button-disabled"} button-small merge-action" role="button" tabindex="0" ${review.mergeable ? "" : "aria-disabled=\"true\""}>${review.mergeable ? "Merge" : "Blocked"}</div></div>`;
+  card.querySelector(".compare-action").addEventListener("click", (event) => {
+    const expanded = card.classList.toggle("details-open");
+    card.querySelector(".review-files").setAttribute("aria-hidden", expanded ? "false" : "true");
+    event.currentTarget.setAttribute("aria-expanded", expanded ? "true" : "false");
+    event.currentTarget.textContent = expanded ? "Hide details" : "Compare";
+  });
+  if (review.mergeable) card.querySelector(".merge-action").addEventListener("click", () => {
+    addActivity(`Merged ${review.branch} into live-option-b.`);
+    flashResult(`Merged ${review.branch}.`);
+  });
+  return card;
+}
+
 async function scan() {
   await simulateBusy("Reviewing Photoshop layers…", 420);
   renderChanges();
@@ -147,6 +243,8 @@ async function saveVersion() {
   changes = [];
   byId("message").value = "";
   byId("history-search").value = "";
+  byId("message").closest(".field-shell")?.classList.remove("has-value");
+  byId("history-search").closest(".field-shell")?.classList.remove("has-value");
   renderChanges();
   renderHistory();
   addActivity(`Saved c84f2a7: ${message}`);
@@ -167,6 +265,7 @@ function createBranch() {
   byId("branch-name-detail").textContent = name;
   byId("branches-count").textContent = String(byId("branch-picker").options.length);
   input.value = "";
+  input.closest(".field-shell")?.classList.remove("has-value");
   addActivity(`Created and switched to ${name}.`);
   flashResult(`Created branch ${name}.`);
 }
@@ -212,11 +311,12 @@ function clearActivity() {
 }
 
 function selectTab(name) {
-  ["changes", "history", "branches", "activity"].forEach((section) => {
+  ["changes", "history", "branches", "reviews", "activity"].forEach((section) => {
     const active = section === name;
     byId(`${section}-view`).hidden = !active;
-    byId(`${section}-tab`).className = active ? "active" : "";
+    byId(`${section}-tab`).classList.toggle("active", active);
     byId(`${section}-tab`).setAttribute("aria-selected", active ? "true" : "false");
+    byId(`${section}-tab`).tabIndex = active ? 0 : -1;
   });
 }
 

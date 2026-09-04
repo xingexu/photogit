@@ -66,6 +66,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   bindInputAction("message", saveVersion);
   bindInputAction("new-branch-name", createBranch);
   bindInputAction("tag-name", createTag);
+  ["message", "history-search", "new-branch-name", "tag-name"].forEach(bindFieldState);
   document.querySelector(".section-nav").addEventListener("keydown", handleTabKeyboard);
   document.addEventListener("keydown", handleGlobalKeyboard);
   document.addEventListener("click", handleOutsideClick);
@@ -96,6 +97,13 @@ function bindInputAction(id, handler) {
     event.preventDefault();
     handler(event);
   });
+}
+
+function bindFieldState(id) {
+  const input = document.getElementById(id);
+  const sync = () => input.closest(".field-shell")?.classList.toggle("has-value", Boolean(input.value));
+  input.addEventListener("input", sync);
+  sync();
 }
 
 function handleTabKeyboard(event) {
@@ -279,7 +287,6 @@ function renderHistory(versions) {
 
 function filterHistory() {
   const query = document.getElementById("history-search").value.trim().toLowerCase();
-  document.querySelector(".search-field").classList.toggle("has-value", Boolean(query));
   if (!query) return renderHistory(historyEntries);
   renderHistory(historyEntries.filter((version) => [version.message, version.shortId, version.author, version.date].some((value) => String(value).toLowerCase().includes(query))));
 }
@@ -316,8 +323,11 @@ async function saveVersion() {
       previewPath: preview.nativePath,
       capture: captureDocument(doc)
     });
-    document.getElementById("message").value = "";
-    document.getElementById("history-search").value = "";
+    for (const id of ["message", "history-search"]) {
+      const input = document.getElementById(id);
+      input.value = "";
+      input.closest(".field-shell")?.classList.remove("has-value");
+    }
     renderChanges([]);
     log(`Saved ${result.shortId}: ${message}`);
     show(`Saved version ${result.shortId}.`, false);
@@ -367,6 +377,7 @@ async function createBranch() {
   return run("Creating branch…", async () => {
     await callHelper("createBranch", { branch: name });
     input.value = "";
+    input.closest(".field-shell")?.classList.remove("has-value");
     log(`Created and switched to ${name}.`);
     await Promise.all([loadBranches(), loadReviews()]);
     show(`Created branch ${name}.`, false);
@@ -493,6 +504,7 @@ async function createTag() {
   return run(`Creating ${tag}…`, async () => {
     await callHelper("createTag", { tag });
     input.value = "";
+    input.closest(".field-shell")?.classList.remove("has-value");
     closeTagSheet();
     await loadReviews();
     log(`Created repository tag ${tag}.`);

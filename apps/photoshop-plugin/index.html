@@ -1,5 +1,5 @@
 <!doctype html>
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -83,12 +83,12 @@
               <div class="title-with-count"><h2>Working changes</h2><span id="changes-total">0</span></div>
               <div id="rescan" class="button button-quiet button-small" role="button" tabindex="0">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6v5h-5"/><path d="M18.2 15.4A7 7 0 1 1 18.5 8L20 11"/></svg>
-                Scan again
+                <span>Scan again</span>
               </div>
             </div>
             <div id="changes" class="list change-list"></div>
             <section id="changes-empty" class="empty-state">
-              <span class="empty-symbol" aria-hidden="true">✓</span>
+              <span class="empty-symbol" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m6.5 12.5 3.5 3.5 7.5-8"/></svg></span>
               <strong>No unsaved design changes</strong>
               <p>Edit the document, then scan to review layer-level differences.</p>
             </section>
@@ -102,7 +102,10 @@
           <section class="liquid-card content-card capture-panel">
             <div class="section-heading"><h2>Save a version</h2><span class="meta-chip">PSD · PREVIEW</span></div>
             <label class="field-label" for="message">Describe what changed</label>
-            <input id="message" type="text" aria-label="Save-version message">
+            <div class="field-shell">
+              <span class="field-placeholder" aria-hidden="true">e.g. Refined cover typography</span>
+              <input id="message" type="text" aria-label="Save-version message" autocomplete="off">
+            </div>
             <div class="capture-actions">
               <div id="scan" class="button button-quiet" role="button" tabindex="0">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3.5h8l4 4V20H6z"/><circle cx="11" cy="13" r="3"/><path d="m13.5 15.5 2 2"/></svg>
@@ -122,9 +125,9 @@
               <div><p class="eyebrow">All checkpoints</p><h2>History</h2></div>
               <span class="meta-chip" id="history-total">0 versions</span>
             </div>
-            <div class="search-field">
+            <div class="field-shell search-field">
               <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 4.5 4.5"/></svg>
-              <span class="search-placeholder" aria-hidden="true">Search messages or IDs</span>
+              <span class="field-placeholder" aria-hidden="true">Search messages or IDs</span>
               <input id="history-search" type="search" aria-label="Search version history">
             </div>
             <div id="history" class="list history-list"></div>
@@ -141,10 +144,13 @@
             <div class="divider"></div>
             <label class="field-label" for="new-branch-name">Start a new direction</label>
             <div class="inline-form">
-              <input id="new-branch-name" type="text" aria-label="New branch name">
+              <div class="field-shell">
+                <span class="field-placeholder" aria-hidden="true">e.g. cover-option-b</span>
+                <input id="new-branch-name" type="text" aria-label="New branch name" aria-describedby="branch-help" autocomplete="off">
+              </div>
               <div id="new-branch" class="button button-primary" role="button" tabindex="0">Create</div>
             </div>
-            <p class="fine-print left">Switching opens that branch’s exact PSD snapshot without overwriting the current document.</p>
+            <p id="branch-help" class="fine-print left">Switching opens that branch’s exact PSD snapshot without overwriting the current document.</p>
           </section>
         </section>
 
@@ -175,7 +181,7 @@
           <div id="pull" class="footer-action" role="button" tabindex="0"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m-4-4 4 4 4-4"/><path d="M5 19h14"/></svg><span>Pull</span></div>
           <div id="push" class="footer-action" role="button" tabindex="0"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V5m-4 4 4-4 4 4"/><path d="M5 19h14"/></svg><span>Push</span></div>
           <div id="show-status" class="footer-action" role="button" tabindex="0"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6v5h-5"/><path d="M18.2 15.4A7 7 0 1 1 18.5 8L20 11"/></svg><span id="sync-status">Sync</span></div>
-          <div id="tools-toggle" class="footer-action tools-toggle" role="button" tabindex="0" aria-controls="tools-menu" aria-expanded="false" aria-label="More repository tools"><span>＋</span></div>
+          <div id="tools-toggle" class="footer-action tools-toggle" role="button" tabindex="0" aria-controls="tools-menu" aria-expanded="false" aria-label="More repository tools" title="More repository tools"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></div>
         </footer>
       </section>
 
@@ -187,10 +193,13 @@
         <div id="tool-settings" class="tool-item" role="button" tabindex="0"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1l2-1.5-2-3.4-2.4 1A7 7 0 0 0 15 6l-.3-2.6h-4L10.4 6a7 7 0 0 0-1.6 1.1l-2.4-1-2 3.4 2 1.5a7 7 0 0 0 0 2l-2 1.5 2 3.4 2.4-1A7 7 0 0 0 10.4 18l.3 2.6h4L15 18a7 7 0 0 0 1.6-1.1l2.4 1 2-3.4-2-1.5a7 7 0 0 0 0-1z"/></svg><span>Repository settings</span></div>
       </section>
 
-      <section id="tag-sheet" class="tool-sheet liquid-card" hidden>
-        <div class="section-heading"><h2>Create tag</h2><div id="close-tag-sheet" class="sheet-close" role="button" tabindex="0" aria-label="Close">×</div></div>
+      <section id="tag-sheet" class="tool-sheet liquid-card" aria-labelledby="tag-sheet-title" hidden>
+        <div class="section-heading"><h2 id="tag-sheet-title">Create tag</h2><div id="close-tag-sheet" class="sheet-close" role="button" tabindex="0" aria-label="Close create-tag panel" title="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6.5 6.5 11 11m0-11-11 11"/></svg></div></div>
         <label class="field-label" for="tag-name">Tag name</label>
-        <input id="tag-name" type="text" aria-label="New tag name">
+        <div class="field-shell">
+          <span class="field-placeholder" aria-hidden="true">e.g. v1.0.0</span>
+          <input id="tag-name" type="text" aria-label="New tag name" autocomplete="off">
+        </div>
         <div id="create-tag" class="button button-primary button-wide" role="button" tabindex="0">Create tag</div>
       </section>
       <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>

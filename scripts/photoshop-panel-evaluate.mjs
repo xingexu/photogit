@@ -13,7 +13,6 @@ if (expression === "--file") {
   const filePath = process.argv[3];
   if (!filePath) throw new Error("Pass a JavaScript file after --file.");
   expression = await readFile(filePath, "utf8");
-  if (process.argv[4]) expression += `\n;${process.argv[4]}`;
 }
 if (!expression) throw new Error("Pass a JavaScript expression to evaluate in the PhotoGit panel.");
 
