@@ -280,7 +280,11 @@ function renderHistory(versions) {
   for (const version of versions) {
     const row = document.createElement("div");
     row.className = "list-row history-row";
-    row.innerHTML = `<span class="history-marker" aria-hidden="true">${historyIcon()}</span><span class="row-copy"><strong>${escapeHtml(version.message)}</strong><span>${escapeHtml(version.author)} · ${escapeHtml(version.date.slice(0, 10))}</span></span><span class="commit-id">${escapeHtml(version.shortId)}</span>`;
+    const message = escapeHtml(version.message);
+    const author = escapeHtml(version.author);
+    const date = escapeHtml(version.date.slice(0, 10));
+    const shortId = escapeHtml(version.shortId);
+    row.innerHTML = `<span class="history-marker" aria-hidden="true">${historyIcon()}</span><span class="row-copy"><strong title="${message}">${message}</strong><span class="history-meta"><span>${author}</span><i aria-hidden="true"></i><time>${date}</time></span></span><span class="commit-id" title="Checkpoint ${shortId}">${shortId}</span>`;
     container.appendChild(row);
   }
 }

@@ -6,7 +6,7 @@ This repository is under active development toward a public v1.0 release on Sept
 
 ## Photoshop experience
 
-![PhotoGit running beside a Photoshop document](artifacts/photogit-ui.png)
+![PhotoGit running beside a Photoshop document](artifacts/photogit-ui-v013-photoshop.png)
 
 Open **Plugins → PhotoGit → PhotoGit** in Photoshop to reveal the dockable sidebar. For a tools-adjacent workspace, drag the **PhotoGit** panel tab into Photoshop's left dock once; Photoshop owns panel placement and remembers it with the current workspace. Its monochrome workspace maps the workflow into five focused views: semantic Changes, searchable History, design Branches, Reviews, and a transparent Activity log. [Watch the real Photoshop demonstration](artifacts/photogit-demo.mp4).
 

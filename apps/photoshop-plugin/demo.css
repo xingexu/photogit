@@ -140,7 +140,7 @@
 
 .plugin-panel { position: absolute; z-index: 5; inset: 0; height: 100%; overflow-y: auto; background: #090a0c; scrollbar-width: thin; scrollbar-color: #474a52 transparent; transform: translateX(0); transition: transform .52s cubic-bezier(.2,.8,.2,1), opacity .35s ease; }
 .right-rail.panel-closed .plugin-panel { opacity: 0; transform: translateX(102%); pointer-events: none; }
-.plugin-panel .panel-root { min-width: 0; min-height: 100%; padding: 10px; }
+.plugin-panel .panel-root { min-width: 0; min-height: 100%; padding: 14px; }
 .plugin-panel .app-header { position: sticky; top: 0; z-index: 5; }
 .panel-loading { display: grid; place-items: center; height: 100%; color: #888c95; font-size: 11px; }
 .pg-dock-tab { position: absolute; z-index: 9; top: 142px; right: 0; display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; padding: 0; border: 1px solid #74757a; border-right: 0; border-radius: 4px 0 0 4px; color: white; background: #111214; font: 900 12px/1 var(--demo-display); letter-spacing: -.12em; }
@@ -218,7 +218,7 @@
   .demo-window { inset: 18px; }
 }
 
-.panel-only { min-width: 230px; min-height: 100vh; overflow: visible; background: #090a0c; }
+.panel-only { width: 100%; min-width: 0; min-height: 100vh; overflow: visible; background: #090a0c; }
 .panel-only .demo-window { position: static; width: 100%; overflow: visible; border: 0; border-radius: 0; box-shadow: none; background: #090a0c; }
 .panel-only .photoshop-titlebar,
 .panel-only .photoshop-menubar,
@@ -231,5 +231,5 @@
 .panel-only .photoshop-workspace { display: block; height: auto; }
 .panel-only .right-rail { overflow: visible; border: 0; background: #090a0c; }
 .panel-only .plugin-panel { height: auto; overflow: visible; }
-.panel-only .plugin-panel .panel-root { padding: 12px; }
+.panel-only .plugin-panel .panel-root { padding: 14px; }
 .panel-only .plugin-panel .app-header { position: static; }

@@ -192,7 +192,11 @@ function renderHistory() {
   matching.forEach((version) => {
     const row = document.createElement("div");
     row.className = "list-row history-row";
-    row.innerHTML = `<span class="history-marker" aria-hidden="true">${historyIcon()}</span><span class="row-copy"><strong>${version.message}</strong><span>${version.author} · ${version.date}</span></span><span class="commit-id">${version.shortId}</span>`;
+    const message = escapeHtml(version.message);
+    const author = escapeHtml(version.author);
+    const date = escapeHtml(version.date);
+    const shortId = escapeHtml(version.shortId);
+    row.innerHTML = `<span class="history-marker" aria-hidden="true">${historyIcon()}</span><span class="row-copy"><strong title="${message}">${message}</strong><span class="history-meta"><span>${author}</span><i aria-hidden="true"></i><time>${date}</time></span></span><span class="commit-id" title="Checkpoint ${shortId}">${shortId}</span>`;
     container.appendChild(row);
   });
 }
@@ -425,3 +429,4 @@ function domainIcon(domain) {
   return '<svg viewBox="0 0 24 24"><path d="m12 4 8 4-8 4-8-4 8-4Z"/><path d="m4 12 8 4 8-4m-16 4 8 4 8-4"/></svg>';
 }
 function historyIcon() { return '<svg viewBox="0 0 24 24"><path d="M12 7v5l3 2"/><circle cx="12" cy="12" r="8"/></svg>'; }
+function escapeHtml(value) { return String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char])); }

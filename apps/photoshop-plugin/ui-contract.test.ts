@@ -32,4 +32,12 @@ describe("PhotoGit panel UI contract", () => {
     expect(css).toContain("@media (prefers-reduced-transparency: reduce)");
     expect(css).toContain("@media (prefers-reduced-motion: reduce)");
   });
+
+  it("uses distinct display typography and one outer scroll instead of nested history scrolling", async () => {
+    const css = await pluginFile("styles.css");
+    expect(css).toContain("--font-display:");
+    expect(css).toMatch(/h1, h2 \{ font-family: var\(--font-display\); \}/);
+    expect(css).toMatch(/\.list \{[\s\S]*?max-height: none;[\s\S]*?overflow: visible;/);
+    expect(css).toContain(".history-meta");
+  });
 });
