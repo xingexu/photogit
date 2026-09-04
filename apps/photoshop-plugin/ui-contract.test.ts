@@ -7,9 +7,9 @@ const pluginFile = (name: string) => readFile(resolve(process.cwd(), "apps/photo
 describe("PhotoGit panel UI contract", () => {
   it("uses one production logo asset throughout the panel and demonstration", async () => {
     const [html, demo] = await Promise.all([pluginFile("index.html"), pluginFile("demo.html")]);
-    expect(html.match(/icons\/photogit-git-mark\.png/g)).toHaveLength(2);
-    expect(demo.match(/icons\/photogit-git-mark\.png/g)).toHaveLength(3);
-    expect(html).toContain('styles.css?v=8');
+    expect(html.match(/icons\/photogit\.png/g)).toHaveLength(2);
+    expect(demo.match(/icons\/photogit\.png/g)).toHaveLength(3);
+    expect(html).toContain('styles.css?v=10');
     expect(html).not.toContain("<span>P</span><span>g</span>");
     expect(demo).not.toContain("<span>P</span><span>g</span>");
   });
@@ -37,9 +37,16 @@ describe("PhotoGit panel UI contract", () => {
     for (const label of ["Changes", "History", "Branches", "Reviews", "Activity"]) expect(html).toContain(`role="tab" tabindex="${label === "Changes" ? "0" : "-1"}" aria-label="${label}"`);
   });
 
+  it("keeps demo tab navigation aligned with the Photoshop panel", async () => {
+    const javascript = await pluginFile("demo.js");
+    expect(javascript).toContain('byId("section-nav").addEventListener("keydown", handleTabKeyboard)');
+    expect(javascript).toContain("function handleTabKeyboard(event)");
+    expect(javascript).toContain('event.key === "ArrowRight"');
+  });
+
   it("retains explicit names when narrow mode hides visible control labels", async () => {
     const html = await pluginFile("index.html");
-    expect(html).toContain('id="rescan" class="button button-quiet button-small" role="button" tabindex="0" aria-label="Scan Photoshop now"');
+    expect(html).toContain('id="rescan" class="button button-quiet scan-button" role="button" tabindex="0" aria-label="Scan Photoshop now"');
     expect(html).toContain('id="pull" class="footer-action" role="button" tabindex="0" aria-label="Pull shared changes"');
     expect(html).toContain('id="push" class="footer-action" role="button" tabindex="0" aria-label="Push saved versions"');
     expect(html).toContain('id="show-status" class="footer-action" role="button" tabindex="0" aria-label="Check sync status"');
@@ -60,7 +67,7 @@ describe("PhotoGit panel UI contract", () => {
     expect(css).toContain("--font-display:");
     expect(css).toMatch(/h1, h2 \{ font-family: var\(--font-display\); \}/);
     expect(css).toMatch(/\.list \{[\s\S]*?max-height: none;[\s\S]*?overflow: visible;/);
-    expect(css).toContain(".history-meta");
+    expect(css).toContain(".history-group-heading");
     expect(css).toMatch(/\.section-nav \{[\s\S]*?position: sticky;[\s\S]*?top: 8px;/);
     expect(css).toMatch(/\.sync-panel \{[\s\S]*?position: sticky;[\s\S]*?bottom: 0;/);
     expect(css).toContain("@media (max-height: 420px)");
@@ -70,9 +77,26 @@ describe("PhotoGit panel UI contract", () => {
     const css = await pluginFile("styles.css");
     expect(css).toMatch(/\.eyebrow \{[\s\S]*?font-family: var\(--font-ui\);/);
     expect(css).toMatch(/\.meta-chip \{[\s\S]*?font-family: var\(--font-ui\);/);
-    expect(css).toMatch(/\.list-row \{[\s\S]*?border-bottom: 1px solid var\(--stroke\);[\s\S]*?background: transparent;/);
-    expect(css).toMatch(/\.review-card \{[\s\S]*?border-bottom: 1px solid var\(--stroke\);[\s\S]*?background: transparent;/);
+    expect(css).toMatch(/\.list-row \{[\s\S]*?border-bottom: 1px solid var\(--line\);[\s\S]*?background: transparent;/);
+    expect(css).toMatch(/\.review-card \{[\s\S]*?border-bottom: 1px solid var\(--line\);[\s\S]*?background: transparent;/);
     expect(css).toContain('.nav-item b[data-empty="true"]');
+  });
+
+  it("groups history by time and keeps pixel-change copy honest", async () => {
+    const [javascript, demo] = await Promise.all([pluginFile("index.js"), pluginFile("demo.js")]);
+    expect(javascript).toContain("function groupHistory(versions)");
+    expect(javascript).toContain('return "Painted pixels changed"');
+    expect(demo).toContain("function groupHistory(entries)");
+    expect(demo).toContain('author: "You"');
+  });
+
+  it("shows the Photoshop layer identity and exact change detail", async () => {
+    const [javascript, demo, css] = await Promise.all([pluginFile("index.js"), pluginFile("demo.js"), pluginFile("styles.css")]);
+    expect(javascript).toContain("Photoshop layer ${escapeHtml(change.photoshopId ? `#${change.photoshopId}` : \"ID unavailable\")}");
+    expect(javascript).toContain("changeSummary(change)");
+    expect(demo).toContain("photoshopId: 18");
+    expect(css).toContain(".layer-identity");
+    expect(css).toContain(".change-detail");
   });
 
   it("treats repository tools as a keyboard menu and the tag surface as a modal dialog", async () => {
@@ -105,11 +129,14 @@ describe("PhotoGit panel UI contract", () => {
   it("automatically rescans Photoshop mutations and fingerprints pixel-layer content", async () => {
     const [html, javascript] = await Promise.all([pluginFile("index.html"), pluginFile("index.js")]);
     expect(html).toContain('id="watch-status" class="watch-status ready" role="status" aria-live="polite"');
-    expect(html).toContain("PhotoGit is watching Photoshop");
+    expect(html).toContain("PhotoGit will turn the edit into a readable change here");
     expect(javascript).toContain('action.addNotificationListener(["all"], onPhotoshopNotification)');
     expect(javascript).toContain("queueAutomaticScan(normalized)");
+    expect(javascript).toContain('queueAutomaticScan("initial-load", 150)');
+    expect(javascript).toContain('scanChanges({ automatic: false, eventName: "workspace-refresh" })');
     expect(javascript).toContain("await captureDocument(app.activeDocument)");
     expect(javascript).toContain("await imaging.getPixels");
+    expect(javascript).toContain("if (children.length === 0) fingerprintTargets.push");
     expect(javascript).toContain("pixels-v1:");
     expect(javascript).toContain("content_fingerprint_skipped");
   });

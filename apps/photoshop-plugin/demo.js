@@ -6,14 +6,14 @@ if (demoParams.has("panel")) document.body.classList.add("panel-only");
 if (timeScale > 1) document.body.classList.add("recording");
 
 let versions = [
-  { message: "Refined hero typography", author: "Zach", date: "Today", shortId: "90511bb" },
-  { message: "Established campaign direction", author: "Zach", date: "Today", shortId: "e3889c1" },
-  { message: "Initial Photoshop document", author: "Zach", date: "Yesterday", shortId: "74b21fe" }
+  { message: "Refined hero typography", author: "You", date: "Today", shortId: "90511bb" },
+  { message: "Established campaign direction", author: "You", date: "Today", shortId: "e3889c1" },
+  { message: "Initial Photoshop document", author: "You", date: "Yesterday", shortId: "74b21fe" }
 ];
 let changes = [
-  { domain: "text", layerName: "Hero typography", summary: "Text content and type styling changed" },
-  { domain: "appearance", layerName: "Gradient sphere", summary: "Opacity changed from 82% to 100%" },
-  { domain: "structure", layerName: "CTA group", summary: "Layer moved above Supporting copy" }
+  { domain: "text", layerName: "Hero typography", photoshopId: 12, summary: "Text content and type styling changed" },
+  { domain: "content", layerName: "Gradient sphere", photoshopId: 18, summary: "Painted pixels changed" },
+  { domain: "structure", layerName: "CTA group", photoshopId: 21, summary: "Layer moved above Supporting copy" }
 ];
 let activityEntries = 0;
 let surfaceReturnFocus = null;
@@ -26,7 +26,7 @@ const demoReviews = [
 boot();
 
 async function boot() {
-  const html = await fetch("index.html?v=8", { cache: "no-store" }).then((response) => response.text());
+  const html = await fetch("index.html?v=10", { cache: "no-store" }).then((response) => response.text());
   const parsed = new DOMParser().parseFromString(html, "text/html");
   mount.innerHTML = "";
   mount.appendChild(document.importNode(parsed.querySelector(".panel-root"), true));
@@ -81,6 +81,7 @@ function setupDemoPanel() {
   byId("branch-picker").addEventListener("change", switchBranch);
   byId("history-search").addEventListener("input", renderHistory);
   byId("tools-menu").addEventListener("keydown", handleMenuKeyboard);
+  byId("section-nav").addEventListener("keydown", handleTabKeyboard);
   document.addEventListener("keydown", handleGlobalKeyboard);
   ["message", "history-search", "new-branch-name", "tag-name"].forEach(bindFieldState);
   document.getElementById("plugins-menu-trigger").addEventListener("click", togglePluginsMenu);
@@ -93,6 +94,20 @@ function bindFieldState(id) {
   const sync = () => field.closest(".field-shell")?.classList.toggle("has-value", Boolean(field.value));
   field.addEventListener("input", sync);
   sync();
+}
+
+function handleTabKeyboard(event) {
+  if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+  const tabs = Array.from(byId("section-nav").querySelectorAll('[role="tab"]'));
+  const current = Math.max(0, tabs.indexOf(event.target));
+  const next = event.key === "Home"
+    ? 0
+    : event.key === "End"
+      ? tabs.length - 1
+      : (current + (event.key === "ArrowRight" ? 1 : -1) + tabs.length) % tabs.length;
+  event.preventDefault();
+  tabs[next]?.focus();
+  selectTab(tabs[next]?.id.replace("-tab", ""));
 }
 
 function toggleToolsMenu(event) {
@@ -262,6 +277,8 @@ function renderChanges() {
   container.innerHTML = "";
   setCount("changes-count", changes.length);
   byId("changes-total").textContent = String(changes.length);
+  byId("change-summary").textContent = changes.length ? `${changes.length} unsaved ${changes.length === 1 ? "edit" : "edits"}` : "Your canvas is clean";
+  byId("last-scan").textContent = "Scanned just now · Updates automatically";
   byId("changes-empty").hidden = changes.length > 0;
   changes.forEach((change, index) => {
     const row = document.createElement("div");
@@ -269,8 +286,8 @@ function renderChanges() {
     row.tabIndex = 0;
     row.setAttribute("role", "button");
     row.setAttribute("aria-pressed", "false");
-    row.setAttribute("aria-label", `Select changed layer ${change.layerName}`);
-    row.innerHTML = `<span class="row-glyph" aria-hidden="true">${domainIcon(change.domain)}</span><span class="row-copy"><strong>${escapeHtml(change.layerName)}</strong><span>${escapeHtml(change.summary)}</span></span><span class="change-domain">${escapeHtml(change.domain)}</span>`;
+    row.setAttribute("aria-label", `Select changed layer ${change.layerName}, Photoshop layer ${change.photoshopId}. ${change.summary}`);
+    row.innerHTML = `<span class="row-glyph" aria-hidden="true">${domainIcon(change.domain)}</span><span class="row-copy"><strong>${escapeHtml(change.layerName)}</strong><span class="layer-identity">Photoshop layer #${escapeHtml(change.photoshopId)}</span><span class="change-detail">${escapeHtml(change.summary)}</span></span><span class="change-domain">${escapeHtml(change.domain)}</span>`;
     const select = () => {
       document.querySelectorAll(".layer").forEach((layer) => layer.classList.remove("active"));
       document.querySelectorAll(".layer")[index]?.classList.add("active");
@@ -300,16 +317,32 @@ function renderHistory() {
   setCount("history-count", versions.length);
   byId("history-total").textContent = `${versions.length} versions`;
   byId("history-empty").hidden = matching.length > 0;
-  matching.forEach((version) => {
-    const row = document.createElement("div");
-    row.className = "list-row history-row";
-    const message = escapeHtml(version.message);
-    const author = escapeHtml(version.author);
-    const date = escapeHtml(version.date);
-    const shortId = escapeHtml(version.shortId);
-    row.innerHTML = `<span class="history-marker" aria-hidden="true">${historyIcon()}</span><span class="row-copy"><strong title="${message}">${message}</strong><span class="history-meta"><span>${author}</span><i class="history-separator" aria-hidden="true">·</i><time>${date}</time></span></span><span class="commit-id" title="Checkpoint ${shortId}">${shortId}</span>`;
-    container.appendChild(row);
+  for (const group of groupHistory(matching)) {
+    const section = document.createElement("section");
+    section.className = "history-group";
+    section.innerHTML = `<div class="history-group-heading"><strong>${escapeHtml(group.label)}</strong><span>Committed by ${escapeHtml(group.author)}</span></div><div class="history-group-entries"></div>`;
+    const entries = section.querySelector(".history-group-entries");
+    group.entries.forEach((version) => {
+      const row = document.createElement("div");
+      row.className = "list-row history-row";
+      const message = escapeHtml(version.message);
+      const shortId = escapeHtml(version.shortId);
+      row.innerHTML = `<span class="history-marker" aria-hidden="true">${historyIcon()}</span><span class="row-copy"><strong title="${message}">${message}</strong></span><span class="commit-id" title="Checkpoint ${shortId}">${shortId}</span>`;
+      entries.appendChild(row);
+    });
+    container.appendChild(section);
+  }
+}
+
+function groupHistory(entries) {
+  const groups = new Map();
+  entries.forEach((version) => {
+    const label = version.date;
+    const key = `${label}\u0000${version.author}`;
+    if (!groups.has(key)) groups.set(key, { label, author: version.author, entries: [] });
+    groups.get(key).entries.push(version);
   });
+  return [...groups.values()];
 }
 
 function renderReviews() {
@@ -356,7 +389,7 @@ async function saveVersion() {
   const message = byId("message").value.trim();
   if (!message) return flashResult("Describe what changed before saving.", true);
   await simulateBusy("Saving exact PSD, preview, and semantic data…", 620);
-  versions.unshift({ message, author: "Zach", date: "Just now", shortId: "c84f2a7" });
+  versions.unshift({ message, author: "You", date: "Today", shortId: "c84f2a7" });
   changes = [];
   byId("message").value = "";
   byId("history-search").value = "";

@@ -35,6 +35,8 @@ let surfaceReturnFocus = null;
 let autoScanTimer = null;
 let pendingPhotoshopEvent = null;
 let changeListenerInstalled = false;
+let observedDocumentId = null;
+let documentObservationReady = false;
 const surfaceTimers = new Map();
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -49,7 +51,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
   bind("choose-project", "click", chooseProject);
-  bind("refresh", "click", () => refreshWorkspace(true));
+  bind("refresh", "click", refreshAndScan);
   bind("global-search", "click", openHistorySearch);
   bind("header-menu", "click", toggleToolsMenu);
   bind("scan", "click", () => scanChanges({ automatic: false }));
@@ -90,6 +92,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   window.setInterval(syncDocumentLabel, 1000);
   await refreshWorkspace();
   await installPhotoshopChangeDetection();
+  queueAutomaticScan("initial-load", 150);
 });
 
 function bind(id, event, handler) {
@@ -209,6 +212,7 @@ async function chooseProject() {
     show(`${error.message} Run PhotoGit setup for this folder, then choose it again.`, true);
   }
   await refreshWorkspace();
+  queueAutomaticScan("project-connected", 150);
 }
 
 async function loadPairing() {
@@ -246,6 +250,13 @@ async function refreshWorkspace(announceErrors = false) {
     log(`Refresh failed: ${error.message || String(error)}`);
     if (announceErrors) show(error.message || "PhotoGit could not refresh this project.", true);
   }
+}
+
+async function refreshAndScan() {
+  if (!ensureReady() || busyNow) return;
+  await refreshWorkspace(true);
+  if (app.documents.length) return scanChanges({ automatic: false, eventName: "workspace-refresh" });
+  show("Project refreshed. Open a Photoshop document to scan edits.", false);
 }
 
 async function loadStatus(existingResult) {
@@ -350,16 +361,44 @@ function renderHistory(versions) {
   const empty = document.getElementById("history-empty");
   container.innerHTML = "";
   empty.hidden = versions.length > 0;
-  for (const version of versions) {
-    const row = document.createElement("div");
-    row.className = "list-row history-row";
-    const message = escapeHtml(version.message);
-    const author = escapeHtml(version.author);
-    const date = escapeHtml(version.date.slice(0, 10));
-    const shortId = escapeHtml(version.shortId);
-    row.innerHTML = `<span class="history-marker" aria-hidden="true">${historyIcon()}</span><span class="row-copy"><strong title="${message}">${message}</strong><span class="history-meta"><span>${author}</span><i class="history-separator" aria-hidden="true">·</i><time>${date}</time></span></span><span class="commit-id" title="Checkpoint ${shortId}">${shortId}</span>`;
-    container.appendChild(row);
+  for (const group of groupHistory(versions)) {
+    const section = document.createElement("section");
+    section.className = "history-group";
+    section.innerHTML = `<div class="history-group-heading"><strong>${escapeHtml(group.label)}</strong><span>Committed by ${escapeHtml(group.author)}</span></div><div class="history-group-entries"></div>`;
+    const entries = section.querySelector(".history-group-entries");
+    for (const version of group.entries) {
+      const row = document.createElement("div");
+      row.className = "list-row history-row";
+      const message = escapeHtml(version.message);
+      const shortId = escapeHtml(version.shortId);
+      row.innerHTML = `<span class="history-marker" aria-hidden="true">${historyIcon()}</span><span class="row-copy"><strong title="${message}">${message}</strong></span><span class="commit-id" title="Checkpoint ${shortId}">${shortId}</span>`;
+      entries.appendChild(row);
+    }
+    container.appendChild(section);
   }
+}
+
+function groupHistory(versions) {
+  const groups = new Map();
+  for (const version of versions) {
+    const label = historyDateLabel(version.date);
+    const key = `${label}\u0000${version.author}`;
+    if (!groups.has(key)) groups.set(key, { label, author: version.author, entries: [] });
+    groups.get(key).entries.push(version);
+  }
+  return [...groups.values()];
+}
+
+function historyDateLabel(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value).slice(0, 10) || "Unknown date";
+  const now = new Date();
+  const day = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const daysAgo = Math.round((today - day) / 86_400_000);
+  if (daysAgo === 0) return "Today";
+  if (daysAgo === 1) return "Yesterday";
+  return date.toLocaleDateString([], { month: "long", day: "numeric", year: date.getFullYear() === now.getFullYear() ? undefined : "numeric" });
 }
 
 function filterHistory() {
@@ -381,10 +420,11 @@ async function scanChanges({ automatic = false, eventName = "manual" } = {}) {
       log(`Captured ${capture.layers.length} Photoshop layer(s); comparing with the latest version.`);
       setWatchStatus(`Comparing ${capture.layers.length} layers…`, "scanning");
       const result = await callHelper("refresh", { capture });
-      renderChanges(result.changes);
-      setWatchStatus(result.changes.length ? `${result.changes.length} changes ready` : "Watching Photoshop", result.changes.length ? "changed" : "ready");
-      log(result.changes.length ? `Found ${result.changes.length} layer change(s).` : "Current design matches the latest version.");
-      if (!automatic || result.changes.length) show(result.changes.length ? `Found ${result.changes.length} layer change(s).` : "No layer changes found.", false);
+      renderChanges(result.changes, { baselineMissing: result.baselineMissing === true });
+      const firstCheckpoint = result.baselineMissing === true;
+      setWatchStatus(firstCheckpoint ? "First checkpoint ready" : result.changes.length ? `${result.changes.length} edits ready` : "Watching Photoshop", firstCheckpoint || result.changes.length ? "changed" : "ready");
+      log(firstCheckpoint ? `Found ${result.changes.length} layer(s) ready for the first checkpoint.` : result.changes.length ? `Found ${result.changes.length} semantic edit(s).` : "Current design matches the latest version.");
+      if (!automatic || result.changes.length) show(firstCheckpoint ? "Your document is ready for its first checkpoint." : result.changes.length ? `Found ${result.changes.length} Photoshop edit(s).` : "No layer edits found.", false);
     } catch (error) {
       setWatchStatus("Scan failed", "error");
       runtimeLog("error", "scan_failed", { source: automatic ? "automatic" : "manual", eventName, message: error.message || String(error) });
@@ -721,6 +761,7 @@ function validateHelperResult(operation, value) {
       if (typeof entry.current !== "boolean") throw invalidHelperData(`branches.branches[${index}].current`);
     });
   } else if (operation === "refresh") {
+    if (result.baselineMissing !== undefined && typeof result.baselineMissing !== "boolean") throw invalidHelperData("refresh.baselineMissing");
     requireHelperArray(result.changes, "refresh.changes", 50_000).forEach((change, index) => {
       const entry = requireHelperRecord(change, `refresh.changes[${index}]`);
       if (!["document", "structure", "appearance", "text", "content"].includes(entry.domain)) throw invalidHelperData(`refresh.changes[${index}].domain`);
@@ -805,7 +846,11 @@ async function captureDocument(doc) {
       content: { fingerprint: null, opaque: !["normal", "pixel", "text", "group"].some((value) => kind.includes(value)), reason: unsupportedReason(kind) }
     };
     layers.push(capturedLayer);
-    if (kind.includes("normal") || kind.includes("pixel") || kind.includes("smart")) fingerprintTargets.push({ layer, capturedLayer });
+    // A rendered fingerprint catches paint, masks, effects, shape fills, smart
+    // object updates, and text styling that the smaller semantic fields miss.
+    // Groups are skipped because every leaf is already fingerprinted and group
+    // composites would duplicate both work and change rows.
+    if (children.length === 0) fingerprintTargets.push({ layer, capturedLayer });
     for (let childIndex = children.length - 1; childIndex >= 0; childIndex -= 1) pending.push({ layer: children[childIndex], order: childIndex, parentPhotoshopId: layer.id });
   }
   for (const target of fingerprintTargets) target.capturedLayer.content.fingerprint = await fingerprintLayerPixels(doc, target.layer);
@@ -840,12 +885,18 @@ async function fingerprintLayerPixels(doc, layer) {
   }
 }
 
-function renderChanges(changes) {
+function renderChanges(changes, { baselineMissing = false } = {}) {
   const container = document.getElementById("changes");
   const empty = document.getElementById("changes-empty");
   container.innerHTML = "";
   setCount("changes-count", changes.length);
   document.getElementById("changes-total").textContent = String(changes.length);
+  document.getElementById("change-summary").textContent = baselineMissing
+    ? "First checkpoint ready"
+    : changes.length
+      ? `${changes.length} unsaved ${changes.length === 1 ? "edit" : "edits"}`
+      : "Your canvas is clean";
+  document.getElementById("last-scan").textContent = `Scanned ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} · Updates automatically`;
   empty.hidden = changes.length > 0;
   for (const change of changes.slice(0, MAX_VISIBLE_CHANGES)) {
     const row = document.createElement("div");
@@ -853,8 +904,8 @@ function renderChanges(changes) {
     row.tabIndex = 0;
     row.setAttribute("role", "button");
     row.setAttribute("aria-pressed", "false");
-    row.setAttribute("aria-label", `Select changed layer ${change.layerName}`);
-    row.innerHTML = `<span class="row-glyph ${domainClass(change.domain)}" aria-hidden="true">${domainIcon(change.domain)}</span><span class="row-copy"><strong>${escapeHtml(change.layerName)}</strong><span>${escapeHtml(changeSummary(change))}</span></span><span class="change-domain">${escapeHtml(change.domain)}</span>`;
+    row.setAttribute("aria-label", `Select changed layer ${change.layerName}, Photoshop layer ${change.photoshopId || "unknown"}. ${changeSummary(change)}`);
+    row.innerHTML = `<span class="row-glyph ${domainClass(change.domain)}" aria-hidden="true">${domainIcon(change.domain)}</span><span class="row-copy"><strong>${escapeHtml(change.layerName)}</strong><span class="layer-identity">Photoshop layer ${escapeHtml(change.photoshopId ? `#${change.photoshopId}` : "ID unavailable")}</span><span class="change-detail">${escapeHtml(changeSummary(change))}</span></span><span class="change-domain">${escapeHtml(change.domain)}</span>`;
     const select = () => {
       container.querySelectorAll(".change-row.selected").forEach((entry) => {
         entry.classList.remove("selected");
@@ -881,6 +932,7 @@ function renderChanges(changes) {
 }
 
 function changeSummary(change) {
+  if (change.domain === "content") return "Painted pixels changed";
   const summary = String(change.summary || "Changed");
   const prefix = `${String(change.layerName || "").trim()}:`;
   return prefix && summary.toLowerCase().startsWith(prefix.toLowerCase())
@@ -1018,6 +1070,21 @@ function syncDocumentLabel() {
   if (!label) return;
   const doc = app.documents.length ? app.activeDocument : null;
   label.textContent = doc ? safeInlineText(doc.name, 1_024) || "Untitled document" : "None open";
+  const nextDocumentId = doc ? String(doc.id) : null;
+  if (!documentObservationReady) {
+    observedDocumentId = nextDocumentId;
+    documentObservationReady = true;
+    return;
+  }
+  if (nextDocumentId === observedDocumentId) return;
+  observedDocumentId = nextDocumentId;
+  if (doc) queueAutomaticScan("active-document-changed", 200);
+  else {
+    renderChanges([]);
+    document.getElementById("change-summary").textContent = "Open a document";
+    document.getElementById("last-scan").textContent = "PhotoGit will scan when a Photoshop document opens.";
+    setWatchStatus("Waiting for Photoshop", "warning");
+  }
 }
 
 function activateOnKeyboard(element, handler) {
@@ -1031,7 +1098,63 @@ function activateOnKeyboard(element, handler) {
 function bounds(value) { return { left: number(value?.left), top: number(value?.top), right: number(value?.right), bottom: number(value?.bottom) }; }
 function number(value, fallback = 0) { const candidate = typeof value === "object" && value !== null && "value" in value ? value.value : value; return Number.isFinite(Number(candidate)) ? Number(candidate) : fallback; }
 function normalizeEnum(value) { return String(value ?? "unknown").replace(/^.*\./, "").toLowerCase(); }
-function textStyleFingerprint(textItem) { try { const style = textItem.characterStyle; return JSON.stringify({ font: style.fontName || null, size: number(style.size), tracking: number(style.tracking) }); } catch { return null; } }
+function textStyleFingerprint(textItem) {
+  try {
+    const character = textItem.characterStyle;
+    const paragraph = textItem.paragraphStyle;
+    const warp = textItem.warpStyle;
+    const color = readTextColor(character);
+    return JSON.stringify({
+      character: {
+        font: readStyleValue(character, "fontName"),
+        fontStyle: readStyleValue(character, "fontStyle"),
+        size: readStyleNumber(character, "size"),
+        tracking: readStyleNumber(character, "tracking"),
+        leading: readStyleNumber(character, "leading"),
+        baselineShift: readStyleNumber(character, "baselineShift"),
+        horizontalScale: readStyleNumber(character, "horizontalScale"),
+        verticalScale: readStyleNumber(character, "verticalScale"),
+        antiAlias: readStyleValue(character, "antiAliasMethod"),
+        capitalization: readStyleValue(character, "capitalization"),
+        underline: readStyleValue(character, "underline"),
+        strikeThrough: readStyleValue(character, "strikeThrough"),
+        ligatures: readStyleBoolean(character, "ligatures"),
+        color
+      },
+      paragraph: {
+        alignment: readStyleValue(paragraph, "alignment"),
+        direction: readStyleValue(paragraph, "direction"),
+        firstLineIndent: readStyleNumber(paragraph, "firstLineIndent"),
+        leftIndent: readStyleNumber(paragraph, "leftIndent"),
+        rightIndent: readStyleNumber(paragraph, "rightIndent"),
+        spaceBefore: readStyleNumber(paragraph, "spaceBefore"),
+        spaceAfter: readStyleNumber(paragraph, "spaceAfter"),
+        hyphenation: readStyleBoolean(paragraph, "hyphenation")
+      },
+      warp: {
+        style: readStyleValue(warp, "style"),
+        bend: readStyleNumber(warp, "bend"),
+        horizontalDistortion: readStyleNumber(warp, "horizontalDistortion"),
+        verticalDistortion: readStyleNumber(warp, "verticalDistortion")
+      }
+    });
+  } catch {
+    return null;
+  }
+}
+function readStyleValue(source, key) { try { const value = source?.[key]; return value === undefined || value === null ? null : normalizeEnum(value); } catch { return null; } }
+function readStyleNumber(source, key) { try { const value = source?.[key]; return value === undefined || value === null ? null : number(value); } catch { return null; } }
+function readStyleBoolean(source, key) { try { const value = source?.[key]; return value === undefined || value === null ? null : Boolean(value); } catch { return null; } }
+function readTextColor(character) {
+  try {
+    const color = character?.color;
+    const rgb = color?.rgb;
+    if (rgb) return { red: number(rgb.red), green: number(rgb.green), blue: number(rgb.blue) };
+    const lab = color?.lab;
+    if (lab) return { lightness: number(lab.lightness), a: number(lab.a), b: number(lab.b) };
+    return null;
+  } catch { return null; }
+}
 function unsupportedReason(kind) { return ["normal", "pixel", "text", "group"].some((value) => kind.includes(value)) ? null : `Unsupported ${kind} properties are preserved in the PSD snapshot.`; }
 function createRequestId() { return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`; }
 function escapeHtml(value) { return String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char])); }

@@ -41,7 +41,7 @@ describe("Photoshop plugin manifest", () => {
   });
 
   it("ships the shared high-resolution PhotoGit identity with transparency", async () => {
-    const logo = await readFile(resolve(process.cwd(), "apps/photoshop-plugin/icons/photogit-git-mark.png"));
+    const logo = await readFile(resolve(process.cwd(), "apps/photoshop-plugin/icons/photogit.png"));
     expect(pngDimensions(logo)).toEqual({ width: 512, height: 512 });
     expect(pngColorType(logo)).toBe(6);
   });

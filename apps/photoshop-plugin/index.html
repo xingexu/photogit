@@ -4,16 +4,16 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>PhotoGit</title>
-    <link rel="stylesheet" href="styles.css?v=8">
-    <script src="index.js?v=8"></script>
+    <link rel="stylesheet" href="styles.css?v=10">
+    <script src="index.js?v=10"></script>
   </head>
   <body>
     <main class="panel-root">
       <header class="app-header liquid-bar">
-        <div class="pg-mark" role="img" aria-label="PhotoGit"><img src="icons/photogit-git-mark.png" alt=""></div>
+        <div class="pg-mark" role="img" aria-label="PhotoGit"><img src="icons/photogit.png" alt=""></div>
         <div class="app-title">
           <h1>PhotoGit</h1>
-          <span>Git for Photoshop</span>
+          <span>Version control for Photoshop</span>
         </div>
         <div id="global-search" class="header-action" role="button" tabindex="0" aria-label="Search history" title="Search history">
           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 4.5 4.5"/></svg>
@@ -24,38 +24,32 @@
       </header>
 
       <section id="onboarding" class="onboarding liquid-card">
-        <div class="pg-mark onboarding-mark" aria-hidden="true"><img src="icons/photogit-git-mark.png" alt=""></div>
-        <p class="eyebrow">Version control inside Photoshop</p>
-        <h2>Connect your project</h2>
-        <p>Choose a PhotoGit folder to track PSD checkpoints, semantic layer edits, branches, reviews, and merges.</p>
-        <div id="choose-project" class="button button-primary button-wide" role="button" tabindex="0">Choose project folder</div>
-        <span id="pairing-help" class="fine-print">Run the one-time helper setup from the README first.</span>
+        <div class="pg-mark onboarding-mark" aria-hidden="true"><img src="icons/photogit.png" alt=""></div>
+        <p class="eyebrow">GET STARTED</p>
+        <h2>Bring version control<br>into your canvas.</h2>
+        <p>Connect a PhotoGit project to see Photoshop edits as readable changes, save exact PSD checkpoints, and explore branches.</p>
+        <div id="choose-project" class="button button-primary button-wide" role="button" tabindex="0">Connect a project</div>
+        <span id="pairing-help" class="fine-print">The desktop helper must be running for this folder.</span>
       </section>
 
       <section id="workspace" class="workspace" hidden>
         <section class="repo-context liquid-card" aria-label="Current repository">
-          <div class="repo-item repo-project">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 6.5h6l2 2H20v10H3.5z"/></svg>
-            <span><small>Project</small><strong id="project-status">No project selected</strong></span>
+          <div class="repo-topline">
+            <div class="repo-item repo-project">
+              <span><small>PROJECT</small><strong id="project-status">No project selected</strong></span>
+            </div>
+            <div id="helper-status" class="repo-state warning"><i></i><span id="repo-sync-status">Not connected</span></div>
           </div>
-          <div class="repo-divider" aria-hidden="true"></div>
-          <div class="repo-item repo-branch">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="5" r="2"/><circle cx="18" cy="7" r="2"/><circle cx="6" cy="19" r="2"/><path d="M6 7v10m2-2c6 0 8-2 8-6"/></svg>
-            <span><small>Branch</small><strong id="branch-name">—</strong></span>
+          <div class="repo-meta">
+            <span class="repo-branch"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="5" r="2"/><circle cx="18" cy="7" r="2"/><circle cx="6" cy="19" r="2"/><path d="M6 7v10m2-2c6 0 8-2 8-6"/></svg><strong id="branch-name">—</strong></span>
+            <span class="repo-document"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3.5h8l4 4V20H6z"/><path d="M14 3.5V8h4"/></svg><span id="document-name">None open</span></span>
+            <div id="refresh" class="strip-action" role="button" tabindex="0" aria-label="Refresh and scan Photoshop" title="Refresh and scan Photoshop">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6v5h-5"/><path d="M18.2 15.4A7 7 0 1 1 18.5 8L20 11"/></svg>
+            </div>
           </div>
-          <div class="repo-divider" aria-hidden="true"></div>
-          <div id="helper-status" class="repo-state warning"><i></i><span id="repo-sync-status">Not connected</span></div>
         </section>
 
-        <div class="document-strip">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3.5h8l4 4V20H6z"/><path d="M14 3.5V8h4"/></svg>
-          <span id="document-name">None open</span>
-          <div id="refresh" class="strip-action" role="button" tabindex="0" aria-label="Refresh workspace" title="Refresh workspace">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6v5h-5"/><path d="M18.2 15.4A7 7 0 1 1 18.5 8L20 11"/></svg>
-          </div>
-        </div>
-
-        <nav class="section-nav liquid-card" role="tablist" aria-label="PhotoGit sections">
+        <nav id="section-nav" class="section-nav liquid-card" role="tablist" aria-label="PhotoGit sections">
           <div id="changes-tab" class="nav-item active" role="tab" tabindex="0" aria-label="Changes" aria-controls="changes-view" aria-selected="true">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3.5h8l4 4V20H6z"/><path d="M14 3.5V8h4"/></svg>
             <span>Changes</span><b id="changes-count" data-empty="true">0</b>
@@ -79,22 +73,26 @@
         </nav>
 
         <section id="changes-view" class="view-panel" role="tabpanel" aria-labelledby="changes-tab">
-          <section class="liquid-card content-card">
-            <div class="view-heading">
-              <div class="title-with-count"><h2>Working changes</h2><span id="changes-total">0</span></div>
-              <div class="change-heading-actions">
-                <div id="watch-status" class="watch-status ready" role="status" aria-live="polite"><i aria-hidden="true"></i><span>Watching Photoshop</span></div>
-                <div id="rescan" class="button button-quiet button-small" role="button" tabindex="0" aria-label="Scan Photoshop now" title="Scan Photoshop now">
-                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6v5h-5"/><path d="M18.2 15.4A7 7 0 1 1 18.5 8L20 11"/></svg>
-                  <span>Scan now</span>
-                </div>
-              </div>
+          <section class="liquid-card scan-card">
+            <div class="scan-copy">
+              <p class="eyebrow">WORKING TREE</p>
+              <div class="title-with-count"><h2 id="change-summary">Your canvas is clean</h2><span id="changes-total">0</span></div>
+              <div id="watch-status" class="watch-status ready" role="status" aria-live="polite"><i aria-hidden="true"></i><span>Watching Photoshop</span></div>
+              <p id="last-scan" class="scan-detail">Scanning this document automatically.</p>
             </div>
+            <div id="rescan" class="button button-quiet scan-button" role="button" tabindex="0" aria-label="Scan Photoshop now" title="Scan Photoshop now">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6v5h-5"/><path d="M18.2 15.4A7 7 0 1 1 18.5 8L20 11"/></svg>
+              <span>Scan now</span>
+            </div>
+          </section>
+
+          <section class="liquid-card content-card changes-card">
+            <div class="section-heading"><h2>Changed layers</h2><span class="meta-chip">LIVE</span></div>
             <div id="changes" class="list change-list"></div>
             <section id="changes-empty" class="empty-state">
               <span class="empty-symbol" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m6.5 12.5 3.5 3.5 7.5-8"/></svg></span>
-              <strong>No changes since the latest version</strong>
-              <p>PhotoGit is watching Photoshop. Add, paint, rename, move, or restyle a layer and it will scan automatically.</p>
+              <strong>No unsaved edits</strong>
+              <p>Paint, rename, move, restyle, or add a layer. PhotoGit will turn the edit into a readable change here.</p>
             </section>
           </section>
 
@@ -104,18 +102,18 @@
           </section>
 
           <section class="liquid-card content-card capture-panel">
-            <div class="section-heading"><h2>Save a version</h2><span class="meta-chip">PSD · PREVIEW</span></div>
-            <label class="field-label" for="message">Describe what changed</label>
+            <div class="section-heading"><div><p class="eyebrow">CHECKPOINT</p><h2>Save this version</h2></div><span class="meta-chip">PSD + DATA</span></div>
+            <label class="field-label" for="message">What did you change?</label>
             <div class="field-shell">
-              <span class="field-placeholder" aria-hidden="true">e.g. Refined cover typography</span>
+              <span class="field-placeholder" aria-hidden="true">Refined cover typography…</span>
               <input id="message" type="text" maxlength="500" aria-label="Save-version message" autocomplete="off">
             </div>
             <div class="capture-actions">
               <div id="scan" class="button button-quiet" role="button" tabindex="0">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3.5h8l4 4V20H6z"/><circle cx="11" cy="13" r="3"/><path d="m13.5 15.5 2 2"/></svg>
-                Review changes
+                Review edits
               </div>
-              <div id="save-version" class="button button-primary" role="button" tabindex="0">Save version</div>
+              <div id="save-version" class="button button-primary" role="button" tabindex="0">Save checkpoint</div>
             </div>
             <div class="progress-track" aria-hidden="true"><span></span></div>
             <sp-progressbar id="progress" indeterminate hidden aria-label="PhotoGit operation in progress"></sp-progressbar>

@@ -10,7 +10,7 @@ import { readProjectState } from "@photogit/git-engine";
 import { DEFAULT_HELPER_PORT, MAX_REQUEST_BYTES, parseBridgeEnvelope, parseHelperRequest, PROTOCOL_VERSION, type HelperRequest, type HelperResponse } from "@photogit/protocol";
 import { validateProjectMetadata, type ProjectMetadata, type ProjectState } from "@photogit/schema";
 import { canonicalJson, stateFromCapture } from "@photogit/serializer";
-import { diffStates } from "@photogit/differ";
+import { diffStates, type SemanticChange } from "@photogit/differ";
 import { assertHelperArguments, isLoopbackHost, parseHelperConfig, publicRepositoryInfo, safeErrorText, secureWrite, type HelperConfig } from "./security.js";
 
 class SlidingWindowLimiter {
@@ -73,11 +73,18 @@ async function executeRequest(payload: HelperRequest, helperConfig: HelperConfig
   if (payload.operation === "history") return { versions: await repository.history(40) };
   if (payload.operation === "branches") return { branches: await repository.branches(), current: await repository.currentBranch() };
   if (payload.operation === "refresh") {
-    const base = await readProjectState(projectRoot);
-    const current = stateFromCapture(payload.capture!, base.project, randomUUID, base.identities.records);
-    const changes = diffStates(base, current);
+    const baselinePath = join(projectRoot, ".photogit", "structure", "layers.json");
+    const hasBaseline = await stat(baselinePath).then((entry) => entry.isFile()).catch((error) => {
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") return false;
+      throw error;
+    });
+    const base = hasBaseline ? await readProjectState(projectRoot) : null;
+    const project = base?.project ?? JSON.parse(await readBoundedText(join(projectRoot, ".photogit", "project.json"))) as ProjectMetadata;
+    validateProjectMetadata(project);
+    const current = stateFromCapture(payload.capture!, project, randomUUID, base?.identities.records ?? []);
+    const changes = base ? diffStates(base, current) : firstCheckpointChanges(current);
     log("info", { event: "refresh_complete", requestId: payload.requestId, capturedLayerCount: payload.capture!.layers.length, changeCount: changes.length });
-    return { changes };
+    return { changes, baselineMissing: base === null };
   }
   if (payload.operation === "createBranch") {
     await repository.createBranch(payload.branch!);
@@ -132,6 +139,31 @@ async function executeRequest(payload: HelperRequest, helperConfig: HelperConfig
     ...(payload.previewPath ? { previewPath: payload.previewPath } : {})
   });
   return { versionId, shortId: versionId.slice(0, 8), warningCount: state.document.warnings.length };
+}
+
+function firstCheckpointChanges(state: ProjectState): SemanticChange[] {
+  return state.structure.layers.map((layer) => {
+    const layerName = inlineText(layer.name, 1_024) || "Unnamed layer";
+    return {
+      domain: "structure",
+      category: "added",
+      layerUuid: layer.uuid,
+      photoshopId: layer.photoshopId,
+      layerName,
+      propertyPath: "layer",
+      baseValue: null,
+      currentValue: layer,
+      summary: inlineText(`Ready to track ${JSON.stringify(layerName)}`, 1_000),
+      mergeability: "automatic",
+      confidence: 1,
+      warnings: []
+    };
+  });
+}
+
+function inlineText(value: string, maximum: number): string {
+  const safe = value.replace(/[\u0000-\u001f\u007f-\u009f\u202a-\u202e\u2066-\u2069]/g, " ").replace(/\s+/g, " ").trim();
+  return safe.length <= maximum ? safe : `${safe.slice(0, maximum - 1)}…`;
 }
 
 function startFileBridge(helperConfig: HelperConfig): void {
