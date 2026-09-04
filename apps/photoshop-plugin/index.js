@@ -1,4 +1,4 @@
-const { app, core } = require("photoshop");
+const { app, core, action } = require("photoshop");
 const { storage, entrypoints, shell } = require("uxp");
 
 entrypoints.setup({
@@ -20,6 +20,8 @@ let reviewEntries = [];
 let repositoryDetails = null;
 let activityEntryCount = 0;
 let toastTimer = null;
+let toastHideTimer = null;
+const surfaceTimers = new Map();
 
 document.addEventListener("DOMContentLoaded", async () => {
   const folderToken = localStorage.getItem("photogit.projectFolderToken");
@@ -61,6 +63,13 @@ document.addEventListener("DOMContentLoaded", async () => {
   bind("tool-settings", "click", openRepositorySettings);
   bind("close-tag-sheet", "click", closeTagSheet);
   bind("create-tag", "click", createTag);
+  bindInputAction("message", saveVersion);
+  bindInputAction("new-branch-name", createBranch);
+  bindInputAction("tag-name", createTag);
+  document.querySelector(".section-nav").addEventListener("keydown", handleTabKeyboard);
+  document.addEventListener("keydown", handleGlobalKeyboard);
+  document.addEventListener("click", handleOutsideClick);
+  selectTab("changes", false);
   window.setInterval(syncDocumentLabel, 1000);
   await refreshWorkspace();
 });
@@ -79,6 +88,41 @@ function bind(id, event, handler) {
       invoke(keyEvent);
     });
   }
+}
+
+function bindInputAction(id, handler) {
+  document.getElementById(id).addEventListener("keydown", (event) => {
+    if (event.key !== "Enter") return;
+    event.preventDefault();
+    handler(event);
+  });
+}
+
+function handleTabKeyboard(event) {
+  if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+  const tabs = Array.from(document.querySelectorAll(".nav-item"));
+  const current = Math.max(0, tabs.indexOf(event.target));
+  const next = event.key === "Home"
+    ? 0
+    : event.key === "End"
+      ? tabs.length - 1
+      : (current + (event.key === "ArrowRight" ? 1 : -1) + tabs.length) % tabs.length;
+  event.preventDefault();
+  tabs[next].focus();
+  selectTab(tabs[next].id.replace("-tab", ""));
+}
+
+function handleGlobalKeyboard(event) {
+  if (event.key !== "Escape") return;
+  closeToolsMenu();
+  closeTagSheet();
+}
+
+function handleOutsideClick(event) {
+  const menu = document.getElementById("tools-menu");
+  if (menu.hidden || menu.contains(event.target)) return;
+  if (document.getElementById("tools-toggle").contains(event.target) || document.getElementById("header-menu").contains(event.target)) return;
+  closeToolsMenu();
 }
 
 async function chooseProject() {
@@ -199,11 +243,16 @@ function createReviewCard(review, compact) {
   const mergeClass = review.mergeable ? "button-primary" : "button-disabled";
   const mergeLabel = review.mergeable ? "Merge" : "Blocked";
   const changes = review.changes.length ? review.changes.join("\n") : "No file-level differences.";
-  card.innerHTML = `<div class="review-title"><strong>${escapeHtml(review.branch)}</strong><span>${review.ahead} ahead</span></div><div class="review-meta"><span class="${statusClass}">${statusLabel}</span><span>·</span><span>${review.changeCount} ${review.changeCount === 1 ? "file" : "files"}</span></div><div class="review-files" hidden>${escapeHtml(changes)}</div><div class="review-actions"><div class="button button-quiet button-small compare-action" role="button" tabindex="0">Compare</div><div class="button ${mergeClass} button-small merge-action" role="button" tabindex="0" data-mergeable="${review.mergeable ? "true" : "false"}" ${review.mergeable ? "" : "aria-disabled=\"true\""}>${mergeLabel}</div></div>`;
+  card.innerHTML = `<div class="review-title"><strong>${escapeHtml(review.branch)}</strong><span>${review.ahead} ahead</span></div><div class="review-meta"><span class="${statusClass}">${statusLabel}</span><span>·</span><span>${review.changeCount} ${review.changeCount === 1 ? "file" : "files"}</span></div><div class="review-files" aria-hidden="true">${escapeHtml(changes)}</div><div class="review-actions"><div class="button button-quiet button-small compare-action" role="button" tabindex="0" aria-expanded="false">Compare</div><div class="button ${mergeClass} button-small merge-action" role="button" tabindex="0" data-mergeable="${review.mergeable ? "true" : "false"}" ${review.mergeable ? "" : "aria-disabled=\"true\""}>${mergeLabel}</div></div>`;
   const details = card.querySelector(".review-files");
   const compareAction = card.querySelector(".compare-action");
   const mergeAction = card.querySelector(".merge-action");
-  const compare = () => { details.hidden = !details.hidden; };
+  const compare = () => {
+    const expanded = card.classList.toggle("details-open");
+    details.setAttribute("aria-hidden", expanded ? "false" : "true");
+    compareAction.setAttribute("aria-expanded", expanded ? "true" : "false");
+    compareAction.textContent = expanded ? "Hide details" : "Compare";
+  };
   const merge = () => {
     if (review.mergeable) mergeReview(review.branch);
   };
@@ -211,7 +260,7 @@ function createReviewCard(review, compact) {
   mergeAction.addEventListener("click", merge);
   activateOnKeyboard(compareAction, compare);
   activateOnKeyboard(mergeAction, merge);
-  if (compact) card.querySelector(".review-files").hidden = true;
+  if (compact) card.classList.add("review-card-compact");
   return card;
 }
 
@@ -230,6 +279,7 @@ function renderHistory(versions) {
 
 function filterHistory() {
   const query = document.getElementById("history-search").value.trim().toLowerCase();
+  document.querySelector(".search-field").classList.toggle("has-value", Boolean(query));
   if (!query) return renderHistory(historyEntries);
   renderHistory(historyEntries.filter((version) => [version.message, version.shortId, version.author, version.date].some((value) => String(value).toLowerCase().includes(query))));
 }
@@ -367,14 +417,18 @@ function openHistorySearch() {
 
 function toggleToolsMenu() {
   const menu = document.getElementById("tools-menu");
-  menu.hidden = !menu.hidden;
-  document.getElementById("tools-toggle").setAttribute("aria-expanded", menu.hidden ? "false" : "true");
-  document.getElementById("tag-sheet").hidden = true;
+  if (menu.hidden || menu.classList.contains("is-closing")) {
+    closeSurface(document.getElementById("tag-sheet"), true);
+    openSurface(menu);
+    setToolsExpanded(true);
+  } else {
+    closeToolsMenu();
+  }
 }
 
-function closeToolsMenu() {
-  document.getElementById("tools-menu").hidden = true;
-  document.getElementById("tools-toggle").setAttribute("aria-expanded", "false");
+function closeToolsMenu(immediate = false) {
+  closeSurface(document.getElementById("tools-menu"), immediate);
+  setToolsExpanded(false);
 }
 
 function openNewBranch() {
@@ -396,11 +450,41 @@ async function openConflicts() {
 
 function openTagSheet() {
   closeToolsMenu();
-  document.getElementById("tag-sheet").hidden = false;
+  openSurface(document.getElementById("tag-sheet"));
   document.getElementById("tag-name").focus();
 }
 
-function closeTagSheet() { document.getElementById("tag-sheet").hidden = true; }
+function closeTagSheet(immediate = false) { closeSurface(document.getElementById("tag-sheet"), immediate); }
+
+function setToolsExpanded(expanded) {
+  const value = expanded ? "true" : "false";
+  document.getElementById("tools-toggle").setAttribute("aria-expanded", value);
+  document.getElementById("header-menu").setAttribute("aria-expanded", value);
+}
+
+function openSurface(element) {
+  clearTimeout(surfaceTimers.get(element));
+  element.hidden = false;
+  element.classList.remove("is-closing", "is-open");
+  void element.offsetWidth;
+  element.classList.add("is-open");
+}
+
+function closeSurface(element, immediate = false) {
+  clearTimeout(surfaceTimers.get(element));
+  if (element.hidden) return;
+  element.classList.remove("is-open");
+  if (immediate) {
+    element.classList.remove("is-closing");
+    element.hidden = true;
+    return;
+  }
+  element.classList.add("is-closing");
+  surfaceTimers.set(element, setTimeout(() => {
+    element.classList.remove("is-closing");
+    element.hidden = true;
+  }, 150));
+}
 
 async function createTag() {
   const input = document.getElementById("tag-name");
@@ -501,34 +585,63 @@ function renderChanges(changes) {
     row.tabIndex = 0;
     row.setAttribute("role", "button");
     row.setAttribute("aria-label", `Select changed layer ${change.layerName}`);
-    row.innerHTML = `<span class="row-glyph ${domainClass(change.domain)}" aria-hidden="true">${domainIcon(change.domain)}</span><span class="row-copy"><strong>${escapeHtml(change.layerName)}</strong><span>${escapeHtml(change.summary)}</span></span><span class="change-domain">${escapeHtml(change.domain)}</span>`;
-    row.addEventListener("click", () => selectPhotoshopLayer(change.photoshopId));
+    row.innerHTML = `<span class="row-glyph ${domainClass(change.domain)}" aria-hidden="true">${domainIcon(change.domain)}</span><span class="row-copy"><strong>${escapeHtml(change.layerName)}</strong><span>${escapeHtml(changeSummary(change))}</span></span><span class="change-domain">${escapeHtml(change.domain)}</span>`;
+    const select = () => {
+      container.querySelectorAll(".change-row.selected").forEach((entry) => entry.classList.remove("selected"));
+      row.classList.add("selected");
+      selectPhotoshopLayer(change.photoshopId);
+    };
+    row.addEventListener("click", select);
     row.addEventListener("keydown", (event) => {
-      if (event.key === "Enter" || event.key === " ") selectPhotoshopLayer(change.photoshopId);
+      if (event.key !== "Enter" && event.key !== " ") return;
+      event.preventDefault();
+      select();
     });
     container.appendChild(row);
   }
+}
+
+function changeSummary(change) {
+  const summary = String(change.summary || "Changed");
+  const prefix = `${String(change.layerName || "").trim()}:`;
+  return prefix && summary.toLowerCase().startsWith(prefix.toLowerCase())
+    ? summary.slice(prefix.length).trim()
+    : summary;
 }
 
 async function selectPhotoshopLayer(photoshopId) {
   if (!photoshopId) return;
   try {
     await core.executeAsModal(async () => {
-      const layer = app.activeDocument.layers.getById(photoshopId);
-      if (layer) await layer.select(false);
+      const layerId = Number(photoshopId);
+      await action.batchPlay([{
+        _obj: "select",
+        _target: [{ _ref: "layer", _id: layerId }],
+        makeVisible: false,
+        layerID: [layerId],
+        _options: { dialogOptions: "dontDisplay" }
+      }], {});
     }, { commandName: "Select changed layer" });
   } catch { /* Layer may have been removed. */ }
 }
 
-function selectTab(name) {
+function selectTab(name, animate = true) {
   closeToolsMenu();
+  let target = null;
   for (const section of ["changes", "history", "branches", "reviews", "activity"]) {
     const active = section === name;
-    document.getElementById(`${section}-view`).hidden = !active;
+    const view = document.getElementById(`${section}-view`);
+    view.hidden = !active;
+    if (active) target = view;
     const tab = document.getElementById(`${section}-tab`);
     tab.classList.toggle("active", active);
     tab.setAttribute("aria-selected", active ? "true" : "false");
+    tab.tabIndex = active ? 0 : -1;
   }
+  if (!animate || !target) return;
+  target.classList.remove("view-enter");
+  void target.offsetWidth;
+  target.classList.add("view-enter");
 }
 
 async function run(label, action) {
@@ -591,6 +704,7 @@ function setHelper(label, ok) {
 }
 function busy(active) {
   busyNow = active;
+  document.body.classList.toggle("is-busy", active);
   document.getElementById("progress").hidden = !active;
   document.querySelector(".capture-panel").classList.toggle("is-busy", active);
   for (const id of ["save-version", "scan", "rescan", "pull", "push", "show-status", "new-branch", "refresh", "new-pull-request", "create-tag", "tools-toggle", "header-menu"]) {
@@ -609,7 +723,12 @@ function show(message, error) {
   toast.className = error ? "toast error" : "toast";
   toast.hidden = false;
   if (toastTimer) clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => { toast.hidden = true; }, error ? 5200 : 3200);
+  if (toastHideTimer) clearTimeout(toastHideTimer);
+  requestAnimationFrame(() => toast.classList.add("visible"));
+  toastTimer = setTimeout(() => {
+    toast.classList.remove("visible");
+    toastHideTimer = setTimeout(() => { toast.hidden = true; }, 180);
+  }, error ? 5200 : 3200);
 }
 function log(message) {
   const activity = document.getElementById("activity");
