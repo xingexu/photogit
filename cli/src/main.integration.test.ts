@@ -1,5 +1,5 @@
 import { execFile } from "node:child_process";
-import { copyFile, mkdtemp, readFile } from "node:fs/promises";
+import { copyFile, mkdir, mkdtemp, readFile, symlink } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { promisify } from "node:util";
@@ -27,6 +27,18 @@ describe("CLI vertical workflow", () => {
     expect(history).toContain("First design");
     const diff = await run(["diff", "--capture", ".photogit/capture.json"], root);
     expect(diff).toContain("No layer changes detected");
+    await expect(run(["save", "-m", "Typo should fail", "--snapsho", "document.psd"], root)).rejects.toThrow(/Unknown option/);
+    await expect(run(["save", "-m", "First", "--message", "Second"], root)).rejects.toThrow(/Use only one of -m or --message/);
+  });
+
+  it("refuses a PhotoGit metadata directory that resolves outside the project", async () => {
+    const parent = await mkdtemp(join(tmpdir(), "photogit-cli-symlink-"));
+    const root = join(parent, "project");
+    const outside = join(parent, "outside");
+    await Promise.all([mkdir(root), mkdir(outside)]);
+    await symlink(outside, join(root, ".photogit"));
+    await expect(run(["init", root])).rejects.toThrow(/metadata folder resolves outside/);
+    await expect(readFile(join(outside, "project.json"), "utf8")).rejects.toMatchObject({ code: "ENOENT" });
   });
 });
 

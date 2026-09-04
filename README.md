@@ -6,9 +6,9 @@ This repository is under active development toward a public v1.0 release on Sept
 
 ## Photoshop experience
 
-![PhotoGit running beside a Photoshop document](artifacts/photogit-ui-v013-photoshop.png)
+![PhotoGit v0.1.3 running beside a Photoshop document](artifacts/photogit-ui-v013-photoshop.png)
 
-Open **Plugins → PhotoGit → PhotoGit** in Photoshop to reveal the dockable sidebar. For a tools-adjacent workspace, drag the **PhotoGit** panel tab into Photoshop's left dock once; Photoshop owns panel placement and remembers it with the current workspace. Its monochrome workspace maps the workflow into five focused views: semantic Changes, searchable History, design Branches, Reviews, and a transparent Activity log. [Watch the real Photoshop demonstration](artifacts/photogit-demo.mp4).
+Open **Plugins → PhotoGit → PhotoGit** in Photoshop to reveal the dockable sidebar. For a tools-adjacent workspace, drag the **PhotoGit** panel tab into Photoshop's left dock once; Photoshop owns panel placement and remembers it with the current workspace. Its monochrome workspace maps the workflow into five focused views: semantic Changes, searchable History, design Branches, Reviews, and a transparent Activity log. [Watch the current interface walkthrough](artifacts/photogit-demo.mp4).
 
 ## Current vertical slice
 
@@ -17,8 +17,8 @@ Open **Plugins → PhotoGit → PhotoGit** in Photoshop to reveal the dockable s
 - Human-readable semantic diffs
 - Deterministic three-way merge planning with explicit conflicts
 - Git-backed `init`, `status`, `save`, `diff`, and `log` commands
-- Atomic writes, transaction journals, and per-project operation locks
-- Approved-root desktop helper with an authenticated project-folder bridge
+- Atomic writes, validated transaction journals, symlink-safe state reads, and per-project operation locks
+- Approved-root desktop helper with a bounded, authenticated project-folder bridge that never sends raw remote URLs to the panel
 - Manifest v5 Photoshop panel that captures the active document and sends it to the helper without insecure localhost HTTP
 
 ## Development

@@ -20,7 +20,8 @@ Leave the helper running while Photoshop is open. A packaged background helper w
 3. Add `/path/to/photogit/apps/photoshop-plugin/manifest.json`.
 4. Start Photoshop 2026, then choose **Load** beside PhotoGit in UXP Developer Tools.
 5. In Photoshop, choose **Plugins → PhotoGit**. PhotoGit opens as a dockable sidebar, the Photoshop equivalent of VIT's **Workspace → Scripts → Vit Panel** flow in DaVinci Resolve.
-6. In the PhotoGit panel, choose the initialized design-project folder.
+6. Drag the **PhotoGit** panel tab into Photoshop’s left dock beside the tool rail. Photoshop remembers that placement in the current workspace.
+7. In the PhotoGit panel, choose the initialized design-project folder.
 
 ## Daily workflow
 

@@ -1,5 +1,7 @@
 import {
   SCHEMA_VERSION,
+  isSafeLayerUuid,
+  validateDocumentCapture,
   validateProjectState,
   type AppearanceDomain,
   type ContentDomain,
@@ -48,6 +50,7 @@ export function stateFromCapture(
   uuidFactory: () => string,
   existing: ExistingIdentity[] = []
 ): ProjectState {
+  validateDocumentCapture(capture);
   const byPhotoshopId = new Map(existing.map((record) => [record.photoshopId, record]));
   const uuidByPhotoshopId = new Map<number, LayerUuid>();
   const signatureByPhotoshopId = new Map<number, string>();
@@ -99,14 +102,15 @@ export function stateFromCapture(
   const supported = capture.document.mode.toLowerCase() === "rgb" && capture.document.bitDepth === 8;
   if (!supported) warnings.push("Only RGB 8-bit documents are fully supported; this snapshot will merge conservatively.");
 
+  const orderedLayers = orderLayers(layers);
   const state: ProjectState = {
     project,
     document: { ...capture.document, schemaVersion: SCHEMA_VERSION, compatibility: supported ? "supported" : "limited", warnings },
     identities: { schemaVersion: SCHEMA_VERSION, records: identities.sort((a, b) => a.uuid.localeCompare(b.uuid)) },
     structure: {
       schemaVersion: SCHEMA_VERSION,
-      roots: layers.filter((layer) => layer.parentUuid === null).sort(compareLayerOrder).map((layer) => layer.uuid),
-      layers: layers.sort(compareLayerOrder)
+      roots: orderedLayers.filter((layer) => layer.parentUuid === null).map((layer) => layer.uuid),
+      layers: orderedLayers
     },
     appearance,
     text,
@@ -131,7 +135,10 @@ export function stateToFiles(state: ProjectState): Map<string, string> {
 }
 
 function appendDomain<T>(files: Map<string, string>, directory: string, domain: Record<string, T>): void {
-  for (const uuid of Object.keys(domain).sort()) files.set(`${directory}/${uuid}.json`, canonicalJson(domain[uuid]));
+  for (const uuid of Object.keys(domain).sort()) {
+    if (!isSafeLayerUuid(uuid)) throw new Error(`Unsafe layer UUID in serialized state: ${uuid}`);
+    files.set(`${directory}/${uuid}.json`, canonicalJson(domain[uuid]));
+  }
 }
 
 function requireUuid(uuid: string | undefined): string {
@@ -139,9 +146,23 @@ function requireUuid(uuid: string | undefined): string {
   return uuid;
 }
 
-function compareLayerOrder(a: LayerNode, b: LayerNode): number {
-  if (a.parentUuid !== b.parentUuid) return (a.parentUuid ?? "").localeCompare(b.parentUuid ?? "");
-  return a.order - b.order || a.uuid.localeCompare(b.uuid);
+function orderLayers(layers: LayerNode[]): LayerNode[] {
+  const children = new Map<string | null, LayerNode[]>();
+  for (const layer of layers) {
+    const siblings = children.get(layer.parentUuid) ?? [];
+    siblings.push(layer);
+    children.set(layer.parentUuid, siblings);
+  }
+  for (const siblings of children.values()) siblings.sort((left, right) => left.order - right.order || left.uuid.localeCompare(right.uuid));
+  const ordered: LayerNode[] = [];
+  const pending = [...(children.get(null) ?? [])].reverse();
+  while (pending.length) {
+    const layer = pending.pop()!;
+    ordered.push(layer);
+    const descendants = children.get(layer.uuid) ?? [];
+    for (let index = descendants.length - 1; index >= 0; index -= 1) pending.push(descendants[index]!);
+  }
+  return ordered;
 }
 
 function identitySignature(kind: string, name: string, parentUuid: string | null, bounds: { left: number; top: number; right: number; bottom: number }): string {

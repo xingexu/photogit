@@ -1,17 +1,17 @@
 #!/usr/bin/env node
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
-import { chmod, mkdir, readFile, readdir, rename, unlink, writeFile } from "node:fs/promises";
-import { dirname, join, resolve } from "node:path";
+import { constants } from "node:fs";
+import { chmod, lstat, mkdir, open, readdir, rename, stat, unlink, writeFile } from "node:fs/promises";
+import { join, resolve } from "node:path";
 import { homedir } from "node:os";
-import { GitRepository, isWithinRoot } from "@photogit/git-engine";
+import { GitRepository, isWithinRealRoot } from "@photogit/git-engine";
 import { readProjectState } from "@photogit/git-engine";
 import { DEFAULT_HELPER_PORT, MAX_REQUEST_BYTES, parseBridgeEnvelope, parseHelperRequest, PROTOCOL_VERSION, type HelperRequest, type HelperResponse } from "@photogit/protocol";
-import type { ProjectMetadata, ProjectState } from "@photogit/schema";
+import { validateProjectMetadata, type ProjectMetadata, type ProjectState } from "@photogit/schema";
 import { canonicalJson, stateFromCapture } from "@photogit/serializer";
 import { diffStates } from "@photogit/differ";
-
-type HelperConfig = { protocolVersion: 1; token: string; approvedRoots: string[] };
+import { assertHelperArguments, isLoopbackHost, parseHelperConfig, publicRepositoryInfo, safeErrorText, secureWrite, type HelperConfig } from "./security.js";
 
 class SlidingWindowLimiter {
   private readonly requests = new Map<string, number[]>();
@@ -27,6 +27,7 @@ class SlidingWindowLimiter {
 }
 
 const args = process.argv.slice(2);
+assertHelperArguments(args);
 const configPath = resolve(process.env.PHOTOGIT_HELPER_CONFIG ?? join(homedir(), ".photogit", "helper.json"));
 const port = numericOption("--port", DEFAULT_HELPER_PORT);
 const approvedFromArgs = repeatedOption("--approve-root").map((path) => resolve(path));
@@ -36,12 +37,14 @@ const limiter = new SlidingWindowLimiter(60, 60_000);
 startFileBridge(config);
 
 const server = createServer(async (request, response) => {
-  setCors(response);
+  setSecurityHeaders(response);
+  if (!isLoopbackHost(request.headers.host, port)) return sendError(response, 403, "INVALID_HOST", "The helper only accepts loopback requests.", "unknown");
   if (request.method === "OPTIONS") return send(response, 204, undefined);
   if (request.method === "GET" && request.url === "/v1/health") {
     return send(response, 200, { protocolVersion: PROTOCOL_VERSION, ok: true, service: "photogit-helper" });
   }
   if (request.method !== "POST" || request.url !== "/v1/request") return sendError(response, 404, "NOT_FOUND", "Unknown helper endpoint.", "unknown");
+  if (request.headers.origin) return sendError(response, 403, "BROWSER_ORIGIN_REJECTED", "Browser-origin helper requests are not allowed.", "unknown");
   if (!limiter.allow(request.socket.remoteAddress ?? "unknown")) return sendError(response, 429, "RATE_LIMITED", "Too many helper requests. Try again shortly.", "unknown");
   if (!authorized(request, config.token)) return sendError(response, 401, "UNAUTHORIZED", "The helper token is missing or invalid.", "unknown");
 
@@ -60,18 +63,21 @@ const server = createServer(async (request, response) => {
 
 async function executeRequest(payload: HelperRequest, helperConfig: HelperConfig): Promise<unknown> {
   const projectRoot = resolve(payload.projectRoot);
-  if (!helperConfig.approvedRoots.some((root) => isWithinRoot(root, projectRoot))) throw coded("ROOT_NOT_APPROVED", "This project folder has not been approved in the PhotoGit helper.");
+  const approved = await Promise.all(helperConfig.approvedRoots.map((root) => isWithinRealRoot(root, projectRoot)));
+  if (!approved.some(Boolean)) throw coded("ROOT_NOT_APPROVED", "This project folder has not been approved in the PhotoGit helper.");
   const repository = new GitRepository(projectRoot);
   if (payload.operation === "status") {
     const [branch, changes] = await Promise.all([repository.currentBranch(), repository.status()]);
-    return { branch, changeCount: changes.length, changes };
+    return { branch, changeCount: changes.length };
   }
   if (payload.operation === "history") return { versions: await repository.history(40) };
   if (payload.operation === "branches") return { branches: await repository.branches(), current: await repository.currentBranch() };
   if (payload.operation === "refresh") {
     const base = await readProjectState(projectRoot);
     const current = stateFromCapture(payload.capture!, base.project, randomUUID, base.identities.records);
-    return { changes: diffStates(base, current) };
+    const changes = diffStates(base, current);
+    log("info", { event: "refresh_complete", requestId: payload.requestId, capturedLayerCount: payload.capture!.layers.length, changeCount: changes.length });
+    return { changes };
   }
   if (payload.operation === "createBranch") {
     await repository.createBranch(payload.branch!);
@@ -96,7 +102,7 @@ async function executeRequest(payload: HelperRequest, helperConfig: HelperConfig
       repository.repositoryInfo(),
       repository.tags()
     ]);
-    return { reviews, conflicts, repository: repositoryInfo, tags };
+    return { reviews, conflicts, repository: publicRepositoryInfo(repositoryInfo), tags };
   }
   if (payload.operation === "mergeBranch") {
     await repository.mergeBranch(payload.branch!);
@@ -110,12 +116,16 @@ async function executeRequest(payload: HelperRequest, helperConfig: HelperConfig
   if (payload.operation !== "capture") throw coded("UNKNOWN_OPERATION", "Unknown helper operation.");
 
   for (const path of [payload.snapshotPath, payload.previewPath]) {
-    if (path && !isWithinRoot(projectRoot, path)) throw coded("UNSAFE_ARTIFACT_PATH", "Snapshot and preview files must be inside the approved project folder.");
+    if (path && !await isWithinRealRoot(projectRoot, path)) throw coded("UNSAFE_ARTIFACT_PATH", "Snapshot and preview files must be inside the approved project folder.");
   }
-  const project = JSON.parse(await readFile(join(projectRoot, ".photogit", "project.json"), "utf8")) as ProjectMetadata;
-  const identities = await readFile(join(projectRoot, ".photogit", "identities.json"), "utf8")
+  const project = JSON.parse(await readBoundedText(join(projectRoot, ".photogit", "project.json"))) as ProjectMetadata;
+  validateProjectMetadata(project);
+  const identities = await readBoundedText(join(projectRoot, ".photogit", "identities.json"))
     .then((text) => (JSON.parse(text) as ProjectState["identities"]).records)
-    .catch(() => []);
+    .catch((error) => {
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") return [];
+      throw error;
+    });
   const state = stateFromCapture(payload.capture, project, randomUUID, identities);
   const versionId = await repository.saveVersion(state, payload.message, {
     ...(payload.snapshotPath ? { snapshotPath: payload.snapshotPath } : {}),
@@ -142,11 +152,19 @@ function startFileBridge(helperConfig: HelperConfig): void {
 }
 
 async function drainBridgeRoot(root: string, helperConfig: HelperConfig): Promise<void> {
+  const rootStat = await stat(root).catch((error) => {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return null;
+    throw error;
+  });
+  if (!rootStat) return;
+  if (!rootStat.isDirectory()) throw coded("INVALID_APPROVED_ROOT", "An approved PhotoGit root is no longer a folder.");
   const requests = join(root, ".photogit", "bridge", "requests");
   const responses = join(root, ".photogit", "bridge", "responses");
   await Promise.all([mkdir(requests, { recursive: true, mode: 0o700 }), mkdir(responses, { recursive: true, mode: 0o700 })]);
+  if (!await isWithinRealRoot(root, requests) || !await isWithinRealRoot(root, responses)) throw coded("UNSAFE_BRIDGE_PATH", "The PhotoGit bridge folders must stay inside the approved project.");
+  await Promise.all([chmod(requests, 0o700), chmod(responses, 0o700)]);
   const entries = await readdir(requests);
-  const readyNames = entries.filter((name) => /^[A-Za-z0-9_-]{8,100}\.ready$/.test(name)).sort();
+  const readyNames = entries.filter((name) => /^[A-Za-z0-9_-]{8,100}\.ready$/.test(name)).sort().slice(0, 100);
   for (const readyName of readyNames) {
     const requestId = readyName.slice(0, -".ready".length);
     await processBridgeRequest(root, requestId, helperConfig);
@@ -160,7 +178,10 @@ async function processBridgeRequest(root: string, requestId: string, helperConfi
   const readyPath = join(requests, `${requestId}.ready`);
   let response: HelperResponse;
   try {
-    const envelope = parseBridgeEnvelope(JSON.parse(await readFile(requestPath, "utf8")));
+    const requestStat = await lstat(requestPath);
+    const readyStat = await lstat(readyPath);
+    if (!requestStat.isFile() || requestStat.isSymbolicLink() || !readyStat.isFile() || readyStat.isSymbolicLink()) throw coded("UNSAFE_BRIDGE_ENTRY", "Bridge requests must be regular files.");
+    const envelope = parseBridgeEnvelope(JSON.parse(await readBoundedText(requestPath)));
     if (!tokensMatch(envelope.token, helperConfig.token)) throw coded("UNAUTHORIZED", "The helper token is missing or invalid.");
     if (envelope.request.requestId !== requestId) throw coded("REQUEST_ID_MISMATCH", "The bridge filename does not match the request ID.");
     if (resolve(envelope.request.projectRoot) !== resolve(root)) throw coded("ROOT_MISMATCH", "The bridge request does not match its project folder.");
@@ -170,11 +191,19 @@ async function processBridgeRequest(root: string, requestId: string, helperConfi
     response = { protocolVersion: PROTOCOL_VERSION, requestId, ok: false, error: { code, message: safeMessage(error) } };
     log("error", { event: "bridge_request_failed", requestId, code, message: safeMessage(error) });
   }
+  const waitingStat = await lstat(readyPath).catch(() => null);
+  if (!waitingStat?.isFile() || waitingStat.isSymbolicLink()) {
+    await Promise.all([unlink(requestPath).catch(() => undefined), unlink(readyPath).catch(() => undefined)]);
+    return;
+  }
   const tempPath = join(responses, `${requestId}.json.tmp`);
   const responsePath = join(responses, `${requestId}.json`);
-  await writeFile(tempPath, canonicalJson(response), { encoding: "utf8", mode: 0o600 });
+  await unlink(tempPath).catch(() => undefined);
+  await writeFile(tempPath, boundedResponseJson(response), { encoding: "utf8", mode: 0o600, flag: "wx" });
   await rename(tempPath, responsePath);
-  await writeFile(join(responses, `${requestId}.ready`), "ready\n", { encoding: "utf8", mode: 0o600 });
+  const responseReadyPath = join(responses, `${requestId}.ready`);
+  await unlink(responseReadyPath).catch(() => undefined);
+  await writeFile(responseReadyPath, "ready\n", { encoding: "utf8", mode: 0o600, flag: "wx" });
   await Promise.all([unlink(requestPath).catch(() => undefined), unlink(readyPath).catch(() => undefined)]);
 }
 
@@ -185,19 +214,15 @@ server.listen(port, "127.0.0.1", () => {
 });
 
 async function loadOrCreateConfig(path: string, approvedRoots: string[]): Promise<HelperConfig> {
+  for (const root of approvedRoots) await assertApprovableRoot(root);
   try {
-    const existing = JSON.parse(await readFile(path, "utf8")) as HelperConfig;
-    if (existing.protocolVersion !== PROTOCOL_VERSION || typeof existing.token !== "string" || !Array.isArray(existing.approvedRoots)) throw new Error("Invalid helper configuration.");
-    const additions = approvedRoots.filter((root) => !existing.approvedRoots.includes(root));
-    if (additions.length) {
-      existing.approvedRoots.push(...additions);
-      existing.approvedRoots.sort();
-      await secureWrite(path, canonicalJson(existing));
-    }
-    return existing;
+    const existing = parseHelperConfig(JSON.parse(await readBoundedText(path, 1024 * 1024)));
+    const updated = parseHelperConfig({ ...existing, approvedRoots: [...new Set([...existing.approvedRoots, ...approvedRoots])] });
+    await secureWrite(path, canonicalJson(updated));
+    return updated;
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
-    const created: HelperConfig = { protocolVersion: PROTOCOL_VERSION, token: randomBytes(32).toString("base64url"), approvedRoots: [...new Set(approvedRoots)].sort() };
+    const created = parseHelperConfig({ protocolVersion: PROTOCOL_VERSION, token: randomBytes(32).toString("base64url"), approvedRoots });
     await secureWrite(path, canonicalJson(created));
     return created;
   }
@@ -207,18 +232,40 @@ async function writePairingFiles(helperConfig: HelperConfig): Promise<void> {
   for (const root of helperConfig.approvedRoots) {
     const directory = join(root, ".photogit");
     try {
+      const rootStat = await stat(root).catch((error) => {
+        if ((error as NodeJS.ErrnoException).code === "ENOENT") return null;
+        throw error;
+      });
+      if (!rootStat) {
+        log("error", { event: "pairing_root_missing", root });
+        continue;
+      }
+      if (!rootStat.isDirectory()) throw coded("INVALID_APPROVED_ROOT", "An approved PhotoGit root is no longer a folder.");
+      await assertApprovableRoot(root);
+      const repository = new GitRepository(root);
+      const trackedPairing = await repository.run(["ls-files", "--error-unmatch", "--", ".photogit/helper.json"], { allowFailure: true });
+      if (trackedPairing) throw coded("PAIRING_FILE_TRACKED", "Refusing to replace .photogit/helper.json because Git already tracks it. Remove it from the Git index before starting the helper.");
       await mkdir(directory, { recursive: true });
+      if (!await isWithinRealRoot(root, directory)) throw coded("UNSAFE_PAIRING_PATH", "The PhotoGit metadata folder must stay inside its approved project.");
+      const requests = join(directory, "bridge", "requests");
+      const responses = join(directory, "bridge", "responses");
+      await Promise.all([mkdir(requests, { recursive: true, mode: 0o700 }), mkdir(responses, { recursive: true, mode: 0o700 })]);
+      if (!await isWithinRealRoot(root, requests) || !await isWithinRealRoot(root, responses)) throw coded("UNSAFE_BRIDGE_PATH", "The PhotoGit bridge folders must stay inside the approved project.");
+      await Promise.all([chmod(requests, 0o700), chmod(responses, 0o700)]);
       await secureWrite(join(directory, "helper.json"), canonicalJson({ protocolVersion: PROTOCOL_VERSION, token: helperConfig.token }));
     } catch (error) {
-      log("error", { event: "pairing_file_failed", root, message: error instanceof Error ? error.message : String(error) });
+      log("error", { event: "pairing_file_failed", root, message: safeMessage(error) });
     }
   }
 }
 
-async function secureWrite(path: string, contents: string): Promise<void> {
-  await mkdir(dirname(path), { recursive: true, mode: 0o700 });
-  await writeFile(path, contents, { encoding: "utf8", mode: 0o600 });
-  await chmod(path, 0o600);
+async function assertApprovableRoot(root: string): Promise<void> {
+  const metadata = await stat(root).catch(() => null);
+  if (!metadata?.isDirectory()) throw new Error(`Approved PhotoGit roots must be existing folders: ${root}`);
+  const repository = new GitRepository(root);
+  await repository.assertRepository();
+  const project = JSON.parse(await readBoundedText(join(root, ".photogit", "project.json")));
+  validateProjectMetadata(project);
 }
 
 async function readBody(request: IncomingMessage): Promise<string> {
@@ -235,6 +282,17 @@ async function readBody(request: IncomingMessage): Promise<string> {
   return Buffer.concat(chunks).toString("utf8");
 }
 
+async function readBoundedText(path: string, maximum = MAX_REQUEST_BYTES): Promise<string> {
+  const handle = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW);
+  try {
+    const fileStat = await handle.stat();
+    if (!fileStat.isFile() || fileStat.size > maximum) throw coded("REQUEST_TOO_LARGE", "Helper file exceeds the safe size limit.");
+    return await handle.readFile({ encoding: "utf8" });
+  } finally {
+    await handle.close();
+  }
+}
+
 function authorized(request: IncomingMessage, token: string): boolean {
   const supplied = request.headers.authorization?.replace(/^Bearer\s+/i, "") ?? "";
   return tokensMatch(supplied, token);
@@ -246,12 +304,10 @@ function tokensMatch(supplied: string, expected: string): boolean {
   return suppliedBuffer.length === expectedBuffer.length && timingSafeEqual(suppliedBuffer, expectedBuffer);
 }
 
-function setCors(response: ServerResponse): void {
-  response.setHeader("Access-Control-Allow-Origin", "*");
-  response.setHeader("Access-Control-Allow-Headers", "authorization, content-type");
-  response.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+function setSecurityHeaders(response: ServerResponse): void {
   response.setHeader("Cache-Control", "no-store");
   response.setHeader("X-Content-Type-Options", "nosniff");
+  response.setHeader("Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'");
 }
 
 function sendOk(response: ServerResponse, requestId: string, result: unknown): void {
@@ -268,7 +324,23 @@ function send(response: ServerResponse, status: number, value: unknown): void {
   response.statusCode = status;
   if (value === undefined) return void response.end();
   response.setHeader("Content-Type", "application/json; charset=utf-8");
-  response.end(JSON.stringify(value));
+  let body = JSON.stringify(value);
+  if (Buffer.byteLength(body, "utf8") > MAX_REQUEST_BYTES) {
+    response.statusCode = 500;
+    body = JSON.stringify({ protocolVersion: PROTOCOL_VERSION, requestId: "unknown", ok: false, error: { code: "RESPONSE_TOO_LARGE", message: "The helper response exceeded the safe size limit." } } satisfies HelperResponse);
+  }
+  response.end(body);
+}
+
+function boundedResponseJson(response: HelperResponse): string {
+  const body = canonicalJson(response);
+  if (Buffer.byteLength(body, "utf8") <= MAX_REQUEST_BYTES) return body;
+  return canonicalJson({
+    protocolVersion: PROTOCOL_VERSION,
+    requestId: response.requestId,
+    ok: false,
+    error: { code: "RESPONSE_TOO_LARGE", message: "The helper response exceeded the safe size limit." }
+  } satisfies HelperResponse);
 }
 
 function repeatedOption(name: string): string[] {
@@ -286,5 +358,7 @@ function numericOption(name: string, fallback: number): number {
 type CodedError = Error & { code: string };
 function coded(code: string, message: string): CodedError { return Object.assign(new Error(message), { code }); }
 function isCoded(value: unknown): value is CodedError { return value instanceof Error && "code" in value && typeof (value as CodedError).code === "string"; }
-function safeMessage(error: unknown): string { return error instanceof Error ? error.message.replaceAll(config.token, "[redacted]") : "Unexpected helper error."; }
+function safeMessage(error: unknown): string {
+  return safeErrorText(error, [config.token]);
+}
 function log(level: "info" | "error", fields: Record<string, unknown>): void { process.stderr.write(`${canonicalJson({ level, time: new Date().toISOString(), ...fields })}`); }

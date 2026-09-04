@@ -1,10 +1,13 @@
-const { app, core, action } = require("photoshop");
+const { app, core, action, imaging } = require("photoshop");
 const { storage, entrypoints, shell } = require("uxp");
 
 entrypoints.setup({
   panels: {
     photogitPanel: {
-      show() { syncDocumentLabel(); }
+      show() {
+        syncDocumentLabel();
+        queueAutomaticScan("panel-open", 250);
+      }
     }
   }
 });
@@ -12,6 +15,13 @@ entrypoints.setup({
 const PROTOCOL_VERSION = 1;
 const HELPER_TIMEOUT_MS = 120000;
 const HELPER_HEALTH_TIMEOUT_MS = 5000;
+const MAX_HELPER_IO_BYTES = 5 * 1024 * 1024;
+const MAX_CAPTURE_LAYERS = 50_000;
+const MAX_VISIBLE_CHANGES = 500;
+const MAX_VISIBLE_CONFLICTS = 500;
+const CONTENT_FINGERPRINT_SIZE = 64;
+const AUTO_SCAN_DELAY_MS = 700;
+const IGNORED_PHOTOSHOP_EVENTS = new Set(["select", "deselect", "invokeCommand", "modalStateChanged", "toolModalStateChanged"]);
 let projectFolder = null;
 let helperToken = null;
 let busyNow = false;
@@ -21,6 +31,10 @@ let repositoryDetails = null;
 let activityEntryCount = 0;
 let toastTimer = null;
 let toastHideTimer = null;
+let surfaceReturnFocus = null;
+let autoScanTimer = null;
+let pendingPhotoshopEvent = null;
+let changeListenerInstalled = false;
 const surfaceTimers = new Map();
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -35,11 +49,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
   bind("choose-project", "click", chooseProject);
-  bind("refresh", "click", refreshWorkspace);
+  bind("refresh", "click", () => refreshWorkspace(true));
   bind("global-search", "click", openHistorySearch);
   bind("header-menu", "click", toggleToolsMenu);
-  bind("scan", "click", scanChanges);
-  bind("rescan", "click", scanChanges);
+  bind("scan", "click", () => scanChanges({ automatic: false }));
+  bind("rescan", "click", () => scanChanges({ automatic: false }));
   bind("save-version", "click", saveVersion);
   bind("pull", "click", pull);
   bind("push", "click", push);
@@ -61,18 +75,21 @@ document.addEventListener("DOMContentLoaded", async () => {
   bind("tool-conflicts", "click", openConflicts);
   bind("tool-create-tag", "click", openTagSheet);
   bind("tool-settings", "click", openRepositorySettings);
-  bind("close-tag-sheet", "click", closeTagSheet);
+  bind("close-tag-sheet", "click", () => closeTagSheet(false, true));
+  bind("surface-backdrop", "click", () => closeTagSheet(false, true));
   bind("create-tag", "click", createTag);
   bindInputAction("message", saveVersion);
   bindInputAction("new-branch-name", createBranch);
   bindInputAction("tag-name", createTag);
   ["message", "history-search", "new-branch-name", "tag-name"].forEach(bindFieldState);
   document.querySelector(".section-nav").addEventListener("keydown", handleTabKeyboard);
+  document.getElementById("tools-menu").addEventListener("keydown", handleMenuKeyboard);
   document.addEventListener("keydown", handleGlobalKeyboard);
   document.addEventListener("click", handleOutsideClick);
   selectTab("changes", false);
   window.setInterval(syncDocumentLabel, 1000);
   await refreshWorkspace();
+  await installPhotoshopChangeDetection();
 });
 
 function bind(id, event, handler) {
@@ -82,7 +99,7 @@ function bind(id, event, handler) {
     return handler(inputEvent);
   };
   element.addEventListener(event, invoke);
-  if (event === "click" && ["button", "tab"].includes(element.getAttribute("role"))) {
+  if (event === "click" && ["button", "tab", "menuitem"].includes(element.getAttribute("role"))) {
     element.addEventListener("keydown", (keyEvent) => {
       if (keyEvent.key !== "Enter" && keyEvent.key !== " ") return;
       keyEvent.preventDefault();
@@ -121,9 +138,54 @@ function handleTabKeyboard(event) {
 }
 
 function handleGlobalKeyboard(event) {
+  const sheet = document.getElementById("tag-sheet");
+  if (!sheet.hidden && event.key === "Tab") {
+    const controls = Array.from(sheet.querySelectorAll('[tabindex="0"], input:not([disabled])'));
+    const first = controls[0];
+    const last = controls[controls.length - 1];
+    if (event.shiftKey && event.target === first) {
+      event.preventDefault();
+      last?.focus();
+    } else if (!event.shiftKey && event.target === last) {
+      event.preventDefault();
+      first?.focus();
+    }
+    return;
+  }
   if (event.key !== "Escape") return;
-  closeToolsMenu();
-  closeTagSheet();
+  if (!sheet.hidden) {
+    event.preventDefault();
+    event.stopPropagation();
+    return closeTagSheet(false, true);
+  }
+  const menu = document.getElementById("tools-menu");
+  if (!menu.hidden) {
+    event.preventDefault();
+    event.stopPropagation();
+    closeToolsMenu(false, true);
+  }
+}
+
+function handleMenuKeyboard(event) {
+  if (event.key === "Tab") {
+    closeToolsMenu(true);
+    return;
+  }
+  if (event.key === "Escape") {
+    event.preventDefault();
+    event.stopPropagation();
+    return closeToolsMenu(false, true);
+  }
+  if (!["ArrowUp", "ArrowDown", "Home", "End"].includes(event.key)) return;
+  const items = Array.from(document.querySelectorAll("#tools-menu .tool-item"));
+  const current = Math.max(0, items.indexOf(event.target));
+  const next = event.key === "Home"
+    ? 0
+    : event.key === "End"
+      ? items.length - 1
+      : (current + (event.key === "ArrowDown" ? 1 : -1) + items.length) % items.length;
+  event.preventDefault();
+  items[next].focus();
 }
 
 function handleOutsideClick(event) {
@@ -153,8 +215,10 @@ async function loadPairing() {
   if (!projectFolder) throw new Error("No project folder selected.");
   const photogit = await projectFolder.getEntry(".photogit");
   const pairingFile = await photogit.getEntry("helper.json");
-  const pairing = JSON.parse(await pairingFile.read());
-  if (pairing.protocolVersion !== PROTOCOL_VERSION || typeof pairing.token !== "string") throw new Error("The project helper pairing is invalid.");
+  const pairingText = await pairingFile.read();
+  if (utf8ByteLength(pairingText) > 65_536) throw new Error("The project helper pairing file is too large.");
+  const pairing = JSON.parse(pairingText);
+  if (!isHelperRecord(pairing) || pairing.protocolVersion !== PROTOCOL_VERSION || typeof pairing.token !== "string" || !/^[A-Za-z0-9_-]{32,200}$/.test(pairing.token)) throw new Error("The project helper pairing is invalid.");
   helperToken = pairing.token;
   await Promise.all([
     ensureFolder(projectFolder, ".photogit/bridge/requests"),
@@ -162,11 +226,12 @@ async function loadPairing() {
   ]);
 }
 
-async function refreshWorkspace() {
+async function refreshWorkspace(announceErrors = false) {
   syncDocumentLabel();
-  document.getElementById("project-status").textContent = projectFolder ? projectFolder.name : "No project selected";
-  document.getElementById("onboarding").hidden = Boolean(projectFolder && helperToken);
-  document.getElementById("workspace").hidden = !projectFolder;
+  document.getElementById("project-status").textContent = projectFolder ? safeInlineText(projectFolder.name, 1_024) || "Unnamed project" : "No project selected";
+  const ready = Boolean(projectFolder && helperToken);
+  document.getElementById("onboarding").hidden = ready;
+  document.getElementById("workspace").hidden = !ready;
   if (!projectFolder || !helperToken) {
     setHelper(projectFolder ? "Setup needed" : "Not connected", false);
     return;
@@ -176,7 +241,11 @@ async function refreshWorkspace() {
     setHelper("Synced", true);
     await loadStatus(status);
     await Promise.all([loadBranches(), loadHistory(), loadReviews()]);
-  } catch { setHelper("Offline", false); }
+  } catch (error) {
+    setHelper("Offline", false);
+    log(`Refresh failed: ${error.message || String(error)}`);
+    if (announceErrors) show(error.message || "PhotoGit could not refresh this project.", true);
+  }
 }
 
 async function loadStatus(existingResult) {
@@ -192,6 +261,7 @@ async function loadBranches(existingResult) {
   const picker = document.getElementById("branch-picker");
   const menu = document.getElementById("branch-menu");
   menu.innerHTML = "";
+  picker.selectedIndex = -1;
   result.branches.forEach((branch, index) => {
     const item = document.createElement("sp-menu-item");
     item.dataset.branch = branch.name;
@@ -201,13 +271,13 @@ async function loadBranches(existingResult) {
   });
   document.getElementById("branch-name").textContent = result.current;
   document.getElementById("branch-name-detail").textContent = result.current;
-  document.getElementById("branches-count").textContent = String(result.branches.length);
+  setCount("branches-count", result.branches.length);
 }
 
 async function loadHistory(existingResult) {
   const result = existingResult || await callHelper("history");
   historyEntries = result.versions;
-  document.getElementById("history-count").textContent = String(historyEntries.length);
+  setCount("history-count", historyEntries.length);
   document.getElementById("history-total").textContent = `${historyEntries.length} ${historyEntries.length === 1 ? "version" : "versions"}`;
   filterHistory();
 }
@@ -216,7 +286,7 @@ async function loadReviews(existingResult) {
   const result = existingResult || await callHelper("reviews");
   repositoryDetails = result.repository;
   reviewEntries = result.reviews.filter((review) => review.ahead > 0 || review.changeCount > 0);
-  document.getElementById("reviews-count").textContent = String(reviewEntries.length);
+  setCount("reviews-count", reviewEntries.length);
   document.getElementById("review-provider").textContent = result.repository.provider === "github"
     ? `GitHub · ${result.repository.baseBranch} ← ${result.repository.currentBranch}`
     : `Local reviews · merging into ${result.repository.currentBranch}`;
@@ -232,7 +302,10 @@ function renderReviews(reviews, conflicts) {
   for (const review of reviews) container.appendChild(createReviewCard(review, false));
   const conflictPanel = document.getElementById("conflict-panel");
   conflictPanel.hidden = conflicts.length === 0;
-  document.getElementById("conflicts").textContent = conflicts.length ? conflicts.join("\n") : "";
+  const visibleConflicts = conflicts.slice(0, MAX_VISIBLE_CONFLICTS);
+  document.getElementById("conflicts").textContent = conflicts.length
+    ? `${visibleConflicts.join("\n")}${conflicts.length > visibleConflicts.length ? `\n… ${conflicts.length - visibleConflicts.length} more conflicts not shown.` : ""}`
+    : "";
 }
 
 function renderReviewPreview(review) {
@@ -251,7 +324,7 @@ function createReviewCard(review, compact) {
   const mergeClass = review.mergeable ? "button-primary" : "button-disabled";
   const mergeLabel = review.mergeable ? "Merge" : "Blocked";
   const changes = review.changes.length ? review.changes.join("\n") : "No file-level differences.";
-  card.innerHTML = `<div class="review-title"><strong>${escapeHtml(review.branch)}</strong><span>${review.ahead} ahead</span></div><div class="review-meta"><span class="${statusClass}">${statusLabel}</span><span>·</span><span>${review.changeCount} ${review.changeCount === 1 ? "file" : "files"}</span></div><div class="review-files" aria-hidden="true">${escapeHtml(changes)}</div><div class="review-actions"><div class="button button-quiet button-small compare-action" role="button" tabindex="0" aria-expanded="false">Compare</div><div class="button ${mergeClass} button-small merge-action" role="button" tabindex="0" data-mergeable="${review.mergeable ? "true" : "false"}" ${review.mergeable ? "" : "aria-disabled=\"true\""}>${mergeLabel}</div></div>`;
+  card.innerHTML = `<div class="review-title"><strong>${escapeHtml(review.branch)}</strong><span>${review.ahead} ahead</span></div><div class="review-meta"><span class="${statusClass}">${statusLabel}</span><span>·</span><span>${review.changeCount} ${review.changeCount === 1 ? "file" : "files"}</span></div><div class="review-files" aria-hidden="true">${escapeHtml(changes)}</div><div class="review-actions"><div class="button button-quiet button-small compare-action" role="button" tabindex="0" aria-expanded="false">Compare</div><div class="button ${mergeClass} button-small merge-action" role="button" tabindex="${review.mergeable ? "0" : "-1"}" data-mergeable="${review.mergeable ? "true" : "false"}" ${review.mergeable ? "" : "aria-disabled=\"true\""}>${mergeLabel}</div></div>`;
   const details = card.querySelector(".review-files");
   const compareAction = card.querySelector(".compare-action");
   const mergeAction = card.querySelector(".merge-action");
@@ -284,7 +357,7 @@ function renderHistory(versions) {
     const author = escapeHtml(version.author);
     const date = escapeHtml(version.date.slice(0, 10));
     const shortId = escapeHtml(version.shortId);
-    row.innerHTML = `<span class="history-marker" aria-hidden="true">${historyIcon()}</span><span class="row-copy"><strong title="${message}">${message}</strong><span class="history-meta"><span>${author}</span><i aria-hidden="true"></i><time>${date}</time></span></span><span class="commit-id" title="Checkpoint ${shortId}">${shortId}</span>`;
+    row.innerHTML = `<span class="history-marker" aria-hidden="true">${historyIcon()}</span><span class="row-copy"><strong title="${message}">${message}</strong><span class="history-meta"><span>${author}</span><i class="history-separator" aria-hidden="true">·</i><time>${date}</time></span></span><span class="commit-id" title="Checkpoint ${shortId}">${shortId}</span>`;
     container.appendChild(row);
   }
 }
@@ -295,14 +368,28 @@ function filterHistory() {
   renderHistory(historyEntries.filter((version) => [version.message, version.shortId, version.author, version.date].some((value) => String(value).toLowerCase().includes(query))));
 }
 
-async function scanChanges() {
+async function scanChanges({ automatic = false, eventName = "manual" } = {}) {
   if (!ensureReady()) return;
   if (!app.documents.length) return show("Open a Photoshop document first.", true);
-  return run("Scanning layers…", async () => {
-    const result = await callHelper("refresh", { capture: captureDocument(app.activeDocument) });
-    renderChanges(result.changes);
-    log(result.changes.length ? `Found ${result.changes.length} layer change(s).` : "Current design matches the latest version.");
-    show(result.changes.length ? `Found ${result.changes.length} layer change(s).` : "No layer changes found.", false);
+  clearTimeout(autoScanTimer);
+  autoScanTimer = null;
+  return run(automatic ? "Updating changes…" : "Scanning Photoshop…", async () => {
+    try {
+      setWatchStatus("Reading layers…", "scanning");
+      const capture = await captureDocument(app.activeDocument);
+      runtimeLog("info", "scan_capture", { source: automatic ? "automatic" : "manual", eventName, layerCount: capture.layers.length });
+      log(`Captured ${capture.layers.length} Photoshop layer(s); comparing with the latest version.`);
+      setWatchStatus(`Comparing ${capture.layers.length} layers…`, "scanning");
+      const result = await callHelper("refresh", { capture });
+      renderChanges(result.changes);
+      setWatchStatus(result.changes.length ? `${result.changes.length} changes ready` : "Watching Photoshop", result.changes.length ? "changed" : "ready");
+      log(result.changes.length ? `Found ${result.changes.length} layer change(s).` : "Current design matches the latest version.");
+      if (!automatic || result.changes.length) show(result.changes.length ? `Found ${result.changes.length} layer change(s).` : "No layer changes found.", false);
+    } catch (error) {
+      setWatchStatus("Scan failed", "error");
+      runtimeLog("error", "scan_failed", { source: automatic ? "automatic" : "manual", eventName, message: error.message || String(error) });
+      throw error;
+    }
   });
 }
 
@@ -321,11 +408,12 @@ async function saveVersion() {
       await doc.saveAs.psd(snapshot, { embedColorProfile: true }, true);
       await doc.saveAs.png(preview, {}, true);
     }, { commandName: "Save PhotoGit version artifacts" });
+    const capture = await captureDocument(doc);
     const result = await callHelper("capture", {
       message,
       snapshotPath: snapshot.nativePath,
       previewPath: preview.nativePath,
-      capture: captureDocument(doc)
+      capture
     });
     for (const id of ["message", "history-search"]) {
       const input = document.getElementById(id);
@@ -333,6 +421,7 @@ async function saveVersion() {
       input.closest(".field-shell")?.classList.remove("has-value");
     }
     renderChanges([]);
+    setWatchStatus("Watching Photoshop", "ready");
     log(`Saved ${result.shortId}: ${message}`);
     show(`Saved version ${result.shortId}.`, false);
     await Promise.all([loadStatus(), loadBranches(), loadHistory(), loadReviews()]);
@@ -430,20 +519,25 @@ function openHistorySearch() {
   document.getElementById("history-search").focus();
 }
 
-function toggleToolsMenu() {
+function toggleToolsMenu(event) {
   const menu = document.getElementById("tools-menu");
   if (menu.hidden || menu.classList.contains("is-closing")) {
     closeSurface(document.getElementById("tag-sheet"), true);
+    closeBackdrop(true);
+    surfaceReturnFocus = event?.currentTarget || document.activeElement;
+    menu.classList.toggle("from-header", event?.currentTarget?.id === "header-menu");
     openSurface(menu);
     setToolsExpanded(true);
+    setTimeout(() => menu.querySelector(".tool-item")?.focus(), 0);
   } else {
-    closeToolsMenu();
+    closeToolsMenu(false, true);
   }
 }
 
-function closeToolsMenu(immediate = false) {
+function closeToolsMenu(immediate = false, returnFocus = false) {
   closeSurface(document.getElementById("tools-menu"), immediate);
   setToolsExpanded(false);
+  if (returnFocus && surfaceReturnFocus?.focus) surfaceReturnFocus.focus();
 }
 
 function openNewBranch() {
@@ -465,11 +559,33 @@ async function openConflicts() {
 
 function openTagSheet() {
   closeToolsMenu();
+  openBackdrop();
   openSurface(document.getElementById("tag-sheet"));
   document.getElementById("tag-name").focus();
 }
 
-function closeTagSheet(immediate = false) { closeSurface(document.getElementById("tag-sheet"), immediate); }
+function closeTagSheet(immediate = false, returnFocus = false) {
+  closeSurface(document.getElementById("tag-sheet"), immediate);
+  closeBackdrop(immediate);
+  if (returnFocus && surfaceReturnFocus?.focus) surfaceReturnFocus.focus();
+}
+
+function openBackdrop() {
+  const backdrop = document.getElementById("surface-backdrop");
+  clearTimeout(surfaceTimers.get(backdrop));
+  backdrop.hidden = false;
+  backdrop.classList.remove("is-open");
+  void backdrop.offsetWidth;
+  backdrop.classList.add("is-open");
+}
+
+function closeBackdrop(immediate = false) {
+  const backdrop = document.getElementById("surface-backdrop");
+  clearTimeout(surfaceTimers.get(backdrop));
+  backdrop.classList.remove("is-open");
+  if (immediate) return void (backdrop.hidden = true);
+  surfaceTimers.set(backdrop, setTimeout(() => { backdrop.hidden = true; }, 160));
+}
 
 function setToolsExpanded(expanded) {
   const value = expanded ? "true" : "false";
@@ -509,7 +625,7 @@ async function createTag() {
     await callHelper("createTag", { tag });
     input.value = "";
     input.closest(".field-shell")?.classList.remove("has-value");
-    closeTagSheet();
+    closeTagSheet(false, true);
     await loadReviews();
     log(`Created repository tag ${tag}.`);
     show(`Created tag ${tag}.`, false);
@@ -520,8 +636,8 @@ function openRepositorySettings() {
   closeToolsMenu();
   selectTab("activity");
   const provider = repositoryDetails?.provider || "unknown";
-  const remote = repositoryDetails?.remoteUrl || "No remote configured";
-  log(`Repository provider: ${provider}. Remote: ${remote}.`);
+  const remote = repositoryDetails?.remoteConfigured ? "Remote configured" : "No remote configured";
+  log(`Repository provider: ${provider}. ${remote}.`);
   showProjectStatus();
 }
 
@@ -538,8 +654,10 @@ async function callHelper(operation, fields = {}, timeoutMs = HELPER_TIMEOUT_MS)
   const requests = await ensureFolder(projectFolder, ".photogit/bridge/requests");
   const responses = await ensureFolder(projectFolder, ".photogit/bridge/responses");
   const request = { protocolVersion: PROTOCOL_VERSION, operation, requestId, projectRoot: projectFolder.nativePath, ...fields };
+  const requestText = `${JSON.stringify({ token: helperToken, request })}\n`;
+  if (utf8ByteLength(requestText) > MAX_HELPER_IO_BYTES) throw new Error("This Photoshop scan is too large for the PhotoGit helper. Reduce unusually large text layers and try again.");
   const requestFile = await requests.createFile(`${requestId}.json`, { overwrite: true });
-  await requestFile.write(`${JSON.stringify({ token: helperToken, request })}\n`);
+  await requestFile.write(requestText);
   const readyFile = await requests.createFile(`${requestId}.ready`, { overwrite: true });
   await readyFile.write("ready\n");
 
@@ -554,57 +672,196 @@ async function callHelper(operation, fields = {}, timeoutMs = HELPER_TIMEOUT_MS)
       await delay(125);
     }
   }
-  if (!responseFile) throw new Error("The PhotoGit helper is offline or did not answer in time.");
-  const body = JSON.parse(await responseFile.read());
-  await Promise.all([
-    removeEntry(responses, `${requestId}.ready`),
-    removeEntry(responses, `${requestId}.json`)
-  ]);
-  if (body.protocolVersion !== PROTOCOL_VERSION || body.requestId !== requestId) throw new Error("The PhotoGit helper returned an invalid response.");
-  if (!body.ok) throw new Error(body.error?.message || "The PhotoGit helper request failed.");
-  return body.result;
+  if (!responseFile) {
+    await Promise.all([
+      removeEntry(requests, `${requestId}.ready`),
+      removeEntry(requests, `${requestId}.json`),
+      removeEntry(responses, `${requestId}.ready`),
+      removeEntry(responses, `${requestId}.json`)
+    ]);
+    throw new Error("The PhotoGit helper is offline or did not answer in time.");
+  }
+  let responseText;
+  try {
+    responseText = await responseFile.read();
+    if (utf8ByteLength(responseText) > MAX_HELPER_IO_BYTES) throw new Error("The PhotoGit helper response exceeded the safe size limit.");
+  } finally {
+    await Promise.all([removeEntry(responses, `${requestId}.ready`), removeEntry(responses, `${requestId}.json`)]);
+  }
+  const body = JSON.parse(responseText);
+  if (!isHelperRecord(body) || body.protocolVersion !== PROTOCOL_VERSION || body.requestId !== requestId || typeof body.ok !== "boolean") throw new Error("The PhotoGit helper returned an invalid response.");
+  if (!body.ok) {
+    const message = isHelperRecord(body.error) && typeof body.error.message === "string" && body.error.message.length <= 2_000
+      ? safeInlineText(body.error.message, 2_000) || "The PhotoGit helper request failed."
+      : "The PhotoGit helper request failed.";
+    throw new Error(message);
+  }
+  return validateHelperResult(operation, body.result);
 }
 
-function captureDocument(doc) {
-  const layers = [];
-  const walk = (collection, parentPhotoshopId) => {
-    Array.from(collection).forEach((layer, order) => {
-      const childIds = Array.from(layer.layers || []).map((child) => child.id);
-      const kind = normalizeEnum(layer.kind);
-      layers.push({
-        photoshopId: layer.id, parentPhotoshopId, childrenPhotoshopIds: childIds, name: layer.name, kind, order,
-        appearance: {
-          visible: Boolean(layer.visible), opacity: number(layer.opacity), fillOpacity: number(layer.fillOpacity, 100), blendMode: normalizeEnum(layer.blendMode), clipped: Boolean(layer.isClippingMask),
-          locks: { all: Boolean(layer.allLocked), pixels: Boolean(layer.pixelsLocked), position: Boolean(layer.positionLocked), transparentPixels: Boolean(layer.transparentPixelsLocked) },
-          bounds: bounds(layer.bounds), boundsWithoutEffects: bounds(layer.boundsNoEffects || layer.bounds)
-        },
-        text: kind.includes("text") && layer.textItem ? { contents: layer.textItem.contents || "", styleFingerprint: textStyleFingerprint(layer.textItem) } : null,
-        content: { fingerprint: null, opaque: !["normal", "pixel", "text", "group"].some((value) => kind.includes(value)), reason: unsupportedReason(kind) }
-      });
-      if (childIds.length) walk(layer.layers, layer.id);
+function validateHelperResult(operation, value) {
+  const result = requireHelperRecord(value, operation);
+  if (operation === "status") {
+    requireHelperText(result.branch, "status.branch", 200);
+    requireHelperCount(result.changeCount, "status.changeCount");
+  } else if (operation === "history") {
+    requireHelperArray(result.versions, "history.versions", 100).forEach((version, index) => {
+      const entry = requireHelperRecord(version, `history.versions[${index}]`);
+      requireHelperText(entry.id, `history.versions[${index}].id`, 64);
+      requireHelperText(entry.shortId, `history.versions[${index}].shortId`, 64);
+      requireHelperText(entry.author, `history.versions[${index}].author`, 200, true);
+      requireHelperText(entry.date, `history.versions[${index}].date`, 64, true);
+      requireHelperText(entry.message, `history.versions[${index}].message`, 500, true);
     });
-  };
-  walk(doc.layers, null);
+  } else if (operation === "branches") {
+    requireHelperText(result.current, "branches.current", 200);
+    requireHelperArray(result.branches, "branches.branches", 1_000).forEach((branch, index) => {
+      const entry = requireHelperRecord(branch, `branches.branches[${index}]`);
+      requireHelperText(entry.name, `branches.branches[${index}].name`, 200);
+      if (typeof entry.current !== "boolean") throw invalidHelperData(`branches.branches[${index}].current`);
+    });
+  } else if (operation === "refresh") {
+    requireHelperArray(result.changes, "refresh.changes", 50_000).forEach((change, index) => {
+      const entry = requireHelperRecord(change, `refresh.changes[${index}]`);
+      if (!["document", "structure", "appearance", "text", "content"].includes(entry.domain)) throw invalidHelperData(`refresh.changes[${index}].domain`);
+      requireHelperText(entry.layerName, `refresh.changes[${index}].layerName`, 1_024, true);
+      requireHelperText(entry.summary, `refresh.changes[${index}].summary`, 1_000, true);
+      if (entry.photoshopId !== null && (!Number.isSafeInteger(entry.photoshopId) || entry.photoshopId <= 0)) throw invalidHelperData(`refresh.changes[${index}].photoshopId`);
+    });
+  } else if (operation === "reviews") {
+    const repository = requireHelperRecord(result.repository, "reviews.repository");
+    if (!["github", "local", "other"].includes(repository.provider)) throw invalidHelperData("reviews.repository.provider");
+    requireHelperText(repository.currentBranch, "reviews.repository.currentBranch", 200);
+    requireHelperText(repository.baseBranch, "reviews.repository.baseBranch", 200);
+    if (typeof repository.remoteConfigured !== "boolean") throw invalidHelperData("reviews.repository.remoteConfigured");
+    requireHelperTextArray(result.conflicts, "reviews.conflicts", 10_000, 4_096);
+    requireHelperTextArray(result.tags, "reviews.tags", 1_000, 100);
+    requireHelperArray(result.reviews, "reviews.reviews", 1_000).forEach((review, index) => {
+      const entry = requireHelperRecord(review, `reviews.reviews[${index}]`);
+      requireHelperText(entry.branch, `reviews.reviews[${index}].branch`, 200);
+      requireHelperCount(entry.ahead, `reviews.reviews[${index}].ahead`);
+      requireHelperCount(entry.behind, `reviews.reviews[${index}].behind`);
+      requireHelperCount(entry.changeCount, `reviews.reviews[${index}].changeCount`);
+      requireHelperTextArray(entry.changes, `reviews.reviews[${index}].changes`, 10_000, 4_096);
+      if (typeof entry.mergeable !== "boolean") throw invalidHelperData(`reviews.reviews[${index}].mergeable`);
+    });
+  } else if (["createBranch", "switchBranch", "pull", "push", "mergeBranch"].includes(operation)) {
+    requireHelperText(result.branch, `${operation}.branch`, 200);
+  } else if (operation === "capture") {
+    requireHelperText(result.versionId, "capture.versionId", 64);
+    requireHelperText(result.shortId, "capture.shortId", 64);
+    requireHelperCount(result.warningCount, "capture.warningCount");
+  } else if (operation === "createTag") {
+    requireHelperText(result.tag, "createTag.tag", 100);
+  } else if (operation === "pullRequestLink") {
+    const url = requireHelperText(result.url, "pullRequestLink.url", 4_096);
+    if (!/^https:\/\/github\.com\/[^/\s]+\/[^/\s]+\/compare\//i.test(url)) throw invalidHelperData("pullRequestLink.url");
+  } else {
+    throw new Error("The PhotoGit helper returned data for an unknown operation.");
+  }
+  return result;
+}
+
+function isHelperRecord(value) { return typeof value === "object" && value !== null && !Array.isArray(value); }
+function requireHelperRecord(value, label) {
+  if (!isHelperRecord(value)) throw invalidHelperData(label);
+  return value;
+}
+function requireHelperArray(value, label, maximum) {
+  if (!Array.isArray(value) || value.length > maximum) throw invalidHelperData(label);
+  return value;
+}
+function requireHelperText(value, label, maximum, allowEmpty = false) {
+  if (typeof value !== "string" || (!allowEmpty && value.length === 0) || value.length > maximum || /[\u0000-\u001f\u007f-\u009f\u202a-\u202e\u2066-\u2069]/.test(value)) throw invalidHelperData(label);
+  return value;
+}
+function requireHelperCount(value, label) {
+  if (!Number.isSafeInteger(value) || value < 0 || value > 1_000_000) throw invalidHelperData(label);
+  return value;
+}
+function requireHelperTextArray(value, label, maximumEntries, maximumLength) {
+  return requireHelperArray(value, label, maximumEntries).map((entry, index) => requireHelperText(entry, `${label}[${index}]`, maximumLength, true));
+}
+function invalidHelperData(label) { return new Error(`The PhotoGit helper returned invalid ${label} data.`); }
+
+async function captureDocument(doc) {
+  const layers = [];
+  const fingerprintTargets = [];
+  const pending = Array.from(doc.layers).map((layer, order) => ({ layer, order, parentPhotoshopId: null })).reverse();
+  while (pending.length) {
+    if (layers.length >= MAX_CAPTURE_LAYERS) throw new Error(`PhotoGit supports up to ${MAX_CAPTURE_LAYERS} layers in one document.`);
+    const { layer, order, parentPhotoshopId } = pending.pop();
+    const children = Array.from(layer.layers || []);
+    const childIds = children.map((child) => child.id);
+    const kind = normalizeEnum(layer.kind);
+    const capturedLayer = {
+      photoshopId: layer.id, parentPhotoshopId, childrenPhotoshopIds: childIds, name: layer.name, kind, order,
+      appearance: {
+        visible: Boolean(layer.visible), opacity: number(layer.opacity), fillOpacity: number(layer.fillOpacity, 100), blendMode: normalizeEnum(layer.blendMode), clipped: Boolean(layer.isClippingMask),
+        locks: { all: Boolean(layer.allLocked), pixels: Boolean(layer.pixelsLocked), position: Boolean(layer.positionLocked), transparentPixels: Boolean(layer.transparentPixelsLocked) },
+        bounds: bounds(layer.bounds), boundsWithoutEffects: bounds(layer.boundsNoEffects || layer.bounds)
+      },
+      text: kind.includes("text") && layer.textItem ? { contents: layer.textItem.contents || "", styleFingerprint: textStyleFingerprint(layer.textItem) } : null,
+      content: { fingerprint: null, opaque: !["normal", "pixel", "text", "group"].some((value) => kind.includes(value)), reason: unsupportedReason(kind) }
+    };
+    layers.push(capturedLayer);
+    if (kind.includes("normal") || kind.includes("pixel") || kind.includes("smart")) fingerprintTargets.push({ layer, capturedLayer });
+    for (let childIndex = children.length - 1; childIndex >= 0; childIndex -= 1) pending.push({ layer: children[childIndex], order: childIndex, parentPhotoshopId: layer.id });
+  }
+  for (const target of fingerprintTargets) target.capturedLayer.content.fingerprint = await fingerprintLayerPixels(doc, target.layer);
   return { document: { documentId: String(doc.id), name: doc.name, width: number(doc.width), height: number(doc.height), resolution: number(doc.resolution), mode: normalizeEnum(doc.mode), bitDepth: number(doc.bitsPerChannel, 8), colorProfile: doc.colorProfileName || null }, layers };
+}
+
+async function fingerprintLayerPixels(doc, layer) {
+  const pixelBounds = bounds(layer.boundsNoEffects || layer.bounds);
+  if (pixelBounds.right <= pixelBounds.left || pixelBounds.bottom <= pixelBounds.top) return "pixels-v1:empty";
+  let imageData = null;
+  try {
+    const pixels = await imaging.getPixels({
+      documentID: doc.id,
+      layerID: layer.id,
+      sourceBounds: pixelBounds,
+      targetSize: { width: CONTENT_FINGERPRINT_SIZE, height: CONTENT_FINGERPRINT_SIZE },
+      componentSize: 8,
+      applyAlpha: false
+    });
+    imageData = pixels.imageData;
+    const data = await imageData.getData({ chunky: true });
+    const bytes = new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
+    let hash = 0x811c9dc5;
+    for (const byte of bytes) hash = Math.imul(hash ^ byte, 0x01000193) >>> 0;
+    const dimensions = `${number(imageData.width)}x${number(imageData.height)}x${number(imageData.components)}`;
+    return `pixels-v1:${dimensions}:${hash.toString(16).padStart(8, "0")}`;
+  } catch (error) {
+    runtimeLog("warn", "content_fingerprint_skipped", { layerId: layer.id, kind: normalizeEnum(layer.kind), message: error.message || String(error) });
+    return null;
+  } finally {
+    try { imageData?.dispose(); } catch { /* Photoshop already released this thumbnail. */ }
+  }
 }
 
 function renderChanges(changes) {
   const container = document.getElementById("changes");
   const empty = document.getElementById("changes-empty");
   container.innerHTML = "";
-  document.getElementById("changes-count").textContent = String(changes.length);
+  setCount("changes-count", changes.length);
   document.getElementById("changes-total").textContent = String(changes.length);
   empty.hidden = changes.length > 0;
-  for (const change of changes) {
+  for (const change of changes.slice(0, MAX_VISIBLE_CHANGES)) {
     const row = document.createElement("div");
     row.className = "list-row change-row";
     row.tabIndex = 0;
     row.setAttribute("role", "button");
+    row.setAttribute("aria-pressed", "false");
     row.setAttribute("aria-label", `Select changed layer ${change.layerName}`);
     row.innerHTML = `<span class="row-glyph ${domainClass(change.domain)}" aria-hidden="true">${domainIcon(change.domain)}</span><span class="row-copy"><strong>${escapeHtml(change.layerName)}</strong><span>${escapeHtml(changeSummary(change))}</span></span><span class="change-domain">${escapeHtml(change.domain)}</span>`;
     const select = () => {
-      container.querySelectorAll(".change-row.selected").forEach((entry) => entry.classList.remove("selected"));
+      container.querySelectorAll(".change-row.selected").forEach((entry) => {
+        entry.classList.remove("selected");
+        entry.setAttribute("aria-pressed", "false");
+      });
       row.classList.add("selected");
+      row.setAttribute("aria-pressed", "true");
       selectPhotoshopLayer(change.photoshopId);
     };
     row.addEventListener("click", select);
@@ -614,6 +871,12 @@ function renderChanges(changes) {
       select();
     });
     container.appendChild(row);
+  }
+  if (changes.length > MAX_VISIBLE_CHANGES) {
+    const note = document.createElement("p");
+    note.className = "list-limit-note";
+    note.textContent = `Showing the first ${MAX_VISIBLE_CHANGES} of ${changes.length} changes. Save or simplify this checkpoint to review the remainder.`;
+    container.appendChild(note);
   }
 }
 
@@ -690,12 +953,71 @@ async function removeEntry(folder, name) {
 }
 
 function delay(milliseconds) { return new Promise((resolve) => setTimeout(resolve, milliseconds)); }
+function utf8ByteLength(value) {
+  let bytes = 0;
+  for (let index = 0; index < value.length; index += 1) {
+    const code = value.charCodeAt(index);
+    if (code < 0x80) bytes += 1;
+    else if (code < 0x800) bytes += 2;
+    else if (code >= 0xd800 && code <= 0xdbff && index + 1 < value.length && value.charCodeAt(index + 1) >= 0xdc00 && value.charCodeAt(index + 1) <= 0xdfff) { bytes += 4; index += 1; }
+    else bytes += 3;
+  }
+  return bytes;
+}
+
+async function installPhotoshopChangeDetection() {
+  if (changeListenerInstalled) return;
+  try {
+    await action.addNotificationListener(["all"], onPhotoshopNotification);
+    changeListenerInstalled = true;
+    setWatchStatus("Watching Photoshop", "ready");
+    log("Automatic Photoshop change detection is active.");
+    runtimeLog("info", "change_listener_ready", { events: "all", debounceMs: AUTO_SCAN_DELAY_MS });
+  } catch (error) {
+    setWatchStatus("Use Scan now", "warning");
+    log(`Automatic detection is unavailable: ${error.message || String(error)}. Use Scan now after editing.`);
+    runtimeLog("error", "change_listener_failed", { message: error.message || String(error) });
+  }
+}
+
+function onPhotoshopNotification(eventName) {
+  const normalized = String(eventName || "unknown");
+  if (IGNORED_PHOTOSHOP_EVENTS.has(normalized)) return;
+  queueAutomaticScan(normalized);
+}
+
+function queueAutomaticScan(eventName, delayMs = AUTO_SCAN_DELAY_MS) {
+  if (!projectFolder || !helperToken || !app.documents.length) return;
+  pendingPhotoshopEvent = safeInlineText(eventName, 100) || "photoshop-change";
+  clearTimeout(autoScanTimer);
+  setWatchStatus("Change noticed…", "pending");
+  autoScanTimer = setTimeout(() => {
+    autoScanTimer = null;
+    if (busyNow) return queueAutomaticScan(pendingPhotoshopEvent, 900);
+    const observedEvent = pendingPhotoshopEvent;
+    pendingPhotoshopEvent = null;
+    void scanChanges({ automatic: true, eventName: observedEvent });
+  }, Math.max(0, number(delayMs, AUTO_SCAN_DELAY_MS)));
+}
+
+function setWatchStatus(label, state = "ready") {
+  const status = document.getElementById("watch-status");
+  if (!status) return;
+  status.className = `watch-status ${state}`;
+  const text = status.querySelector("span");
+  if (text) text.textContent = safeInlineText(label, 100) || "Watching Photoshop";
+}
+
+function runtimeLog(level, event, details = {}) {
+  const writer = level === "error" ? console.error : level === "warn" ? console.warn : console.info;
+  writer.call(console, `[PhotoGit] ${event}`, details);
+}
 
 function syncDocumentLabel() {
   const label = document.getElementById("document-name");
   if (!label) return;
   const doc = app.documents.length ? app.activeDocument : null;
-  label.textContent = doc ? doc.name : "None open";
+  label.textContent = doc ? safeInlineText(doc.name, 1_024) || "Untitled document" : "None open";
 }
 
 function activateOnKeyboard(element, handler) {
@@ -721,6 +1043,7 @@ function setHelper(label, ok) {
 function busy(active) {
   busyNow = active;
   document.body.classList.toggle("is-busy", active);
+  document.getElementById("workspace").setAttribute("aria-busy", active ? "true" : "false");
   document.getElementById("progress").hidden = !active;
   document.querySelector(".capture-panel").classList.toggle("is-busy", active);
   for (const id of ["save-version", "scan", "rescan", "pull", "push", "show-status", "new-branch", "refresh", "new-pull-request", "create-tag", "tools-toggle", "header-menu"]) {
@@ -728,14 +1051,20 @@ function busy(active) {
     control.setAttribute("aria-disabled", active ? "true" : "false");
     control.tabIndex = active ? -1 : 0;
   }
-  for (const control of document.querySelectorAll(".merge-action")) control.setAttribute("aria-disabled", active || control.dataset.mergeable !== "true" ? "true" : "false");
+  for (const id of ["message", "new-branch-name", "tag-name", "branch-picker"]) document.getElementById(id).disabled = active;
+  for (const control of document.querySelectorAll(".merge-action")) {
+    const disabled = active || control.dataset.mergeable !== "true";
+    control.setAttribute("aria-disabled", disabled ? "true" : "false");
+    control.tabIndex = disabled ? -1 : 0;
+  }
 }
 function show(message, error) {
+  const safeMessage = safeInlineText(message, 800) || (error ? "PhotoGit could not complete that action." : "Done.");
   const result = document.getElementById("result");
-  result.textContent = message;
+  result.textContent = safeMessage;
   result.className = error ? "error" : "success";
   const toast = document.getElementById("toast");
-  toast.textContent = message;
+  toast.textContent = safeMessage;
   toast.className = error ? "toast error" : "toast";
   toast.hidden = false;
   if (toastTimer) clearTimeout(toastTimer);
@@ -749,16 +1078,26 @@ function show(message, error) {
 function log(message) {
   const activity = document.getElementById("activity");
   const stamp = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  activity.textContent = `[${stamp}] ${message}\n${activity.textContent === "Ready." ? "" : activity.textContent}`.slice(0, 4000);
+  activity.textContent = `[${stamp}] ${safeInlineText(message, 2_000)}\n${activity.textContent === "Ready." ? "" : activity.textContent}`.slice(0, 4000);
   activityEntryCount += 1;
-  document.getElementById("activity-count").textContent = String(activityEntryCount);
+  setCount("activity-count", activityEntryCount);
 }
 function clearActivity() {
   document.getElementById("activity").textContent = "Ready.";
   activityEntryCount = 0;
-  document.getElementById("activity-count").textContent = "0";
+  setCount("activity-count", 0);
+}
+function setCount(id, value) {
+  const count = Number.isFinite(Number(value)) ? Math.max(0, Number(value)) : 0;
+  const element = document.getElementById(id);
+  element.textContent = String(count);
+  element.dataset.empty = count === 0 ? "true" : "false";
 }
 function setSyncStatus(label) { document.getElementById("repo-sync-status").textContent = label; }
+function safeInlineText(value, maximum) {
+  const safe = String(value ?? "").replace(/[\u0000-\u001f\u007f-\u009f\u202a-\u202e\u2066-\u2069]/g, " ").replace(/\s+/g, " ").trim();
+  return safe.length <= maximum ? safe : `${safe.slice(0, maximum - 1)}…`;
+}
 function domainClass(domain) {
   const value = String(domain || "").toLowerCase();
   if (value.includes("text")) return "text";

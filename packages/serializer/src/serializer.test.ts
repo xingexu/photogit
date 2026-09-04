@@ -30,6 +30,19 @@ describe("canonical serialization", () => {
     expect(result.structure.layers[0]?.uuid).toBe("layer-a");
   });
 
+  it("serializes deeply nested layers in deterministic parent-before-child order", () => {
+    const nested = structuredClone(capture);
+    nested.layers = [
+      { ...structuredClone(capture.layers[0]!), photoshopId: 1, parentPhotoshopId: null, childrenPhotoshopIds: [2], name: "Root", kind: "group", text: null },
+      { ...structuredClone(capture.layers[0]!), photoshopId: 2, parentPhotoshopId: 1, childrenPhotoshopIds: [3], name: "Child", kind: "group", text: null },
+      { ...structuredClone(capture.layers[0]!), photoshopId: 3, parentPhotoshopId: 2, childrenPhotoshopIds: [4], name: "Grandchild", kind: "group", text: null },
+      { ...structuredClone(capture.layers[0]!), photoshopId: 4, parentPhotoshopId: 3, childrenPhotoshopIds: [], name: "Leaf" }
+    ];
+    const uuids = ["root-z", "child-z", "grand-z", "deep-a"];
+    const state = stateFromCapture(nested, { schemaVersion: SCHEMA_VERSION, projectId: "p", displayName: "Poster", createdWith: "test" }, () => uuids.shift()!);
+    expect(state.structure.layers.map((layer) => layer.name)).toEqual(["Root", "Child", "Grandchild", "Leaf"]);
+  });
+
   it("refuses ambiguous identity matches", () => {
     const signature = "text|Title|root|1|2|3|4";
     expect(() => stateFromCapture(capture, { schemaVersion: SCHEMA_VERSION, projectId: "p", displayName: "Poster", createdWith: "test" }, () => "new", [

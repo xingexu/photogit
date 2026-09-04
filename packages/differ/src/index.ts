@@ -1,4 +1,4 @@
-import type { LayerNode, ProjectState } from "@photogit/schema";
+import { validateProjectState, type LayerNode, type ProjectState } from "@photogit/schema";
 
 export type ChangeDomain = "document" | "structure" | "appearance" | "text" | "content";
 export type Mergeability = "automatic" | "manual" | "unsupported";
@@ -19,6 +19,8 @@ export type SemanticChange = {
 };
 
 export function diffStates(base: ProjectState, current: ProjectState): SemanticChange[] {
+  validateProjectState(base);
+  validateProjectState(current);
   const changes: SemanticChange[] = [];
   diffObject("document", null, "Document", base.document, current.document, changes, ["schemaVersion", "warnings", "compatibility"]);
 
@@ -75,7 +77,7 @@ function diffObject(
     category: action,
     layerUuid: layer?.uuid ?? null,
     photoshopId: layer?.photoshopId ?? null,
-    layerName: label,
+    layerName: safeInline(label, 1_024) || "Unnamed layer",
     propertyPath: prefix,
     baseValue: before,
     currentValue: after,
@@ -92,11 +94,11 @@ function layerLifecycle(category: "added" | "removed", layer: LayerNode): Semant
     category,
     layerUuid: layer.uuid,
     photoshopId: layer.photoshopId,
-    layerName: layer.name,
+    layerName: safeInline(layer.name, 1_024) || "Unnamed layer",
     propertyPath: "layer",
     baseValue: category === "removed" ? layer : null,
     currentValue: category === "added" ? layer : null,
-    summary: `${category === "added" ? "Added" : "Removed"} layer “${layer.name}”`,
+    summary: `${category === "added" ? "Added" : "Removed"} layer ${safeInline(JSON.stringify(layer.name), 120)}`,
     mergeability: "automatic",
     confidence: 1,
     warnings: []
@@ -105,17 +107,30 @@ function layerLifecycle(category: "added" | "removed", layer: LayerNode): Semant
 
 function summarize(label: string, path: string, before: unknown, after: unknown): string {
   const friendly = path.replaceAll(".", " ").replace(/([A-Z])/g, " $1").toLowerCase();
-  return `${label}: ${friendly} changed from ${display(before)} to ${display(after)}`;
+  return `${safeInline(label, 120)}: ${safeInline(friendly, 120)} changed from ${display(before)} to ${display(after)}`;
 }
 
 function display(value: unknown): string {
   if (value === undefined) return "not set";
-  if (typeof value === "string") return `“${value}”`;
-  return JSON.stringify(value);
+  const serialized = JSON.stringify(value);
+  return safeInline(serialized === undefined ? String(value) : serialized, 160);
+}
+
+function safeInline(value: string, maximum: number): string {
+  const sanitized = value.replace(/[\u0000-\u001f\u007f-\u009f\u202a-\u202e\u2066-\u2069]/g, " ").replace(/\s+/g, " ").trim();
+  return sanitized.length <= maximum ? sanitized : `${sanitized.slice(0, maximum - 1)}…`;
 }
 
 function same(left: unknown, right: unknown): boolean {
-  return JSON.stringify(left) === JSON.stringify(right);
+  if (Object.is(left, right)) return true;
+  if (Array.isArray(left) || Array.isArray(right)) {
+    return Array.isArray(left) && Array.isArray(right) && left.length === right.length && left.every((value, index) => same(value, right[index]));
+  }
+  if (!isRecord(left) || !isRecord(right)) return false;
+  const leftKeys = Object.keys(left).sort();
+  const rightKeys = Object.keys(right).sort();
+  return leftKeys.length === rightKeys.length
+    && leftKeys.every((key, index) => key === rightKeys[index] && Object.prototype.hasOwnProperty.call(right, key) && same(left[key], right[key]));
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
