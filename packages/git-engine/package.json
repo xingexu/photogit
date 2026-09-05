@@ -1,12 +1,13 @@
 {
   "name": "@photogit/git-engine",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": "./dist/index.js",
   "dependencies": {
-    "@photogit/schema": "0.1.0",
-    "@photogit/serializer": "0.1.0"
+    "@photogit/differ": "0.2.0",
+    "@photogit/schema": "0.2.0",
+    "@photogit/serializer": "0.2.0"
   }
 }

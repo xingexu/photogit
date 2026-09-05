@@ -13,8 +13,14 @@ export function isLoopbackHost(host: string | undefined, port: number): boolean 
 
 export function assertHelperArguments(args: string[]): void {
   let sawPort = false;
+  let sawBridgeOnly = false;
   for (let index = 0; index < args.length; index += 1) {
     const option = args[index]!;
+    if (option === "--bridge-only") {
+      if (sawBridgeOnly) throw new Error("Duplicate helper option: --bridge-only");
+      sawBridgeOnly = true;
+      continue;
+    }
     if (!["--port", "--approve-root"].includes(option)) throw new Error(`Unknown helper option: ${option}`);
     if (option === "--port" && sawPort) throw new Error("Duplicate helper option: --port");
     if (option === "--port") sawPort = true;

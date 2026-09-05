@@ -1,6 +1,6 @@
 {
   "name": "photogit",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "Designer-friendly, semantic version control for Photoshop documents.",
   "type": "module",
@@ -14,6 +14,9 @@
     "check": "tsc -b --pretty false",
     "test": "tsc -b && vitest run",
     "test:watch": "vitest",
+    "verify:security": "node scripts/verify-security.mjs",
+    "package:development": "node scripts/package-development.mjs",
+    "verify:package": "node scripts/package-development.mjs --verify",
     "prephotogit": "tsc -b --pretty false",
     "photogit": "node cli/dist/main.js",
     "prehelper": "tsc -b --pretty false",
@@ -24,6 +27,7 @@
   },
   "devDependencies": {
     "@types/node": "^24.3.0",
+    "linkedom": "0.18.13",
     "tsx": "^4.20.5",
     "typescript": "^5.9.2",
     "vitest": "^3.2.4"

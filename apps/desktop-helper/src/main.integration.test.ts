@@ -24,6 +24,20 @@ afterEach(async () => {
 });
 
 describe("desktop helper Photoshop refresh flow", () => {
+  it("reports an occupied port without starting a second bridge or changing project pairing", async () => {
+    const parent = await mkdtemp(join(tmpdir(), "photogit-helper-port-"));
+    const projectRoot = join(parent, "project"), helperConfig = join(parent, "helper.json");
+    await execute(process.execPath, [cliEntry, "init", projectRoot]);
+    const occupied = createServer(); occupied.listen(0, "127.0.0.1"); await once(occupied, "listening");
+    const address = occupied.address(); if (!address || typeof address === "string") throw new Error("Expected a local port.");
+    const helper = spawn(process.execPath, [helperEntry, "--port", String(address.port), "--approve-root", projectRoot], { env: { ...process.env, PHOTOGIT_HELPER_CONFIG: helperConfig }, stdio: ["ignore", "pipe", "pipe"] });
+    children.push(helper);
+    try {
+      await expect(waitForOutput(helper, "PhotoGit helper is listening")).rejects.toThrow(/port .*already in use.*--bridge-only/);
+      await expect(readFile(join(projectRoot, ".photogit", "helper.json"), "utf8")).rejects.toMatchObject({ code: "ENOENT" });
+    } finally { occupied.close(); await once(occupied, "close"); }
+  }, 15_000);
+
   it("shows a first checkpoint and then returns real edits against the saved baseline", async () => {
     const parent = await mkdtemp(join(tmpdir(), "photogit-helper-flow-"));
     const projectRoot = join(parent, "project");
@@ -41,6 +55,11 @@ describe("desktop helper Photoshop refresh flow", () => {
     await waitForOutput(helper, "PhotoGit helper is listening");
     const token = (JSON.parse(await readFile(helperConfig, "utf8")) as { token: string }).token;
     const capture = JSON.parse(await readFile(fixturePath, "utf8")) as DocumentCapture;
+    expect(await (await fetch(`http://127.0.0.1:${port}/v1/health`)).json()).toMatchObject({ ok: true, service: "photogit-helper" });
+    const unauthenticated = await fetch(`http://127.0.0.1:${port}/v1/request`, { method: "POST", body: "{}" });
+    expect(unauthenticated.status).toBe(401);
+    const originRequest = await fetch(`http://127.0.0.1:${port}/v1/request`, { method: "POST", headers: { authorization: `Bearer ${token}`, origin: "https://untrusted.example" }, body: "{}" });
+    expect(originRequest.status).toBe(403);
 
     const first = await request(port, token, projectRoot, "refresh", { capture });
     expect(first).toMatchObject({ ok: true, result: { baselineMissing: true } });
@@ -51,6 +70,8 @@ describe("desktop helper Photoshop refresh flow", () => {
     const capturePath = join(projectRoot, ".photogit", "capture.json");
     await writeFile(capturePath, JSON.stringify(capture));
     await execute(process.execPath, [cliEntry, "save", "--capture", capturePath, "-m", "Baseline"], { cwd: projectRoot });
+    const documentIdentity = { documentId: capture.document.documentId, name: capture.document.name, sourcePath: null };
+    await request(port, token, projectRoot, "connectDocument", { documentIdentity });
 
     const edited = structuredClone(capture);
     const hero = edited.layers.find((layer) => layer.name === "Launch day");
@@ -60,7 +81,7 @@ describe("desktop helper Photoshop refresh flow", () => {
     if (hero!.text) hero!.text.contents = "A clearer headline";
     hero!.content.fingerprint = "pixels-v1:64x64x4:feedbabe";
 
-    const refreshed = await request(port, token, projectRoot, "refresh", { capture: edited });
+    const refreshed = await request(port, token, projectRoot, "refresh", { capture: edited, documentIdentity });
     expect(refreshed).toMatchObject({ ok: true, result: { baselineMissing: false } });
     expect(refreshed.result.changes).toEqual(expect.arrayContaining([
       expect.objectContaining({ domain: "structure", layerName: "Hero revised", propertyPath: "name" }),
@@ -107,6 +128,7 @@ function waitForOutput(child: ChildProcess, text: string): Promise<void> {
       resolveReady();
     };
     child.stdout?.on("data", onData);
+    child.stderr?.on("data", onData);
     child.once("exit", (code) => {
       clearTimeout(timeout);
       reject(new Error(`Helper exited before startup with code ${String(code)}. Output: ${output}`));

@@ -20,6 +20,7 @@ export type DocumentDomain = {
   mode: string;
   bitDepth: number;
   colorProfile: string | null;
+  renderedFingerprint?: string | null;
   compatibility: "supported" | "limited";
   warnings: string[];
 };
@@ -169,7 +170,7 @@ export function validateDocumentCapture(value: unknown): asserts value is Docume
   if (!isRecord(document)) issues.push("capture.document must be an object");
   if (!Array.isArray(layers)) issues.push("capture.layers must be an array");
   if (isRecord(document)) {
-    checkAllowedKeys(document, "capture.document", ["documentId", "name", "width", "height", "resolution", "mode", "bitDepth", "colorProfile"], issues);
+    checkAllowedKeys(document, "capture.document", ["documentId", "name", "width", "height", "resolution", "mode", "bitDepth", "colorProfile", "renderedFingerprint"], issues);
     checkBoundedString(document.documentId, "capture.document.documentId", issues, 500);
     checkBoundedString(document.name, "capture.document.name", issues, 1_024);
     checkPositive(document.width, "capture.document.width", issues);
@@ -178,6 +179,7 @@ export function validateDocumentCapture(value: unknown): asserts value is Docume
     checkInteger(document.bitDepth, "capture.document.bitDepth", issues, 1);
     checkBoundedString(document.mode, "capture.document.mode", issues, 100);
     checkNullableString(document.colorProfile, "capture.document.colorProfile", issues, 1_024);
+    if (document.renderedFingerprint !== undefined) checkNullableString(document.renderedFingerprint, "capture.document.renderedFingerprint", issues, 10_000);
   }
   if (Array.isArray(layers)) {
     if (layers.length > MAX_CAPTURE_LAYERS) issues.push(`capture.layers must contain at most ${MAX_CAPTURE_LAYERS} layers`);
@@ -265,7 +267,7 @@ export function validateProjectState(value: unknown): asserts value is ProjectSt
     checkBoundedString(project.createdWith, "project.createdWith", issues, 200);
   }
   if (isRecord(document)) {
-    checkAllowedKeys(document, "document", ["schemaVersion", "documentId", "name", "width", "height", "resolution", "mode", "bitDepth", "colorProfile", "compatibility", "warnings"], issues);
+    checkAllowedKeys(document, "document", ["schemaVersion", "documentId", "name", "width", "height", "resolution", "mode", "bitDepth", "colorProfile", "renderedFingerprint", "compatibility", "warnings"], issues);
     checkBoundedString(document.documentId, "document.documentId", issues, 500);
     checkBoundedString(document.name, "document.name", issues, 1_024);
     checkPositive(document.width, "document.width", issues);
@@ -274,6 +276,7 @@ export function validateProjectState(value: unknown): asserts value is ProjectSt
     checkBoundedString(document.mode, "document.mode", issues, 100);
     checkInteger(document.bitDepth, "document.bitDepth", issues, 1);
     checkNullableString(document.colorProfile, "document.colorProfile", issues, 1_024);
+    if (document.renderedFingerprint !== undefined) checkNullableString(document.renderedFingerprint, "document.renderedFingerprint", issues, 10_000);
     if (!["supported", "limited"].includes(String(document.compatibility))) issues.push("document.compatibility must be supported or limited");
     checkStringArray(document.warnings, "document.warnings", issues, true);
   }

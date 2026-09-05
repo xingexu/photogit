@@ -1,0 +1,32 @@
+name: Bug report
+description: Report a reproducible PhotoGit problem. Do not include secrets or private artwork.
+body:
+  - type: markdown
+    attributes:
+      value: For security vulnerabilities, use the private route in SECURITY.md. Remove tokens, personal paths, document content, and remote credentials from diagnostics.
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: PhotoGit version, Photoshop version, OS version, Node version, Git/LFS versions.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps
+      description: Include the starting document/project state and the exact action.
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual and expected result
+      description: Explain whether Git changed, whether a PSD opened, and whether the panel recovered.
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Sanitized diagnostics
+      description: Doctor output, panel activity, and helper error text. Never attach helper.json, a token, or private PSDs.

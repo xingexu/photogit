@@ -14,6 +14,26 @@ function validState(): ProjectState {
 describe("validateProjectState", () => {
   it("accepts a minimal valid state", () => expect(() => validateProjectState(validState())).not.toThrow());
 
+  it("accepts optional composite fingerprints in legacy captures and saved states", () => {
+    for (const fingerprint of [undefined, null, "rendered-v1:64x64x4:abc123", "x".repeat(10_000)]) {
+      const state = validState();
+      if (fingerprint !== undefined) state.document.renderedFingerprint = fingerprint;
+      const { schemaVersion: _schemaVersion, compatibility: _compatibility, warnings: _warnings, ...document } = state.document;
+      expect(() => validateProjectState(state)).not.toThrow();
+      expect(() => validateDocumentCapture({ document, layers: [] })).not.toThrow();
+    }
+  });
+
+  it("rejects oversized, malformed, or null-byte document composite fingerprints", () => {
+    for (const fingerprint of [123, {}, [], "x".repeat(10_001), "rendered\0value"]) {
+      const state = validState();
+      Object.assign(state.document, { renderedFingerprint: fingerprint });
+      const { schemaVersion: _schemaVersion, compatibility: _compatibility, warnings: _warnings, ...document } = state.document;
+      expect(() => validateProjectState(state)).toThrow(/document.renderedFingerprint/);
+      expect(() => validateDocumentCapture({ document, layers: [] })).toThrow(/capture.document.renderedFingerprint/);
+    }
+  });
+
   it("validates standalone project metadata before helper approval", () => {
     expect(() => validateProjectMetadata(validState().project)).not.toThrow();
     expect(() => validateProjectMetadata({ ...validState().project, token: "must-not-be-here" })).toThrow(/not a recognized field/);

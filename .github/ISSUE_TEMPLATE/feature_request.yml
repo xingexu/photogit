@@ -1,0 +1,16 @@
+name: Feature request
+description: Describe a Photoshop workflow PhotoGit should support.
+body:
+  - type: textarea
+    id: workflow
+    attributes:
+      label: Workflow and current limitation
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Expected result
+      description: Explain what a user should be able to do and how success could be tested.
+    validations:
+      required: true

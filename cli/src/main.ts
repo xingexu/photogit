@@ -1,15 +1,16 @@
 #!/usr/bin/env node
 import { execFile } from "node:child_process";
 import { constants } from "node:fs";
-import { access, lstat, mkdir, open, stat, statfs, writeFile } from "node:fs/promises";
+import { access, lstat, mkdir, open, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { basename, join, resolve } from "node:path";
 import { promisify } from "node:util";
 import { randomUUID } from "node:crypto";
 import { diffStates } from "@photogit/differ";
-import { findProjectRoot, GitRepository, isWithinRealRoot, readProjectState, recoverTransactions } from "@photogit/git-engine";
-import { SCHEMA_VERSION, validateDocumentCapture, validateProjectMetadata, validateProjectState, type DocumentCapture, type ProjectMetadata, type ProjectState } from "@photogit/schema";
+import { findProjectRoot, GitRepository, isWithinRealRoot, recoverTransactions } from "@photogit/git-engine";
+import { SCHEMA_VERSION, validateDocumentCapture, validateProjectMetadata, validateProjectState, type DocumentCapture, type ProjectMetadata } from "@photogit/schema";
 import { canonicalJson, stateFromCapture } from "@photogit/serializer";
+import { inspectProject, type DoctorCheck } from "./doctor.js";
 
 const execFileAsync = promisify(execFile);
 const MAX_INPUT_BYTES = 5 * 1024 * 1024;
@@ -50,7 +51,7 @@ async function initCommand(args: string[]): Promise<void> {
   });
   if (projectStat?.isSymbolicLink() || (projectStat && !projectStat.isFile())) throw new Error("The PhotoGit project metadata file is unsafe.");
   if (!projectStat) {
-    const project: ProjectMetadata = { schemaVersion: SCHEMA_VERSION, projectId: randomUUID(), displayName: basename(root), createdWith: "photogit/0.1.0" };
+    const project: ProjectMetadata = { schemaVersion: SCHEMA_VERSION, projectId: randomUUID(), displayName: basename(root), createdWith: "photogit/0.2.0" };
     await writeFile(projectPath, canonicalJson(project), { encoding: "utf8", flag: "wx" });
   } else {
     validateProjectMetadata(await readBoundedJson<ProjectMetadata>(projectPath));
@@ -80,12 +81,9 @@ async function saveCommand(args: string[]): Promise<void> {
   validateDocumentCapture(capture);
   const project = await readBoundedJson<ProjectMetadata>(join(root, ".photogit", "project.json"));
   validateProjectMetadata(project);
-  const previousIdentities = await readBoundedJson<ProjectState["identities"]>(join(root, ".photogit", "identities.json"))
-    .then((identities) => identities.records)
-    .catch((error) => {
-      if ((error as NodeJS.ErrnoException).code === "ENOENT") return [];
-      throw error;
-    });
+  const baseline = await new GitRepository(root).readStateAt();
+  if (baseline && capture.document.documentId !== baseline.document.documentId) throw new Error("This capture belongs to another document. Reconnect it in the Photoshop panel before saving.");
+  const previousIdentities = baseline?.identities.records ?? [];
   const state = stateFromCapture(capture, project, randomUUID, previousIdentities);
   const id = await new GitRepository(root).saveVersion(state, message, snapshotPath ? { snapshotPath: resolve(root, snapshotPath) } : {});
   process.stdout.write(`Saved version ${id.slice(0, 8)} — ${terminalText(message, 500)}\n`);
@@ -101,7 +99,8 @@ async function diffCommand(args: string[]): Promise<void> {
     return;
   }
   const root = await findProjectRoot();
-  const base = await readProjectState(root);
+  const base = await new GitRepository(root).readStateAt();
+  if (!base) throw new Error("Save a first version before comparing layer changes.");
   validateProjectState(base);
   const capture = await readBoundedJson<DocumentCapture>(resolve(root, capturePath));
   validateDocumentCapture(capture);
@@ -123,34 +122,27 @@ async function logCommand(args: string[]): Promise<void> {
 async function doctorCommand(args: string[]): Promise<void> {
   assertArguments(args, [], 1);
   const requested = args.find((arg) => !arg.startsWith("-"));
-  const checks: Array<[string, boolean, string]> = [];
-  const git = await commandVersion("git", ["--version"]); checks.push(["Git", git.ok, git.detail]);
-  const lfs = await commandVersion("git", ["lfs", "version"]); checks.push(["Git LFS", lfs.ok, lfs.detail || "not installed (required before sharing PSD snapshots)"]);
+  const checks: DoctorCheck[] = [];
+  const git = await commandVersion("git", ["--version"]); checks.push({ name: "Git", status: git.ok ? "pass" : "fail", detail: git.detail });
+  const lfs = await commandVersion("git", ["lfs", "version"]); checks.push({ name: "Git LFS", status: lfs.ok ? "pass" : "fail", detail: lfs.detail || "not installed (required for PSD snapshots)" });
   const photoshopCandidates = [join(homedir(), "Applications", "Adobe Photoshop 2026"), "/Applications/Adobe Photoshop 2026/Adobe Photoshop 2026.app", "/Applications/Adobe Photoshop 2025/Adobe Photoshop 2025.app"];
-  const photoshop = await firstExisting(photoshopCandidates); checks.push(["Photoshop", Boolean(photoshop), photoshop ?? "Photoshop 2025/2026 not found in standard macOS locations"]);
+  const photoshop = await firstExisting(photoshopCandidates); checks.push({ name: "Photoshop", status: photoshop ? "pass" : "notice", detail: photoshop ?? "not found in standard macOS locations; live document checks require Photoshop" });
   const developerTool = await firstExisting([
     "/Applications/Adobe UXP Developer Tools/Adobe UXP Developer Tools.app",
     "/Applications/UXP Developer Tool.app",
     join(homedir(), "Applications", "Adobe UXP Developer Tools.app"),
     join(homedir(), "Applications", "UXP Developer Tool.app")
   ]);
-  checks.push(["UXP Developer Tools", Boolean(developerTool), developerTool ?? "not found; install it before loading the panel"]);
+  checks.push({ name: "UXP Developer Tools", status: developerTool ? "pass" : "notice", detail: developerTool ?? "not found; install it before loading the panel" });
   const helper = await helperHealth();
-  checks.push(["Helper", helper.ok, helper.detail]);
+  checks.push({ name: "Helper", status: helper.ok ? "pass" : "notice", detail: helper.detail });
   if (requested || await findProjectRoot().then(() => true).catch(() => false)) {
     const root = requested ? resolve(requested) : await findProjectRoot();
-    const repository = new GitRepository(root);
-    const valid = await repository.assertRepository().then(() => true).catch(() => false);
-    checks.push(["Project", valid, valid ? root : "not a valid Git-backed PhotoGit project"]);
-    const disk = await stat(root); checks.push(["Permissions", Boolean(disk.mode & 0o200), Boolean(disk.mode & 0o200) ? "project root is writable" : "project root is not writable"]);
-    const fileSystem = await statfs(root);
-    const freeBytes = fileSystem.bavail * fileSystem.bsize;
-    checks.push(["Disk space", freeBytes >= 5 * 1024 ** 3, `${(freeBytes / 1024 ** 3).toFixed(1)} GB available${freeBytes < 5 * 1024 ** 3 ? "; at least 5 GB recommended" : ""}`]);
-    const remotes = valid ? await repository.run(["remote"]) : "";
-    checks.push(["Shared project", true, remotes ? `configured remote(s): ${remotes.split("\n").join(", ")}` : "no remote configured"]);
-  }
-  for (const [name, ok, detail] of checks) process.stdout.write(`${ok ? "✓" : "!"} ${terminalText(name, 120)}: ${terminalText(detail, 4_096)}\n`);
-  if (checks.some(([, ok]) => !ok)) process.exitCode = 1;
+    checks.push(...await inspectProject(root));
+  } else checks.push({ name: "Project", status: "notice", detail: "No project selected; run photogit doctor /path/to/project to validate one" });
+  for (const { name, status, detail } of checks) process.stdout.write(`${status === "pass" ? "✓" : status === "fail" ? "!" : "i"} ${terminalText(name, 120)}: ${terminalText(detail, 4_096)}\n`);
+  process.stdout.write("Notices describe live setup requirements; they do not certify Photoshop integration.\n");
+  if (checks.some(({ status }) => status === "fail")) process.exitCode = 1;
 }
 
 function printHelp(): void {
@@ -189,7 +181,7 @@ function assertArguments(args: string[], valueOptions: string[], maximumPosition
 }
 
 async function commandVersion(command: string, args: string[]): Promise<{ ok: boolean; detail: string }> {
-  try { const { stdout } = await execFileAsync(command, args, { encoding: "utf8" }); return { ok: true, detail: stdout.trim() }; }
+  try { const { stdout } = await execFileAsync(command, args, { encoding: "utf8", timeout: 10_000 }); return { ok: true, detail: stdout.trim() }; }
   catch { return { ok: false, detail: "" }; }
 }
 

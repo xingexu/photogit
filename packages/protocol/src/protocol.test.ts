@@ -17,6 +17,29 @@ describe("helper protocol", () => {
     expect(envelope.request.operation).toBe("status");
     expect(() => parseBridgeEnvelope({ token: "short", request: envelope.request })).toThrow(/token/i);
   });
+  it("validates bridge deadlines without silently accepting malformed expiry", () => {
+    const request = { protocolVersion: 1, operation: "status", requestId: "request-123", projectRoot: "/tmp/project" };
+    expect(parseBridgeEnvelope({ token: "a".repeat(43), request, expiresAt: 123456789 })).toHaveProperty("expiresAt", 123456789);
+    for (const expiresAt of ["later", -1, NaN, 1.5]) expect(() => parseBridgeEnvelope({ token: "a".repeat(43), request, expiresAt })).toThrow(/expiry/);
+  });
+  it("requires explicit, bounded document identity and an adoption boolean", () => {
+    const base = { protocolVersion: 1, requestId: "request-123", projectRoot: "/tmp/project", operation: "connectDocument" };
+    const documentIdentity = { documentId: "doc-1", name: "poster.psd", sourcePath: "/tmp/project/poster.psd" };
+    expect(parseHelperRequest({ ...base, documentIdentity, adopt: true })).toMatchObject({ adopt: true });
+    expect(() => parseHelperRequest(base)).toThrow(/identity/);
+    expect(() => parseHelperRequest({ ...base, documentIdentity, adopt: "yes" })).toThrow(/boolean/);
+    expect(() => parseHelperRequest({ ...base, documentIdentity: { ...documentIdentity, sourcePath: "relative.psd" } })).toThrow(/identity/);
+    expect(() => parseHelperRequest({ ...base, documentIdentity: { ...documentIdentity, injected: true } })).toThrow(/Unknown/);
+  });
+  it("restricts history opening to saved version IDs and validates comparison names", () => {
+    const base = { protocolVersion: 1, requestId: "request-123", projectRoot: "/tmp/project" };
+    expect(parseHelperRequest({ ...base, operation: "openVersion", version: "abcdef123" })).toHaveProperty("version", "abcdef123");
+    expect(parseHelperRequest({ ...base, operation: "openVersion", version: "HEAD" })).toHaveProperty("version", "HEAD");
+    expect(parseHelperRequest({ ...base, operation: "versionDetails", version: "HEAD" })).toHaveProperty("version", "HEAD");
+    for (const version of ["--help", "main", "../file", "abcd\n1234"]) expect(() => parseHelperRequest({ ...base, operation: "versionDetails", version })).toThrow(/version ID/);
+    expect(parseHelperRequest({ ...base, operation: "compareBranches", branch: "origin/design", base: "main" })).toHaveProperty("base", "main");
+    expect(() => parseHelperRequest({ ...base, operation: "compareBranches", branch: "" })).toThrow(/branch name/);
+  });
   it("validates review-tool arguments", () => {
     const base = { protocolVersion: PROTOCOL_VERSION, requestId: "request-123", projectRoot: "/tmp/project" };
     expect(parseHelperRequest({ ...base, operation: "mergeBranch", branch: "feature/review" }).operation).toBe("mergeBranch");

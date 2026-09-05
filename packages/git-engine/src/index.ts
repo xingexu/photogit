@@ -1,11 +1,12 @@
-import { execFile } from "node:child_process";
-import { constants } from "node:fs";
+import { execFile, spawn } from "node:child_process";
+import { constants, createReadStream } from "node:fs";
 import { access, chmod, copyFile, lstat, mkdir, open, readFile, readdir, realpath, rename, rm, unlink, writeFile } from "node:fs/promises";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { promisify } from "node:util";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { isSafeLayerUuid, validateProjectState, type ProjectState } from "@photogit/schema";
 import { canonicalJson, stateToFiles } from "@photogit/serializer";
+import { diffStates, type SemanticChange } from "@photogit/differ";
 
 const execFileAsync = promisify(execFile);
 const MAX_GIT_OUTPUT = 10 * 1024 * 1024;
@@ -14,6 +15,8 @@ const MAX_TRANSACTION_JOURNAL_BYTES = 16 * 1024 * 1024;
 const MAX_REPOSITORY_METADATA_BYTES = 1024 * 1024;
 const MAX_ARTIFACT_BYTES = 8 * 1024 * 1024 * 1024;
 const MAX_LOCK_BYTES = 8 * 1024;
+const GIT_TIMEOUT_MS = 60_000;
+const MAX_STATE_BYTES = 64 * 1024 * 1024;
 
 export class GitCommandError extends Error {
   constructor(public readonly args: readonly string[], public readonly stderr: string) {
@@ -24,8 +27,11 @@ export class GitCommandError extends Error {
 
 export type VersionEntry = { id: string; shortId: string; author: string; date: string; message: string };
 export type BranchEntry = { name: string; current: boolean };
-export type ReviewEntry = { branch: string; ahead: number; behind: number; changeCount: number; changes: string[]; mergeable: boolean };
+export type ReviewEntry = { branch: string; baseBranch: string; ahead: number; behind: number; changeCount: number; changes: string[]; mergeable: boolean; mergeKind: "git" };
 export type RepositoryInfo = { remoteUrl: string | null; provider: "github" | "local" | "other"; currentBranch: string; baseBranch: string };
+export type FileChange = { path: string; status: string };
+export type BranchComparison = { baseBranch: string; incomingBranch: string; mergeBase: string; ahead: number; behind: number; files: FileChange[]; changes: SemanticChange[]; gitMergeable: boolean; conflicts: string[]; warnings: string[] };
+export type VersionDetails = { version: VersionEntry; files: FileChange[]; changes: SemanticChange[]; snapshotAvailable: boolean; warnings: string[] };
 
 export class GitRepository {
   readonly root: string;
@@ -34,18 +40,22 @@ export class GitRepository {
     this.root = resolve(root);
   }
 
-  async run(args: readonly string[], options: { allowFailure?: boolean } = {}): Promise<string> {
+  async run(args: readonly string[], options: { allowFailure?: boolean; timeoutMs?: number; signal?: AbortSignal } = {}): Promise<string> {
     try {
       const { stdout } = await execFileAsync("git", [...args], {
         cwd: this.root,
         encoding: "utf8",
         maxBuffer: MAX_GIT_OUTPUT,
+        timeout: options.timeoutMs ?? GIT_TIMEOUT_MS,
+        killSignal: "SIGKILL",
+        signal: options.signal,
         env: { ...process.env, GIT_TERMINAL_PROMPT: "0" }
       });
       return stdout.trimEnd();
     } catch (error) {
-      const failed = error as NodeJS.ErrnoException & { stderr?: string };
+      const failed = error as NodeJS.ErrnoException & { stderr?: string; killed?: boolean };
       if (options.allowFailure) return "";
+      if (failed.killed || failed.name === "AbortError") throw new GitCommandError(args, "Git operation timed out or was cancelled. Refresh project status before retrying.");
       throw new GitCommandError(args, failed.stderr ?? failed.message);
     }
   }
@@ -61,6 +71,7 @@ export class GitRepository {
     await ensureLine(join(this.root, ".gitignore"), ".photogit/incoming/");
     await ensureLine(join(this.root, ".gitignore"), ".photogit/helper.json");
     await ensureLine(join(this.root, ".gitignore"), ".photogit/bridge/");
+    await ensureLine(join(this.root, ".gitignore"), ".photogit/recovered/");
   }
 
   async assertRepository(): Promise<void> {
@@ -147,22 +158,19 @@ export class GitRepository {
     const current = await this.currentBranch();
     if (current === "detached") throw new Error("Switch to a branch before reviewing design directions.");
     const count = Number.isFinite(limit) ? Math.min(50, Math.max(1, Math.trunc(limit))) : 8;
-    const branches = (await this.branches()).filter((branch) => !branch.current).slice(0, count);
+    const branches = (await this.reviewBranches()).filter((branch) => branch.name !== current).slice(0, count);
     const reviews = await Promise.all(branches.map(async ({ name }) => {
-      const [aheadText, behindText, changed, mergeTree] = await Promise.all([
-        this.run(["rev-list", "--count", `${current}..${name}`], { allowFailure: true }),
-        this.run(["rev-list", "--count", `${name}..${current}`], { allowFailure: true }),
-        this.run(["diff", "--name-only", "-z", `${current}...${name}`], { allowFailure: true }),
-        this.run(["merge-tree", "--write-tree", current, name], { allowFailure: true })
-      ]);
-      const changes = changed.split("\0").filter(Boolean).map((path) => safeDisplayText(path, 4_096));
+      const comparison = await this.compareBranches(name, current);
+      const changes = comparison.files.map(({ path }) => path);
       return {
         branch: name,
-        ahead: Number.parseInt(aheadText || "0", 10) || 0,
-        behind: Number.parseInt(behindText || "0", 10) || 0,
+        baseBranch: current,
+        ahead: comparison.ahead,
+        behind: comparison.behind,
         changeCount: changes.length,
         changes: changes.slice(0, 12),
-        mergeable: /^[a-f0-9]{40,64}(?:\n|$)/i.test(mergeTree)
+        mergeable: comparison.gitMergeable,
+        mergeKind: "git" as const
       };
     }));
     return reviews.sort((left, right) => right.ahead - left.ahead || left.branch.localeCompare(right.branch));
@@ -174,12 +182,18 @@ export class GitRepository {
     const current = await this.currentBranch();
     if (current === "detached") throw new Error("Switch to a branch before merging a design direction.");
     if (current === name) throw new Error("Choose another branch to merge into the current design.");
-    if (!(await this.branches()).some((branch) => branch.name === name)) throw new Error(`Branch ${name} does not exist in this project.`);
+    if (!(await this.reviewBranches()).some((branch) => branch.name === name)) throw new Error(`Branch ${name} does not exist in this project.`);
+    const comparison = await this.compareBranches(name, current);
+    if (!comparison.gitMergeable) throw new Error(`Git merge cannot proceed: ${comparison.conflicts.join(", ") || "changes require manual resolution"}. No project files were changed.`);
     try {
       await this.run(["merge", "--no-ff", "--no-edit", name]);
-    } catch {
-      await this.run(["merge", "--abort"], { allowFailure: true });
-      throw new Error(`PhotoGit could not merge ${name} automatically. The merge was safely aborted; review its conflicting design changes first.`);
+    } catch (error) {
+      const activeMerge = await this.run(["rev-parse", "--verify", "MERGE_HEAD"], { allowFailure: true });
+      if (activeMerge) {
+        try { await this.run(["merge", "--abort"]); }
+        catch { throw new Error("Git merge failed and could not be aborted. Recovery required: inspect project conflicts and finish or abort the merge in Git before continuing."); }
+      }
+      throw new Error(`Git merge failed: ${error instanceof Error ? error.message : String(error)}. Refresh project status before retrying.`);
     }
   }
 
@@ -252,6 +266,10 @@ export class GitRepository {
         if (!sourceStat.isFile() || sourceStat.isSymbolicLink() || sourceStat.size > MAX_ARTIFACT_BYTES) throw new Error(`PhotoGit artifacts must be regular files no larger than 8 GB: ${source}`);
         await access(source, constants.R_OK);
       }
+      if (artifacts.snapshotPath) {
+        const source = resolve(artifacts.snapshotPath);
+        assertPsdHeader(await readFileHeader(source), (await lstat(source)).size);
+      }
       const alreadyStaged = await this.run(["diff", "--cached", "--name-only"]);
       if (alreadyStaged) throw new Error("The Git index already contains staged files. Commit or unstage them before saving a PhotoGit version.");
       await this.assertAuthorConfigured();
@@ -279,6 +297,215 @@ export class GitRepository {
     return this.run(["show", `${version}:${projectPath}`]);
   }
 
+  /** Read the immutable commit tree. Never use working metadata as a saved baseline. */
+  async readStateAt(version = "HEAD"): Promise<ProjectState | null> {
+    assertCommitIdentifier(version);
+    const id = await this.run(["rev-parse", "--verify", `${version}^{commit}`], { allowFailure: true });
+    if (!id) {
+      if (version === "HEAD" && !(await this.history(1)).length) return null;
+      throw new Error(`Version ${version} does not exist.`);
+    }
+    const tree = await this.run(["ls-tree", "-r", "-l", "-z", id, "--", ".photogit"]);
+    const files = new Map<string, { id: string; bytes: number }>();
+    let totalBytes = 0;
+    for (const entry of tree.split("\0").filter(Boolean)) {
+      const match = /^(\d+) blob ([a-f0-9]+)\s+(\d+)\t(.+)$/s.exec(entry);
+      if (!match) continue;
+      const path = match[4]!;
+      if (!/^\.photogit\/(?:project\.json|document\.json|identities\.json|structure\/layers\.json|(?:appearance|text|content)\/[^/]+\.json)$/.test(path)) continue;
+      assertManagedProjectPath(path);
+      const bytes = Number(match[3]);
+      if (match[1] !== "100644" && match[1] !== "100755") throw new Error(`Saved state contains an unsafe file: ${path}`);
+      totalBytes += bytes;
+      if (bytes > MAX_STATE_FILE_BYTES || totalBytes > MAX_STATE_BYTES) throw new Error("Saved PhotoGit metadata exceeds the supported size limit.");
+      files.set(path, { id: match[2]!, bytes });
+    }
+    if (!files.has(".photogit/structure/layers.json")) {
+      if (files.has(".photogit/document.json") || files.has(".photogit/identities.json")) throw new Error("Saved PhotoGit state is incomplete: structure is missing.");
+      return null;
+    }
+    const values = await readGitJsonBatch(this.root, files);
+    const required = <T>(path: string): T => {
+      if (!values.has(path)) throw new Error(`Saved PhotoGit state is incomplete: ${path}`);
+      return values.get(path) as T;
+    };
+    const state: ProjectState = {
+      project: required(".photogit/project.json"), document: required(".photogit/document.json"),
+      identities: required(".photogit/identities.json"), structure: required(".photogit/structure/layers.json"),
+      appearance: {}, text: {}, content: {}
+    };
+    for (const [path, value] of values) {
+      const domain = /^\.photogit\/(appearance|text|content)\/([^/]+)\.json$/.exec(path);
+      if (domain) (state[domain[1] as "appearance" | "text" | "content"] as Record<string, unknown>)[domain[2]!] = value;
+    }
+    validateProjectState(state);
+    return state;
+  }
+
+  async compareBranches(incoming: string, base?: string): Promise<BranchComparison> {
+    assertBranchName(incoming);
+    const baseBranch = base ?? await this.currentBranch();
+    assertBranchName(baseBranch);
+    const [baseId, incomingId] = await Promise.all([this.resolveVersion(baseBranch), this.resolveVersion(incoming)]);
+    const mergeBase = await this.run(["merge-base", baseId, incomingId]);
+    const [ahead, behind, files, merged] = await Promise.all([
+      this.run(["rev-list", "--count", `${baseId}..${incomingId}`]),
+      this.run(["rev-list", "--count", `${incomingId}..${baseId}`]),
+      this.changedFiles(mergeBase, incomingId),
+      this.previewGitMerge(baseId, incomingId)
+    ]);
+    const warnings = ["This is an ordinary Git merge. PhotoGit does not combine Photoshop layer edits into a new PSD."];
+    let changes: SemanticChange[] = [];
+    try {
+      const [before, after] = await Promise.all([this.readStateAt(mergeBase), this.readStateAt(incomingId)]);
+      if (before && after) changes = diffStates(before, after);
+      else warnings.push("Semantic state is unavailable for one side of this comparison.");
+    } catch { warnings.push("Saved layer metadata could not be read; inspect the file changes before proceeding."); }
+    let gitMergeable = merged.clean;
+    const baseFiles = await this.changedFiles(mergeBase, baseId);
+    const incomingSnapshot = files.some((file) => file.path === "snapshot/document.psd");
+    const baseSnapshot = baseFiles.some((file) => file.path === "snapshot/document.psd");
+    const conflicts: string[] = [...merged.conflicts];
+    if (incomingSnapshot && baseSnapshot) {
+      const identical = !(await this.run(["diff", "--name-only", baseId, incomingId, "--", "snapshot/document.psd"]));
+      if (!identical) { gitMergeable = false; conflicts.push("snapshot/document.psd"); warnings.push("Both branches changed the PSD. Resolve the document in Photoshop before merging."); }
+    }
+    const designPath = (path: string) => path === "snapshot/document.psd" || /^\.photogit\/(?:document\.json|identities\.json|structure\/|appearance\/|text\/|content\/)/.test(path);
+    if (files.some(({ path }) => designPath(path)) && baseFiles.some(({ path }) => designPath(path))) {
+      const differentDesign = await this.run(["diff", "--name-only", baseId, incomingId, "--", "snapshot/document.psd", ".photogit/document.json", ".photogit/identities.json", ".photogit/structure", ".photogit/appearance", ".photogit/text", ".photogit/content"]);
+      if (differentDesign) {
+        gitMergeable = false;
+        if (!conflicts.length) conflicts.push("Both branches changed the Photoshop design");
+        warnings.push("Combining independently edited layer metadata would not update the PSD. Open both documents in Photoshop and save the resolved design before using Git merge.");
+      }
+    }
+    if (!gitMergeable && !conflicts.length) conflicts.push("Git reports overlapping or unsupported changes; inspect both branches in an external Git client.");
+    return { baseBranch, incomingBranch: incoming, mergeBase, ahead: Number(ahead), behind: Number(behind), files, changes, gitMergeable, conflicts: [...new Set(conflicts)], warnings };
+  }
+
+  async versionDetails(version: string): Promise<VersionDetails> {
+    const id = await this.resolveVersion(version);
+    const [description, parent] = await Promise.all([
+      this.run(["show", "-s", "--format=%H%x00%h%x00%an%x00%aI%x00%s", id]),
+      this.run(["rev-list", "--parents", "-n", "1", id])
+    ]);
+    const [fullId = id, shortId = id.slice(0, 8), author = "", date = "", message = ""] = description.split("\0");
+    const previous = parent.split(" ")[1];
+    const files = await this.changedFiles(previous ?? null, id);
+    const warnings: string[] = [];
+    let changes: SemanticChange[] = [];
+    try {
+      const [before, after] = await Promise.all([previous ? this.readStateAt(previous) : Promise.resolve(null), this.readStateAt(id)]);
+      if (before && after) changes = diffStates(before, after);
+      else if (after) warnings.push(`First saved layer state: ${after.structure.layers.length} layers.`);
+    } catch { warnings.push("Saved layer details are unavailable for this version."); }
+    const snapshotAvailable = await this.validateSnapshotAt(id).then(() => true).catch(() => false);
+    if (!snapshotAvailable) warnings.push("This version has no locally available valid PSD snapshot.");
+    return { version: { id: fullId, shortId, author: safeDisplayText(author, 200), date: safeDisplayText(date, 64), message: safeDisplayText(message, 500) }, files, changes, snapshotAvailable, warnings };
+  }
+
+  async validateSnapshotAt(version: string): Promise<{ version: string; bytes: number }> {
+    const source = await this.snapshotSource(version);
+    const header = source.path ? await readFileHeader(source.path) : await readGitBlobPrefix(this.root, source.objectId!);
+    assertPsdHeader(header, source.bytes);
+    return { version: source.version, bytes: source.bytes };
+  }
+
+  /** Open recovery as a new copy. Never replace the working PSD or change HEAD. */
+  async exportVersionSnapshot(version: string): Promise<string> {
+    const source = await this.snapshotSource(version);
+    const header = source.path ? await readFileHeader(source.path) : await readGitBlobPrefix(this.root, source.objectId!);
+    assertPsdHeader(header, source.bytes);
+    await ensureLine(join(this.root, ".gitignore"), ".photogit/recovered/");
+    const directory = join(this.root, ".photogit", "recovered");
+    await mkdir(directory, { recursive: true, mode: 0o700 });
+    if (!await isWithinRealRoot(this.root, directory)) throw new Error("Recovery folder resolves outside the project.");
+    const destination = join(directory, `version-${source.version.slice(0, 12)}-${randomUUID()}.psd`);
+    const handle = await open(destination, "wx", 0o600);
+    try {
+      if (source.path) {
+        const sourceHandle = await open(source.path, constants.O_RDONLY | constants.O_NOFOLLOW);
+        try { await handle.writeFile(createReadStream(source.path, { fd: sourceHandle.fd, autoClose: false })); }
+        finally { await sourceHandle.close(); }
+      } else {
+        await spawnGitToFile(this.root, ["cat-file", "blob", source.objectId!], handle.fd);
+      }
+    } catch (error) {
+      await unlink(destination).catch(() => undefined);
+      throw error;
+    } finally { await handle.close().catch(() => undefined); }
+    return destination;
+  }
+
+  private async snapshotSource(version: string): Promise<{ version: string; bytes: number; path?: string; objectId?: string }> {
+    const id = await this.resolveVersion(version);
+    const entry = await this.run(["ls-tree", "-l", id, "--", "snapshot/document.psd"]);
+    const match = /^100(?:644|755) blob ([a-f0-9]+)\s+(\d+)\tsnapshot\/document.psd$/.exec(entry);
+    if (!match) throw new Error("This version has no regular PSD snapshot. Choose a version saved with its document.");
+    const objectId = match[1]!;
+    const bytes = Number(match[2]);
+    if (bytes > MAX_ARTIFACT_BYTES || bytes < 26) throw new Error("Snapshot size is invalid or exceeds 8 GB.");
+    if (bytes <= 1024) {
+      const blob = await this.run(["cat-file", "blob", objectId]);
+      if (blob.startsWith("version https://git-lfs.github.com/spec/v1")) {
+        const pointer = /^version https:\/\/git-lfs.github.com\/spec\/v1\noid sha256:([a-f0-9]{64})\nsize (\d+)$/.exec(blob);
+        if (!pointer || Number(pointer[2]) > MAX_ARTIFACT_BYTES) throw new Error("Saved Git LFS pointer is invalid.");
+        const oid = pointer[1]!;
+        const gitDirectory = resolve(this.root, await this.run(["rev-parse", "--git-common-dir"]));
+        const lfsDirectory = join(gitDirectory, "lfs", "objects");
+        const path = join(lfsDirectory, oid.slice(0, 2), oid.slice(2, 4), oid);
+        if (!await isWithinRealRoot(gitDirectory, path)) throw new Error("The PSD is not available locally. Run git lfs pull for this version and retry.");
+        const metadata = await lstat(path);
+        if (!metadata.isFile() || metadata.isSymbolicLink() || metadata.size !== Number(pointer[2])) throw new Error("Local Git LFS snapshot is missing or invalid.");
+        const digest = createHash("sha256");
+        const handle = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW);
+        try { for await (const chunk of createReadStream(path, { fd: handle.fd, autoClose: false })) digest.update(chunk); }
+        finally { await handle.close(); }
+        if (digest.digest("hex") !== oid) throw new Error("Local Git LFS snapshot failed its integrity check.");
+        return { version: id, bytes: metadata.size, path };
+      }
+    }
+    return { version: id, bytes, objectId };
+  }
+
+  private async resolveVersion(version: string): Promise<string> {
+    assertCommitIdentifier(version);
+    return this.run(["rev-parse", "--verify", `${version}^{commit}`]);
+  }
+
+  private async previewGitMerge(base: string, incoming: string): Promise<{ clean: boolean; conflicts: string[] }> {
+    try {
+      await execFileAsync("git", ["merge-tree", "--write-tree", "--name-only", "-z", base, incoming], {
+        cwd: this.root, encoding: "utf8", maxBuffer: MAX_GIT_OUTPUT, timeout: GIT_TIMEOUT_MS, killSignal: "SIGKILL", env: { ...process.env, GIT_TERMINAL_PROMPT: "0" }
+      });
+      return { clean: true, conflicts: [] };
+    } catch (error) {
+      const failed = error as { code?: number; stdout?: string };
+      if (failed.code !== 1 || !failed.stdout) return { clean: false, conflicts: ["Git could not determine whether these branches merge cleanly"] };
+      const fields = failed.stdout.split("\0");
+      const conflicts: string[] = [];
+      // With --name-only -z the first field is a tree ID, followed by conflict paths,
+      // an empty separator, then diagnostic records (which are not filenames).
+      for (const path of fields.slice(1)) { if (!path) break; conflicts.push(safeDisplayText(path, 4096)); }
+      return { clean: false, conflicts };
+    }
+  }
+
+  private async changedFiles(before: string | null, after: string): Promise<FileChange[]> {
+    const output = before ? await this.run(["diff", "--no-renames", "--name-status", "-z", before, after, "--"]) : await this.run(["diff-tree", "--root", "--no-commit-id", "-r", "--no-renames", "--name-status", "-z", after]);
+    const fields = output.split("\0").filter(Boolean);
+    const files: FileChange[] = [];
+    for (let index = 0; index + 1 < fields.length; index += 2) files.push({ status: fields[index]!, path: safeDisplayText(fields[index + 1]!, 4096) });
+    return files;
+  }
+
+  private async reviewBranches(): Promise<BranchEntry[]> {
+    const local = await this.branches();
+    const names = new Set(local.map(({ name }) => name));
+    const remote = await this.run(["for-each-ref", "--format=%(refname:short)", "refs/remotes"]);
+    return [...local, ...remote.split("\n").filter((name) => name && !name.endsWith("/HEAD") && !names.has(name.slice(name.indexOf("/") + 1))).map((name) => ({ name, current: false }))];
+  }
+
   private async assertAuthorConfigured(): Promise<void> {
     const [name, email] = await Promise.all([
       this.run(["config", "user.name"], { allowFailure: true }),
@@ -293,9 +520,11 @@ export class GitRepository {
   }
 
   private async defaultBaseBranch(remote: string): Promise<string> {
+    const configured = await this.run(["config", "photogit.baseBranch"], { allowFailure: true });
+    if (configured) { assertBranchName(configured); await this.resolveVersion(configured); return configured; }
     const symbolic = await this.run(["symbolic-ref", "--quiet", "--short", `refs/remotes/${remote}/HEAD`], { allowFailure: true });
     if (symbolic.startsWith(`${remote}/`)) return symbolic.slice(remote.length + 1);
-    const names = (await this.branches()).map((branch) => branch.name);
+    const names = (await this.reviewBranches()).map((branch) => branch.name.startsWith(`${remote}/`) ? branch.name.slice(remote.length + 1) : branch.name);
     return names.includes("main") ? "main" : names.includes("master") ? "master" : names[0] || "main";
   }
 
@@ -320,6 +549,75 @@ export class GitRepository {
       await unlink(pathspecPath).catch(() => undefined);
     }
   }
+}
+
+async function readGitJsonBatch(root: string, files: Map<string, { id: string; bytes: number }>): Promise<Map<string, unknown>> {
+  const expected = [...files];
+  const input = expected.map(([, file]) => file.id).join("\n") + "\n";
+  const output = await new Promise<Buffer>((resolveOutput, reject) => {
+    const process = spawn("git", ["cat-file", "--batch"], { cwd: root, stdio: ["pipe", "pipe", "pipe"] });
+    const chunks: Buffer[] = [];
+    let bytes = 0;
+    const timer = setTimeout(() => { process.kill("SIGKILL"); reject(new Error("Reading saved layer state timed out.")); }, GIT_TIMEOUT_MS);
+    process.on("error", (error) => { clearTimeout(timer); reject(error); });
+    process.stdout.on("data", (chunk: Buffer) => {
+      bytes += chunk.length;
+      if (bytes > MAX_STATE_BYTES + expected.length * 100) { process.kill("SIGKILL"); reject(new Error("Saved layer state exceeds its size limit.")); }
+      else chunks.push(chunk);
+    });
+    process.stderr.resume();
+    process.on("close", (code) => { clearTimeout(timer); code === 0 ? resolveOutput(Buffer.concat(chunks)) : reject(new Error("Git could not read saved layer state.")); });
+    process.stdin.on("error", () => undefined);
+    process.stdin.end(input);
+  });
+  const values = new Map<string, unknown>();
+  let offset = 0;
+  for (const [path, file] of expected) {
+    const end = output.indexOf(10, offset);
+    if (end < offset || output.subarray(offset, end).toString() !== `${file.id} blob ${file.bytes}`) throw new Error("Saved state blob is missing or invalid.");
+    offset = end + 1;
+    values.set(path, JSON.parse(output.subarray(offset, offset + file.bytes).toString("utf8")));
+    offset += file.bytes + 1;
+  }
+  return values;
+}
+
+async function readFileHeader(path: string): Promise<Buffer> {
+  const handle = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW);
+  try { const header = Buffer.alloc(26); await handle.read(header, 0, 26, 0); return header; }
+  finally { await handle.close(); }
+}
+
+function assertPsdHeader(header: Buffer, bytes: number): void {
+  const version = header.length >= 26 ? header.readUInt16BE(4) : 0;
+  if (header.length < 26 || bytes < 26 || header.subarray(0, 4).toString() !== "8BPS" || ![1, 2].includes(version)
+    || header.subarray(6, 12).some((value) => value !== 0) || header.readUInt16BE(12) < 1 || header.readUInt16BE(12) > 56
+    || header.readUInt32BE(14) < 1 || header.readUInt32BE(18) < 1 || ![1, 8, 16, 32].includes(header.readUInt16BE(22))
+    || header.readUInt16BE(24) > 9) throw new Error("The saved snapshot does not have a valid Photoshop PSD/PSB header. No branch changes were made.");
+}
+
+async function readGitBlobPrefix(root: string, id: string): Promise<Buffer> {
+  return new Promise((resolvePrefix, reject) => {
+    const child = spawn("git", ["cat-file", "blob", id], { cwd: root, stdio: ["ignore", "pipe", "ignore"] });
+    const timer = setTimeout(() => { child.kill("SIGKILL"); reject(new Error("Reading the snapshot timed out.")); }, GIT_TIMEOUT_MS);
+    let prefix = Buffer.alloc(0);
+    child.stdout.on("data", (chunk: Buffer) => {
+      prefix = Buffer.concat([prefix, chunk.subarray(0, 26 - prefix.length)]);
+      if (prefix.length === 26) { child.kill(); clearTimeout(timer); resolvePrefix(prefix); }
+    });
+    child.on("error", (error) => { clearTimeout(timer); reject(error); });
+    child.on("close", () => { clearTimeout(timer); resolvePrefix(prefix); });
+  });
+}
+
+async function spawnGitToFile(root: string, args: string[], fd: number): Promise<void> {
+  await new Promise<void>((resolveExport, reject) => {
+    const child = spawn("git", args, { cwd: root, stdio: ["ignore", fd, "ignore"] });
+    const timer = setTimeout(() => { child.kill("SIGKILL"); reject(new Error("Exporting the saved PSD timed out; no working document was changed.")); }, GIT_TIMEOUT_MS);
+    child.on("error", (error) => { clearTimeout(timer); reject(error); });
+    child.on("close", (code) => { clearTimeout(timer); code === 0 ? resolveExport() : reject(new Error("Git could not export the saved PSD.")); });
+  });
+
 }
 
 export async function findProjectRoot(start = process.cwd()): Promise<string> {

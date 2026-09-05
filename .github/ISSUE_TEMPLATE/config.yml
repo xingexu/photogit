@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/xingexu/photogit/blob/main/SECURITY.md
+    about: Use the private reporting route. Do not post vulnerability details in public issues.
