@@ -1,19 +1,19 @@
 :root {
   color-scheme: dark;
-  --bg: #202020; --surface: #292929; --elevated: #333333; --input: #202020;
-  --text: #f2f2ef; --muted: #b8b8b2; --line: #41413d; --border: #85857d;
+  --bg: #17191d; --surface: #24272d; --elevated: #30353d; --input: #191c21;
+  --text: #ffffff; --muted: #c5ccd6; --line: #474d58; --border: #9ba7b7;
   --hover: #383838; --pressed: #454545; --selected: #333c50; --focus: #afc5ff;
   --primary: #f2f2ef; --primary-text: #20201e; --primary-hover: #ffffff; --primary-pressed: #d6d6d0;
   --success: #91c6a0; --success-surface: #243128; --warning: #e3c17c; --warning-surface: #332e22;
   --error: #eea19a; --error-surface: #392927; --backdrop: rgba(0,0,0,.6);
   --space: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-6: 24px; --space-8: 32px;
-  --text-small: 12px; --text-body: 12px; --text-title: 14px; --text-onboarding: 18px; --radius: 4px; --motion: 120ms;
+  --text-small: 12px; --text-body: 12px; --text-title: 14px; --text-onboarding: 18px; --radius: 8px; --radius-panel: 12px; --motion: 120ms;
   --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; --mono: var(--font-ui);
 }
 :root[data-theme="light"] {
   color-scheme: light;
-  --bg: #f5f6f8; --surface: #ffffff; --elevated: #eceef2; --input: #ffffff;
-  --text: #252a32; --muted: #59616e; --line: #daddE3; --border: #858d99;
+  --bg: #e9edf3; --surface: #ffffff; --elevated: #f5f7fb; --input: #ffffff;
+  --text: #151d29; --muted: #404e61; --line: #c2cad5; --border: #69768a;
   --hover: #e9ecf2; --pressed: #dce1eb; --selected: #e5ebf8; --focus: #365bbb;
   --primary: #303947; --primary-text: #ffffff; --primary-hover: #424e60; --primary-pressed: #202936;
   --success: #24683c; --success-surface: #e7f1e9; --warning: #805900; --warning-surface: #f6eedc;
@@ -67,7 +67,7 @@ small { color: var(--muted); display: block; font-size: var(--text-small); lette
 .project-switch { margin-top: 7px; display: inline-block; }
 .text-link { color: var(--muted); font-size: var(--text-small); text-decoration: underline; padding: 3px 0; }
 .section-nav { display: flex; flex-wrap: wrap; border-bottom: 1px solid var(--line); padding: 6px 0; }
-.nav-item { display: flex; align-items: center; justify-content: center; flex: 0 1 auto; min-height: 32px; padding: 6px 8px; font-size: var(--text-small); border-radius: 3px; color: var(--muted); }
+.nav-item { display: flex; align-items: center; justify-content: center; flex: 0 1 auto; min-height: 32px; padding: 6px 8px; font-size: var(--text-small); border-radius: var(--radius); color: var(--muted); }
 .nav-item svg { display: none; }
 .nav-item b { margin-left: 4px; font-size: var(--text-small); font-weight: 400; }
 .nav-item b[data-empty="true"] { display: none; }
@@ -147,10 +147,10 @@ sp-dropdown { width: 100%; margin: 5px 0; }
 .footer-action { display: flex; align-items: center; justify-content: center; flex: 1; padding: 7px 4px; color: var(--muted); font-size: var(--text-small); border-radius: var(--radius); }
 .footer-action svg { width: 14px; height: 14px; margin-right: 5px; }
 .tools-toggle { flex: 0 0 30px; }
-.tools-menu, .tool-sheet { position: fixed; left: 8px; right: 8px; top: 8px; max-height: calc(100% - 16px); overflow: auto; z-index: 30; padding: 14px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); }
+.tools-menu, .tool-sheet { position: fixed; left: 8px; right: 8px; top: 8px; max-height: calc(100% - 16px); overflow: auto; z-index: 30; padding: 14px; border: 1px solid var(--border); border-radius: var(--radius-panel); background: var(--surface); }
 .tools-menu { top: auto; bottom: 8px; }
 .tools-menu.from-header { top: 8px; bottom: auto; }
-.tool-item { display: flex; align-items: center; padding: 10px 7px; border-radius: 3px; }
+.tool-item { display: flex; align-items: center; padding: 10px 7px; border-radius: var(--radius); }
 .tool-item svg { margin-right: 9px; }
 .surface-backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: var(--backdrop); z-index: 20; }
 .detail-content { margin: 12px 0 18px; }
@@ -258,4 +258,38 @@ input::placeholder { font-family: var(--font-ui); font-size: var(--text-body); f
   .command-trigger { padding: 4px; margin-left: 0; }
   .appearance-toggle { margin-left: 0; width: 24px; }
   #header-menu { width: 24px; }
+}
+
+/* Rounded task surfaces; strong contrast without adding decorative chrome. */
+.content-card, .scan-card, .onboarding {
+  margin: 12px 0; padding: 12px; border: 1px solid var(--line);
+  border-radius: var(--radius-panel); background: var(--surface);
+}
+.capture-panel { background: var(--elevated); }
+.version-label { margin: 0 0 8px; color: var(--text); font-weight: 600; font-size: var(--text-title); }
+.section-nav { margin: 12px 0; padding: 4px; border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--surface); }
+.nav-item { margin: 2px; padding: 6px; border: 1px solid transparent; border-radius: var(--radius); }
+.nav-item.active { background: var(--selected); border-color: var(--focus); }
+.nav-item:hover { background: var(--hover); }
+.list-row, .command-row { border-radius: var(--radius); padding: 10px 8px; }
+.row-copy strong { display: inline; }
+.row-copy > .layer-identity { display: inline; margin-left: 8px; }
+.layer-identity:empty { display: none; }
+.row-copy > .change-detail { display: block; margin-top: 4px; }
+.change-domain { padding: 2px 6px; background: var(--elevated); border-radius: var(--radius); }
+.watch-status.changed { display: none; } /* Summary already contains this count. */
+.repo-state.ok i { background: var(--success); }
+.repo-state.warning i { background: var(--warning); }
+.review-meta .ready { color: var(--success); }
+.review-meta .blocked { color: var(--warning); }
+.tools-menu, .tool-sheet, .notice, .setup-command, .current-branch, .empty-state { border-radius: var(--radius-panel); }
+.current-branch { padding: 8px 12px; background: var(--selected); }
+.sync-panel { border: 1px solid var(--line); padding: 4px; border-radius: var(--radius-panel); background: var(--surface); }
+.command-row { margin-top: 4px; }
+.docs-intro { margin-bottom: 12px; }
+#result.error { border-radius: var(--radius); }
+@media (max-width: 280px) {
+  .content-card, .scan-card, .onboarding { padding: 8px; }
+  .nav-item { padding: 6px 4px; }
+  .row-copy > .layer-identity { display: none; }
 }

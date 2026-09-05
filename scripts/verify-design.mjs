@@ -3,7 +3,7 @@ import { execFileSync } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 const cli = process.env.PHOTOGIT_BROWSER_CLI || "agent-browser";
-const out = resolve("artifacts/appearance-toggle-20260905");
+const out = resolve(process.env.PHOTOGIT_DESIGN_ARTIFACTS || "artifacts/rounded-ui-20260905");
 mkdirSync(out, { recursive: true });
 const run = (...args) => {
   // At the 200px minimum height a partly visible target can have its center
@@ -28,6 +28,11 @@ for (const theme of ["dark", "light"]) {
       settle();
       const state = JSON.parse(run("eval", `({overflow:document.documentElement.scrollWidth>innerWidth,active:!document.getElementById('${view}-view').hidden})`));
       if (state.overflow || !state.active) throw new Error(`${theme} ${width} ${view}: ${JSON.stringify(state)}`);
+      if (width === 420) {
+        run("eval", "window.scrollTo(0, 0)");
+        settle();
+        run("screenshot", `${out}/demo-${theme}-${view}-420x800.png`);
+      }
     }
   }
 }

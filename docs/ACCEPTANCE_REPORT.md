@@ -1,5 +1,13 @@
 # Acceptance report: 0.2.0 development
 
+## September 5 rounded, higher-contrast UI — batch 1
+
+Removed redundant captions across all six destinations, grouped tasks into rounded cards, standardized 8px controls/12px surfaces, strengthened both themes and shortened layer metadata while preserving accessible action names and safety copy. The new token regression checks readable text and interactive boundaries on five surface roles in each theme.
+
+255 tests passed across the full-suite run and corrected UI-test rerun (123 panel tests); type, security and package checks passed. The initial contrast-test parser also matched component selectors; it was corrected to read exactly the two theme token blocks. No production failure was hidden. Development ZIP SHA-256: `239b7c6c3b5121b4fc4862c95ccf70ab934649d3c9d0c1ac76ba317cf55fc08a`.
+
+The [simulated visual matrix](../artifacts/rounded-ui-20260905/demo-matrix.json) passed all six destinations in both themes at four sizes, plus stress states and palette/persistence checks. [Native Changes](../artifacts/rounded-ui-20260905/native-dark-changes-814x800.png) confirms the rounded UI at 814×800 logical pixels. Existing native-widget and actual narrow-window acceptance limits remain; no Photoshop document was saved, switched or merged in this pass.
+
 ## September 5 moon/sun follow-up
 
 Replaced the large appearance selector with one accessible header icon, standardized UI typography (one system sans-serif family; 12px body/control/supporting text, 14px headings, 18px onboarding), refined Light surfaces/contrast, and capped the repository menu at 256px. User authorized committing and pushing this update, including the previous local design-system work.

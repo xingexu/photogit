@@ -14,7 +14,6 @@
         <div class="pg-mark" role="img" aria-label="PhotoGit"><img src="icons/photogit.png" alt=""></div>
         <div class="app-title">
           <h1>PhotoGit</h1>
-          <span>Version control for Photoshop</span>
         </div>
         <div id="global-search" class="header-action command-trigger" role="button" tabindex="0" aria-label="Open commands" title="Open the searchable command palette">
           <span>Commands</span>
@@ -30,8 +29,6 @@
       <p id="appearance-note" class="status-message" role="status" hidden></p>
 
       <section id="onboarding" class="onboarding liquid-card">
-        <div class="pg-mark onboarding-mark" aria-hidden="true"><img src="icons/photogit.png" alt=""></div>
-        <p class="eyebrow">Your next step</p>
         <h2>A history for your artwork.</h2>
         <p>Track readable layer edits, save exact PSD versions, and explore branches.</p>
         <div id="choose-project" class="button button-primary button-wide" role="button" tabindex="0">Connect a project</div>
@@ -54,7 +51,7 @@
         <section class="repo-context liquid-card" aria-label="Current repository">
           <div class="repo-topline">
             <div class="repo-item repo-project">
-              <span><small>Project</small><strong id="project-status">No project selected</strong></span>
+              <span><strong id="project-status">No project selected</strong></span>
               <div id="change-project" class="text-link project-switch" role="button" tabindex="0">Change project</div>
             </div>
             <div id="helper-status" class="repo-state warning"><i></i><span id="repo-sync-status">Not connected</span></div>
@@ -102,7 +99,6 @@
         <section id="changes-view" class="view-panel" role="tabpanel" aria-labelledby="changes-tab">
           <section class="liquid-card scan-card">
             <div class="scan-copy">
-              <p class="eyebrow">WORKING DOCUMENT</p>
               <div class="title-with-count"><h2 id="change-summary">Waiting for a scan</h2><span id="changes-total">—</span></div>
               <div id="watch-status" class="watch-status ready" role="status" aria-live="polite"><i aria-hidden="true"></i><span>Watching Photoshop</span></div>
               <p id="last-scan" class="scan-detail">Scanning this document automatically.</p>
@@ -115,8 +111,7 @@
           <div id="cancel-scan" class="button button-quiet" role="button" tabindex="0" hidden>Cancel scan</div>
 
           <section class="liquid-card content-card capture-panel">
-            <div class="section-heading"><h2>Save a version</h2><span class="meta-chip">PSD + data</span></div>
-            <label class="field-label" for="message">Version message</label>
+            <label class="field-label version-label" for="message">What changed?</label>
             <div class="field-shell">
               <span class="field-placeholder" aria-hidden="true">Refined cover typography…</span>
               <input id="message" type="text" maxlength="500" placeholder="Describe this version" aria-label="Save-version message" autocomplete="off" uxp-quiet="true">
@@ -151,7 +146,7 @@
         <section id="history-view" class="view-panel" role="tabpanel" aria-labelledby="history-tab" hidden>
           <section class="liquid-card content-card">
             <div class="view-heading">
-              <div><p class="eyebrow">Saved versions</p><h2>History</h2></div>
+              <h2>History</h2>
               <span class="meta-chip" id="history-total">0 versions</span>
             </div>
             <div class="field-shell search-field">
@@ -166,8 +161,8 @@
 
         <section id="branches-view" class="view-panel" role="tabpanel" aria-labelledby="branches-tab" hidden>
           <section class="liquid-card content-card">
-            <div class="view-heading"><div><p class="eyebrow">Design directions</p><h2>Branches</h2></div><span class="meta-chip">Exact PSD states</span></div>
-            <div class="current-branch"><span><small>Current branch</small><strong id="branch-name-detail">—</strong></span><span class="meta-chip">CURRENT</span></div>
+            <div class="view-heading"><h2>Branches</h2></div>
+            <div class="current-branch"><span><small>Current branch</small><strong id="branch-name-detail">—</strong></span></div>
             <label class="field-label" for="branch-picker">Switch direction</label>
             <sp-dropdown id="branch-picker" placeholder="Choose a branch" aria-label="Current branch"><sp-menu id="branch-menu" slot="options"></sp-menu></sp-dropdown>
             <div class="divider"></div>
@@ -186,7 +181,7 @@
         <section id="reviews-view" class="view-panel" role="tabpanel" aria-labelledby="reviews-tab" hidden>
           <section class="liquid-card content-card">
             <div class="view-heading">
-              <div><p class="eyebrow">Branch collaboration</p><h2>Reviews</h2></div>
+              <h2>Reviews</h2>
               <div id="new-pull-request" class="button button-primary button-small" role="button" tabindex="0" hidden>Open GitHub comparison</div>
             </div>
             <div id="review-provider" class="provider-note">Reviewing local branches</div>
@@ -194,7 +189,7 @@
             <section id="reviews-empty" class="empty-state" hidden><strong>No branches to review</strong><p>Create a branch or fetch a shared branch to begin a review.</p></section>
           </section>
           <section id="conflict-panel" class="liquid-card content-card conflict-panel" hidden>
-            <div class="section-heading"><h2>Conflicts</h2><span class="meta-chip">ACTION NEEDED</span></div>
+            <div class="section-heading"><h2>Conflicts</h2></div>
             <div id="conflicts" class="conflict-list"></div>
             <p class="fine-print">PhotoGit does not resolve PSD conflicts. Save your open work separately. Resolve or abort the Git merge outside Photoshop, then refresh this project.</p>
           </section>
@@ -202,17 +197,15 @@
 
         <section id="activity-view" class="view-panel" role="tabpanel" aria-labelledby="activity-tab" hidden>
           <section class="liquid-card content-card">
-            <div class="view-heading"><div><p class="eyebrow">Operation log</p><h2>Activity</h2></div><div id="clear-activity" class="button button-quiet button-small" role="button" tabindex="0">Clear</div></div>
+            <div class="view-heading"><h2>Activity</h2><div id="clear-activity" class="button button-quiet button-small" role="button" tabindex="0">Clear</div></div>
             <div id="activity" class="activity" role="log" aria-live="polite">Ready.</div>
           </section>
         </section>
 
         <section id="docs-view" class="view-panel" role="tabpanel" aria-labelledby="docs-tab" hidden>
           <section class="content-card">
-            <div class="section-heading"><h2>Commands &amp; docs</h2><div id="docs-open-palette" class="button button-quiet" role="button" tabindex="0">Run a command</div></div>
-            <p class="docs-intro">Edit → scan → save a version. Use History to open earlier work; Branches to explore; Reviews to compare and merge.</p>
-            <p class="fine-print">Open Commands, type a command, then press <strong>Enter</strong>. Use arrow keys to browse results and <strong>Escape</strong> to close. Enter in the version-message field saves that version. Photoshop’s own modifier-key shortcuts are left unchanged.</p>
-            <label class="field-label" for="docs-search">Find a command</label>
+            <div class="section-heading"><h2>Commands</h2><div id="docs-open-palette" class="button button-quiet" role="button" tabindex="0">Open palette</div></div>
+            <p class="docs-intro">Choose a command below. In the palette, Enter runs it; Escape closes it.</p>
             <div class="field-shell"><input id="docs-search" type="text" placeholder="Search save, merge, history…" aria-label="Search command directory" uxp-quiet="true"></div>
             <div id="command-directory"></div>
           </section>
