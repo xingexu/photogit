@@ -47,20 +47,13 @@ let helperOnline = false;
 let suppressNotifications = false;
 let detailAction = null;
 let lastScanCount = null;
+let startupPromise = null;
+let startupPending = false;
 const surfaceTimers = new Map();
 
-document.addEventListener("DOMContentLoaded", async () => {
-  let folderToken = null;
-  try { folderToken = localStorage.getItem("photogit.projectFolderToken"); } catch { /* Storage failure must not prevent UI startup. */ }
-  if (folderToken) {
-    try {
-      projectFolder = await storage.localFileSystem.getEntryForPersistentToken(folderToken);
-      await loadPairing();
-    } catch {
-      try { localStorage.removeItem("photogit.projectFolderToken"); } catch { /* Continue with setup. */ }
-      projectFolder = null;
-    }
-  }
+document.addEventListener("DOMContentLoaded", () => { void initializePanel(); });
+
+function bindPanelEvents() {
   bind("choose-project", "click", chooseProject);
   bind("setup-toggle", "click", () => {
     const instructions = document.getElementById("setup-instructions");
@@ -117,15 +110,69 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.addEventListener("click", handleOutsideClick);
   selectTab("changes", false);
   window.setInterval(syncDocumentLabel, 1000);
-  await refreshWorkspace();
+}
+
+function initializePanel() {
+  // Some host lifecycle events can repeat. Bind controls and start polling once.
+  if (!startupPromise) startupPromise = startPanel();
+  return startupPromise;
+}
+
+async function startPanel() {
+  setStartup(true);
+  try {
+    bindPanelEvents();
+    let folderToken = null;
+    try { folderToken = localStorage.getItem("photogit.projectFolderToken"); } catch { /* Continue with setup if preferences are unavailable. */ }
+    if (folderToken) {
+      try {
+        projectFolder = await startupRead(storage.localFileSystem.getEntryForPersistentToken(folderToken));
+        await startupRead(loadPairing());
+      } catch {
+        try { localStorage.removeItem("photogit.projectFolderToken"); } catch { /* Continue with setup. */ }
+        projectFolder = null;
+        helperToken = null;
+        show("Your saved project connection is unavailable. Connect the project again.", true);
+      }
+    }
+    document.getElementById("startup-message").textContent = projectFolder ? "Checking the helper and loading saved versions." : "Preparing your workspace.";
+    // Startup reads are bounded separately from potentially slow Git mutations.
+    await refreshWorkspace(false, HELPER_HEALTH_TIMEOUT_MS);
+  } catch (error) {
+    setHelper("Connection needs attention", false);
+    const ready = Boolean(projectFolder && helperToken);
+    document.getElementById("onboarding").hidden = ready;
+    document.getElementById("workspace").hidden = !ready;
+    show("PhotoGit could not finish loading. Reconnect your project to try again.", true);
+    log(`Startup failed: ${error.message || String(error)}`);
+  } finally {
+    setStartup(false);
+  }
   await installPhotoshopChangeDetection();
-  queueAutomaticScan("initial-load", 150);
-});
+  if (helperOnline) queueAutomaticScan("initial-load", 150);
+}
+
+async function startupRead(promise) {
+  let timer;
+  try {
+    return await Promise.race([promise, new Promise((_, reject) => {
+      timer = setTimeout(() => reject(new Error("The saved project connection timed out.")), 15000);
+    })]);
+  } finally { clearTimeout(timer); }
+}
+
+function setStartup(active) {
+  startupPending = active;
+  document.body.classList.toggle("is-initializing", active);
+  document.getElementById("startup-state").hidden = !active;
+  document.getElementById("workspace").setAttribute("aria-busy", String(active));
+  for (const id of ["global-search", "header-menu"]) document.getElementById(id).setAttribute("aria-disabled", String(active));
+}
 
 function bind(id, event, handler) {
   const element = document.getElementById(id);
   const invoke = (inputEvent) => {
-    if (element.getAttribute("aria-disabled") === "true") return;
+    if (startupPending || element.getAttribute("aria-disabled") === "true") return;
     return handler(inputEvent);
   };
   element.addEventListener(event, invoke);
@@ -269,7 +316,7 @@ async function loadPairing() {
   ]);
 }
 
-async function refreshWorkspace(announceErrors = false) {
+async function refreshWorkspace(announceErrors = false, readTimeoutMs = HELPER_TIMEOUT_MS) {
   const generation = ++workspaceGeneration;
   const current = () => generation === workspaceGeneration;
   syncDocumentLabel();
@@ -286,7 +333,7 @@ async function refreshWorkspace(announceErrors = false) {
     if (!current()) return;
     setHelper("Helper online", true);
     await loadStatus(status);
-    const [branches, history, reviews] = await Promise.all([callHelper("branches"), callHelper("history"), callHelper("reviews")]);
+    const [branches, history, reviews] = await Promise.all([callHelper("branches", {}, readTimeoutMs), callHelper("history", {}, readTimeoutMs), callHelper("reviews", {}, readTimeoutMs)]);
     if (!current()) return;
     await Promise.all([loadBranches(branches), loadHistory(history), loadReviews(reviews)]);
   } catch (error) {
@@ -311,7 +358,7 @@ async function loadStatus(existingResult) {
   projectStatus = result;
   document.getElementById("branch-name").textContent = result.branch;
   document.getElementById("branch-name-detail").textContent = result.branch;
-  document.getElementById("sync-status").textContent = result.changeCount ? "Files changed" : "File status";
+  setSyncStatus(result.changeCount ? "Project files changed" : "Project files clean");
   renderDocumentBinding();
   if (result.changeCount) log(`${result.changeCount} project file change(s) detected.`);
 }
@@ -416,8 +463,9 @@ function renderHistory(versions) {
       row.className = "list-row history-row";
       const message = escapeHtml(version.message);
       const shortId = escapeHtml(version.shortId);
-      row.innerHTML = `<span class="history-marker" aria-hidden="true">${historyIcon()}</span><span class="row-copy"><strong title="${message}">${message}</strong><span>Inspect version</span></span><span class="commit-id" title="Version ${shortId}">${shortId}</span>`;
+      row.innerHTML = `<span class="history-marker" aria-hidden="true">${historyIcon()}</span><span class="row-copy"><strong title="${message}">${message}</strong></span><span class="commit-id" title="Version ${shortId}">${shortId}</span>`;
       row.setAttribute("role", "button");
+      row.setAttribute("aria-label", `Inspect version ${version.shortId}: ${version.message}`);
       row.tabIndex = 0;
       row.addEventListener("click", () => inspectVersion(version));
       activateOnKeyboard(row, () => inspectVersion(version));
@@ -621,7 +669,7 @@ async function pull() {
     if (!await openAfterGit(`Pulled ${result.branch}`)) return;
     log(`Pulled ${result.branch} and opened its saved PSD version.`);
     await refreshWorkspace();
-    setSyncStatus("Synced");
+    setSyncStatus("Pulled shared changes");
     show(`Pulled ${result.branch} successfully.`, false);
   });
 }
@@ -631,7 +679,7 @@ async function push() {
   return run("Sharing versions…", async () => {
     const result = await callHelper("push");
     log(`Shared branch ${result.branch}.`);
-    setSyncStatus("Synced");
+    setSyncStatus("Pushed saved versions");
     await loadReviews();
     show("Changes shared successfully.", false);
   });
@@ -642,7 +690,7 @@ async function showProjectStatus() {
   return run("Checking project…", async () => {
     const result = await callHelper("status");
     log(`${result.branch}: ${result.changeCount ? `${result.changeCount} project file change(s)` : "clean"}.`);
-    setSyncStatus(result.changeCount ? "Changes" : "Synced");
+    setSyncStatus(result.changeCount ? "Project files changed" : "Project files clean");
     show(result.changeCount ? "Project files have unsaved changes." : "Project is clean.", result.changeCount > 0);
   });
 }
@@ -1247,6 +1295,7 @@ function renderCommandDocs() {
 }
 
 function openCommandPalette(initial = "") {
+  if (startupPending) return;
   if (busyNow) return show("Wait for the current operation before running a command.", false);
   openDetail("Go to or run a command", "");
   const content = document.getElementById("detail-content");
@@ -1288,6 +1337,7 @@ function openCommandPalette(initial = "") {
 }
 
 async function executeCommand(input) {
+  if (startupPending) return;
   const parsed = commandDirectory.parse(input);
   const fail = message => {
     const error = document.getElementById("command-error");
@@ -1375,6 +1425,7 @@ async function run(label, action) {
 }
 
 function ensureReady() {
+  if (startupPending) { show("PhotoGit is still opening your project. Please wait.", false); return false; }
   if (!projectFolder) { show("Choose a PhotoGit project folder first.", true); return false; }
   if (!helperToken) { show("Start the helper for this project, then choose the folder again.", true); return false; }
   return true;
@@ -1431,7 +1482,7 @@ function onPhotoshopNotification(eventName) {
 }
 
 function queueAutomaticScan(eventName, delayMs = AUTO_SCAN_DELAY_MS) {
-  if (!projectFolder || !helperToken || !app.documents.length) return;
+  if (startupPending || !projectFolder || !helperToken || !app.documents.length) return;
   pendingPhotoshopEvent = safeInlineText(eventName, 100) || "photoshop-change";
   clearTimeout(autoScanTimer);
   setWatchStatus("Change noticed…", "pending");
@@ -1641,7 +1692,10 @@ function setCount(id, value) {
   element.textContent = String(count);
   element.dataset.empty = count === 0 ? "true" : "false";
 }
-function setSyncStatus(label) { document.getElementById("sync-status").textContent = label; }
+function setSyncStatus(label) {
+  document.getElementById("sync-status").textContent = "Status";
+  document.getElementById("show-status").setAttribute("title", `Check project status · ${safeInlineText(label, 100)}`);
+}
 function safeInlineText(value, maximum) {
   const safe = String(value ?? "").replace(/[\u0000-\u001f\u007f-\u009f\u202a-\u202e\u2066-\u2069]/g, " ").replace(/\s+/g, " ").trim();
   return safe.length <= maximum ? safe : `${safe.slice(0, maximum - 1)}…`;

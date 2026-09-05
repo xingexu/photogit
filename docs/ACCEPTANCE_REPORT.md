@@ -1,5 +1,17 @@
 # Acceptance report: 0.2.0 development
 
+## September 5 startup and final label polish — batch 2
+
+Replaced the setup-screen flash with a rounded, theme-correct loading surface. Initialization binds once, gates commands/automatic scans while restoring, bounds folder/pairing reads at 15 seconds each and startup helper requests at 5 seconds, ignores late folder/pairing results, and always releases the loading UI on recoverable failures. Setup, reconnect and manual scanning remain available on the tested error paths. No fake progress or animation is required.
+
+267/267 tests passed (135 production-panel tests with mocked host APIs); type, source-security and package checks passed. The real helper/Git integration tests use disposable fixtures. Development ZIP SHA-256: `044b0fb5f13a73f3c522c4a99a4fde2e04a31db24e98201044302a7778485596` (12 runtime files; not installable CCX).
+
+The [simulated matrix](../artifacts/startup-ui-20260905/demo-matrix.json) passed all six destinations, both themes, four sizes, empty/error/setup/500-row stress states, loading, palette navigation, persistence and focus return. A real native window was now available at 318×800 logical pixels: [all six pages in both themes](../artifacts/startup-ui-20260905/native-matrix.json) were captured and visually inspected at 2× backing scale, without CSS width constraints. Final inspection prompted the stable “Status” footer label and removal of the redundant current-branch card. History's repeated “Inspect version” subtitle is now an accessible row action instead.
+
+Native reload completed, restored the helper and five edits, and enabled Commands. Injected DOM Enter navigated `/docs` and closed the palette; command-directory search for “merge” returned two matches. These are native DOM checks, not physical-keyboard coverage. No artwork was saved, switched or merged. The Spectrum branch picker still follows Photoshop's host theme; all other OS/scale/viewport and destructive-workflow acceptance gaps remain as documented below.
+
+Batch 1 (`77b68c5`) was pushed to GitHub main and its full [GitHub CI run](https://github.com/xingexu/photogit/actions/runs/33947981749) passed before this second batch was published.
+
 ## September 5 rounded, higher-contrast UI — batch 1
 
 Removed redundant captions across all six destinations, grouped tasks into rounded cards, standardized 8px controls/12px surfaces, strengthened both themes and shortened layer metadata while preserving accessible action names and safety copy. The new token regression checks readable text and interactive boundaries on five surface roles in each theme.

@@ -43,6 +43,10 @@ async function boot() {
   if (demoParams.get("state") === "long") { changes = Array.from({ length: 500 }, (_, i) => ({ domain: "content", layerName: "Campaign-direction-with-a-very-long-layer-name-".repeat(3) + i, photoshopId: i + 1, summary: "Rendered appearance changed" })); renderChanges(); }
   if (demoParams.get("state") === "error") flashResult("The helper is disconnected. Reconnect before saving a version.", true);
   if (demoParams.get("state") === "setup") { byId("workspace").hidden = true; byId("onboarding").hidden = false; }
+  if (demoParams.get("state") === "loading") {
+    byId("workspace").hidden = true; byId("onboarding").hidden = true; byId("startup-state").hidden = false;
+    for (const id of ["global-search", "header-menu"]) byId(id).setAttribute("aria-disabled", "true");
+  }
   if (demoParams.has("view")) selectTab(demoParams.get("view"));
   if (demoParams.has("panel")) openPhotoGit();
   if (demoParams.has("autoplay")) autoplay();
@@ -50,6 +54,8 @@ async function boot() {
 }
 
 function setupDemoPanel() {
+  byId("startup-state").hidden = true;
+  for (const id of ["global-search", "header-menu"]) byId(id).setAttribute("aria-disabled", "false");
   byId("onboarding").hidden = true;
   byId("workspace").hidden = false;
   byId("project-status").textContent = "photogit-demo";
@@ -58,7 +64,7 @@ function setupDemoPanel() {
   byId("branch-name-detail").textContent = "live-option-b";
   byId("helper-status").className = "repo-state ok";
   byId("repo-sync-status").textContent = "Synced";
-  byId("sync-status").textContent = "Sync";
+  byId("sync-status").textContent = "Status";
   replaceDemoDropdown();
   renderChanges();
   renderHistory();
@@ -537,7 +543,7 @@ function switchBranch(event) {
 }
 
 function sync(message, status) {
-  byId("sync-status").textContent = status;
+  byId("show-status").setAttribute("title", `Check project status · ${status}`);
   addActivity(message);
   flashResult(message);
 }
@@ -685,7 +691,7 @@ async function autoplay() {
 
 function bind(id, handler) {
   const element = byId(id);
-  element.addEventListener("click", handler);
+  element.addEventListener("click", event => { if (element.getAttribute("aria-disabled") !== "true") handler(event); });
   if (["button", "tab", "menuitem"].includes(element.getAttribute("role"))) element.addEventListener("keydown", activateOnKeyboard);
 }
 function activateOnKeyboard(event) {

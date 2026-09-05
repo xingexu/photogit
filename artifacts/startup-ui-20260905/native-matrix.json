@@ -1,0 +1,116 @@
+{
+  "native": true,
+  "platform": "macOS",
+  "backingScale": 2,
+  "note": "Captured actual window without viewport overrides. Screenshots require visual inspection; this is not Photoshop mutation or physical keyboard acceptance.",
+  "results": [
+    {
+      "theme": "dark",
+      "view": "changes",
+      "active": true,
+      "loading": false,
+      "width": 318,
+      "height": 800,
+      "screenshot": "native-dark-changes-318x800.png"
+    },
+    {
+      "theme": "dark",
+      "view": "history",
+      "active": true,
+      "loading": false,
+      "width": 318,
+      "height": 800,
+      "screenshot": "native-dark-history-318x800.png"
+    },
+    {
+      "theme": "dark",
+      "view": "branches",
+      "active": true,
+      "loading": false,
+      "width": 318,
+      "height": 800,
+      "screenshot": "native-dark-branches-318x800.png"
+    },
+    {
+      "theme": "dark",
+      "view": "reviews",
+      "active": true,
+      "loading": false,
+      "width": 318,
+      "height": 800,
+      "screenshot": "native-dark-reviews-318x800.png"
+    },
+    {
+      "theme": "dark",
+      "view": "activity",
+      "active": true,
+      "loading": false,
+      "width": 318,
+      "height": 800,
+      "screenshot": "native-dark-activity-318x800.png"
+    },
+    {
+      "theme": "dark",
+      "view": "docs",
+      "active": true,
+      "loading": false,
+      "width": 318,
+      "height": 800,
+      "screenshot": "native-dark-docs-318x800.png"
+    },
+    {
+      "theme": "light",
+      "view": "changes",
+      "active": true,
+      "loading": false,
+      "width": 318,
+      "height": 800,
+      "screenshot": "native-light-changes-318x800.png"
+    },
+    {
+      "theme": "light",
+      "view": "history",
+      "active": true,
+      "loading": false,
+      "width": 318,
+      "height": 800,
+      "screenshot": "native-light-history-318x800.png"
+    },
+    {
+      "theme": "light",
+      "view": "branches",
+      "active": true,
+      "loading": false,
+      "width": 318,
+      "height": 800,
+      "screenshot": "native-light-branches-318x800.png"
+    },
+    {
+      "theme": "light",
+      "view": "reviews",
+      "active": true,
+      "loading": false,
+      "width": 318,
+      "height": 800,
+      "screenshot": "native-light-reviews-318x800.png"
+    },
+    {
+      "theme": "light",
+      "view": "activity",
+      "active": true,
+      "loading": false,
+      "width": 318,
+      "height": 800,
+      "screenshot": "native-light-activity-318x800.png"
+    },
+    {
+      "theme": "light",
+      "view": "docs",
+      "active": true,
+      "loading": false,
+      "width": 318,
+      "height": 800,
+      "screenshot": "native-light-docs-318x800.png"
+    }
+  ]
+}
