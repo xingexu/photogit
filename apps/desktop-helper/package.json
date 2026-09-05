@@ -1,14 +1,16 @@
 {
   "name": "@photogit/desktop-helper",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "main": "dist/main.js",
-  "bin": { "photogit-helper": "dist/main.js" },
+  "bin": {
+    "photogit-helper": "dist/main.js"
+  },
   "dependencies": {
-    "@photogit/differ": "0.1.0",
-    "@photogit/git-engine": "0.1.0",
-    "@photogit/protocol": "0.1.0",
-    "@photogit/schema": "0.1.0",
-    "@photogit/serializer": "0.1.0"
+    "@photogit/differ": "0.2.0",
+    "@photogit/git-engine": "0.2.0",
+    "@photogit/protocol": "0.2.0",
+    "@photogit/schema": "0.2.0",
+    "@photogit/serializer": "0.2.0"
   }
 }
