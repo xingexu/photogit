@@ -1,5 +1,13 @@
 # Acceptance report: 0.2.0 development
 
+## September 5 motion refinement
+
+Removed the redundant Open palette button from Docs while retaining global Commands access. Added shared timer-driven button feedback, tab/sheet entrances and a two-phase appearance fade. Presentation never triggers operations, keeps focus/visibility independent, cancels obsolete animations, and restores inline opacity. Preference intent is saved before animation so an immediate reload keeps the user's choice. Reduced-motion handling is covered through browser media queries and the CSS fallback; native OS preference propagation is not asserted.
+
+275 tests passed in 16 files, including eight new motion tests (rapid toggles, preference failure, reduced-motion paths, immediate single-dispatch click behavior, cancelled hidden views and Docs structure). Type, source-security and package checks passed. The runtime package now includes `motion.js` (13 files). The [browser matrix](../artifacts/motion-ui-20260905/demo-matrix.json) covers all six pages/both themes/four sizes, stress states, theme persistence and command focus behavior; screenshots wait for fades to settle.
+
+Native inspection confirmed Docs opens immediately, its duplicate button is absent, and the theme samples progress from opacity 1 through 0.63009/0.55 back to 1 by the 320ms observation. Browser frame sampling independently measured an intermediate 0.569294 and final 1; rapid toggles and Docs entrance passed. No artwork operation was performed. Existing native Spectrum theme and broader acceptance limitations remain.
+
 ## September 5 startup and final label polish — batch 2
 
 Replaced the setup-screen flash with a rounded, theme-correct loading surface. Initialization binds once, gates commands/automatic scans while restoring, bounds folder/pairing reads at 15 seconds each and startup helper requests at 5 seconds, ignores late folder/pairing results, and always releases the loading UI on recoverable failures. Setup, reconnect and manual scanning remain available on the tested error paths. No fake progress or animation is required.

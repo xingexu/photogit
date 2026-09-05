@@ -15,6 +15,7 @@ const results = [];
 try {
   for (const theme of ["dark", "light"]) {
     evaluate(`(() => { if(document.documentElement.getAttribute("data-theme")!==${JSON.stringify(theme)}) document.getElementById("appearance-toggle").dispatchEvent(new Event("click",{bubbles:true})); return true; })()`);
+    await new Promise(resolve => setTimeout(resolve, 280));
     for (const view of ["changes", "history", "branches", "reviews", "activity", "docs"]) {
       const state = evaluate(`(() => {
         document.getElementById(${JSON.stringify(view + "-tab")}).dispatchEvent(new Event("click",{bubbles:true})); document.body.scrollTop=0;

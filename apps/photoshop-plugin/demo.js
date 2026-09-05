@@ -76,7 +76,6 @@ function setupDemoPanel() {
   bind("reviews-tab", () => selectTab("reviews"));
   bind("activity-tab", () => selectTab("activity"));
   bind("docs-tab", () => selectTab("docs"));
-  bind("docs-open-palette", () => openCommandPalette());
   bind("close-detail", closeDetail);
   byId("docs-search").addEventListener("input", renderCommandDocs);
   renderCommandDocs();
@@ -281,9 +280,11 @@ function openSurface(element) {
   element.classList.remove("is-closing", "is-open");
   void element.offsetWidth;
   element.classList.add("is-open");
+  globalThis.PhotoGitMotion?.enter(element);
 }
 
 function closeSurface(element, immediate = false) {
+  globalThis.PhotoGitMotion?.cancel(element);
   clearTimeout(surfaceTimers.get(element));
   if (element.hidden) return;
   element.classList.remove("is-open");
@@ -590,6 +591,7 @@ function selectTab(name) {
     byId(`${section}-tab`).setAttribute("aria-selected", active ? "true" : "false");
     byId(`${section}-tab`).tabIndex = active ? 0 : -1;
   });
+  globalThis.PhotoGitMotion?.enter(byId(`${name}-view`));
 }
 
 function setCaption(step, heading, copy) {

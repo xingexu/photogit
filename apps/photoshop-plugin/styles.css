@@ -8,7 +8,7 @@
   --error: #eea19a; --error-surface: #392927; --backdrop: rgba(0,0,0,.6);
   --space: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-6: 24px; --space-8: 32px;
   --text-small: 12px; --text-body: 12px; --text-title: 14px; --text-onboarding: 18px; --radius: 8px; --radius-panel: 12px; --motion: 120ms;
-  --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; --mono: var(--font-ui);
+  --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; --mono: var(--font-ui); --motion-enabled: 1;
 }
 :root[data-theme="light"] {
   color-scheme: light;
@@ -35,7 +35,7 @@ svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width:
 .app-title { flex: 1; min-width: 0; }
 .app-title > span { display: block; color: var(--muted); font-size: var(--text-small); }
 .header-action, .strip-action, .sheet-close { display: flex; align-items: center; justify-content: center; width: 28px; height: 30px; flex-shrink: 0; border-radius: var(--radius); }
-[role="button"], [role="tab"], [role="menuitem"] { cursor: pointer; transition: background-color var(--motion) ease, opacity var(--motion) ease; }
+[role="button"], [role="tab"], [role="menuitem"] { cursor: pointer; transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease; }
 [role="button"]:hover, [role="menuitem"]:hover { background-color: var(--hover); }
 [role="button"]:active { background-color: var(--pressed); }
 [role="button"]:focus, [role="tab"]:focus, [role="menuitem"]:focus, input:focus, sp-dropdown:focus { outline: 2px solid var(--focus); outline-offset: 2px; }
@@ -183,6 +183,7 @@ sp-dropdown { width: 100%; margin: 5px 0; }
 /* UXP native text fields can paint above fixed overlays despite z-index. */
 body.has-surface #workspace input, body.has-surface #workspace sp-dropdown { visibility: hidden; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+@media (prefers-reduced-motion: reduce) { :root { --motion-enabled: 0; } }
 
 /* Editorial layout: natural-width tabs, one document scroll, bounded reading width. */
 .panel-root { max-width: 680px; margin: 0 auto; padding: 0 var(--space-3) var(--space-3); }

@@ -1,0 +1,80 @@
+{
+  "simulated": true,
+  "results": [
+    {
+      "height": 200,
+      "overflow": false,
+      "simulated": true,
+      "tabs": 6,
+      "theme": "dark",
+      "width": 230
+    },
+    {
+      "height": 600,
+      "overflow": false,
+      "simulated": true,
+      "tabs": 6,
+      "theme": "dark",
+      "width": 320
+    },
+    {
+      "height": 800,
+      "overflow": false,
+      "simulated": true,
+      "tabs": 6,
+      "theme": "dark",
+      "width": 420
+    },
+    {
+      "height": 800,
+      "overflow": false,
+      "simulated": true,
+      "tabs": 6,
+      "theme": "dark",
+      "width": 900
+    },
+    {
+      "height": 200,
+      "overflow": false,
+      "simulated": true,
+      "tabs": 6,
+      "theme": "light",
+      "width": 230
+    },
+    {
+      "height": 600,
+      "overflow": false,
+      "simulated": true,
+      "tabs": 6,
+      "theme": "light",
+      "width": 320
+    },
+    {
+      "height": 800,
+      "overflow": false,
+      "simulated": true,
+      "tabs": 6,
+      "theme": "light",
+      "width": 420
+    },
+    {
+      "height": 800,
+      "overflow": false,
+      "simulated": true,
+      "tabs": 6,
+      "theme": "light",
+      "width": 900
+    }
+  ],
+  "destinationsPerViewport": 6,
+  "statesAt320": [
+    "empty",
+    "long (500 rows)",
+    "error",
+    "setup",
+    "loading"
+  ],
+  "persistence": true,
+  "paletteNavigation": true,
+  "dismissalAndFocus": true
+}

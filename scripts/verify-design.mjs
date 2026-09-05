@@ -12,7 +12,15 @@ const run = (...args) => {
   return execFileSync(cli, ["--session", "photogit-design", ...args], { encoding: "utf8" });
 };
 const results = [];
-const settle = () => run("eval", "new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve(true))))");
+const settle = () => run("eval", `new Promise((resolve, reject) => {
+  const started = Date.now();
+  const check = () => {
+    const fading = Array.from(document.querySelectorAll('.panel-root, .view-panel, .tool-sheet')).some(element => element.style.opacity);
+    if (!fading) return requestAnimationFrame(() => requestAnimationFrame(() => resolve(true)));
+    if (Date.now() - started > 1500) return reject(new Error('Motion did not settle'));
+    setTimeout(check, 16);
+  }; check();
+})`);
 for (const theme of ["dark", "light"]) {
   for (const [width, height] of [[230, 200], [320, 600], [420, 800], [900, 800]]) {
     run("set", "viewport", String(width), String(height));

@@ -2,7 +2,8 @@
 // Shared by the native panel and the explicitly simulated browser preview.
 (function () {
   const key = "photogit.appearance";
-  function apply(value, persist = false) {
+  let intendedTheme = null;
+  function apply(value) {
     const theme = value === "light" ? "light" : "dark";
     document.documentElement.setAttribute("data-theme", theme);
     const control = document.getElementById("appearance-toggle");
@@ -11,11 +12,6 @@
       control.setAttribute("aria-label", label);
       control.setAttribute("title", label);
     }
-    if (persist) {
-      try { localStorage.setItem(key, theme); }
-      catch { return false; }
-    }
-    return true;
   }
   function restore() {
     let saved = "dark";
@@ -27,9 +23,19 @@
   document.addEventListener("click", event => {
     const control = event.target.closest("#appearance-toggle");
     if (!control) return;
-    const saved = apply(document.documentElement.getAttribute("data-theme") === "light" ? "dark" : "light", true);
-    const note = document.getElementById("appearance-note");
-    if (note) { note.hidden = saved; note.textContent = saved ? "" : "Appearance changed for this session. Preference storage is unavailable."; }
+    intendedTheme = (intendedTheme || document.documentElement.getAttribute("data-theme")) === "light" ? "dark" : "light";
+    const nextTheme = intendedTheme;
+    // Persist intent immediately, even if the panel reloads during the fade.
+    let saved = true;
+    try { localStorage.setItem(key, nextTheme); } catch { saved = false; }
+    const change = () => {
+      apply(nextTheme);
+      intendedTheme = null;
+      const note = document.getElementById("appearance-note");
+      if (note) { note.hidden = saved; note.textContent = saved ? "" : "Appearance changed for this session. Preference storage is unavailable."; }
+    };
+    if (globalThis.PhotoGitMotion) globalThis.PhotoGitMotion.theme(change);
+    else change();
   });
   document.addEventListener("keydown", event => {
     if (!["Enter", " "].includes(event.key) || event.repeat || !event.target.matches("#appearance-toggle")) return;

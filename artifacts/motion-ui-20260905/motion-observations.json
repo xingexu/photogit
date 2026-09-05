@@ -1,0 +1,12 @@
+{
+  "nativeEvidence": "Computed-style observations in the live Photoshop panel; not a frame-rate or physical-keyboard test",
+  "nativeThemeSamples": [
+    { "atMs": 0, "theme": "dark", "opacity": 1 },
+    { "atMs": 48, "theme": "dark", "opacity": 0.63009 },
+    { "atMs": 112, "theme": "light", "opacity": 0.55 },
+    { "atMs": 320, "theme": "light", "opacity": 1 }
+  ],
+  "nativeDocs": { "immediatelyVisible": true, "entranceOpacity": 0.78, "duplicateButtonAbsent": true },
+  "simulatedBrowser": { "midFadeOpacity": 0.569294, "settledOpacity": 1, "rapidToggles": true, "docsFade": true },
+  "artworkMutations": false
+}

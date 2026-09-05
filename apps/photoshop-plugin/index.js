@@ -70,7 +70,6 @@ function bindPanelEvents() {
   bind("refresh", "click", refreshAndScan);
   bind("global-search", "click", () => openCommandPalette());
   bind("docs-tab", "click", () => selectTab("docs"));
-  bind("docs-open-palette", "click", () => openCommandPalette());
   bind("docs-search", "input", renderCommandDocs);
   renderCommandDocs();
   bind("header-menu", "click", toggleToolsMenu);
@@ -850,9 +849,11 @@ function openSurface(element) {
   element.classList.remove("is-closing", "is-open");
   void element.offsetWidth;
   element.classList.add("is-open");
+  globalThis.PhotoGitMotion?.enter(element);
 }
 
 function closeSurface(element, immediate = false) {
+  globalThis.PhotoGitMotion?.cancel(element);
   clearTimeout(surfaceTimers.get(element));
   if (element.hidden) return;
   element.classList.remove("is-open");
@@ -1402,6 +1403,7 @@ function selectTab(name, animate = true) {
   target.classList.remove("view-enter");
   void target.offsetWidth;
   target.classList.add("view-enter");
+  globalThis.PhotoGitMotion?.enter(target);
 }
 
 async function run(label, action) {
