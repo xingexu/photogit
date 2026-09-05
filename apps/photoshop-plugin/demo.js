@@ -396,7 +396,7 @@ function renderChanges() {
     row.setAttribute("role", "button");
     row.setAttribute("aria-pressed", "false");
     row.setAttribute("aria-label", `Select changed layer ${change.layerName}, Photoshop layer ${change.photoshopId}. ${change.summary}`);
-    row.innerHTML = `<span class="row-glyph" aria-hidden="true">${domainIcon(change.domain)}</span><span class="row-copy"><strong>${escapeHtml(change.layerName)}</strong><span class="layer-identity">Photoshop layer #${escapeHtml(change.photoshopId)}</span><span class="change-detail">${escapeHtml(change.summary)}</span></span><span class="change-domain">${escapeHtml(change.domain)}</span>`;
+    row.innerHTML = `<span class="row-glyph" aria-hidden="true">${domainIcon(change.domain)}</span><span class="row-copy"><strong>${escapeHtml(change.layerName)}</strong><span class="layer-identity">Layer #${escapeHtml(change.photoshopId)}</span><span class="change-detail">${escapeHtml(change.summary)}</span></span><span class="change-domain">${escapeHtml(change.domain)}</span>`;
     const select = () => {
       document.querySelectorAll(".layer").forEach((layer) => layer.classList.remove("active"));
       document.querySelectorAll(".layer")[index]?.classList.add("active");

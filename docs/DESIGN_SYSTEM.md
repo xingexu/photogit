@@ -12,25 +12,26 @@ The single production stylesheet `apps/photoshop-plugin/styles.css` defines both
 
 | Role/token | Dark | Light |
 | --- | --- | --- |
-| Canvas `--bg` | #202020 | #F5F6F8 |
-| Surface `--surface` | #292929 | #FFFFFF |
-| Elevated `--elevated` | #333333 | #ECEEF2 |
-| Text `--text` | #F2F2EF | #252A32 |
-| Supporting text `--muted` | #B8B8B2 | #59616E |
-| Separator `--line` | #41413D | #DADDE3 |
-| Control boundary `--border` | #85857D | #858D99 |
+| Canvas `--bg` | #17191D | #E9EDF3 |
+| Surface `--surface` | #24272D | #FFFFFF |
+| Elevated `--elevated` | #30353D | #F5F7FB |
+| Text `--text` | #FFFFFF | #151D29 |
+| Supporting text `--muted` | #C5CCD6 | #404E61 |
+| Separator `--line` | #474D58 | #C2CAD5 |
+| Control boundary `--border` | #9BA7B7 | #69768A |
 | Focus `--focus` | #AFC5FF | #365BBB |
 | Selection `--selected` | #333C50 | #E5EBF8 |
 | Success `--success` | #91C6A0 | #24683C |
 | Warning `--warning` | #E3C17C | #805900 |
 | Error `--error` | #EEA19A | #A32E28 |
 
-Additional tokens define input background, hover/pressed states, inverse primary controls, status surfaces and backdrop. Disabled controls retain their label and use reduced opacity plus `aria-disabled`; disabled controls are not a color-only status signal. Spacing tokens are 4/8/12/16/24/32px. One system sans-serif family throughout, including commands and identifiers: 12px body, controls and supporting text; 14px headings; 18px onboarding title. Semibold is consistently 600. The header title uses 12px at the minimum width. Controls are 32–34px, compact controls at least 28px, radius 4px, motion 120ms with reduced-motion override.
+Additional tokens define input background, hover/pressed states, inverse primary controls, status surfaces and backdrop. Disabled controls retain their label and use reduced opacity plus `aria-disabled`; disabled controls are not a color-only status signal. Spacing tokens are 4/8/12/16/24/32px. One system sans-serif family throughout, including commands and identifiers: 12px body, controls and supporting text; 14px headings; 18px onboarding title. Semibold is consistently 600. The header title uses 12px at the minimum width. Controls are 32–34px, compact controls at least 28px, radius 8px (12px cards/sheets), motion 120ms with reduced-motion override.
 
-Calculated contrast against canvas: normal text 14.53:1 dark / 13.34:1 light; supporting text 8.18 / 5.78; interactive boundary 4.38 / 3.10; focus 9.51 / 5.76. Status text exceeds 4.5:1 against canvas. Separators are intentionally quiet and must not substitute for control boundaries. Native widget internals are an exception requiring separate host verification (below).
+Automated token checks require text and supporting text to exceed 4.5:1, and interactive boundaries/focus to exceed 3:1, against canvas, surface, elevated, input and selected backgrounds in both themes. Primary-button text also exceeds 4.5:1. Separators are intentionally quieter and must not substitute for control boundaries. Native widget internals are an exception requiring separate host verification (below).
 
 ## Component and responsive rules
 
+- Rounded task cards separate scanning, saving, changes and reviews. The save card has one field prompt, “What changed?”, instead of a repeated heading, data caption and field label. Duplicate edit-count status and section eyebrows are removed. Layer IDs remain concise inline metadata (and full accessible row names); document identity, warnings and action labels remain.
 - One dominant action per task: Save version, Create branch, or the explicit confirmation. Never hide essential actions behind hover.
 - Changes retains one visible Scan now control and command access. Version message and Save precede the list; error and cancellation controls remain intact.
 - Six text-labeled tabs wrap by content width rather than occupying an oversized equal-column grid. Changes/History/Branches have stronger weight. Active secondary destinations remain visible. Arrow/Home/End navigation and tab semantics are preserved.
@@ -49,6 +50,8 @@ This is an explicit panel preference, not “Match Photoshop.” Text fields use
 Adobe documents [CSS variable support](https://developer.adobe.com/photoshop/uxp/2021/uxp/reference-css/General/variables/) and [UXP layout/control limitations](https://developer.adobe.com/photoshop/uxp/2022/uxp/known-issues/). Native rendering is not assumed to match Chromium.
 
 ## Evidence and remaining gaps
+
+Rounded-UI follow-up: 255 tests passed across the full suite and corrected UI-test rerun (123 panel tests). The [updated matrix](../artifacts/rounded-ui-20260905/demo-matrix.json) includes screenshots of all six destinations in both themes at 420×800, plus all previous viewport/stress checks. [Native Dark Changes](../artifacts/rounded-ui-20260905/native-dark-changes-814x800.png) confirms the new tokens, rounded surfaces, concise field prompt and layer labels in Photoshop at 814×800. No artwork was mutated. Earlier evidence below is historical.
 
 Automated source checks: 253 tests passed, including appearance/activity cases, icon-child clicks, Enter/Space, held-key suppression, storage failure and reload persistence; TypeScript, security inventory and development package verification passed. Tests execute production panel behavior with mocked host APIs, not real Photoshop mutations.
 

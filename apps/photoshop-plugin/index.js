@@ -1168,7 +1168,7 @@ function renderChanges(changes, { baselineMissing = false, changeCount = changes
       row.setAttribute("aria-pressed", "false");
       row.setAttribute("aria-label", `Select changed layer ${change.layerName}, Photoshop layer ${change.photoshopId}. ${changeSummary(change)}`);
     }
-    const identityLabel = change.domain === "document" ? "Whole document" : `Photoshop layer ${change.photoshopId ? `#${change.photoshopId}` : "ID unavailable"}`;
+    const identityLabel = change.domain === "document" ? "" : `Layer ${change.photoshopId ? `#${change.photoshopId}` : "ID unavailable"}`;
     row.innerHTML = `<span class="row-glyph ${domainClass(change.domain)}" aria-hidden="true">${domainIcon(change.domain)}</span><span class="row-copy"><strong>${escapeHtml(change.layerName)}</strong><span class="layer-identity">${escapeHtml(identityLabel)}</span><span class="change-detail">${escapeHtml(changeSummary(change))}</span></span><span class="change-domain">${escapeHtml(change.domain)}</span>`;
     const select = () => {
       if (!selectable) return;

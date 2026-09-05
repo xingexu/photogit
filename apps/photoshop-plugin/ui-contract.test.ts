@@ -822,6 +822,40 @@ describe("PhotoGit production panel behavior — host mocked", () => {
   });
 });
 
+describe("PhotoGit rounded design and label clarity", () => {
+  it("removes repeated captions without removing input names or merge warnings", async () => {
+    const p = await panel();
+    expect(p.document.querySelectorAll(".eyebrow")).toHaveLength(0);
+    expect(p.id("message").getAttribute("aria-label")).toBe("Save-version message");
+    expect(p.document.querySelector('label[for="message"]')!.textContent).toBe("What changed?");
+    expect(p.id("docs-view").textContent).toContain("Merge uses ordinary Git, not layer blending");
+    p.evaluate("renderChanges(testChanges)", { testChanges: [change(12), change(0, { domain: "document", layerName: "Document" })] });
+    expect(p.id("changes").textContent).toContain("Layer #12");
+    expect(p.id("changes").textContent).not.toContain("Whole document");
+    expect(p.id("changes").querySelector('[role="button"]')!.getAttribute("aria-label")).toContain("Photoshop layer 12");
+  });
+  it("keeps text and interactive boundaries high contrast on both themes' main surfaces", async () => {
+    const css = await readFile(resolve(pluginRoot, "styles.css"), "utf8");
+    const luminance = (hex: string) => {
+      const channels = hex.match(/[a-f\d]{2}/gi)!.map(channel => parseInt(channel, 16) / 255).map(value => value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4);
+      return channels[0]! * 0.2126 + channels[1]! * 0.7152 + channels[2]! * 0.0722;
+    };
+    const contrast = (a: string, b: string) => { const values = [luminance(a), luminance(b)].sort((x, y) => y - x); return (values[0]! + 0.05) / (values[1]! + 0.05); };
+    const themes = css.match(/^:root(?:\[data-theme="light"\])? \{[^}]+}/gm)!;
+    expect(themes).toHaveLength(2);
+    for (const block of themes) {
+      const colors = Object.fromEntries([...block.matchAll(/--([\w-]+):\s*(#[a-f\d]{6})/gi)].map(match => [match[1], match[2]]));
+      for (const surface of ["bg", "surface", "elevated", "input", "selected"]) {
+        for (const text of ["text", "muted"]) expect(contrast(colors[text]!, colors[surface]!)).toBeGreaterThanOrEqual(4.5);
+        for (const boundary of ["border", "focus"]) expect(contrast(colors[boundary]!, colors[surface]!)).toBeGreaterThanOrEqual(3);
+      }
+      expect(contrast(colors["primary-text"]!, colors.primary!)).toBeGreaterThanOrEqual(4.5);
+    }
+    expect(css).toContain("--radius: 8px");
+    expect(css).toContain("--radius-panel: 12px");
+  });
+});
+
 describe("PhotoGit appearance — shared startup and preference behavior", () => {
   async function appearance(saved: string | null = null, fails = false) {
     const { document, window } = parseHTML(await readFile(resolve(pluginRoot, "index.html"), "utf8"));
