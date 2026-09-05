@@ -429,12 +429,13 @@ function createReviewCard(review, compact) {
   const statusClass = review.mergeable ? "ready" : "blocked";
   const statusLabel = review.mergeable ? "Git merge available" : "Git merge blocked";
   const mergeClass = review.mergeable ? "button-primary" : "button-disabled";
-  const mergeLabel = review.mergeable ? "Merge" : "Blocked";
+  const mergeLabel = review.mergeable ? "Merge" : "Resolve conflicts to merge";
   const changes = review.changes.length ? review.changes.join("\n") : "No file-level differences.";
   card.innerHTML = `<div class="review-title"><strong>${escapeHtml(review.branch)}</strong><span>${review.ahead} ahead</span></div><div class="review-meta"><span class="${statusClass}">${statusLabel}</span><span>·</span><span>${review.changeCount} ${review.changeCount === 1 ? "file" : "files"}</span></div><div class="review-files" aria-hidden="true">${escapeHtml(changes)}</div><div class="review-actions"><div class="button button-quiet button-small compare-action" role="button" tabindex="0" aria-expanded="false">Compare</div><div class="button ${mergeClass} button-small merge-action" role="button" tabindex="${review.mergeable ? "0" : "-1"}" data-mergeable="${review.mergeable ? "true" : "false"}" ${review.mergeable ? "" : "aria-disabled=\"true\""}>${mergeLabel}</div></div>`;
   const details = card.querySelector(".review-files");
   const compareAction = card.querySelector(".compare-action");
   const mergeAction = card.querySelector(".merge-action");
+  if (!review.mergeable) { mergeAction.setAttribute("role", "note"); mergeAction.removeAttribute("tabindex"); }
   const compare = () => compareBranch(review.branch);
   const merge = () => {
     if (review.mergeable) mergeReview(review.branch);
@@ -1664,6 +1665,26 @@ function log(message) {
   const stamp = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   if (activity.textContent === "Ready.") activity.textContent = "";
   const text = safeInlineText(message, 2_000);
+  const scanEvent = /^(Captured \d+ Photoshop layer|\d+ semantic edits found|Ready to save the first version|\d+ project file change\(s\) detected)/.test(text);
+  if (scanEvent) {
+    let group = activity.firstElementChild;
+    if (!group || !group.classList.contains("activity-scan")) {
+      group = document.createElement("div"); group.className = "activity-row activity-scan";
+      const toggle = document.createElement("div"); toggle.className = "text-link";
+      toggle.setAttribute("role", "button"); toggle.tabIndex = 0; toggle.setAttribute("aria-expanded", "false");
+      const details = document.createElement("p"); details.hidden = true;
+      const expand = () => { details.hidden = !details.hidden; toggle.setAttribute("aria-expanded", String(!details.hidden)); };
+      toggle.addEventListener("click", expand); activateOnKeyboard(toggle, expand);
+      group.appendChild(toggle); group.appendChild(details); activity.insertBefore(group, activity.firstChild);
+    }
+    // Keep the same bounded session history as the surrounding activity feed.
+    const entries = (group.lastElementChild.textContent || "").split("\n").filter(Boolean);
+    entries.push(`[${stamp}] ${text}`);
+    group.lastElementChild.textContent = entries.slice(-50).join("\n");
+    group.firstElementChild.textContent = `[${stamp}] Change detection · ${entries.slice(-50).length} recent events — details`;
+    while (activity.children.length > 50) activity.lastElementChild.remove();
+    activityEntryCount += 1; setCount("activity-count", activityEntryCount); return;
+  }
   const row = document.createElement("div"); row.className = "activity-row";
   const summary = document.createElement("div");
   summary.textContent = `[${stamp}] ${text.length > 160 ? text.slice(0, 160) + "…" : text}`;

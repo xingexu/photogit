@@ -15,7 +15,7 @@ const results = [];
 try {
   for (const theme of ["dark", "light"]) {
     evaluate(`(() => { if(document.documentElement.getAttribute("data-theme")!==${JSON.stringify(theme)}) document.getElementById("appearance-toggle").dispatchEvent(new Event("click",{bubbles:true})); return true; })()`);
-    await new Promise(resolve => setTimeout(resolve, 280));
+    await new Promise(resolve => setTimeout(resolve, 520));
     for (const view of ["changes", "history", "branches", "reviews", "activity", "docs"]) {
       const state = evaluate(`(() => {
         document.getElementById(${JSON.stringify(view + "-tab")}).dispatchEvent(new Event("click",{bubbles:true})); document.body.scrollTop=0;
@@ -24,6 +24,7 @@ try {
       })()`);
       if (!state.active || state.loading || state.theme !== theme || !state.width) throw new Error(JSON.stringify(state));
       await settle();
+      await new Promise(resolve => setTimeout(resolve, 200));
       state.screenshot = `native-${theme}-${view}-${state.width}x${state.height}.png`;
       execFileSync("screencapture", ["-x", "-l", windowId, resolve(out, state.screenshot)]);
       results.push(state);

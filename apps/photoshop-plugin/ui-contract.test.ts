@@ -946,12 +946,26 @@ describe("PhotoGit production startup — mocked host and filesystem", () => {
 });
 
 describe("PhotoGit rounded design and label clarity", () => {
-  it("keeps Status a stable action label and shows a branch only once in its form", async () => {
+  it("groups scan events with expandable details and separates user actions", async () => {
+    const p = await panel();
+    p.evaluate('clearActivity(); log("Captured 3 Photoshop layer(s); comparing with the latest version."); log("2 semantic edits found.")');
+    expect(p.id("activity").children).toHaveLength(1);
+    const group = p.id("activity").firstElementChild!;
+    expect(group.textContent).toContain("2 recent events");
+    expect((group.lastElementChild as HTMLElement).hidden).toBe(true);
+    (group.firstElementChild as HTMLElement).click();
+    expect((group.lastElementChild as HTMLElement).hidden).toBe(false);
+    p.evaluate('log("Saved abc1234: Cover update")');
+    expect(p.id("activity").children).toHaveLength(2);
+    expect(p.id("activity-count").textContent).toBe("3");
+  });
+  it("keeps Status stable and identifies the current branch separately from switching", async () => {
     const p = await panel();
     p.evaluate('setSyncStatus("Project files changed")');
     expect(p.id("sync-status").textContent).toBe("Status");
     expect(p.id("show-status").getAttribute("title")).toContain("Project files changed");
-    expect(p.document.querySelector<HTMLElement>(".current-branch")!.hidden).toBe(true);
+    expect(p.document.querySelector<HTMLElement>(".current-branch")!.hidden).toBe(false);
+    expect(p.document.querySelector(".current-branch")!.textContent).toContain("Current");
     expect(p.document.querySelector('label[for="branch-picker"]')!.textContent).toBe("Switch branch");
     p.evaluate("renderHistory(versions)", { versions: [{ message: "Refined cover", shortId: "abc1234", id: "a".repeat(40), author: "Designer", date: new Date().toISOString() }] });
     expect(p.id("history").textContent).not.toContain("Inspect version");
