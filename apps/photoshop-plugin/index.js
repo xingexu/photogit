@@ -1,6 +1,7 @@
 const { app, core, action, imaging } = require("photoshop");
 const { storage, entrypoints, shell } = require("uxp");
 const panelModel = require("./panel-model.js");
+const commandDirectory = require("./commands.js");
 const scans = new panelModel.ScanCoordinator();
 
 entrypoints.setup({
@@ -68,7 +69,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   bind("close-detail", "click", closeDetail);
   bind("detail-action", "click", () => detailAction?.());
   bind("refresh", "click", refreshAndScan);
-  bind("global-search", "click", openHistorySearch);
+  bind("global-search", "click", () => openCommandPalette());
+  bind("docs-tab", "click", () => selectTab("docs"));
+  bind("docs-open-palette", "click", () => openCommandPalette());
+  bind("docs-search", "input", renderCommandDocs);
+  renderCommandDocs();
   bind("header-menu", "click", toggleToolsMenu);
   bind("scan", "click", () => scanChanges({ automatic: false }));
   bind("rescan", "click", () => scanChanges({ automatic: false }));
@@ -131,6 +136,7 @@ function bindInputAction(id, handler) {
   document.getElementById(id).addEventListener("keydown", (event) => {
     if (event.key !== "Enter") return;
     event.preventDefault();
+    event.stopPropagation();
     handler(event);
   });
 }
@@ -759,6 +765,7 @@ function closeTagSheet(immediate = false, returnFocus = false) {
 }
 
 function openBackdrop() {
+  document.body.classList.add("has-surface");
   const backdrop = document.getElementById("surface-backdrop");
   clearTimeout(surfaceTimers.get(backdrop));
   backdrop.hidden = false;
@@ -771,8 +778,8 @@ function closeBackdrop(immediate = false) {
   const backdrop = document.getElementById("surface-backdrop");
   clearTimeout(surfaceTimers.get(backdrop));
   backdrop.classList.remove("is-open");
-  if (immediate) return void (backdrop.hidden = true);
-  surfaceTimers.set(backdrop, setTimeout(() => { backdrop.hidden = true; }, 160));
+  if (immediate) { backdrop.hidden = true; document.body.classList.remove("has-surface"); return; }
+  surfaceTimers.set(backdrop, setTimeout(() => { backdrop.hidden = true; document.body.classList.remove("has-surface"); }, 160));
 }
 
 function setToolsExpanded(expanded) {
@@ -1207,10 +1214,122 @@ async function selectPhotoshopLayer(photoshopId) {
   } catch { /* Layer may have been removed. */ }
 }
 
+function commandRow(command, activate) {
+  const row = document.createElement("div");
+  row.className = "command-row";
+  row.setAttribute("role", "button");
+  row.tabIndex = 0;
+  const title = document.createElement("strong"); title.textContent = command.label;
+  const syntax = document.createElement("code"); syntax.textContent = `/${command.example}`;
+  const description = document.createElement("span"); description.textContent = command.description;
+  row.appendChild(title); row.appendChild(syntax); row.appendChild(description);
+  row.addEventListener("click", activate);
+  row.addEventListener("keydown", event => {
+    if (event.key === "Enter" || event.key === " ") { event.preventDefault(); event.stopPropagation(); activate(); }
+  });
+  return row;
+}
+
+function renderCommandDocs() {
+  const list = document.getElementById("command-directory");
+  list.innerHTML = "";
+  const matches = commandDirectory.search(document.getElementById("docs-search").value || "");
+  for (const command of matches) list.appendChild(commandRow(command, () => openCommandPalette(command.id + " ")));
+  if (!matches.length) list.textContent = "No matching commands. Try save, branch, or history.";
+}
+
+function openCommandPalette(initial = "") {
+  if (busyNow) return show("Wait for the current operation before running a command.", false);
+  openDetail("Go to or run a command", "");
+  const content = document.getElementById("detail-content");
+  const field = document.createElement("input");
+  field.id = "command-input"; field.type = "text"; field.maxLength = 600;
+  field.setAttribute("aria-label", "PhotoGit command");
+  field.setAttribute("placeholder", "Search, or type /save Your message");
+  field.setAttribute("uxp-quiet", "true"); field.value = initial;
+  const hint = document.createElement("p"); hint.className = "command-hint";
+  hint.textContent = "Enter to run. Arrow keys to browse. Escape to close.";
+  const error = document.createElement("p"); error.id = "command-error"; error.setAttribute("role", "status");
+  const results = document.createElement("div"); results.id = "command-results";
+  content.appendChild(field); content.appendChild(hint); content.appendChild(error); content.appendChild(results);
+  const render = () => {
+    error.textContent = ""; results.innerHTML = "";
+    const parsed = commandDirectory.parse(field.value);
+    const matches = parsed ? [parsed.command] : commandDirectory.search(field.value);
+    for (const command of matches) results.appendChild(commandRow(command, () => {
+      if (["save", "branch", "switch", "compare", "merge"].includes(command.id)) {
+        field.value = command.id + " "; field.focus(); render();
+      } else void executeCommand(command.id);
+    }));
+    if (!matches.length) results.textContent = "No matching commands. Nothing will be run.";
+  };
+  field.addEventListener("input", render);
+  field.addEventListener("keydown", event => {
+    if (event.key === "Enter") { event.preventDefault(); event.stopPropagation(); void executeCommand(field.value); }
+    if (event.key === "ArrowDown") { event.preventDefault(); results.firstElementChild?.focus(); }
+  });
+  results.addEventListener("keydown", event => {
+    if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) return;
+    const rows = Array.from(results.children); const index = rows.indexOf(event.target);
+    if (index < 0) return;
+    event.preventDefault();
+    const next = event.key === "Home" ? 0 : event.key === "End" ? rows.length - 1 : index + (event.key === "ArrowDown" ? 1 : -1);
+    if (next < 0) field.focus(); else rows[Math.min(next, rows.length - 1)]?.focus();
+  });
+  render(); field.focus();
+}
+
+async function executeCommand(input) {
+  const parsed = commandDirectory.parse(input);
+  const fail = message => {
+    const error = document.getElementById("command-error");
+    if (error) error.textContent = message; else show(message, true);
+  };
+  if (!parsed) return fail("Unknown command. Choose a command from the directory.");
+  if (busyNow) return fail("Another operation is running. Please wait.");
+  const { command, argument } = parsed;
+  const needsArgument = ["save", "branch", "switch", "compare", "merge"].includes(command.id);
+  if (needsArgument && !argument) return fail(`Usage: /${command.example}`);
+  if (!needsArgument && argument) return fail(`/${command.id} does not take an argument.`);
+  if ((command.id === "save" && argument.length > 500) || (needsArgument && command.id !== "save" && argument.length > 200)) return fail("The command argument is too long.");
+  closeDetail();
+  if (["changes", "history", "branches", "reviews", "activity", "docs"].includes(command.id)) {
+    selectTab(command.id); if (command.id === "history") document.getElementById("history-search").focus(); return;
+  }
+  if (command.id === "connect") return chooseProject();
+  if (command.id === "reconnect") return reconnectHelper();
+  if (command.id === "status") return openRepositorySettings();
+  if (!ensureReady()) return;
+  if (command.id === "scan") return scanChanges({ automatic: false });
+  if (command.id === "save") { document.getElementById("message").value = argument; return saveVersion(); }
+  if (command.id === "branch") { document.getElementById("new-branch-name").value = argument; return createBranch(); }
+  if (command.id === "compare") return compareBranch(argument);
+  if (command.id === "merge") return mergeReview(argument);
+  if (command.id === "tag") return openTagSheet();
+  if (command.id === "conflicts") return openConflicts();
+  const folder = projectFolder;
+  if (["switch", "pull", "push"].includes(command.id)) {
+    openDetail(`${command.label}?`, `${command.id === "switch" ? `Switch to “${argument}”. ` : ""}${command.description}. Save work you want to keep first. Your current document stays open.`, command.label, async () => {
+      if (projectFolder !== folder) return show("The project changed. Run the command again.", true);
+      closeDetail();
+      if (command.id === "pull") return pull();
+      if (command.id === "push") return push();
+      return run(`Switching to ${argument}…`, async () => {
+        await callHelper("switchBranch", { branch: argument });
+        if (await openAfterGit(`Switched to ${argument}`)) { await refreshWorkspace(); show(`Switched to ${argument}.`, false); }
+      });
+    });
+  }
+}
+
 function selectTab(name, animate = true) {
   closeToolsMenu();
+  if (!projectFolder || !helperToken) {
+    document.getElementById("workspace").hidden = name !== "docs";
+    document.getElementById("onboarding").hidden = name === "docs";
+  }
   let target = null;
-  for (const section of ["changes", "history", "branches", "reviews", "activity"]) {
+  for (const section of ["changes", "history", "branches", "reviews", "activity", "docs"]) {
     const active = section === name;
     const view = document.getElementById(`${section}-view`);
     view.hidden = !active;
@@ -1221,6 +1340,7 @@ function selectTab(name, animate = true) {
     tab.tabIndex = active ? 0 : -1;
   }
   if (!animate || !target) return;
+  document.body.scrollTop = 0;
   target.classList.remove("view-enter");
   void target.offsetWidth;
   target.classList.add("view-enter");
@@ -1474,6 +1594,7 @@ function show(message, error) {
   requestAnimationFrame(() => toast.classList.add("visible"));
   toastTimer = setTimeout(() => {
     toast.classList.remove("visible");
+    if (!error && !busyNow && result.textContent === safeMessage) result.textContent = "";
     toastHideTimer = setTimeout(() => { toast.hidden = true; }, 180);
   }, error ? 5200 : 3200);
 }

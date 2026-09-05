@@ -66,7 +66,6 @@ for (const icon of [...(manifest.icons ?? []), ...manifest.entrypoints.flatMap((
   await include(icon.path);
   const extension = extname(icon.path);
   for (const scale of icon.scale ?? [1]) {
-    if (scale === 1) continue; // The declared base path is the 1x icon.
     const variant = `${icon.path.slice(0, -extension.length)}@${scale}x${extension}`;
     await include(variant);
   }

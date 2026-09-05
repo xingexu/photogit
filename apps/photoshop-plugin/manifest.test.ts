@@ -34,6 +34,8 @@ describe("Photoshop plugin manifest", () => {
     for (const [path, icon] of icons) {
       const base = await readFile(resolve(pluginRoot, path));
       expect(pngDimensions(base), path).toEqual({ width: icon.width, height: icon.height });
+      const standard = await readFile(resolve(pluginRoot, path.replace(/\.png$/, "@1x.png")));
+      expect(pngDimensions(standard)).toEqual({ width: icon.width, height: icon.height });
       const retinaPath = path.replace(/\.png$/, "@2x.png");
       const retina = await readFile(resolve(pluginRoot, retinaPath));
       expect(pngDimensions(retina), retinaPath).toEqual({ width: icon.width * 2, height: icon.height * 2 });

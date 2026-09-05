@@ -4,6 +4,9 @@
 
 Hardening candidate for the Photoshop version workflow. This entry describes changes under verification, not a declaration of release acceptance.
 
+- Tighten logo/title alignment and panel spacing, remove redundant scan/save controls, and add a searchable command palette plus an in-panel Docs directory. Preserve mutation guards and confirm sync/branch-switch commands.
+- Include Adobe's explicitly requested `@1x` icon variant in packaging and manifest checks.
+
 - Redesign the actual monochrome UXP panel around the supplied Pg logo and consistent version/project/document/scan language.
 - Add document binding and scan lifecycle handling so stale or wrong-document scans cannot silently replace a project.
 - Run imaging capture in Photoshop's required modal scope and preserve alpha. After direct group imaging failed natively, add a document-composite fallback with explicit old-baseline warnings; unrelated imaging failures still stop the scan. Add regressions based on both host failures.

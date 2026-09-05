@@ -15,8 +15,8 @@
           <h1>PhotoGit</h1>
           <span>Version control for Photoshop</span>
         </div>
-        <div id="global-search" class="header-action" role="button" tabindex="0" aria-label="Search history" title="Search history">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 4.5 4.5"/></svg>
+        <div id="global-search" class="header-action command-trigger" role="button" tabindex="0" aria-label="Open commands" title="Open the searchable command palette">
+          <span>Commands</span>
         </div>
         <div id="header-menu" class="header-action" role="button" tabindex="0" aria-label="More PhotoGit tools" aria-controls="tools-menu" aria-expanded="false" title="More tools">
           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
@@ -87,12 +87,13 @@
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l2-6 4 12 2-6h6"/></svg>
             <span>Activity</span><b id="activity-count" data-empty="true">0</b>
           </div>
+          <div id="docs-tab" class="nav-item" role="tab" tabindex="-1" aria-label="Commands and docs" aria-controls="docs-view" aria-selected="false"><span>Docs</span></div>
         </nav>
 
         <section id="changes-view" class="view-panel" role="tabpanel" aria-labelledby="changes-tab">
           <section class="liquid-card scan-card">
             <div class="scan-copy">
-              <p class="eyebrow">DOCUMENT CHANGES</p>
+              <p class="eyebrow">WORKING DOCUMENT</p>
               <div class="title-with-count"><h2 id="change-summary">Waiting for a scan</h2><span id="changes-total">—</span></div>
               <div id="watch-status" class="watch-status ready" role="status" aria-live="polite"><i aria-hidden="true"></i><span>Watching Photoshop</span></div>
               <p id="last-scan" class="scan-detail">Scanning this document automatically.</p>
@@ -106,7 +107,7 @@
 
           <section class="liquid-card content-card capture-panel">
             <div class="section-heading"><h2>Save a version</h2><span class="meta-chip">PSD + data</span></div>
-            <label class="field-label" for="message">What did you change?</label>
+            <label class="field-label" for="message">Version message</label>
             <div class="field-shell">
               <span class="field-placeholder" aria-hidden="true">Refined cover typography…</span>
               <input id="message" type="text" maxlength="500" placeholder="Describe this version" aria-label="Save-version message" autocomplete="off" uxp-quiet="true">
@@ -114,7 +115,7 @@
             <div class="capture-actions">
               <div id="scan" class="button button-quiet" role="button" tabindex="0">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3.5h8l4 4V20H6z"/><circle cx="11" cy="13" r="3"/><path d="m13.5 15.5 2 2"/></svg>
-                Review edits
+                Scan again
               </div>
               <div id="save-version" class="button button-primary" role="button" tabindex="0">Save version</div>
             </div>
@@ -194,6 +195,23 @@
           <section class="liquid-card content-card">
             <div class="view-heading"><div><p class="eyebrow">Operation log</p><h2>Activity</h2></div><div id="clear-activity" class="button button-quiet button-small" role="button" tabindex="0">Clear</div></div>
             <div id="activity" class="activity" role="log" aria-live="polite">Ready.</div>
+          </section>
+        </section>
+
+        <section id="docs-view" class="view-panel" role="tabpanel" aria-labelledby="docs-tab" hidden>
+          <section class="content-card">
+            <div class="section-heading"><h2>Commands &amp; docs</h2><div id="docs-open-palette" class="button button-quiet" role="button" tabindex="0">Run a command</div></div>
+            <p class="docs-intro">Edit → scan → save a version. Use History to open earlier work; Branches to explore; Reviews to compare and merge.</p>
+            <p class="fine-print">Open Commands, type a command, then press <strong>Enter</strong>. Use arrow keys to browse results and <strong>Escape</strong> to close. Enter in the version-message field saves that version. Photoshop’s own modifier-key shortcuts are left unchanged.</p>
+            <label class="field-label" for="docs-search">Find a command</label>
+            <div class="field-shell"><input id="docs-search" type="text" placeholder="Search save, merge, history…" aria-label="Search command directory" uxp-quiet="true"></div>
+            <div id="command-directory"></div>
+          </section>
+          <section class="content-card">
+            <h2>Setup in Terminal</h2>
+            <p class="fine-print">Run these from the PhotoGit source folder, not in the command palette. Replace the example with your project’s full path.</p>
+            <p class="setup-command">npm run photogit -- init "/path/to/project"<br>npm run helper -- --approve-root "/path/to/project"<br>npm run photogit -- doctor "/path/to/project"</p>
+            <p class="fine-print">A saved version is a Git commit. /commit is an alias for /save. Earlier PSDs open separately; adopt a copy deliberately before saving it into a project. Merge uses ordinary Git, not layer blending. Sampled appearance comparisons can miss tiny edits.</p>
           </section>
         </section>
 

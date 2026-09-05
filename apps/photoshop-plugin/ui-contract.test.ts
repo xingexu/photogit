@@ -120,6 +120,117 @@ async function bridgePanel(body?: unknown) {
   return { ...p, requests, responses };
 }
 
+describe("PhotoGit command palette — production behavior with mocked host", () => {
+  it("opens setup documentation before a project has been connected", async () => {
+    const p = await panel();
+    await p.evaluate('executeCommand("docs")');
+    expect(p.id("workspace").hidden).toBe(false);
+    expect(p.id("docs-view").hidden).toBe(false);
+    expect(p.id("onboarding").hidden).toBe(true);
+  });
+  it("marks overlay state to suppress background native fields without losing their values", async () => {
+    const p = await panel(); p.connect(); p.id<HTMLInputElement>("message").value = "Keep my draft";
+    p.evaluate("openCommandPalette()");
+    expect(p.document.body.classList.contains("has-surface")).toBe(true);
+    p.evaluate("closeDetail()");
+    expect(p.document.body.classList.contains("has-surface")).toBe(false);
+    expect(p.id<HTMLInputElement>("message").value).toBe("Keep my draft");
+  });
+  it.each(["changes", "history", "branches", "reviews", "activity", "docs"])("navigates to %s without a helper mutation", async section => {
+    const p = await panel(); p.connect();
+    const helper = vi.fn(); p.context.callHelper = helper;
+    p.evaluate("openCommandPalette()");
+    await p.evaluate("executeCommand(command)", { command: `/${section}` });
+    expect(p.id(`${section}-view`).hidden).toBe(false);
+    expect(p.id("detail-sheet").hidden).toBe(true);
+    expect(helper).not.toHaveBeenCalled();
+  });
+  it("searches aliases and renders a browsable command directory", async () => {
+    const p = await panel();
+    p.id<HTMLInputElement>("docs-search").value = "commit";
+    p.evaluate("renderCommandDocs()");
+    expect(p.id("command-directory").textContent).toContain("Save a version");
+    expect(p.id("command-directory").querySelectorAll(".command-row")).toHaveLength(1);
+    (p.id("command-directory").firstElementChild as HTMLElement).click();
+    expect(p.id<HTMLInputElement>("command-input").value).toBe("save ");
+    expect(p.document.activeElement).toBe(p.id("command-input"));
+  });
+  it("browses palette results with arrows and closes with Escape", async () => {
+    const p = await panel(); p.id("global-search").focus();
+    p.document.addEventListener("keydown", p.context.handleGlobalKeyboard);
+    p.evaluate("openCommandPalette()");
+    p.keyboard(p.id("command-input"), "ArrowDown");
+    expect(p.document.activeElement).toBe(p.id("command-results").firstElementChild);
+    p.keyboard(p.document.activeElement, "ArrowUp");
+    expect(p.document.activeElement).toBe(p.id("command-input"));
+    p.keyboard(p.id("command-input"), "Escape");
+    expect(p.id("detail-sheet").hidden).toBe(true);
+    expect(p.document.activeElement).toBe(p.id("global-search"));
+  });
+  it.each(["/save", "/merge", "/switch", "/branch", "/compare", "/status extra", "rm -rf anything", "/save " + "x".repeat(501)])("rejects invalid command %s without mutation", async input => {
+    const p = await panel(); p.connect();
+    p.evaluate("openCommandPalette()");
+    const helper = vi.fn(); p.context.callHelper = helper;
+    await p.evaluate("executeCommand(input)", { input });
+    expect(p.id("command-error").textContent).not.toBe("");
+    expect(helper).not.toHaveBeenCalled();
+  });
+  it.each(["save", "commit"])("routes /%s through the existing save guard with a literal message", async name => {
+    const p = await panel(); p.connect();
+    const save = vi.fn(); p.context.saveVersion = save;
+    await p.evaluate("executeCommand(input)", { input: `/${name} Refine <img src=x> & title` });
+    expect(p.id<HTMLInputElement>("message").value).toBe("Refine <img src=x> & title");
+    expect(save).toHaveBeenCalledOnce();
+    expect(p.document.querySelector("#message img")).toBeNull();
+  });
+  it.each([["branch alternate", "createBranch"], ["compare alternate", "compareBranch"], ["merge alternate", "mergeReview"], ["scan", "scanChanges"], ["tag", "openTagSheet"], ["status", "openRepositorySettings"], ["conflicts", "openConflicts"], ["connect", "chooseProject"], ["reconnect", "reconnectHelper"]])("routes %s through its guarded workflow", async (command, handler) => {
+    const p = await panel(); p.connect(); const run = vi.fn(); p.context[handler!] = run;
+    await p.evaluate("executeCommand(command)", { command });
+    expect(run).toHaveBeenCalledOnce();
+    if (command!.startsWith("merge") || command!.startsWith("compare")) expect(run).toHaveBeenCalledWith("alternate");
+    if (command!.startsWith("branch")) expect(p.id<HTMLInputElement>("new-branch-name").value).toBe("alternate");
+  });
+  it.each(["pull", "push", "switch alternate"])("requires confirmation for %s", async command => {
+    const p = await panel(); p.connect();
+    const helper = vi.fn(async () => ({})); p.context.callHelper = helper;
+    p.context.openAfterGit = vi.fn(async () => true); p.context.refreshWorkspace = vi.fn(async () => undefined);
+    const pull = vi.fn(); p.context.pull = pull; const push = vi.fn(); p.context.push = push;
+    await p.evaluate("executeCommand(command)", { command });
+    expect(helper).not.toHaveBeenCalled(); expect(pull).not.toHaveBeenCalled(); expect(push).not.toHaveBeenCalled();
+    expect(p.id("detail-sheet").hidden).toBe(false);
+    await p.evaluate("detailAction()");
+    if (command === "pull") expect(pull).toHaveBeenCalledOnce();
+    else if (command === "push") expect(push).toHaveBeenCalledOnce();
+    else expect(helper).toHaveBeenCalledWith("switchBranch", { branch: "alternate" });
+  });
+  it("rejects a sync confirmation after the project changes", async () => {
+    const p = await panel(); p.connect(); const push = vi.fn(); p.context.push = push;
+    await p.evaluate('executeCommand("push")');
+    p.evaluate('projectFolder = { name: "different" }');
+    await p.evaluate("detailAction()");
+    expect(push).not.toHaveBeenCalled();
+  });
+  it("leaves Photoshop modifier shortcuts alone and preserves an existing confirmation", async () => {
+    const p = await panel(); p.connect();
+    const preventDefault = vi.fn();
+    p.evaluate('handleGlobalKeyboard({key:"k",metaKey:true,preventDefault})', { preventDefault });
+    expect(p.id("command-input")).toBeNull(); expect(preventDefault).not.toHaveBeenCalled();
+    p.evaluate('openDetail("Confirm merge", "Do not replace me")');
+    p.evaluate('handleGlobalKeyboard({key:" ",ctrlKey:true,shiftKey:true,preventDefault})', { preventDefault });
+    expect(p.id("detail-title").textContent).toBe("Confirm merge");
+    p.evaluate("closeDetail()"); const save = vi.fn(); p.context.saveVersion = save;
+    p.evaluate('handleGlobalKeyboard({key:"Enter",ctrlKey:true,shiftKey:true,preventDefault})', { preventDefault });
+    expect(save).not.toHaveBeenCalled();
+  });
+  it("refuses commands while an exclusive operation is running", async () => {
+    const p = await panel(); p.connect(); p.evaluate("openCommandPalette(); busy(true)");
+    const helper = vi.fn(); p.context.callHelper = helper;
+    await p.evaluate('executeCommand("merge alternate")');
+    expect(helper).not.toHaveBeenCalled();
+    expect(p.id("command-error").textContent).toContain("running");
+  });
+});
+
 describe("PhotoGit production panel behavior — host mocked", () => {
   it("registers the native panel without starting IO before DOM readiness", async () => {
     const p = await panel();
@@ -132,17 +243,17 @@ describe("PhotoGit production panel behavior — host mocked", () => {
     const p = await panel();
     p.id("section-nav").addEventListener("keydown", p.context.handleTabKeyboard);
     p.keyboard(p.id("changes-tab"), "ArrowLeft");
-    expect(p.id("activity-tab").getAttribute("aria-selected")).toBe("true");
-    expect(p.document.activeElement).toBe(p.id("activity-tab"));
-    p.keyboard(p.id("activity-tab"), "Home");
+    expect(p.id("docs-tab").getAttribute("aria-selected")).toBe("true");
+    expect(p.document.activeElement).toBe(p.id("docs-tab"));
+    p.keyboard(p.id("docs-tab"), "Home");
     expect(p.id("changes-view").hidden).toBe(false);
     p.keyboard(p.id("changes-tab"), "ArrowRight");
     expect(p.id("history-view").hidden).toBe(false);
     expect(p.id("changes-view").hidden).toBe(true);
     p.keyboard(p.id("history-tab"), "End");
     expect([...p.document.querySelectorAll('[role="tab"][aria-selected="true"]')]).toHaveLength(1);
-    expect(p.id("activity-view").hidden).toBe(false);
-    for (const section of ["changes", "history", "branches", "reviews", "activity"]) {
+    expect(p.id("docs-view").hidden).toBe(false);
+    for (const section of ["changes", "history", "branches", "reviews", "activity", "docs"]) {
       p.evaluate("selectTab(section, false)", { section });
       expect(p.id(`${section}-view`).hidden).toBe(false);
       // linkedom's tabIndex getter maps zero to -1; inspect the reflected attribute.

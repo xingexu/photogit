@@ -1,5 +1,15 @@
 # Acceptance report: 0.2.0 development
 
+## September 5 command-directory follow-up
+
+Following commit `be82b52`, the UI was compacted and a 19-command palette and searchable Docs tab were added. Save/commit, branch, compare, merge, scan, history and sync commands reuse the existing guards; sync and switch require confirmation. Background native fields are hidden while overlays are open to prevent UXP placeholder bleed-through. The missing explicit `@1x` icon is now packaged.
+
+The final follow-up run passed **245/245 tests in 15 files**, including **113 production panel behavior tests**. Type checks, build, source security inventory, package creation/verification and diff checks passed. The ZIP includes 11 runtime files; SHA-256 `5ef086235487aa04680ce551364260e9c7bfed0b51ec71a55636a8789ffd1ed2`. No dependency changes or new online audit were needed.
+
+Native Photoshop 27.10.0 showed the compact Changes layout, the command palette, and successful `/docs` navigation at 420 × 800 logical pixels (2× capture backing). Native testing found Cmd+K intercepted by Photoshop Preferences and a replacement modifier shortcut unreliable, so neither is advertised or registered. Use the Commands button and type a command, then Enter. The background-placeholder fix was visually verified. Modifier shortcuts are not a claimed feature. These observations do not establish every native command mutation or the full size/scale matrix.
+
+See [Commands](COMMANDS.md) and the new [palette capture](../artifacts/commands-20260905/palette.png). The original hardening ledger below is historical evidence, not the latest source revision or test count.
+
 This ledger records the September 4–5, 2026 hardening session. Core workflows were exercised in real Photoshop, but fresh folder permission and the complete native size/scale/state matrix remain unverified. This is not a completed v1 acceptance claim.
 
 ## Source and baseline

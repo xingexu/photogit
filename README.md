@@ -1,5 +1,7 @@
 # PhotoGit
 
+**Faster navigation:** click **Commands**, or browse the new **Docs** tab. Type `/history`, `/save Refined title` (`/commit` alias), or `/merge cover-b`, then press Enter. See the [command directory](docs/COMMANDS.md) for syntax and safety behavior.
+
 PhotoGit records Photoshop documents as named versions in a local Git project. A version includes supported layer metadata and an exact PSD; Git LFS stores large PSD and preview artifacts. The Photoshop panel talks to a local helper through an authenticated project-folder bridge.
 
 **0.2.0 is an unreleased development build.** It is not a completed v1 release. Keep an independent copy of valuable artwork. See the [acceptance report](docs/ACCEPTANCE_REPORT.md) for checks performed on this revision and the real Photoshop checks still required.
@@ -29,7 +31,7 @@ The helper is required for panel repository actions. Project-folder access alone
 
 ## Verified native workflow
 
-In Photoshop 27.10.0, the actual panel detected common edits automatically, saved versions with a clean baseline, opened earlier PSDs separately, switched branches, completed a clean Git merge, blocked a conflicting merge, rejected a wrong-document save, and recovered after helper restart. Group-opacity detection also passed through the document-composite fallback after direct group imaging failed. A 521-layer scan correctly displayed 500 of 548 changes. The integrated suite passed 210 tests. Native large-document save/cancellation, fresh folder permission, unrecorded advanced layer cases, and the complete native size/scale matrix remain open. [Full evidence and limitations](docs/ACCEPTANCE_REPORT.md).
+In Photoshop 27.10.0, the actual panel detected common edits automatically, saved versions with a clean baseline, opened earlier PSDs separately, switched branches, completed a clean Git merge, blocked a conflicting merge, rejected a wrong-document save, and recovered after helper restart. Group-opacity detection also passed through the document-composite fallback after direct group imaging failed. A 521-layer scan correctly displayed 500 of 548 changes. The command-directory follow-up passed 245 tests; native checks verified the palette, `/docs` navigation, and rejection of `/merge` without an argument. Native large-document save/cancellation, fresh folder permission, unrecorded advanced layer cases, and the complete native size/scale matrix remain open. [Full evidence and limitations](docs/ACCEPTANCE_REPORT.md).
 
 [View the real Changes panel](artifacts/acceptance-20260904/native-changes.png), captured at 420 × 800 logical pixels with 2× raster output. Captures predate the final Save-control placement adjustment, which remains unverified natively. This single size does not establish the full responsive matrix.
 
@@ -49,6 +51,6 @@ The archive `release/photogit-0.2.0-development.zip` is a checked source bundle 
 
 ## Demonstrations
 
-`apps/photoshop-plugin/demo.html` visibly identifies itself as a simulated UI prototype. The six images under `artifacts/acceptance-20260904/` are current real-panel evidence with the scope recorded above. Other screenshots and videos under `artifacts/` are historical development material and are not acceptance evidence for 0.2.0. See [live acceptance](docs/LIVE_ACCEPTANCE.md).
+`apps/photoshop-plugin/demo.html` visibly identifies itself as a simulated UI prototype. Native evidence is scoped in `artifacts/acceptance-20260904/` and the later `artifacts/commands-20260905/`. Other screenshots and videos are historical development material, not current acceptance evidence. See [live acceptance](docs/LIVE_ACCEPTANCE.md).
 
 [Contributing](CONTRIBUTING.md) · [Changelog](CHANGELOG.md) · [Release checklist](docs/RELEASE_CHECKLIST.md)
