@@ -12,15 +12,20 @@ The single production stylesheet `apps/photoshop-plugin/styles.css` defines both
 
 | Role/token | Dark | Light |
 | --- | --- | --- |
-| Canvas `--bg` | #17191D | #E9EDF3 |
-| Surface `--surface` | #24272D | #FFFFFF |
-| Elevated `--elevated` | #30353D | #F5F7FB |
-| Text `--text` | #FFFFFF | #151D29 |
-| Supporting text `--muted` | #C5CCD6 | #404E61 |
-| Separator `--line` | #474D58 | #C2CAD5 |
-| Control boundary `--border` | #9BA7B7 | #69768A |
+| Canvas `--bg` | #1B1B1B | #EEEEEE |
+| Surface `--surface` | #272727 | #FFFFFF |
+| Elevated `--elevated` | #333333 | #F5F5F5 |
+| Text `--text` | #FFFFFF | #202020 |
+| Supporting text `--muted` | #C9C9C9 | #4B4B4B |
+| Separator `--line` | #3A3A3A | #CCCCCC |
+| Control boundary `--border` | #A0A0A0 | #747474 |
 | Focus `--focus` | #AFC5FF | #365BBB |
-| Selection `--selected` | #333C50 | #E5EBF8 |
+| Selection `--selected` | #30394B | #E1E7F5 |
+| Hover `--hover` | #414141 | #DEDEDE |
+| Pressed `--pressed` | #525252 | #C8C8C8 |
+| Primary `--primary` | #B6C7FF | #365BBB |
+| Primary hover `--primary-hover` | #CCD7FF | #294B9F |
+| Primary pressed `--primary-pressed` | #A4B8F0 | #203E88 |
 | Success `--success` | #91C6A0 | #24683C |
 | Warning `--warning` | #E3C17C | #805900 |
 | Error `--error` | #EEA19A | #A32E28 |
@@ -30,6 +35,14 @@ Additional tokens define input background, hover/pressed states, inverse primary
 Automated token checks require text and supporting text to exceed 4.5:1, and interactive boundaries/focus to exceed 3:1, against canvas, surface, elevated, input and selected backgrounds in both themes. Primary-button text also exceeds 4.5:1. Separators are intentionally quieter and must not substitute for control boundaries. Native widget internals are an exception requiring separate host verification (below).
 
 ## Component and responsive rules
+
+### Editorial refinement (current)
+
+Canvas-backed lists replace repeated cards. Only saving and branch management use raised task surfaces; navigation is a quiet segmented surface and sync is a separator-led utility strip. Unavailable merges are explanatory notes rather than disabled buttons. Current branch is visible. Consecutive scan events collapse into expandable groups retaining the latest 50 details; user actions remain separate. Commands use `--mono: "SFMono-Regular", Consolas, monospace`; other typography remains unchanged.
+
+Current motion tokens: `--motion-control: 200ms` ease-out; `--motion-nav: 240ms` cubic-bezier(.22,1,.36,1). JS entrances remain 300ms, click feedback 240ms, theme out/in 170/280ms with smoothstep. Native fades interpolate painted colours, with a 180-node ceiling. Empty inline properties are removed, not assigned empty strings (UXP otherwise leaves black borders). No translate, scale, shadows or delayed closing is claimed: host-safe painted fades are preferred over unsupported compositing. Browser reduced motion is covered; native OS preference propagation and physical keyboard testing remain manual acceptance items.
+
+Changed implementation files: `styles.css`, `index.html`, `index.js`, `demo.js`, `motion.js`; verification files: `motion.test.ts`, `ui-contract.test.ts`, `scripts/verify-native-design.mjs`; documentation: this file and `docs/ACCEPTANCE_REPORT.md`. Earlier component notes below describe the preceding boxed revision where they conflict with this section.
 
 - Rounded task cards separate scanning, saving, changes and reviews. The save card has one field prompt, “What changed?”, instead of a repeated heading, data caption and field label. Duplicate edit-count status and section eyebrows are removed. Layer IDs remain concise inline metadata (and full accessible row names); document identity, warnings and action labels remain.
 - One dominant action per task: Save version, Create branch, or the explicit confirmation. Never hide essential actions behind hover.
@@ -42,6 +55,10 @@ Automated token checks require text and supporting text to exceed 4.5:1, and int
 - Focus rings, accessible labels, Escape, dialog focus containment and trigger focus return remain. No Photoshop global modifier shortcut is registered.
 
 ## Appearance behavior
+
+Stronger-motion correction: the earlier native computed-opacity measurements did **not** prove visible container compositing. Holding opacity at 0.2 still rendered full-strength content. Native fades now blend actual text/background/border colours toward the canvas and restore every inline style afterward; a captured intermediate frame visibly dims the content. Work is capped at 180 nodes per animation. Overlapping parent/child animations cancel or skip competing paint snapshots. Raster branding remains unchanged. Browsers retain opacity-based fades.
+
+Current timing is 240ms button feedback, 300ms entrances, and a 170ms fade-out plus 280ms fade-in for themes, using smoothstep easing. Repeated toggles continue from the current fade level instead of flashing back to full opacity. The palette is neutral grey, with distinct hover/pressed shades. Final interaction rules override Light-theme backgrounds; disabled controls do not gain hover feedback. Keyboard focus keeps a distinct blue outline. Historical motion notes below describe the preceding revision.
 
 Motion refinement: Docs now has only its searchable command directory; the duplicate “Open palette” action is removed. The global Commands button remains available on every page. A shared `motion.js` supplies 140ms button feedback, 160ms tab/sheet entrances and an 80ms fade-out plus 160ms fade-in for appearance changes. Actions are never dispatched by the motion layer or delayed for a button animation. Theme intent is saved immediately; rapid toggles cancel obsolete visual callbacks. Every completed/cancelled fade restores the prior inline opacity. Disabled controls are skipped. Browser reduced-motion and a computed CSS-token fallback bypass motion; native OS preference propagation still depends on host media-query support.
 

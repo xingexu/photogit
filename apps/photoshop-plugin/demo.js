@@ -479,6 +479,11 @@ function createDemoReviewCard(review) {
   const card = document.createElement("article");
   card.className = "review-card";
   card.innerHTML = `<div class="review-title"><strong>${escapeHtml(review.branch)}</strong><span>${review.ahead} ahead</span></div><div class="review-meta"><span class="${review.mergeable ? "ready" : "blocked"}">${review.mergeable ? "Ready to merge" : "Review conflicts"}</span><span>·</span><span>${review.changeCount} files</span></div><div class="review-files" aria-hidden="true">document.psd\npreview.png</div><div class="review-actions"><div class="button button-quiet button-small compare-action" role="button" tabindex="0" aria-expanded="false">Compare</div><div class="button ${review.mergeable ? "button-primary" : "button-disabled"} button-small merge-action" role="button" tabindex="${review.mergeable ? "0" : "-1"}" ${review.mergeable ? "" : "aria-disabled=\"true\""}>${review.mergeable ? "Merge" : "Blocked"}</div></div>`;
+  if (!review.mergeable) {
+    const unavailable = card.querySelector(".merge-action");
+    unavailable.textContent = "Resolve conflicts to merge";
+    unavailable.setAttribute("role", "note"); unavailable.removeAttribute("tabindex");
+  }
   card.querySelector(".compare-action").addEventListener("click", (event) => {
     const expanded = card.classList.toggle("details-open");
     card.querySelector(".review-files").setAttribute("aria-hidden", expanded ? "false" : "true");

@@ -1,5 +1,21 @@
 # Acceptance report: 0.2.0 development
 
+## September 5 editorial surface refinement
+
+Replaced repeated outlined cards with canvas-backed lists, a focal save surface, quiet segmented navigation, and a utility footer. Added periwinkle primary/selected states while preserving grey hover feedback. Commands use monospace syntax. Current branch is visible; unavailable merges are explanatory notes. Consecutive detection events disclose grouped details rather than filling the activity feed. The shared demo uses the production stylesheet and matching review treatment.
+
+Verification: 279/279 tests in 16 files; type, source-security and package checks passed. Browser verification covered six destinations in both themes at 230×200, 320×600, 420×800 and 900×800, plus empty/error/loading/long-list/setup, palette navigation and focus return. Native captures cover six destinations in both themes at 753×800. Captures and matrices are under `artifacts/editorial-ui-20260905`. Native inspection found empty inline border restoration produced black outlines; cleanup now removes properties instead. No Photoshop artwork was modified. The final 13-file development bundle SHA-256 is `52422fe93b747176400b5304f0d3fc7548fc8990f6be0c064bca222bef67863e`; it is not an installable CCX.
+
+The final cleanup fix passed regression tests, but its native re-capture timed out twice after reload; UXP Developer Tools still reported PhotoGit as Debugging. Native screenshots therefore precede that cleanup fix and are not proof of its final visual result. Remaining manual acceptance: final border cleanup, physical keyboard behavior, native minimum-width widget interiors, OS reduced-motion propagation, and destructive workflows on disposable PSDs. Mock/helper tests are not a claim of exhaustive native Photoshop acceptance. Native translation/scale/shadow and animated exit effects were not added; immediate closing preserves focus and responsiveness. Exact current tokens and changed source files are recorded in `docs/DESIGN_SYSTEM.md`. The preceding local refinement below is included in this delivery; its verification numbers describe that earlier checkpoint.
+
+## September 5 stronger grey interactions — local refinement
+
+Corrected the native animation assumption: computed opacity changes were observable, but a held opacity-0.2 screenshot still showed full-strength content. Native motion now interpolates actual painted text/background/border colours instead. An intermediate screenshot visibly confirmed the dimmed content; inline styles are restored on finish/cancellation. Native branding and host-widget interiors are not composited by this effect. Existing computed-opacity samples remain historical telemetry, not proof of the old effect's visual success.
+
+Introduced neutral-grey surfaces and clearly different hover/pressed tokens, fixed later Light-theme rules masking hover states, and excluded disabled controls. Entrances are 300ms; theme fades total about 450ms; button feedback is 240ms. Smoothstep easing and continuity during repeated toggles make the effect more visible without delaying actions. Native paint work is bounded to 180 nodes; parent/child animation conflicts are covered by regression tests. This pass has not been committed or pushed.
+
+Final local verification: 278/278 tests passed in 16 files, including 11 motion tests; type, source-security, diff and package checks passed. The 13-file development bundle has SHA-256 `fb891d79ed30dae311694c6d57b29f757535ce560b68392963eb01b31e5ae584`. The final implementation was reloaded in Photoshop. No artwork was modified.
+
 ## September 5 motion refinement
 
 Removed the redundant Open palette button from Docs while retaining global Commands access. Added shared timer-driven button feedback, tab/sheet entrances and a two-phase appearance fade. Presentation never triggers operations, keeps focus/visibility independent, cancels obsolete animations, and restores inline opacity. Preference intent is saved before animation so an immediate reload keeps the user's choice. Reduced-motion handling is covered through browser media queries and the CSS fallback; native OS preference propagation is not asserted.
