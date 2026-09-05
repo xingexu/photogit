@@ -31,4 +31,5 @@ function search(query) {
   const needle = String(query).trim().replace(/^\//, "").toLowerCase();
   return commands.filter(c => `${c.id} ${c.alias || ""} ${c.label} ${c.description}`.toLowerCase().includes(needle));
 }
-module.exports = { commands, parse, search };
+if (typeof module !== "undefined") module.exports = { commands, parse, search };
+else window.PhotoGitCommands = { commands, parse, search };

@@ -1,4 +1,5 @@
 const mount = document.getElementById("plugin-panel");
+const commandDirectory = window.PhotoGitCommands;
 const demoParams = new URLSearchParams(location.search);
 const timeScale = Math.max(1, Number(demoParams.get("timeScale")) || 1);
 const wait = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds * timeScale));
@@ -31,6 +32,18 @@ async function boot() {
   mount.innerHTML = "";
   mount.appendChild(document.importNode(parsed.querySelector(".panel-root"), true));
   setupDemoPanel();
+  const theme = demoParams.get("theme");
+  if (theme === "light" || theme === "dark") document.documentElement.setAttribute("data-theme", theme);
+  const themeLabel = document.documentElement.getAttribute("data-theme") === "light" ? "Switch to Dark mode" : "Switch to Light mode";
+  byId("appearance-toggle").setAttribute("aria-label", themeLabel);
+  byId("appearance-toggle").setAttribute("title", themeLabel);
+  const badge = document.createElement("p"); badge.className = "simulation-label"; badge.textContent = "Simulated preview · no Photoshop or Git operations";
+  mount.prepend(badge);
+  if (demoParams.get("state") === "empty") { changes = []; renderChanges(); }
+  if (demoParams.get("state") === "long") { changes = Array.from({ length: 500 }, (_, i) => ({ domain: "content", layerName: "Campaign-direction-with-a-very-long-layer-name-".repeat(3) + i, photoshopId: i + 1, summary: "Rendered appearance changed" })); renderChanges(); }
+  if (demoParams.get("state") === "error") flashResult("The helper is disconnected. Reconnect before saving a version.", true);
+  if (demoParams.get("state") === "setup") { byId("workspace").hidden = true; byId("onboarding").hidden = false; }
+  if (demoParams.has("view")) selectTab(demoParams.get("view"));
   if (demoParams.has("panel")) openPhotoGit();
   if (demoParams.has("autoplay")) autoplay();
   else document.querySelector(".demo-caption").classList.add("visible");
@@ -56,6 +69,12 @@ function setupDemoPanel() {
   bind("branches-tab", () => selectTab("branches"));
   bind("reviews-tab", () => selectTab("reviews"));
   bind("activity-tab", () => selectTab("activity"));
+  bind("docs-tab", () => selectTab("docs"));
+  bind("docs-open-palette", () => openCommandPalette());
+  bind("close-detail", closeDetail);
+  byId("docs-search").addEventListener("input", renderCommandDocs);
+  renderCommandDocs();
+  bind("setup-toggle", () => { byId("setup-instructions").hidden = !byId("setup-instructions").hidden; byId("setup-toggle").setAttribute("aria-expanded", String(!byId("setup-instructions").hidden)); });
   bind("scan", scan);
   bind("rescan", scan);
   bind("save-version", saveVersion);
@@ -65,7 +84,7 @@ function setupDemoPanel() {
   bind("refresh", () => flashResult("Workspace refreshed."));
   bind("new-branch", createBranch);
   bind("clear-activity", clearActivity);
-  bind("global-search", () => { selectTab("history"); byId("history-search").focus(); });
+  bind("global-search", () => openCommandPalette());
   bind("header-menu", toggleToolsMenu);
   bind("tools-toggle", toggleToolsMenu);
   bind("tool-new-branch", () => { closeToolsMenu(); selectTab("branches"); byId("new-branch-name").focus(); });
@@ -74,7 +93,7 @@ function setupDemoPanel() {
   bind("tool-create-tag", openTagSheet);
   bind("tool-settings", () => { closeToolsMenu(); selectTab("activity"); addActivity("Repository settings inspected."); });
   bind("close-tag-sheet", () => closeTagSheet(false, true));
-  bind("surface-backdrop", () => closeTagSheet(false, true));
+  bind("surface-backdrop", () => { closeTagSheet(false, true); closeDetail(); });
   bind("create-tag", createTag);
   bind("open-reviews", () => selectTab("reviews"));
   bind("new-pull-request", () => flashResult("Pull-request review opened in GitHub."));
@@ -87,6 +106,96 @@ function setupDemoPanel() {
   document.getElementById("plugins-menu-trigger").addEventListener("click", togglePluginsMenu);
   document.getElementById("open-photogit").addEventListener("click", openPhotoGit);
   document.getElementById("pg-dock-tab").addEventListener("click", openPhotoGit);
+}
+
+// Palette presentation mirrors production; dispatch below is explicitly simulation-only.
+let busyNow = false;
+function openDetail(title) {
+  surfaceReturnFocus = document.activeElement;
+  byId("detail-title").textContent = title;
+  byId("detail-content").innerHTML = "";
+  openBackdrop(); openSurface(byId("detail-sheet"));
+}
+function closeDetail() {
+  closeSurface(byId("detail-sheet"), true); closeBackdrop(true);
+  surfaceReturnFocus?.focus();
+}
+function show(message) { flashResult(message, true); }
+async function executeCommand(input) {
+  const parsed = commandDirectory.parse(input);
+  if (!parsed) { byId("command-error").textContent = "Unknown command. Nothing was run."; return; }
+  const { command, argument } = parsed;
+  if (["save", "branch", "switch", "compare", "merge"].includes(command.id) && !argument) { byId("command-error").textContent = "Usage: /" + command.example; return; }
+  closeDetail();
+  if (["changes", "history", "branches", "reviews", "activity", "docs"].includes(command.id)) return selectTab(command.id);
+  if (command.id === "save") { byId("message").value = argument; return saveVersion(); }
+  if (command.id === "scan") return scan();
+  if (command.id === "tag") return openTagSheet();
+  flashResult("Simulation only: /" + command.id + " — no Photoshop or Git operation performed.");
+}
+function commandRow(command, activate) {
+  const row = document.createElement("div");
+  row.className = "command-row";
+  row.setAttribute("role", "button");
+  row.tabIndex = 0;
+  const title = document.createElement("strong"); title.textContent = command.label;
+  const syntax = document.createElement("code"); syntax.textContent = `/${command.example}`;
+  const description = document.createElement("span"); description.textContent = command.description;
+  row.appendChild(title); row.appendChild(syntax); row.appendChild(description);
+  row.addEventListener("click", activate);
+  row.addEventListener("keydown", event => {
+    if (event.key === "Enter" || event.key === " ") { event.preventDefault(); event.stopPropagation(); activate(); }
+  });
+  return row;
+}
+
+function renderCommandDocs() {
+  const list = document.getElementById("command-directory");
+  list.innerHTML = "";
+  const matches = commandDirectory.search(document.getElementById("docs-search").value || "");
+  for (const command of matches) list.appendChild(commandRow(command, () => openCommandPalette(command.id + " ")));
+  if (!matches.length) list.textContent = "No matching commands. Try save, branch, or history.";
+}
+
+function openCommandPalette(initial = "") {
+  if (busyNow) return show("Wait for the current operation before running a command.", false);
+  openDetail("Go to or run a command", "");
+  const content = document.getElementById("detail-content");
+  const field = document.createElement("input");
+  field.id = "command-input"; field.type = "text"; field.maxLength = 600;
+  field.setAttribute("aria-label", "PhotoGit command");
+  field.setAttribute("placeholder", "Search, or type /save Your message");
+  field.setAttribute("uxp-quiet", "true"); field.value = initial;
+  const hint = document.createElement("p"); hint.className = "command-hint";
+  hint.textContent = "Enter to run. Arrow keys to browse. Escape to close.";
+  const error = document.createElement("p"); error.id = "command-error"; error.setAttribute("role", "status");
+  const results = document.createElement("div"); results.id = "command-results";
+  content.appendChild(field); content.appendChild(hint); content.appendChild(error); content.appendChild(results);
+  const render = () => {
+    error.textContent = ""; results.innerHTML = "";
+    const parsed = commandDirectory.parse(field.value);
+    const matches = parsed ? [parsed.command] : commandDirectory.search(field.value);
+    for (const command of matches) results.appendChild(commandRow(command, () => {
+      if (["save", "branch", "switch", "compare", "merge"].includes(command.id)) {
+        field.value = command.id + " "; field.focus(); render();
+      } else void executeCommand(command.id);
+    }));
+    if (!matches.length) results.textContent = "No matching commands. Nothing will be run.";
+  };
+  field.addEventListener("input", render);
+  field.addEventListener("keydown", event => {
+    if (event.key === "Enter") { event.preventDefault(); event.stopPropagation(); void executeCommand(field.value); }
+    if (event.key === "ArrowDown") { event.preventDefault(); results.firstElementChild?.focus(); }
+  });
+  results.addEventListener("keydown", event => {
+    if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) return;
+    const rows = Array.from(results.children); const index = rows.indexOf(event.target);
+    if (index < 0) return;
+    event.preventDefault();
+    const next = event.key === "Home" ? 0 : event.key === "End" ? rows.length - 1 : index + (event.key === "ArrowDown" ? 1 : -1);
+    if (next < 0) field.focus(); else rows[Math.min(next, rows.length - 1)]?.focus();
+  });
+  render(); field.focus();
 }
 
 function bindFieldState(id) {
@@ -203,7 +312,7 @@ function handleMenuKeyboard(event) {
 }
 
 function handleGlobalKeyboard(event) {
-  const sheet = byId("tag-sheet");
+  const sheet = !byId("detail-sheet").hidden ? byId("detail-sheet") : byId("tag-sheet");
   if (!sheet.hidden && event.key === "Tab") {
     const controls = Array.from(sheet.querySelectorAll('[tabindex="0"], input:not([disabled])'));
     const first = controls[0];
@@ -221,7 +330,7 @@ function handleGlobalKeyboard(event) {
   if (!sheet.hidden) {
     event.preventDefault();
     event.stopPropagation();
-    return closeTagSheet(false, true);
+    return sheet.id === "detail-sheet" ? closeDetail() : closeTagSheet(false, true);
   }
   const menu = byId("tools-menu");
   if (!menu.hidden) {
@@ -468,7 +577,7 @@ function setCount(id, value) {
 }
 
 function selectTab(name) {
-  ["changes", "history", "branches", "reviews", "activity"].forEach((section) => {
+  ["changes", "history", "branches", "reviews", "activity", "docs"].forEach((section) => {
     const active = section === name;
     byId(`${section}-view`).hidden = !active;
     byId(`${section}-tab`).classList.toggle("active", active);
