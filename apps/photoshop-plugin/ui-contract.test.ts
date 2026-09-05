@@ -810,6 +810,68 @@ describe("PhotoGit production panel behavior — host mocked", () => {
     expect(p.id("activity").textContent).toBe("Ready.");
     expect(p.id("activity").querySelector("img")).toBeNull();
   });
+  it("collapses technical activity details and bounds the visible log", async () => {
+    const p = await panel();
+    p.evaluate('log("Long event ".repeat(40))');
+    const toggle = p.id("activity").querySelector('[role="button"]') as HTMLElement;
+    expect(toggle.getAttribute("aria-expanded")).toBe("false");
+    p.keyboard(toggle, "Enter");
+    expect(toggle.getAttribute("aria-expanded")).toBe("true");
+    p.evaluate('for (let i = 0; i < 60; i++) log("Event " + i)');
+    expect(p.id("activity").children.length).toBe(50);
+  });
+});
+
+describe("PhotoGit appearance — shared startup and preference behavior", () => {
+  async function appearance(saved: string | null = null, fails = false) {
+    const { document, window } = parseHTML(await readFile(resolve(pluginRoot, "index.html"), "utf8"));
+    const localStorage = { getItem: () => { if (fails) throw new Error("Unavailable"); return saved; }, setItem: vi.fn((_key: string, value: string) => { if (fails) throw new Error("Unavailable"); saved = value; }) };
+    const source = await readFile(resolve(pluginRoot, "appearance.js"), "utf8");
+    const context = createContext({ document, localStorage });
+    runInContext(source, context);
+    return { document, window, localStorage, reload: () => runInContext(source, context) };
+  }
+  it.each([null, "invalid", "dark"])("defaults safely from %s", async saved => {
+    const p = await appearance(saved);
+    expect(p.document.documentElement.getAttribute("data-theme")).toBe("dark");
+  });
+  it("applies light synchronously, changes via keyboard, and persists after reload", async () => {
+    const p = await appearance("light");
+    expect(p.document.documentElement.getAttribute("data-theme")).toBe("light");
+    const toggle = p.document.getElementById("appearance-toggle")!;
+    expect(toggle.getAttribute("aria-label")).toBe("Switch to Dark mode");
+    const event = new p.window.Event("keydown", { bubbles: true, cancelable: true });
+    Object.assign(event, { key: "Enter" }); toggle.dispatchEvent(event);
+    expect(p.localStorage.setItem).toHaveBeenCalledWith("photogit.appearance", "dark");
+    p.reload();
+    expect(p.document.documentElement.getAttribute("data-theme")).toBe("dark");
+    expect(toggle.getAttribute("aria-label")).toBe("Switch to Light mode");
+    expect(p.document.querySelector(".appearance-group")).toBeNull();
+  });
+  it("survives unavailable preference storage and explains session-only appearance", async () => {
+    const p = await appearance(null, true);
+    (p.document.getElementById("appearance-toggle") as HTMLElement).click();
+    expect(p.document.documentElement.getAttribute("data-theme")).toBe("light");
+    expect(p.document.getElementById("appearance-note")!.textContent).toContain("storage is unavailable");
+    expect(p.document.getElementById("appearance-note")!.hidden).toBe(false);
+  });
+  it("toggles when the icon is clicked, updates its action name and keeps success quiet", async () => {
+    const p = await appearance("dark");
+    p.document.querySelector(".theme-sun path")!.dispatchEvent(new p.window.Event("click", { bubbles: true }));
+    expect(p.document.documentElement.getAttribute("data-theme")).toBe("light");
+    expect(p.document.getElementById("appearance-toggle")!.getAttribute("title")).toBe("Switch to Dark mode");
+    expect(p.document.getElementById("appearance-note")!.hidden).toBe(true);
+  });
+  it("supports Space without repeating the toggle when the key is held", async () => {
+    const p = await appearance("dark");
+    const toggle = p.document.getElementById("appearance-toggle")!;
+    for (const repeat of [false, true]) {
+      const event = new p.window.Event("keydown", { bubbles: true, cancelable: true });
+      Object.assign(event, { key: " ", repeat }); toggle.dispatchEvent(event);
+    }
+    expect(p.document.documentElement.getAttribute("data-theme")).toBe("light");
+    expect(p.localStorage.setItem).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe("PhotoGit production helper result validation — host mocked", () => {

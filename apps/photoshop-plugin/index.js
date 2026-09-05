@@ -50,17 +50,23 @@ let lastScanCount = null;
 const surfaceTimers = new Map();
 
 document.addEventListener("DOMContentLoaded", async () => {
-  const folderToken = localStorage.getItem("photogit.projectFolderToken");
+  let folderToken = null;
+  try { folderToken = localStorage.getItem("photogit.projectFolderToken"); } catch { /* Storage failure must not prevent UI startup. */ }
   if (folderToken) {
     try {
       projectFolder = await storage.localFileSystem.getEntryForPersistentToken(folderToken);
       await loadPairing();
     } catch {
-      localStorage.removeItem("photogit.projectFolderToken");
+      try { localStorage.removeItem("photogit.projectFolderToken"); } catch { /* Continue with setup. */ }
       projectFolder = null;
     }
   }
   bind("choose-project", "click", chooseProject);
+  bind("setup-toggle", "click", () => {
+    const instructions = document.getElementById("setup-instructions");
+    instructions.hidden = !instructions.hidden;
+    document.getElementById("setup-toggle").setAttribute("aria-expanded", String(!instructions.hidden));
+  });
   bind("change-project", "click", chooseProject);
   bind("reconnect-helper", "click", reconnectHelper);
   bind("connect-document", "click", connectDocument);
@@ -721,6 +727,7 @@ function toggleToolsMenu(event) {
     surfaceReturnFocus = event?.currentTarget || document.activeElement;
     menu.classList.toggle("from-header", event?.currentTarget?.id === "header-menu");
     openSurface(menu);
+    document.body.classList.add("has-surface");
     setToolsExpanded(true);
     setTimeout(() => menu.querySelector(".tool-item")?.focus(), 0);
   } else {
@@ -730,6 +737,7 @@ function toggleToolsMenu(event) {
 
 function closeToolsMenu(immediate = false, returnFocus = false) {
   closeSurface(document.getElementById("tools-menu"), immediate);
+  document.body.classList.remove("has-surface");
   setToolsExpanded(false);
   if (returnFocus && surfaceReturnFocus?.focus) surfaceReturnFocus.focus();
 }
@@ -1601,7 +1609,24 @@ function show(message, error) {
 function log(message) {
   const activity = document.getElementById("activity");
   const stamp = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  activity.textContent = `[${stamp}] ${safeInlineText(message, 2_000)}\n${activity.textContent === "Ready." ? "" : activity.textContent}`.slice(0, 4000);
+  if (activity.textContent === "Ready.") activity.textContent = "";
+  const text = safeInlineText(message, 2_000);
+  const row = document.createElement("div"); row.className = "activity-row";
+  const summary = document.createElement("div");
+  summary.textContent = `[${stamp}] ${text.length > 160 ? text.slice(0, 160) + "…" : text}`;
+  row.appendChild(summary);
+  if (text.length > 160) {
+    const toggle = document.createElement("div"); toggle.className = "text-link";
+    toggle.setAttribute("role", "button"); toggle.tabIndex = 0;
+    toggle.setAttribute("aria-expanded", "false"); toggle.textContent = "Show details";
+    const details = document.createElement("p"); details.hidden = true; details.textContent = text;
+    const expand = () => { details.hidden = !details.hidden; toggle.setAttribute("aria-expanded", String(!details.hidden)); toggle.textContent = details.hidden ? "Show details" : "Hide details"; };
+    toggle.addEventListener("click", expand);
+    toggle.addEventListener("keydown", event => { if (["Enter", " "].includes(event.key)) { event.preventDefault(); expand(); } });
+    row.appendChild(toggle); row.appendChild(details);
+  }
+  activity.insertBefore(row, activity.firstChild);
+  while (activity.children.length > 50) activity.lastElementChild.remove();
   activityEntryCount += 1;
   setCount("activity-count", activityEntryCount);
 }

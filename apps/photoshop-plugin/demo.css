@@ -235,3 +235,10 @@
 .panel-only .plugin-panel { height: auto; overflow: visible; }
 .panel-only .plugin-panel .panel-root { padding: 14px; }
 .panel-only .plugin-panel .app-header { position: static; }
+
+/* The matrix is the production panel, not a second visual design system. */
+.panel-only, .panel-only .demo-window, .panel-only .right-rail, .plugin-panel { background: var(--bg); color: var(--text); }
+.panel-only .plugin-panel { position: static; transform: none !important; opacity: 1 !important; transition: none; }
+.panel-only .plugin-panel .panel-root { padding: 0 var(--space-3) var(--space-3); }
+.simulation-label { max-width: 680px; margin: 0 auto; padding: 4px 12px; font-size: 11px; color: var(--muted); border-bottom: 1px solid var(--line); }
+.demo-select { color: var(--text); background: var(--input); border: 1px solid var(--border); border-radius: var(--radius); }

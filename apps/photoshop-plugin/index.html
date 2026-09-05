@@ -4,8 +4,9 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>PhotoGit</title>
-    <link rel="stylesheet" href="styles.css?v=20">
-    <script src="index.js?v=20"></script>
+    <script src="appearance.js"></script>
+    <link rel="stylesheet" href="styles.css?v=21">
+    <script src="index.js?v=21"></script>
   </head>
   <body>
     <main class="panel-root">
@@ -18,20 +19,28 @@
         <div id="global-search" class="header-action command-trigger" role="button" tabindex="0" aria-label="Open commands" title="Open the searchable command palette">
           <span>Commands</span>
         </div>
+        <div id="appearance-toggle" class="header-action appearance-toggle" role="button" tabindex="0" aria-label="Switch to Light mode" title="Switch to Light mode">
+          <svg class="theme-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg>
+          <svg class="theme-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14A8.5 8.5 0 0 1 10 4a8.5 8.5 0 1 0 10 10Z"/></svg>
+        </div>
         <div id="header-menu" class="header-action" role="button" tabindex="0" aria-label="More PhotoGit tools" aria-controls="tools-menu" aria-expanded="false" title="More tools">
           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
         </div>
       </header>
+      <p id="appearance-note" class="status-message" role="status" hidden></p>
 
       <section id="onboarding" class="onboarding liquid-card">
         <div class="pg-mark onboarding-mark" aria-hidden="true"><img src="icons/photogit.png" alt=""></div>
-        <p class="eyebrow">GET STARTED</p>
-        <h2>Bring version control<br>into your canvas.</h2>
+        <p class="eyebrow">Your next step</p>
+        <h2>A history for your artwork.</h2>
         <p>Track readable layer edits, save exact PSD versions, and explore branches.</p>
         <div id="choose-project" class="button button-primary button-wide" role="button" tabindex="0">Connect a project</div>
+        <div id="setup-toggle" class="text-link" role="button" tabindex="0" aria-expanded="false" aria-controls="setup-instructions">Helper setup instructions</div>
+        <section id="setup-instructions" hidden>
         <p id="pairing-help" class="fine-print">From the PhotoGit source folder in Terminal, initialize your project and start its helper. Keep the helper running, then choose the project folder here.</p>
         <p class="setup-command">npm run photogit -- init "/path/to/project"<br>npm run helper -- --approve-root "/path/to/project"</p>
         <p class="fine-print">Open PhotoGit from Photoshop’s Plugins → PhotoGit menu. Drag its native panel tab beside the left toolbar. Release when Photoshop shows a docking highlight. Panel placement is controlled by Photoshop.</p>
+        </section>
       </section>
 
       <section id="connection-notice" class="notice" hidden>
@@ -45,7 +54,8 @@
         <section class="repo-context liquid-card" aria-label="Current repository">
           <div class="repo-topline">
             <div class="repo-item repo-project">
-              <span><small>PROJECT</small><strong id="project-status">No project selected</strong></span>
+              <span><small>Project</small><strong id="project-status">No project selected</strong></span>
+              <div id="change-project" class="text-link project-switch" role="button" tabindex="0">Change project</div>
             </div>
             <div id="helper-status" class="repo-state warning"><i></i><span id="repo-sync-status">Not connected</span></div>
           </div>
@@ -56,7 +66,6 @@
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6v5h-5"/><path d="M18.2 15.4A7 7 0 1 1 18.5 8L20 11"/></svg>
             </div>
           </div>
-          <div id="change-project" class="text-link project-switch" role="button" tabindex="0">Change project</div>
         </section>
 
         <section id="document-connection" class="notice" hidden>

@@ -1,5 +1,23 @@
 # Acceptance report: 0.2.0 development
 
+## September 5 moon/sun follow-up
+
+Replaced the large appearance selector with one accessible header icon, standardized UI typography (one system sans-serif family; 12px body/control/supporting text, 14px headings, 18px onboarding), refined Light surfaces/contrast, and capped the repository menu at 256px. User authorized committing and pushing this update, including the previous local design-system work.
+
+**253/253 tests passed**, including 121 panel tests. Type, security and package checks passed. Verified development ZIP SHA-256: `01210e252d63da7b5bcd249f9ef5ed9e47414cc0a78f7b11eaac2cd35d0baacd` (12 runtime files; not installable CCX). The refreshed [simulated matrix](../artifacts/appearance-toggle-20260905/demo-matrix.json) passed both themes, four logical sizes, all destinations, stress states and palette/focus/persistence checks. Explicit scrolling is required before clicking partially visible controls at 200px height; the browser driver did not automatically scroll a target whose center was exactly outside the viewport.
+
+Native 27.10.0 inspection confirmed the old selector is absent, the icon is accessible, changing appearance saves the preference, and the new typography/Light header renders. [Native Light screenshot](../artifacts/appearance-toggle-20260905/native-light-814x800.png). This does not remove the previously recorded Spectrum/placeholder/selection or full native sizing limitations.
+
+## September 5 editorial design-system follow-up (local only)
+
+Added centralized dark/light tokens, persisted appearance, compact wrapping navigation, reduced context chrome, one visible scan action, expandable setup/technical activity, native custom-input appearance, and a refreshed explicitly simulated demo. No source commit, push or publication was performed for this brief.
+
+Full suite: **251/251 tests passed** (119 panel tests). Type checks, security inventory, package creation/verification and diff checks passed. After the final input CSS adjustment, all 119 panel tests and the check/security/package checks were rerun successfully. Development ZIP: 12 runtime files; SHA-256 `d2657d0e5b6ea4884e38aa5167305f647309229a6554f88d151c0553c2313bdc`. This is still not an installable CCX.
+
+Both simulated themes passed the four requested logical sizes (230×200, 320×600, 420×800, 900×800), all six destinations, additional empty/error/setup/500-row states, preference reload, palette navigation, Escape and focus return. Native 27.10.0 checks established rendering, theme changes, Light persistence after reload and `/docs` dispatch via an injected native DOM keyboard event. Physical system-keyboard delivery and floating-window resizing did not establish acceptance; a 320px content constraint is not equivalent to a resized viewport.
+
+**Known gap:** native Spectrum branch-picker interior still follows Photoshop's host theme. Full native theme, placeholder/selection, popup/progress and actual viewport coverage remain incomplete. See [design system and evidence](DESIGN_SYSTEM.md). Previous sections below are historical, not proof of this revision's complete native acceptance.
+
 ## September 5 command-directory follow-up
 
 Following commit `be82b52`, the UI was compacted and a 19-command palette and searchable Docs tab were added. Save/commit, branch, compare, merge, scan, history and sync commands reuse the existing guards; sync and switch require confirmation. Background native fields are hidden while overlays are open to prevent UXP placeholder bleed-through. The missing explicit `@1x` icon is now packaged.
