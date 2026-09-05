@@ -12,5 +12,7 @@ release/
 photogit-demo/
 photogit-demo-remote.git/
 .demo-helper.json
+.demo-helper.json.lock/
+.demo-project/
 .uxp-generated-probe/
 artifacts/demo-frames-*/

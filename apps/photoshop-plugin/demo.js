@@ -479,8 +479,8 @@ function selectTab(name) {
 
 function setCaption(step, heading, copy) {
   document.getElementById("demo-step").textContent = step;
-  document.getElementById("demo-heading").textContent = heading;
-  document.getElementById("demo-copy").textContent = copy;
+  document.getElementById("demo-heading").textContent = `Simulated prototype · ${heading}`;
+  document.getElementById("demo-copy").textContent = `${copy} No real Photoshop or Git operations occur.`;
   document.querySelector(".demo-caption").classList.add("visible");
 }
 

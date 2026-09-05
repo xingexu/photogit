@@ -22,6 +22,17 @@ describe("canonical serialization", () => {
     expect(files.get(".photogit/document.json")).toContain('"width": 1920.123457');
   });
 
+  it("preserves optional composite fingerprints through capture serialization without changing legacy files", () => {
+    for (const fingerprint of [undefined, null, "rendered-v1:64x64x4:abc123"]) {
+      const current = structuredClone(capture);
+      if (fingerprint !== undefined) current.document.renderedFingerprint = fingerprint;
+      const state = stateFromCapture(current, { schemaVersion: SCHEMA_VERSION, projectId: "p", displayName: "Poster", createdWith: "test" }, () => "layer-a");
+      const persisted = JSON.parse(stateToFiles(state).get(".photogit/document.json")!);
+      expect(persisted.renderedFingerprint).toBe(fingerprint);
+      expect(Object.hasOwn(persisted, "renderedFingerprint")).toBe(fingerprint !== undefined);
+    }
+  });
+
   it("retains identity after Photoshop changes a layer ID", () => {
     const initial = stateFromCapture(capture, { schemaVersion: SCHEMA_VERSION, projectId: "p", displayName: "Poster", createdWith: "test" }, () => "layer-a");
     const reopened = structuredClone(capture);

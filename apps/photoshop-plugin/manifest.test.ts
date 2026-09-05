@@ -7,7 +7,7 @@ describe("Photoshop plugin manifest", () => {
     const path = resolve(process.cwd(), "apps/photoshop-plugin/manifest.json");
     const manifest = JSON.parse(await readFile(path, "utf8"));
     expect(manifest.manifestVersion).toBe(5);
-    expect(manifest.host).toMatchObject({ app: "PS", minVersion: "24.2.0" });
+    expect(manifest.host).toMatchObject({ app: "PS", minVersion: "25.0.0" });
     expect(manifest.requiredPermissions).toEqual({
       localFileSystem: "request",
       launchProcess: { schemes: ["https"] }
@@ -24,7 +24,7 @@ describe("Photoshop plugin manifest", () => {
   it("keeps development ID visibly distinct from a release package", async () => {
     const manifest = JSON.parse(await readFile(resolve(process.cwd(), "apps/photoshop-plugin/manifest.json"), "utf8"));
     expect(manifest.id).toBe("com.photogit.development");
-    expect(manifest.version).toBe("0.1.6");
+    expect(manifest.version).toBe("0.2.0");
   });
 
   it("ships crisp monochrome panel icons at every declared scale", async () => {

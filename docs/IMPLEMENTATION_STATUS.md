@@ -1,36 +1,30 @@
-# Implementation status
+# Implementation status: 0.2.0 development
 
-## Implemented in the first vertical slice
+This revision is a hardening candidate, not a completed v1. The [acceptance report](ACCEPTANCE_REPORT.md) is the source of truth for commands and host checks actually run. Past acceptance prose and historical screenshots do not establish current behavior.
 
-- Production monorepo shape and TypeScript project boundaries
-- Semantic schema v1 and deterministic canonical JSON
-- Domain files for document metadata, layer structure, appearance, and text
-- Bounded runtime validation for nested captures, saved state, relationships, and filename-safe layer identities
-- Property-level diff model with mergeability and confidence fields
-- Three-way merge planner for independent edits, UUID-keyed layer records, and same-property conflicts
-- Git subprocess isolation using argument arrays
-- Atomic file replacement, validated transaction journals, stale lock recovery, and real-path/symlink containment
-- CLI initialization, save-version, status, history, and semantic diff
-- Token-authenticated, Git-ignored project-folder bridge compatible with Photoshop on macOS
-- UXP panel document and nested-layer capture
-- VIT-style panel loop with Pull, Push, Status, activity, branches, semantic refresh, Save version, clickable layer changes, and history
-- Automatic helper pairing through a mode-0600, Git-ignored project file
-- Git LFS 3.8.0 installed and initialized for the local demo project
-- Responsive monochrome panel UI with one outer scroll, persistent section/sync navigation, flat history/review rows, reduced-motion/transparency modes, keyboard menus, focus trapping, and bounded text fields
-- 78 automated checks covering schema and capture bounds, canonical output, identity reconciliation, diffs, UUID-aware merge planning, traversal and symlink safety, rollback and forged journals, helper configuration and credential redaction, the authenticated bridge envelope, the UXP UI/manifest/icon contracts, and complete temporary-repository CLI flows
+## Implemented surfaces
 
-## Requires local Adobe/account access
+- Deterministic schema and serializer, layer diff model, and a standalone semantic merge planner.
+- Git-backed versions, project locks, bounded state reads, transaction recovery, branch comparisons, history details, and extraction of earlier PSDs into separate working files.
+- CLI initialization, project doctor, save, status, diff, and history.
+- Approved-root helper, token-authenticated filesystem bridge, request claiming, per-configuration locking, bounded responses, redaction, and project-document binding.
+- Actual UXP panel for connection, scanning, versions, branches, reviews, and activity. Common edit detection, saved baselines, separate history opening, branch switching, clean/blocked merges, wrong-document protection, and helper reconnect were exercised in Photoshop 27.10.0.
+- One product version across package metadata and manifest, CI configuration, source secret inventory, development archive verification, and contributor/security guidance.
 
-- Permanent Developer Distribution plugin ID
-- Photoshop 2025 compatibility test (Photoshop 2026 is verified)
-- `.ccx` packaging and Creative Cloud installation test
-- Marketplace listing, screenshots, and submission
-- Apple signing/notarization credentials for a native helper installer
+## Deliberate feature boundaries
 
-## Live acceptance test completed
+- A **version** is stored as a Git commit; the UI uses “version”.
+- A **scan** compares the connected Photoshop document against saved state; externally edited metadata is not an implicit new baseline.
+- **Git merge** is ordinary Git merging. Semantic merge planning is not applied to PSD content.
+- **Open GitHub comparison** opens a provider URL; it does not create a draft pull request.
+- **View conflicts** explains conflicting paths; it does not imply automatic PSD conflict resolution.
+- Earlier-version PSDs are opened separately. Restoration requires inspecting the copy and deliberately saving the intended state as a new version.
+- `demo.html` and simulated DOM tests are prototypes or test harnesses. Neither proves UXP imaging or Photoshop transitions.
 
-On September 3, 2026, PhotoGit was loaded through Adobe UXP Developer Tools 2.2.1 into Photoshop 2026 v27.10. The panel paired with an approved project folder, detected semantic layer and document changes, saved PSD and PNG artifacts through Git LFS, displayed history, created and switched branches, pushed and pulled a shared branch, reopened branch-specific PSD state, and reported a clean project.
+## Release gates
 
-## Release gates still open
+The final integrated suite passed 210 tests in 15 files, including 78 production panel behavioral tests and 13 actual helper-process bridge tests. Check, build, source security inventory, and development package verification passed. The earlier online audit found zero vulnerabilities with the unchanged dependency lock; authorization to repeat that external audit was denied. The native group-opacity/document-composite follow-up passed with a new saved baseline and no legacy warning or false dirty state. A 521-layer native document scanned successfully with correct 500-of-548 list truncation. Six native panel images were inspected at 420 × 800 logical pixels with 2× raster output. These observations do not complete every host scenario or the requested visual matrix; the final Save-control reorder has an automated regression but was not reverified natively.
 
-Applying individual semantic changes back into an already-open document, visual compare, interactive conflict resolution, distributable packaging, website, complete user documentation, Photoshop 2025 coverage, and clean-machine acceptance testing.
+The native debugger stopped responding during an attempted cancellation stress test. Its outcome was not observed, and large-document saving was not run. Photoshop and the test artwork were left open; restarting the host requires user permission after saving personal work. Fresh folder selection/permission, shape/mask/effect/smart-object cases and additional group effects, large-document save/cancellation, remaining native failure/timeout combinations, the full panel size/scale/state matrix, clean-machine installation, signed packaging, other Photoshop/OS versions, and Adobe distribution identity remain open. See [the evidence ledger](ACCEPTANCE_REPORT.md), [LIVE_ACCEPTANCE.md](LIVE_ACCEPTANCE.md), and [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md).
+
+No release date is promised by this repository. Only the scoped native images under `artifacts/acceptance-20260904/` are current visual evidence; other media remain historical material.

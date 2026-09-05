@@ -22,7 +22,9 @@ export function diffStates(base: ProjectState, current: ProjectState): SemanticC
   validateProjectState(base);
   validateProjectState(current);
   const changes: SemanticChange[] = [];
-  diffObject("document", null, "Document", base.document, current.document, changes, ["schemaVersion", "warnings", "compatibility"]);
+  // Photoshop assigns a new ID and filename when opening a saved recovery copy.
+  // Project binding validates identity; neither value is a visible design edit.
+  diffObject("document", null, "Document", base.document, current.document, changes, ["schemaVersion", "documentId", "name", "warnings", "compatibility"]);
 
   const baseLayers = new Map(base.structure.layers.map((layer) => [layer.uuid, layer]));
   const currentLayers = new Map(current.structure.layers.map((layer) => [layer.uuid, layer]));
@@ -62,6 +64,10 @@ function diffObject(
   prefix = ""
 ): void {
   if (same(before, after)) return;
+  const compositeChange = domain === "document" && prefix === "renderedFingerprint";
+  // A legacy baseline or an unsupported scan has no comparable composite.
+  // The helper reports that coverage gap; it is not evidence of a design edit.
+  if (compositeChange && (typeof before !== "string" || typeof after !== "string")) return;
   if (isRecord(before) && isRecord(after)) {
     for (const key of [...new Set([...Object.keys(before), ...Object.keys(after)])].sort()) {
       if (ignoredKeys.includes(key)) continue;
@@ -70,7 +76,7 @@ function diffObject(
     return;
   }
 
-  const unsupported = domain === "content";
+  const unsupported = domain === "content" || compositeChange;
   const action = prefix === "order" ? "reordered" : prefix === "parentUuid" ? "moved" : "modified";
   changes.push({
     domain,
@@ -81,7 +87,9 @@ function diffObject(
     propertyPath: prefix,
     baseValue: before,
     currentValue: after,
-    summary: summarize(label, prefix, before, after),
+    summary: compositeChange ? "Document rendered appearance changed" : domain === "content" && prefix === "fingerprint"
+      ? `${safeInline(label, 120)}: ${before == null || after == null ? "Rendered appearance fingerprint availability changed" : "Rendered appearance changed"}`
+      : summarize(label, prefix, before, after),
     mergeability: unsupported ? "unsupported" : "automatic",
     confidence: unsupported ? 0.75 : 1,
     warnings: unsupported ? ["Content changes require Photoshop artifact handling and cannot be merged as JSON alone."] : []
@@ -107,12 +115,15 @@ function layerLifecycle(category: "added" | "removed", layer: LayerNode): Semant
 
 function summarize(label: string, path: string, before: unknown, after: unknown): string {
   const friendly = path.replaceAll(".", " ").replace(/([A-Z])/g, " $1").toLowerCase();
+  if (typeof before === "number" && typeof after === "number" && display(before) === display(after)) {
+    return `${safeInline(label, 120)}: ${safeInline(friendly, 120)} changed by less than 0.001`;
+  }
   return `${safeInline(label, 120)}: ${safeInline(friendly, 120)} changed from ${display(before)} to ${display(after)}`;
 }
 
 function display(value: unknown): string {
   if (value === undefined) return "not set";
-  const serialized = JSON.stringify(value);
+  const serialized = JSON.stringify(value, (_key, entry: unknown) => typeof entry === "number" ? Number(entry.toFixed(3)) : entry);
   return safeInline(serialized === undefined ? String(value) : serialized, 160);
 }
 
@@ -123,6 +134,9 @@ function safeInline(value: string, maximum: number): string {
 
 function same(left: unknown, right: unknown): boolean {
   if (Object.is(left, right)) return true;
+  // Match serializer canonicalize(): HEAD stores six decimals, whereas UXP
+  // reports values such as 161 / 255 * 100 at full floating-point precision.
+  if (typeof left === "number" && typeof right === "number") return Number(left.toFixed(6)) === Number(right.toFixed(6));
   if (Array.isArray(left) || Array.isArray(right)) {
     return Array.isArray(left) && Array.isArray(right) && left.length === right.length && left.every((value, index) => same(value, right[index]));
   }

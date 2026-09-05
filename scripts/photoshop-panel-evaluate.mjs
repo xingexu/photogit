@@ -54,7 +54,9 @@ const result = await new Promise((resolve, reject) => {
     socket.send(JSON.stringify({
       id: 2,
       method: "Runtime.evaluate",
-      params: { expression, contextId, awaitPromise: true, returnByValue: true }
+      // Some UXP hosts report 'Promise was collected' for fire-and-poll scripts.
+      // --no-await keeps their explicit window result objects as the evidence.
+      params: { expression, contextId, awaitPromise: !process.argv.includes("--no-await"), returnByValue: true }
     }));
   };
   socket.addEventListener("open", () => socket.send(JSON.stringify({ id: 1, method: "Runtime.enable" })));
