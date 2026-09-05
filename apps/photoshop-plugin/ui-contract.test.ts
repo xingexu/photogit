@@ -73,7 +73,7 @@ async function panel() {
     evaluate('projectFolder = { name: "Synthetic project", nativePath: "/synthetic-project" }; helperToken = "host-mock-token"; projectStatus = { branch: "main", changeCount: 0, baselineMissing: false, documentBinding: panelModel.documentIdentity(app.activeDocument) }; helperOnline = true;');
     return doc;
   };
-  return { document, context, evaluate, id, keyboard, connect, app, core, action, imaging, pixels, timers, entrypoints, executionContext, inModal: () => modalDepth > 0 };
+  return { document, context, evaluate, id, keyboard, connect, app, core, action, imaging, pixels, timers, entrypoints, storage, executionContext, inModal: () => modalDepth > 0 };
 }
 
 function syntheticLayer(id = 1, name = "Layer", kind = "pixel") {
@@ -822,7 +822,141 @@ describe("PhotoGit production panel behavior — host mocked", () => {
   });
 });
 
+describe("PhotoGit production startup — mocked host and filesystem", () => {
+  it("paints a loading state first, then setup; repeated startup does not rebind controls", async () => {
+    const p = await panel();
+    expect(p.id("startup-state").hidden).toBe(false);
+    expect(p.id("onboarding").hidden).toBe(true);
+    expect(p.id("workspace").hidden).toBe(true);
+    const first = p.evaluate("initializePanel()");
+    expect(p.evaluate("initializePanel()")).toBe(first);
+    await first;
+    expect(p.id("startup-state").hidden).toBe(true);
+    expect(p.document.body.classList.contains("is-initializing")).toBe(false);
+    expect(p.id("workspace").getAttribute("aria-busy")).toBe("false");
+    expect(p.id("onboarding").hidden).toBe(false);
+    expect(p.context.window.setInterval).toHaveBeenCalledOnce();
+    expect(p.action.addNotificationListener).toHaveBeenCalledOnce();
+    p.id("global-search").click();
+    expect(p.id("detail-sheet").hidden).toBe(false);
+  });
+  it("holds commands and automatic scans until the saved project finishes loading", async () => {
+    const p = await panel(); const waiting = deferred<any>();
+    p.context.localStorage.getItem = () => "saved-folder";
+    Object.assign(p.storage.localFileSystem, { getEntryForPersistentToken: () => waiting.promise });
+    const selectFolder = vi.fn(); p.context.chooseProject = selectFolder;
+    const helper = vi.fn(); p.context.callHelper = helper;
+    const startup = p.evaluate("initializePanel()");
+    p.id("global-search").click(); p.id("choose-project").click();
+    p.evaluate('openCommandPalette(); executeCommand("/connect"); queueAutomaticScan("early-event")');
+    expect(selectFolder).not.toHaveBeenCalled();
+    expect(helper).not.toHaveBeenCalled();
+    expect(p.id("detail-sheet").hidden).toBe(true);
+    expect(p.id("global-search").getAttribute("aria-disabled")).toBe("true");
+    waiting.resolve(null); await startup;
+    expect(p.id("onboarding").hidden).toBe(false);
+    expect(p.id("global-search").getAttribute("aria-disabled")).toBe("false");
+  });
+  it("loads the project using bounded read-only helper requests before revealing its workspace", async () => {
+    const p = await panel(); p.connect();
+    const status = p.evaluate("projectStatus");
+    const helper = vi.fn(async (command: string) => ({
+      status, branches: { current: "main", branches: [{ name: "main", current: true }] },
+      history: { versions: [] }, reviews: { repository: { provider: "local", currentBranch: "main" }, reviews: [] }
+    })[command]);
+    p.context.callHelper = helper;
+    await p.evaluate("initializePanel()");
+    expect(p.id("workspace").hidden).toBe(false);
+    expect(p.id("onboarding").hidden).toBe(true);
+    expect(p.id("startup-state").hidden).toBe(true);
+    expect(helper.mock.calls.map(call => call[0])).toEqual(["status", "branches", "history", "reviews"]);
+    for (const call of helper.mock.calls as unknown[][]) expect(call[2]).toBe(5000);
+    expect(p.id("repo-sync-status").textContent).toBe("Helper online");
+  });
+  it.each(["token", "pairing", "preferences"])("recovers from %s failure and keeps setup usable", async failure => {
+    const p = await panel();
+    p.context.localStorage.getItem = () => { if (failure === "preferences") throw new Error("Unavailable"); return "saved-folder"; };
+    Object.assign(p.storage.localFileSystem, { getEntryForPersistentToken: async () => {
+      if (failure === "token") throw new Error("Expired permission");
+      return { name: "Project", getEntry: async () => ({ getEntry: async () => ({ read: async () => "{malformed-json" }) }) };
+    } });
+    await p.evaluate("initializePanel()");
+    expect(p.id("startup-state").hidden).toBe(true);
+    expect(p.id("onboarding").hidden).toBe(false);
+    expect(p.evaluate("projectFolder")).toBeNull();
+    expect(p.evaluate("helperToken")).toBeNull();
+    p.id("setup-toggle").click();
+    expect(p.id("setup-instructions").hidden).toBe(false);
+  });
+  it("times out a stalled folder grant and ignores its late result", async () => {
+    const p = await panel(); const waiting = deferred<any>();
+    p.context.localStorage.getItem = () => "saved-folder";
+    Object.assign(p.storage.localFileSystem, { getEntryForPersistentToken: () => waiting.promise });
+    const startup = p.evaluate("initializePanel()");
+    [...p.timers.values()].find(timer => timer.delay === 15000)!.callback();
+    await startup;
+    expect(p.id("onboarding").hidden).toBe(false);
+    expect(p.id("startup-state").hidden).toBe(true);
+    waiting.resolve({ name: "Late folder" }); await settle();
+    expect(p.evaluate("projectFolder")).toBeNull();
+    expect([...p.timers.values()].some(timer => timer.delay === 15000)).toBe(false);
+  });
+  it("reveals a reconnect state when the helper is offline", async () => {
+    const p = await panel(); p.connect();
+    p.context.callHelper = vi.fn(async () => { throw new Error("Helper unavailable"); });
+    await p.evaluate("initializePanel()");
+    expect(p.id("startup-state").hidden).toBe(true);
+    expect(p.id("workspace").hidden).toBe(false);
+    expect(p.id("connection-notice").hidden).toBe(false);
+    expect(p.id("repo-sync-status").textContent).toBe("Helper offline");
+    expect(p.evaluate("helperOnline")).toBe(false);
+    expect([...p.timers.values()].some(timer => timer.delay === 150)).toBe(false);
+  });
+  it("ignores pairing data that arrives after its startup deadline", async () => {
+    const p = await panel(); const waiting = deferred<string>();
+    p.context.localStorage.getItem = () => "saved-folder";
+    Object.assign(p.storage.localFileSystem, { getEntryForPersistentToken: async () => ({
+      name: "Project", getEntry: async () => ({ getEntry: async () => ({ read: () => waiting.promise }) })
+    }) });
+    const startup = p.evaluate("initializePanel()"); await settle();
+    [...p.timers.values()].find(timer => timer.delay === 15000)!.callback();
+    await startup;
+    waiting.resolve(JSON.stringify({ protocolVersion: 1, token: "synthetic-test-token-".repeat(3) })); await settle();
+    expect(p.evaluate("helperToken")).toBeNull();
+    expect(p.evaluate("projectFolder")).toBeNull();
+    expect(p.id("startup-state").hidden).toBe(true);
+  });
+  it("releases loading if automatic Photoshop notifications are unavailable", async () => {
+    const p = await panel();
+    p.action.addNotificationListener.mockRejectedValue(new Error("Notifications unavailable"));
+    await p.evaluate("initializePanel()");
+    expect(p.id("startup-state").hidden).toBe(true);
+    expect(p.id("watch-status").textContent).toContain("Use Scan now");
+  });
+  it("always releases the loading gate after an unexpected refresh failure", async () => {
+    const p = await panel();
+    p.context.refreshWorkspace = vi.fn(async () => { throw new Error("Unexpected render failure"); });
+    await p.evaluate("initializePanel()");
+    expect(p.id("startup-state").hidden).toBe(true);
+    expect(p.id("onboarding").hidden).toBe(false);
+    expect(p.id("result").textContent).toContain("could not finish loading");
+    p.id("global-search").click();
+    expect(p.id("detail-sheet").hidden).toBe(false);
+  });
+});
+
 describe("PhotoGit rounded design and label clarity", () => {
+  it("keeps Status a stable action label and shows a branch only once in its form", async () => {
+    const p = await panel();
+    p.evaluate('setSyncStatus("Project files changed")');
+    expect(p.id("sync-status").textContent).toBe("Status");
+    expect(p.id("show-status").getAttribute("title")).toContain("Project files changed");
+    expect(p.document.querySelector<HTMLElement>(".current-branch")!.hidden).toBe(true);
+    expect(p.document.querySelector('label[for="branch-picker"]')!.textContent).toBe("Switch branch");
+    p.evaluate("renderHistory(versions)", { versions: [{ message: "Refined cover", shortId: "abc1234", id: "a".repeat(40), author: "Designer", date: new Date().toISOString() }] });
+    expect(p.id("history").textContent).not.toContain("Inspect version");
+    expect(p.id("history").querySelector('[role="button"]')!.getAttribute("aria-label")).toBe("Inspect version abc1234: Refined cover");
+  });
   it("removes repeated captions without removing input names or merge warnings", async () => {
     const p = await panel();
     expect(p.document.querySelectorAll(".eyebrow")).toHaveLength(0);

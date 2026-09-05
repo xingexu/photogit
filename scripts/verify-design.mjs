@@ -3,7 +3,7 @@ import { execFileSync } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 const cli = process.env.PHOTOGIT_BROWSER_CLI || "agent-browser";
-const out = resolve(process.env.PHOTOGIT_DESIGN_ARTIFACTS || "artifacts/rounded-ui-20260905");
+const out = resolve(process.env.PHOTOGIT_DESIGN_ARTIFACTS || "artifacts/startup-ui-20260905");
 mkdirSync(out, { recursive: true });
 const run = (...args) => {
   // At the 200px minimum height a partly visible target can have its center
@@ -38,7 +38,7 @@ for (const theme of ["dark", "light"]) {
 }
 run("set", "viewport", "320", "600");
 for (const theme of ["dark", "light"]) {
-  for (const state of ["empty", "long", "error", "setup"]) {
+  for (const state of ["empty", "long", "error", "setup", "loading"]) {
     run("open", `http://127.0.0.1:8766/demo.html?panel&theme=${theme}&state=${state}`);
     run("wait", ".simulation-label");
     settle();
@@ -58,5 +58,5 @@ if (JSON.parse(run("eval", 'document.getElementById("docs-view").hidden'))) thro
 run("click", "#global-search"); run("press", "Escape");
 if (!JSON.parse(run("eval", 'document.getElementById("detail-sheet").hidden'))) throw new Error("Escape did not dismiss palette");
 if (!run("eval", 'document.activeElement.id').includes("global-search")) throw new Error("Focus not restored");
-writeFileSync(`${out}/demo-matrix.json`, JSON.stringify({ simulated: true, results, destinationsPerViewport: 6, statesAt320: ["empty", "long (500 rows)", "error", "setup"], persistence: true, paletteNavigation: true, dismissalAndFocus: true }, null, 2));
+writeFileSync(`${out}/demo-matrix.json`, JSON.stringify({ simulated: true, results, destinationsPerViewport: 6, statesAt320: ["empty", "long (500 rows)", "error", "setup", "loading"], persistence: true, paletteNavigation: true, dismissalAndFocus: true }, null, 2));
 console.log("PASS: eight simulated viewports/themes, six destinations each, stress states, theme persistence, palette navigation and focus return.");

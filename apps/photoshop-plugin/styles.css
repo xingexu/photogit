@@ -293,3 +293,12 @@ input::placeholder { font-family: var(--font-ui); font-size: var(--text-body); f
   .nav-item { padding: 6px 4px; }
   .row-copy > .layer-identity { display: none; }
 }
+
+/* Paint the chosen theme and one calm loading surface, never a setup-screen flash. */
+.is-initializing #workspace, .is-initializing #onboarding, .is-initializing #connection-notice { display: none !important; }
+.startup-card { margin: 12px 0; padding: 16px; border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--surface); }
+.startup-card p { margin-top: 4px; color: var(--muted); }
+.startup-skeleton { margin-top: 20px; }
+.startup-skeleton span { display: block; height: 10px; margin-top: 10px; background: var(--elevated); border-radius: var(--radius); }
+.startup-skeleton span:first-child { width: 40%; }
+.startup-skeleton span:last-child { width: 70%; }
