@@ -4,6 +4,18 @@ September 5, 2026 · development revision · native UXP, no framework migration.
 
 ## Direction
 
+### Liquid material revision
+
+Prominent-glass revision (current): surface radius 22px, control radius 18px, active tabs 16px. Dark/Light base tint alpha is now 36%/42%, upper reflection 18%/88%, ambient tint 20%/20%, and lower reflection 7% pale blue/36% white. Dark rim is #D5E0F2. Layered lower reflections and shaded edges make the material visible without backdrop blur. Browser-only progressive shadows add inset rims and two levels of cast shadow; hover raises the shadow and press insets it without moving hit targets. Primary buttons use only their contrast-tested primary/hover/pressed colours for the gradient, never a white sheen. The softer quintic motion from the preceding follow-up is retained. README preview is refreshed from simulated data. Earlier values below describe prior checkpoints.
+
+Depth follow-up: surfaces now use `--glass-tint` at 52% alpha in Dark and 54% in Light, a directional reflection (12% / 72% white), shaded lower edges (#24272D / #AEB8C9), and a faint ambient canvas tint. Floating menus remain opaque for legibility. Supported browsers additionally render inset highlights and lifted shadows; native UXP must be judged by its gradient/rim fallback, not browser screenshots. Reduced-transparency mode restores opaque surfaces and removes decorative gradients.
+
+Motion now uses quintic smootherstep: page/sheet entrance 62%→100% over 320ms, theme out/in 100%→50%→100% over 160ms + 320ms, click feedback 82%→100% over 220ms. The lighter fades avoid full-panel blackouts; action dispatch remains immediate and rapid-toggle cancellation/reduced-motion behavior remains covered by tests.
+
+The latest user-directed style follows [Apple Icon Composer](https://developer.apple.com/icon-composer/): layered surfaces, specular rims, rounded controls, and crisp text. This supersedes the prior no-gradient editorial direction. It is an adaptation, not Apple's native Liquid Glass engine; no refraction or live backdrop blur is claimed. Adobe documents linear gradients as supported UXP backgrounds, so gradients and border highlights provide the native treatment without dependencies or a manifest feature-flag change.
+
+New tokens (dark / light): `--glass-top` #343940 / #FFFFFF; `--glass-bottom` #272727 / #F1F3F7; `--glass-edge` #747D8C / #A5ACB8; `--glass-glint` #B3BFD3 / #FFFFFF; `--glass-well` #202329 / #E8ECF2; `--glass-sheen` white at 10% / 65%; `--glass-shadow` black at 18% / #1B273E at 10%. `--glass-radius` is 18px, controls 12px, list rows 10px. Page/form titles and branding are 16px; body and controls remain 12px. Text stays opaque instead of blurred or refracted. Contrast tests include both gradient endpoints and inset wells. Reduced-transparency media queries remove decorative gradients when supported; shadows are progressive enhancement only. Existing motion timings, commands, IDs, helper operations, and startup logic are unchanged.
+
 Compact, typography-led workspace: small identity, project and connection, document context, natural-width section tabs, active task, quiet sync footer. The restrained navigation and composition of [Martin Sit’s site](https://martinsit.ca/) informed the direction, without copying assets or layout. Save version stays above long change lists. Earlier versions still open separate PSDs; merge remains ordinary Git, not visual blending.
 
 ## Tokens

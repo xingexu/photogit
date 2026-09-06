@@ -1,5 +1,25 @@
 # Acceptance report: 0.2.0 development
 
+## Prominent-glass delivery
+
+Verification: 280 tests passed in 16 files, plus type, source-security, diff and package checks. The browser matrix passed all six pages in Dark/Light at 230×200, 320×600, 420×800 and 900×800, including stress states, palette navigation, theme persistence and focus return. Both 420×800 theme captures were visually reviewed. Final development bundle SHA-256: `74b2d5c250ed53ef9e1c8f5b65be50b8d467d45b83c5ab0cad0b30a5db7ecbac`.
+
+This delivery combines the earlier uncommitted liquid-material and motion revisions with stronger reflections, more translucent surfaces, rounded controls and deeper edge shading. The README image is a reviewed simulated-data screenshot; no native Photoshop screenshots or project artwork are included in the commit. The historical "not pushed" notes below describe earlier checkpoints.
+
+Native limitation: this final revision has not been reloaded or visually inspected in Photoshop. The previous native gradient/tab checks do not establish support for the new layered reflections, browser shadow enhancements, or final motion behavior. No Apple-native refraction or live blur is claimed. Runtime workflow code and document data are unchanged.
+
+## Translucent depth and softer motion follow-up
+
+Browser verification passed all six destinations across eight viewport/theme combinations, plus stress states, theme persistence, palette navigation and focus return. Captures are local under `/private/tmp/photogit-depth-ui`; both 420×800 themes were visually inspected.
+
+Added genuinely translucent base fills, directional reflection gradients, shaded lower edges and progressive inset/drop shadows. Menus stay opaque enough to read over other content. Softer page/theme/click fades use quintic easing without delaying actions. 280 tests passed, including a new entrance midpoint/cleanup test, plus type and development-package validation. Bundle SHA-256: `d3580b174740124af6797b0d77ea3a173d7588207a88410f8211660db16f8dab`. This follow-up has not been reloaded or visually accepted in native Photoshop; earlier native evidence below applies only to the preceding revision. No artwork was modified and no changes were pushed.
+
+## Liquid material UI revision
+
+Updated the shared stylesheet across all six pages, startup, menus, sheets, fields and controls using the Apple Icon Composer reference. Text remains opaque and legible; gradients and highlighted rims approximate the material in UXP without native Apple refraction. Primary controls intentionally omit the white sheen to preserve contrast in Light mode.
+
+279 tests passed, including contrast checks on the new gradient endpoints and inset wells. Type and development-package checks passed; final bundle SHA-256: `47df5a6073e2d6cdb2956fa3970c1f7936b3c508c5855b986c661771ebfa447d`. Browser matrix passed six pages in both themes at four sizes, plus stress states and command-palette navigation. Native startup completed, all six tabs responded to dispatched clicks, and computed navigation background was `linear-gradient(145deg,#343940,#272727)`. This is runtime evidence, not pixel-level verification: final native screenshot inspection was blocked by pending macOS Accessibility/Screen Recording permissions. Native physical pointer/keyboard checks, final primary-sheen correction, and reduced-transparency propagation remain unverified. No artwork was modified and no changes were pushed in this pass.
+
 ## September 5 editorial surface refinement
 
 Replaced repeated outlined cards with canvas-backed lists, a focal save surface, quiet segmented navigation, and a utility footer. Added periwinkle primary/selected states while preserving grey hover feedback. Commands use monospace syntax. Current branch is visible; unavailable merges are explanatory notes. Consecutive detection events disclose grouped details rather than filling the activity feed. The shared demo uses the production stylesheet and matching review treatment.
