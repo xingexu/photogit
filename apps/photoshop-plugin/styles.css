@@ -10,6 +10,12 @@
   --text-small: 12px; --text-body: 12px; --text-title: 14px; --text-onboarding: 18px; --radius: 8px; --radius-panel: 12px; --motion: 120ms;
   --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; --mono: "SFMono-Regular", Consolas, monospace; --motion-enabled: 1;
   --motion-control: 200ms; --motion-nav: 240ms;
+  --glass-top: #343940; --glass-bottom: #272727; --glass-edge: #747d8c;
+  --glass-glint: #d5e0f2; --glass-well: #202329; --glass-radius: 22px;
+  --glass-sheen: rgba(255,255,255,.14); --glass-shadow: rgba(0,0,0,.24);
+  --glass-tint: rgba(39,43,50,.36); --glass-reflection: rgba(255,255,255,.18);
+  --glass-underedge: #24272d; --glass-ambient: rgba(104,139,190,.20);
+  --glass-bounce: rgba(199,222,255,.07);
 }
 :root[data-theme="light"] {
   color-scheme: light;
@@ -19,6 +25,12 @@
   --primary: #365bbb; --primary-text: #ffffff; --primary-hover: #294b9f; --primary-pressed: #203e88;
   --success: #24683c; --success-surface: #e7f1e9; --warning: #805900; --warning-surface: #f6eedc;
   --error: #a32e28; --error-surface: #f9e8e6; --backdrop: rgba(0,0,0,.3);
+  --glass-top: #ffffff; --glass-bottom: #f1f3f7; --glass-edge: #a5acb8;
+  --glass-glint: #ffffff; --glass-well: #e8ecf2;
+  --glass-sheen: rgba(255,255,255,.65); --glass-shadow: rgba(27,39,62,.14);
+  --glass-tint: rgba(255,255,255,.42); --glass-reflection: rgba(255,255,255,.88);
+  --glass-underedge: #aeb8c9; --glass-ambient: rgba(111,149,203,.20);
+  --glass-bounce: rgba(255,255,255,.36);
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; width: 100%; height: 100%; background: var(--bg); color: var(--text); font-family: var(--font-ui); font-size: var(--text-body); line-height: 1.5; }
@@ -324,3 +336,76 @@ input::placeholder { font-family: var(--font-ui); font-size: var(--text-body); f
 :root [role="menuitem"]:not([aria-disabled="true"]):active { background-color: var(--pressed); }
 :root .button-primary[role="button"]:not([aria-disabled="true"]):hover { background-color: var(--primary-hover); border-color: var(--primary-hover); }
 :root .button-primary[role="button"]:not([aria-disabled="true"]):active { background-color: var(--primary-pressed); border-color: var(--primary-pressed); }
+
+/* Liquid material: real UXP-supported gradients and edge highlights, not a
+   dependency on backdrop filtering or Apple's proprietary refraction engine. */
+.panel-root { padding-top: 8px; }
+body { background-image: radial-gradient(ellipse at 10% 0%, var(--glass-ambient), transparent 65%); }
+.app-header { border: 0; padding: 10px 4px; }
+.app-title h1 { font-size: 16px; letter-spacing: -.3px; }
+.repo-context { padding: 12px 4px; border: 0; }
+.content-card, .scan-card, .onboarding, .startup-card,
+.section-nav, .sync-panel, .tools-menu, .tool-sheet, .notice {
+  background-color: var(--glass-tint);
+  background-image: linear-gradient(160deg, var(--glass-reflection) 0%, transparent 32%), linear-gradient(175deg, transparent 72%, var(--glass-bounce) 94%, var(--glass-shadow) 100%);
+  border: 1px solid var(--glass-edge);
+  border-top-color: var(--glass-glint);
+  border-bottom-color: var(--glass-underedge);
+  border-radius: var(--glass-radius);
+}
+.content-card, .onboarding { padding: 14px; margin: 12px 0; }
+.scan-card { padding: 10px 12px; }
+.capture-panel { border-color: var(--border); border-top-color: var(--glass-glint); }
+.version-label, .view-heading h2 { font-size: 16px; letter-spacing: -.2px; }
+.section-nav { padding: 5px; }
+.nav-item { border-radius: 16px; min-height: 34px; }
+.nav-item.active { border-color: var(--focus); background-color: var(--selected); background-image: linear-gradient(160deg, var(--glass-sheen), transparent); }
+.nav-item b { font-size: 11px; }
+.button, .header-action, .footer-action, .sheet-close, .tool-item {
+  border-radius: 18px;
+  background-image: linear-gradient(180deg, var(--glass-sheen), transparent 55%, var(--glass-shadow));
+}
+.button { min-height: 34px; }
+.button-primary { border-top-color: var(--glass-glint); background-image: linear-gradient(180deg, var(--primary-hover), var(--primary) 45%, var(--primary-pressed)); }
+.button-quiet, .command-trigger { background-color: var(--surface); border-color: var(--border); }
+.appearance-toggle, #header-menu { margin-left: 4px; }
+.field-shell, #command-input, sp-dropdown { border-radius: 12px; background-color: var(--glass-well); }
+input { border-radius: 12px; background-color: transparent; }
+.field-shell:focus-within { border-color: var(--focus); }
+.list-row, .command-row { padding: 10px 6px; border-radius: 10px; }
+.list-row:hover, .command-row:hover, .tool-item:hover { background-image: linear-gradient(150deg, var(--glass-sheen), transparent); }
+.change-domain, .meta-chip { border-radius: 8px; }
+.change-domain { border: 1px solid var(--line); background-image: linear-gradient(150deg, var(--glass-sheen), transparent); }
+.review-card { padding: 12px 2px; }
+.review-actions > .merge-action[aria-disabled="true"] { background-image: none; }
+.current-branch { border-radius: 10px; background-color: var(--selected); padding: 8px; }
+.sync-panel { padding: 5px; margin-top: 12px; }
+.footer-action { margin: 2px; }
+.setup-command, .empty-state { border-radius: 12px; background-color: var(--glass-well); }
+.empty-state { padding: 20px 12px; }
+.startup-skeleton span { background-image: linear-gradient(100deg, var(--glass-well), var(--elevated)); }
+/* Floating content stays opaque enough to read over unrelated text below it. */
+.tools-menu, .tool-sheet, .notice { background-color: var(--surface); }
+/* Shadows are progressive enhancement; the native fallback is the lit rim. */
+@supports (box-shadow: 0 2px 8px black) {
+  .tools-menu, .tool-sheet { box-shadow: inset 0 1px 0 var(--glass-glint), inset 0 -2px 4px var(--glass-bounce), 0 20px 48px var(--glass-shadow); }
+  .content-card, .section-nav, .sync-panel, .scan-card { box-shadow: inset 0 1px 0 var(--glass-reflection), inset 0 -2px 3px var(--glass-bounce), 0 2px 4px var(--glass-shadow), 0 12px 24px var(--glass-shadow); }
+  .button, .command-trigger { box-shadow: inset 0 1px 0 var(--glass-reflection), inset 0 -2px 2px var(--glass-shadow), 0 3px 7px var(--glass-shadow); }
+  .button:not([aria-disabled="true"]):hover { box-shadow: inset 0 1px 0 var(--glass-glint), 0 5px 12px var(--glass-shadow); }
+  .button:not([aria-disabled="true"]):active { box-shadow: inset 0 2px 4px var(--glass-shadow); }
+  .button[aria-disabled="true"] { box-shadow: none; }
+}
+/* The material changes depth without moving hit targets or layout. */
+.button, .command-trigger { transition: background-color 220ms ease-out, border-color 220ms ease-out, color 220ms ease-out, box-shadow 220ms ease-out; }
+@media (prefers-reduced-transparency: reduce) {
+  body { background-image: none; }
+  .content-card, .scan-card, .section-nav, .sync-panel, .tools-menu, .tool-sheet,
+  .onboarding, .startup-card, .notice { background-color: var(--surface); background-image: none; }
+  .button, .header-action, .nav-item.active { background-image: none; }
+}
+@media (max-width: 280px) {
+  .content-card, .scan-card, .onboarding { padding: 8px; }
+  .app-title h1 { font-size: 12px; }
+  .appearance-toggle, #header-menu { margin-left: 0; }
+  .footer-action svg { margin-right: 3px; }
+}

@@ -31,6 +31,17 @@ async function fixture(reduce = false, cssFallback = false) {
 }
 
 describe("Shared native-compatible PhotoGit motion", () => {
+  it("keeps entrances readable and gently settles their final frame", async () => {
+    const p = await fixture();
+    const view = p.id("changes-view");
+    p.context.PhotoGitMotion.enter(view);
+    expect(Number(view.style.opacity)).toBe(0.62);
+    p.advance(160);
+    expect(Number(view.style.opacity)).toBeCloseTo(0.81, 2);
+    p.advance(180);
+    expect(view.style.opacity || "").toBe("");
+    expect(p.timers.size).toBe(0);
+  });
   it("fades theme out/in, persists intent before the midpoint, and restores opacity", async () => {
     const p = await fixture();
     p.id("appearance-toggle").click();

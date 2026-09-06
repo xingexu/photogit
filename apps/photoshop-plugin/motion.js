@@ -69,8 +69,8 @@
         cancel(element); complete?.(); return;
       }
       const progress = Math.min(1, (Date.now() - start) / duration);
-      // Smoothstep keeps both ends gentle without rushing through the visible fade.
-      const eased = progress * progress * (3 - 2 * progress);
+      // Smootherstep has zero velocity and acceleration at both ends.
+      const eased = progress * progress * progress * (progress * (progress * 6 - 15) + 10);
       element.style.opacity = String(from + (to - from) * eased);
       paint(state, from + (to - from) * eased);
       if (progress === 1) { cancel(element); complete?.(); }
@@ -78,20 +78,20 @@
     };
     step();
   }
-  function enter(element) { animate(element, 0.28, 1, 300); }
+  function enter(element) { animate(element, 0.62, 1, 320); }
   function theme(change) {
     const panel = document.querySelector(".panel-root");
     if (!panel || reduced()) { cancel(panel); change(); return; }
     // A new toggle cancels the previous pending change; the caller owns intent.
     const current = Number(panel.style.opacity || 1);
-    animate(panel, current, 0.18, 170, () => { change(); animate(panel, 0.18, 1, 280); });
+    animate(panel, current, 0.5, 160, () => { change(); animate(panel, 0.5, 1, 320); });
   }
   document.addEventListener("click", event => {
     const control = event.target.closest('[role="button"], [role="tab"], [role="menuitem"]');
     if (!control || control.getAttribute("aria-disabled") === "true" || control.closest('[hidden]')) return;
     // Avoid competing paint snapshots while the containing theme/view is fading.
     if ([...running.keys()].some(parent => parent !== control && parent.contains(control))) return;
-    animate(control, 0.65, 1, 240);
+    animate(control, 0.82, 1, 220);
   });
   globalThis.PhotoGitMotion = { enter, theme, cancel, reduced };
 })();

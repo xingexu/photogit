@@ -993,14 +993,18 @@ describe("PhotoGit rounded design and label clarity", () => {
     expect(themes).toHaveLength(2);
     for (const block of themes) {
       const colors = Object.fromEntries([...block.matchAll(/--([\w-]+):\s*(#[a-f\d]{6})/gi)].map(match => [match[1], match[2]]));
-      for (const surface of ["bg", "surface", "elevated", "input", "selected"]) {
+      for (const surface of ["bg", "surface", "elevated", "input", "selected", "glass-top", "glass-bottom", "glass-well"]) {
         for (const text of ["text", "muted"]) expect(contrast(colors[text]!, colors[surface]!)).toBeGreaterThanOrEqual(4.5);
         for (const boundary of ["border", "focus"]) expect(contrast(colors[boundary]!, colors[surface]!)).toBeGreaterThanOrEqual(3);
       }
-      expect(contrast(colors["primary-text"]!, colors.primary!)).toBeGreaterThanOrEqual(4.5);
+      for (const state of ["primary", "primary-hover", "primary-pressed"]) {
+        expect(contrast(colors["primary-text"]!, colors[state]!)).toBeGreaterThanOrEqual(4.5);
+      }
     }
     expect(css).toContain("--radius: 8px");
     expect(css).toContain("--radius-panel: 12px");
+    expect(css).toContain("--glass-radius: 22px");
+    expect(css).toContain("prefers-reduced-transparency: reduce");
   });
 });
 
