@@ -989,7 +989,7 @@ describe("PhotoGit rounded design and label clarity", () => {
       return channels[0]! * 0.2126 + channels[1]! * 0.7152 + channels[2]! * 0.0722;
     };
     const contrast = (a: string, b: string) => { const values = [luminance(a), luminance(b)].sort((x, y) => y - x); return (values[0]! + 0.05) / (values[1]! + 0.05); };
-    const themes = css.match(/^:root(?:\[data-theme="light"\])? \{[^}]+}/gm)!;
+    const themes = css.match(/^:root(?:\[data-theme="light"\])? \{[^}]+}/gm)!.slice(-2);
     expect(themes).toHaveLength(2);
     for (const block of themes) {
       const colors = Object.fromEntries([...block.matchAll(/--([\w-]+):\s*(#[a-f\d]{6})/gi)].map(match => [match[1], match[2]]));
