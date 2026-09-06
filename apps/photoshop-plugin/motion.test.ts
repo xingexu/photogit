@@ -73,17 +73,20 @@ describe("Shared native-compatible PhotoGit motion", () => {
     expect(p.document.documentElement.getAttribute("data-theme")).toBe("dark");
     expect(p.panel.style.opacity || "").toBe("");
   });
-  it("uses distinct neutral-grey hover and pressed tokens in both themes", async () => {
+  it("keeps chrome, focus and primary controls neutral silver/graphite in both themes", async () => {
     const css = await readFile(resolve("apps/photoshop-plugin/styles.css"), "utf8");
     const blocks = css.match(/^:root(?:\[data-theme="light"\])? \{[^}]+}/gm)!;
     for (const block of blocks) {
       const colors = Object.fromEntries([...block.matchAll(/--([\w-]+):\s*(#[a-f\d]{6})/gi)].map(match => [match[1], match[2]]));
-      for (const name of ["bg", "surface", "hover", "pressed"]) {
+      for (const name of ["bg", "surface", "hover", "pressed", "selected", "focus", "primary", "primary-hover", "primary-pressed", "glass-top", "glass-bottom", "glass-edge", "glass-glint", "glass-well", "glass-underedge"]) {
         const rgb = colors[name]!.slice(1).match(/../g)!;
         expect(new Set(rgb).size).toBe(1);
       }
       expect(colors.hover).not.toBe(colors.surface);
       expect(colors.pressed).not.toBe(colors.hover);
+      for (const match of block.matchAll(/--glass-[\w-]+:\s*rgba\((\d+),(\d+),(\d+),/g)) {
+        expect(new Set(match.slice(1)).size).toBe(1);
+      }
     }
   });
   it("animates actual native paint colours and restores all styles, including overlapping controls", async () => {

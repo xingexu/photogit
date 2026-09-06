@@ -4,6 +4,10 @@ September 5, 2026 · development revision · native UXP, no framework migration.
 
 ## Direction
 
+### Silver and graphite (current)
+
+All decorative blue accents are removed in favour of neutral glass. Dark primary: #DEDEDE, hover #FFFFFF, pressed #BCBCBC; Light primary: #373737, hover #505050, pressed #202020. Dark/Light focus: #D6D6D6/#555555; selection: #383838/#E2E2E2. Glass borders, wells, reflections, shadows and ambient tints now have equal RGB channels. Green success, amber warning and red error remain semantic signals. The existing glossy gradients, depth, radii and quintic motion are unchanged. Regression tests prevent blue from returning to chrome or primary states. Earlier colour tables below are historical.
+
 ### Liquid material revision
 
 Prominent-glass revision (current): surface radius 22px, control radius 18px, active tabs 16px. Dark/Light base tint alpha is now 36%/42%, upper reflection 18%/88%, ambient tint 20%/20%, and lower reflection 7% pale blue/36% white. Dark rim is #D5E0F2. Layered lower reflections and shaded edges make the material visible without backdrop blur. Browser-only progressive shadows add inset rims and two levels of cast shadow; hover raises the shadow and press insets it without moving hit targets. Primary buttons use only their contrast-tested primary/hover/pressed colours for the gradient, never a white sheen. The softer quintic motion from the preceding follow-up is retained. README preview is refreshed from simulated data. Earlier values below describe prior checkpoints.

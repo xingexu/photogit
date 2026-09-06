@@ -1,5 +1,11 @@
 # Acceptance report: 0.2.0 development
 
+## Neutral silver/graphite theme
+
+Verification: 280 tests, type, security and package checks passed. All six pages passed the eight viewport/theme browser combinations, plus stress states, theme persistence, palette navigation and focus return. Dark/Light 420×800 previews were visually reviewed. Final development bundle SHA-256: `9f68faf2e9352dfdd345d53aba8dcf6406f7f0cd82869a2b9150cce3d3ba26c7`.
+
+Removed blue from primary controls, navigation selection, focus rings and all glass material tokens. Kept semantic success/warning/error colours and refreshed the README's simulated preview. Extended the neutral-palette regression to hex and RGBA material tokens; existing contrast tests cover all primary gradient stops. This is a stylesheet-only runtime change; commands, startup and data operations are unchanged. Native Photoshop visual acceptance is still pending; browser screenshots are not evidence of native shadow rendering. Private screenshots remain untracked and excluded from delivery.
+
 ## Prominent-glass delivery
 
 Verification: 280 tests passed in 16 files, plus type, source-security, diff and package checks. The browser matrix passed all six pages in Dark/Light at 230×200, 320×600, 420×800 and 900×800, including stress states, palette navigation, theme persistence and focus return. Both 420×800 theme captures were visually reviewed. Final development bundle SHA-256: `74b2d5c250ed53ef9e1c8f5b65be50b8d467d45b83c5ab0cad0b30a5db7ecbac`.
