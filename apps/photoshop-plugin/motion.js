@@ -78,20 +78,22 @@
     };
     step();
   }
-  function enter(element) { animate(element, 0.62, 1, 320); }
+  // A view should settle into place, never flash or obscure the Photoshop work.
+  // This is intentionally a gentle opacity cue only; colour and layout are CSS.
+  function enter(element) { animate(element, 0.82, 1, 380); }
   function theme(change) {
     const panel = document.querySelector(".panel-root");
     if (!panel || reduced()) { cancel(panel); change(); return; }
     // A new toggle cancels the previous pending change; the caller owns intent.
     const current = Number(panel.style.opacity || 1);
-    animate(panel, current, 0.5, 160, () => { change(); animate(panel, 0.5, 1, 320); });
+    animate(panel, current, 0.82, 180, () => { change(); animate(panel, 0.82, 1, 380); });
   }
   document.addEventListener("click", event => {
     const control = event.target.closest('[role="button"], [role="tab"], [role="menuitem"]');
     if (!control || control.getAttribute("aria-disabled") === "true" || control.closest('[hidden]')) return;
     // Avoid competing paint snapshots while the containing theme/view is fading.
     if ([...running.keys()].some(parent => parent !== control && parent.contains(control))) return;
-    animate(control, 0.82, 1, 220);
+    animate(control, 0.9, 1, 240);
   });
   globalThis.PhotoGitMotion = { enter, theme, cancel, reduced };
 })();

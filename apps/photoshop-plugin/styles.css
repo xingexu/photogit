@@ -409,3 +409,88 @@ input { border-radius: 12px; background-color: transparent; }
   .appearance-toggle, #header-menu { margin-left: 0; }
   .footer-action svg { margin-right: 3px; }
 }
+
+/* Workspace redesign: hierarchy comes from restraint, not a glass treatment
+   around every piece of information.  These rules deliberately live last so
+   older development experiments cannot make native Photoshop feel like a
+   browser dashboard. */
+:root {
+  --bg: #16181c; --surface: #20232a; --elevated: #292e37; --input: #14161a;
+  --text: #f3f5f8; --muted: #b7bdc8; --line: #343a46; --border: #7c8798;
+  --hover: #2d3440; --pressed: #394252; --selected: #2b3444; --focus: #b7c9ff;
+  --primary: #b7c9ff; --primary-text: #172033; --primary-hover: #d0dbff; --primary-pressed: #9bb1ef;
+  --glass-top: #20232a; --glass-bottom: #20232a; --glass-edge: #343a46;
+  --glass-glint: #586272; --glass-well: #14161a; --glass-underedge: #343a46;
+  --glass-sheen: rgba(255,255,255,0); --glass-shadow: rgba(0,0,0,.22);
+  --glass-tint: #20232a; --glass-reflection: rgba(255,255,255,0); --glass-bounce: rgba(255,255,255,0);
+  --glass-ambient: rgba(0,0,0,0); --glass-radius: 10px;
+  --motion-control: 240ms; --motion-nav: 280ms;
+}
+:root[data-theme="light"] {
+  --bg: #f5f6f8; --surface: #ffffff; --elevated: #eef1f5; --input: #fbfcfe;
+  --text: #1c2430; --muted: #586270; --line: #d8dde5; --border: #687587;
+  --hover: #edf1f7; --pressed: #e0e6ef; --selected: #e5ecfb; --focus: #4265b8;
+  --primary: #385cae; --primary-text: #ffffff; --primary-hover: #496fc7; --primary-pressed: #2f4e95;
+  --glass-top: #ffffff; --glass-bottom: #ffffff; --glass-edge: #d8dde5;
+  --glass-glint: #9ca6b5; --glass-well: #fbfcfe; --glass-underedge: #d8dde5;
+  --glass-tint: #ffffff; --glass-reflection: rgba(255,255,255,0); --glass-bounce: rgba(0,0,0,0);
+  --glass-sheen: rgba(255,255,255,0); --glass-shadow: rgba(28,36,48,.10);
+  --glass-ambient: rgba(0,0,0,0);
+}
+
+body { background: var(--bg); background-image: none; }
+.panel-root { max-width: 640px; padding-top: 0; }
+.app-header { min-height: 56px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.app-title h1 { font-size: 15px; letter-spacing: -.15px; }
+.repo-context { padding: 14px 0 12px; border-bottom: 1px solid var(--line); }
+.content-card, .scan-card, .onboarding, .startup-card, .section-nav, .sync-panel,
+.tools-menu, .tool-sheet, .notice {
+  background-color: transparent; background-image: none; border: 0; border-radius: 0; box-shadow: none;
+}
+
+/* Navigation is orientation chrome, not a row of equally heavy buttons. */
+.section-nav { gap: 2px; margin: 12px 0 18px; padding: 0; border-bottom: 1px solid var(--line); }
+.nav-item { min-height: 36px; margin: 0; padding: 8px 10px; border: 0; border-bottom: 2px solid transparent; border-radius: 0; }
+.nav-item.active { background: transparent; background-image: none; border: 0; border-bottom: 2px solid var(--focus); color: var(--text); }
+.nav-item b { color: var(--muted); font-size: 11px; }
+.nav-item:hover { background: var(--hover); background-image: none; }
+
+/* Reserve the raised surface for an active task; lists live directly on canvas. */
+.scan-card { display: flex; margin: 0 0 14px; padding: 0 0 12px; border-bottom: 1px solid var(--line); }
+.capture-panel, #branches-view .content-card, .startup-card, .notice {
+  margin: 0 0 18px; padding: 16px; border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--surface); box-shadow: 0 8px 20px rgba(0,0,0,.10);
+}
+.capture-panel { border-color: #46516a; }
+.changes-card, #history-view .content-card, #reviews-view .content-card, #activity-view .content-card, #docs-view .content-card { margin: 0 0 18px; padding: 0; }
+.review-preview { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--line); }
+.view-heading { margin-bottom: 12px; }
+.view-heading h2, .version-label { font-size: 16px; letter-spacing: -.2px; }
+
+.field-shell, #command-input, sp-dropdown { border-radius: 7px; background: var(--input); border-color: var(--border); }
+.field-shell:focus-within { border-color: var(--focus); box-shadow: 0 0 0 2px rgba(183,201,255,.18); }
+.button, .header-action, .footer-action, .sheet-close, .tool-item { background-image: none; border-radius: 7px; box-shadow: none; }
+.button { min-height: 34px; }
+.button-primary { background: var(--primary); border-color: var(--primary); }
+.button-quiet, .command-trigger { background: transparent; border-color: var(--border); }
+.button:not([aria-disabled="true"]):hover { box-shadow: none; transform: none; }
+
+.list-row, .command-row { padding: 12px 4px; border-radius: 0; border-color: var(--line); }
+.list-row:hover, .command-row:hover, .tool-item:hover { background: var(--hover); background-image: none; }
+.change-domain { background: var(--elevated); border: 0; border-radius: 999px; }
+.history-group { padding-top: 18px; }
+.review-card { padding: 14px 4px; border-color: var(--line); }
+.current-branch { padding: 10px; border-left: 3px solid var(--focus); border-radius: 0; background: var(--elevated); }
+.empty-state, .setup-command { border-radius: 8px; background: var(--elevated); }
+
+/* Bottom utilities recede until the designer needs them. */
+.sync-panel { margin-top: 6px; padding: 8px 0 0; border-top: 1px solid var(--line); }
+.footer-action { margin: 0; color: var(--muted); }
+.footer-action:hover { color: var(--text); background: var(--hover); }
+.tools-menu, .tool-sheet { padding: 12px; border: 1px solid var(--border); border-radius: var(--radius-panel); background: var(--surface); box-shadow: 0 16px 40px rgba(0,0,0,.28); }
+
+@media (max-width: 360px) {
+  .panel-root { padding-left: 10px; padding-right: 10px; }
+  .section-nav { margin-left: -2px; margin-right: -2px; }
+  .nav-item { padding-left: 7px; padding-right: 7px; }
+  .capture-panel, #branches-view .content-card { padding: 12px; }
+}

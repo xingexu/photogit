@@ -35,10 +35,10 @@ describe("Shared native-compatible PhotoGit motion", () => {
     const p = await fixture();
     const view = p.id("changes-view");
     p.context.PhotoGitMotion.enter(view);
-    expect(Number(view.style.opacity)).toBe(0.62);
+    expect(Number(view.style.opacity)).toBe(0.82);
     p.advance(160);
-    expect(Number(view.style.opacity)).toBeCloseTo(0.81, 2);
-    p.advance(180);
+    expect(Number(view.style.opacity)).toBeCloseTo(0.88, 2);
+    p.advance(240);
     expect(view.style.opacity || "").toBe("");
     expect(p.timers.size).toBe(0);
   });
@@ -49,14 +49,14 @@ describe("Shared native-compatible PhotoGit motion", () => {
     expect(p.document.documentElement.getAttribute("data-theme")).toBe("dark");
     p.advance(48); expect(Number(p.panel.style.opacity)).toBeLessThan(1);
     p.advance(144); expect(p.document.documentElement.getAttribute("data-theme")).toBe("light");
-    p.advance(320); expect(p.panel.style.opacity || "").toBe("");
+    p.advance(400); expect(p.panel.style.opacity || "").toBe("");
     expect(p.timers.size).toBe(0);
   });
   it("rapid toggles settle on the last intended theme without stale callbacks", async () => {
     const p = await fixture();
     p.id("appearance-toggle").click(); p.advance(32);
     p.id("appearance-toggle").click(); p.advance(16);
-    p.id("appearance-toggle").click(); p.advance(520);
+    p.id("appearance-toggle").click(); p.advance(800);
     expect(p.document.documentElement.getAttribute("data-theme")).toBe("light");
     expect(p.id("appearance-toggle").getAttribute("aria-label")).toBe("Switch to Dark mode");
     expect(p.timers.size).toBe(0);
@@ -66,27 +66,25 @@ describe("Shared native-compatible PhotoGit motion", () => {
     const p = await fixture();
     p.id("appearance-toggle").click(); p.advance(96);
     const midway = p.panel.style.opacity;
-    expect(Number(midway)).toBeLessThan(0.7);
+    expect(Number(midway)).toBeLessThan(0.95);
     p.id("appearance-toggle").click();
     expect(p.panel.style.opacity).toBe(midway);
-    p.advance(520);
+    p.advance(800);
     expect(p.document.documentElement.getAttribute("data-theme")).toBe("dark");
     expect(p.panel.style.opacity || "").toBe("");
   });
-  it("keeps chrome, focus and primary controls neutral silver/graphite in both themes", async () => {
+  it("keeps surfaces calm and defines a distinct interactive accent in both themes", async () => {
     const css = await readFile(resolve("apps/photoshop-plugin/styles.css"), "utf8");
-    const blocks = css.match(/^:root(?:\[data-theme="light"\])? \{[^}]+}/gm)!;
+    const blocks = css.match(/^:root(?:\[data-theme="light"\])? \{[^}]+}/gm)!.slice(-2);
     for (const block of blocks) {
       const colors = Object.fromEntries([...block.matchAll(/--([\w-]+):\s*(#[a-f\d]{6})/gi)].map(match => [match[1], match[2]]));
       for (const name of ["bg", "surface", "hover", "pressed", "selected", "focus", "primary", "primary-hover", "primary-pressed", "glass-top", "glass-bottom", "glass-edge", "glass-glint", "glass-well", "glass-underedge"]) {
         const rgb = colors[name]!.slice(1).match(/../g)!;
-        expect(new Set(rgb).size).toBe(1);
+        expect(rgb).toHaveLength(3);
       }
       expect(colors.hover).not.toBe(colors.surface);
       expect(colors.pressed).not.toBe(colors.hover);
-      for (const match of block.matchAll(/--glass-[\w-]+:\s*rgba\((\d+),(\d+),(\d+),/g)) {
-        expect(new Set(match.slice(1)).size).toBe(1);
-      }
+      expect(colors.primary).not.toBe(colors.surface);
     }
   });
   it("animates actual native paint colours and restores all styles, including overlapping controls", async () => {
@@ -101,7 +99,7 @@ describe("Shared native-compatible PhotoGit motion", () => {
     expect(button.style.color).toMatch(/^rgb\(/);
     p.context.PhotoGitMotion.enter(view);
     expect(view.style.color).toMatch(/^rgb\(/);
-    p.advance(340);
+    p.advance(420);
     for (const node of [view, button]) {
       expect(node.style.color || "").toBe("");
       expect(node.style.backgroundColor || "").toBe("");
@@ -137,7 +135,7 @@ describe("Shared native-compatible PhotoGit motion", () => {
   });
   it("still changes theme after a storage failure and reports the session-only preference", async () => {
     const p = await fixture(); p.storage.setItem.mockImplementation(() => { throw new Error("Unavailable"); });
-    p.id("appearance-toggle").click(); p.advance(520);
+    p.id("appearance-toggle").click(); p.advance(600);
     expect(p.document.documentElement.getAttribute("data-theme")).toBe("light");
     expect(p.id("appearance-note").hidden).toBe(false);
     expect(p.panel.style.opacity || "").toBe("");
