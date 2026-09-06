@@ -240,8 +240,10 @@ describe("real helper process filesystem bridge", () => {
     // This is exactly the panel's timeout cleanup while the helper is in Git.
     await Promise.all([unlink(readyPath), unlink(requestPath)]);
     expect(await f.request("status")).toMatchObject({ ok: true, result: { branch: "late-result" } });
+    // A published reply does not mean the helper's finally block has finished
+    // unlinking that status request. Wait for cleanup, not a scheduler speed.
+    await expect.poll(() => readdir(f.requests), { timeout: 5_000 }).toEqual([]);
     expect(await readdir(f.responses)).toEqual([]);
-    expect(await readdir(f.requests)).toEqual([]);
   }, 15_000);
 });
 

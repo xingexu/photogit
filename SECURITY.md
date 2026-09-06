@@ -4,11 +4,13 @@ PhotoGit 0.2.0 is an unreleased development build. Keep an independent backup of
 
 Report vulnerabilities privately to [xxu767@uwo.ca](mailto:xxu767@uwo.ca), the maintainer's contact published on [xinge.ca](https://xinge.ca/). Use the subject “PhotoGit security report”. Include the affected revision, reproduction steps using synthetic data, impact, and any suggested fix. Do not send helper tokens, credentials, or private PSDs. This is ordinary email; encrypted reporting and a response-time guarantee are not currently provided.
 
-GitHub private vulnerability reporting was **disabled** when checked on September 4, 2026. Do not rely on that feature until the repository settings and this policy are updated. Enabling it requires a separate maintainer action.
+GitHub private vulnerability reporting was **disabled** when rechecked on September 6, 2026. Secret scanning and push protection were enabled, but Dependabot security updates and main-branch protection were not. See the [September 6 audit](docs/SECURITY_AUDIT_2026-09-06.md) for evidence and recommended maintainer actions. No repository settings were changed by the audit.
 
 Only the current development branch is being maintained; there is no supported stable release series yet.
 
 ## Defensive boundaries
+
+The informational `GET /v1/health` endpoint does not require authentication; repository operations do. The wording below about authentication refers to operation requests, not health checks.
 
 The helper binds only to `127.0.0.1`, rejects non-loopback host headers and browser-origin POSTs, and authenticates every request with a random project token. It restricts operations to explicitly approved, real-path-resolved roots; refuses symlinked state and bridge files; bounds request, response, and state-file sizes by UTF-8 bytes; keeps bridge directories owner-only; and writes pairing data atomically with mode `0600`. It refuses to replace a pairing file tracked by Git, never returns a raw remote URL to the Photoshop panel, and redacts helper tokens plus credentials embedded in error URLs.
 
