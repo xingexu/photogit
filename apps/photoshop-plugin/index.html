@@ -6,8 +6,8 @@
     <title>PhotoGit</title>
     <script src="motion.js"></script>
     <script src="appearance.js"></script>
-    <link rel="stylesheet" href="styles.css?v=49">
-    <script src="index.js?v=47"></script>
+    <link rel="stylesheet" href="styles.css?v=52">
+    <script src="index.js?v=50"></script>
   </head>
   <body class="is-initializing">
     <main class="panel-root">
@@ -127,6 +127,11 @@
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6v5h-5"/><path d="M18.2 15.4A7 7 0 1 1 18.5 8L20 11"/></svg>
               <span>Scan now</span>
             </div>
+            <dl id="change-tally" class="change-tally" hidden>
+              <div class="tally-tile"><dd id="tally-changed">0</dd><dt>Changed layers</dt></div>
+              <div class="tally-tile"><dd id="tally-added">0</dd><dt>New layers</dt></div>
+              <div class="tally-tile"><dd id="tally-removed">0</dd><dt>Deleted layers</dt></div>
+            </dl>
           </section>
           <div id="cancel-scan" class="button button-quiet" role="button" tabindex="0" hidden>Cancel scan</div>
 
@@ -153,7 +158,7 @@
           </section>
 
           <section class="liquid-card content-card capture-panel">
-            <h2 class="capture-title">Save new version</h2>
+            <h2 class="capture-title"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10v16l-5-4-5 4z"/></svg>Save new version</h2>
             <div class="capture-heading"><label class="version-label" for="message">What changed?</label><span id="message-count" class="meta-chip" aria-live="off">0/500</span></div>
             <div class="field-shell">
               <span class="field-placeholder" aria-hidden="true">Refined cover typography…</span>

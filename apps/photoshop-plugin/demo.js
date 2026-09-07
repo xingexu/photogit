@@ -69,6 +69,7 @@ function setupDemoPanel() {
   const railLabel = byId("rail-sync-label");
   if (railLabel) { railLabel.textContent = "Synced"; byId("rail-sync").className = "rail-sync ok"; }
   renderDemoDocumentPreview();
+  renderDemoTally();
   byId("sync-status").textContent = "Status";
   replaceDemoDropdown();
   renderDemoBranches();
@@ -500,6 +501,18 @@ function demoPosterFor(version) {
 
 // Simulated document facts and artwork for the labelled prototype only.
 // Production fills these from the real scan and the newest saved version.
+// Simulated tallies for the labelled prototype; production counts the real
+// categories reported by the scan.
+function renderDemoTally() {
+  const tally = byId("change-tally");
+  if (!tally) return;
+  const counts = { "tally-changed": changes.filter(c => !["added", "removed"].includes(c.category)).length,
+                   "tally-added": changes.filter(c => c.category === "added").length,
+                   "tally-removed": changes.filter(c => c.category === "removed").length };
+  for (const [id, value] of Object.entries(counts)) { const el = byId(id); if (el) el.textContent = String(value); }
+  tally.hidden = changes.length === 0;
+}
+
 function renderDemoDocumentPreview() {
   const section = byId("document-preview");
   const list = byId("document-facts");

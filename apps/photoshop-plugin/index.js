@@ -1035,6 +1035,18 @@ async function readVersionPreview(versionId) {
 
 // Reference 01's preview column. Facts come from the scan PhotoGit already runs;
 // the image is the newest saved version, never a render of unsaved edits.
+// Reference tiles, counted from the same categories the rows already report.
+function renderChangeTally(changes) {
+  const tally = document.getElementById("change-tally");
+  if (!tally) return;
+  const list = Array.isArray(changes) ? changes : [];
+  const count = category => list.filter(change => (["added", "removed"].includes(change?.category) ? change.category : "modified") === category).length;
+  document.getElementById("tally-changed").textContent = String(count("modified"));
+  document.getElementById("tally-added").textContent = String(count("added"));
+  document.getElementById("tally-removed").textContent = String(count("removed"));
+  tally.hidden = list.length === 0;
+}
+
 function renderDocumentFacts(meta) {
   const section = document.getElementById("document-preview");
   const list = document.getElementById("document-facts");
@@ -1375,6 +1387,7 @@ function renderChanges(changes, { baselineMissing = false, changeCount = changes
       : warnings.length ? "No layer changes · Review scan limits" : "No detected changes";
   document.getElementById("last-scan").textContent = `Scanned ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} · Updates automatically${warnings.length ? `\n${warnings.join("\n")}` : ""}`;
   empty.hidden = changes.length > 0;
+  renderChangeTally(changes);
   for (const change of changes.slice(0, MAX_VISIBLE_CHANGES)) {
     const row = document.createElement("div");
     row.className = "list-row change-row";
