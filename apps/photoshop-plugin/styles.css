@@ -8,7 +8,7 @@
   --accent: #7ea9ff; --primary: #2a62d2; --primary-text: #ffffff; --primary-hover: #2f6fed; --primary-pressed: #2456bd;
   --success: #a6d6ad; --success-surface: #26382d; --warning: #efce8a; --warning-surface: #3d3220;
   --error: #ffb2ac; --error-surface: #432a29; --backdrop: rgba(0,0,0,.5);
-  --rim: #494d52; --shine: rgba(255,255,255,.055); --shadow: rgba(0,0,0,.28);
+  --rim: #494d52; --shine: rgba(255,255,255,.055); --shadow: rgba(0,0,0,.28); --press-veil: rgba(0,0,0,.12);
   --space: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-6: 24px;
   --text-small: 12px; --text-body: 13px; --text-subhead: 15px; --text-title: 18px; --text-heading: 22px;
   --control: 32px; --control-tall: 40px;
@@ -25,7 +25,7 @@
   --accent: #245bb6; --primary: #2d60b5; --primary-text: #ffffff; --primary-hover: #234e98; --primary-pressed: #1c4080;
   --success: #2b653b; --success-surface: #e8f2eb; --warning: #765006; --warning-surface: #fbf1db;
   --error: #a12e29; --error-surface: #fceceb; --backdrop: rgba(21,29,42,.24);
-  --rim: #c5cbd3; --shine: rgba(255,255,255,.65); --shadow: rgba(27,35,48,.11);
+  --rim: #c5cbd3; --shine: rgba(255,255,255,.65); --shadow: rgba(27,35,48,.11); --press-veil: rgba(0,0,0,.12);
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; width: 100%; height: 100%; }
@@ -51,7 +51,20 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .theme-moon { display: none; }
 :root[data-theme="light"] .theme-sun { display: none; }
 :root[data-theme="light"] .theme-moon { display: block; }
-[role="button"], [role="tab"], [role="menuitem"] { cursor: pointer; transition: background-color var(--motion-control) ease, color var(--motion-control) ease, border-color var(--motion-control) ease, box-shadow var(--motion-control) ease; }
+[role="button"], [role="tab"], [role="menuitem"] { position: relative; cursor: pointer; transition: background-color var(--motion-control) ease, color var(--motion-control) ease, border-color var(--motion-control) ease, box-shadow var(--motion-control) ease; }
+/* Press feedback: a veil fades in on press and back out on release. It is
+   decoration only — it sits behind pointer events, never changes layout, and
+   click handlers run immediately regardless of where the fade is. The veil
+   always darkens, which raises label contrast on every control in both themes
+   (a lightening veil dropped the primary button's label to 4.24). The command
+   trigger is excluded because its ::after carries the shortcut hint. */
+[role="button"]:not(.command-trigger)::after, [role="tab"]::after, [role="menuitem"]::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; background: var(--press-veil);
+  opacity: 0; pointer-events: none; transition: opacity var(--motion-nav) ease;
+}
+[role="button"]:not(.command-trigger):not([aria-disabled="true"]):active::after,
+[role="tab"]:active::after, [role="menuitem"]:active::after { opacity: 1; transition-duration: 90ms; }
+[aria-disabled="true"]::after { display: none; }
 [role="button"]:not([aria-disabled="true"]):hover, [role="tab"]:hover, [role="menuitem"]:hover { background-color: var(--hover); color: var(--text); }
 [role="button"]:not([aria-disabled="true"]):active, [role="tab"]:active, [role="menuitem"]:active { background-color: var(--pressed); }
 [role="button"]:focus, [role="tab"]:focus, [role="menuitem"]:focus, input:focus, sp-dropdown:focus, select:focus { outline: 2px solid var(--focus); outline-offset: 2px; }
@@ -135,7 +148,7 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .preset { padding: 5px 8px; margin: 3px; border: 1px solid var(--line); border-radius: 6px; color: var(--muted); font-size: var(--text-small); background: var(--elevated); }
 sp-progressbar { width: 100%; margin-top: 12px; color: var(--accent); }
 .button { display: flex; align-items: center; justify-content: center; min-height: 34px; padding: 7px 12px; border: 1px solid transparent; border-radius: var(--radius); font-size: var(--text-body); font-weight: 500; text-align: center; line-height: 1.4; }
-.button svg { width: 16px; height: 16px; margin-right: 7px; }
+.button svg { position: relative; width: 16px; height: 16px; margin-right: 7px; }
 .button-primary { background: var(--primary); color: var(--primary-text); border-color: var(--primary); box-shadow: inset 0 1px 0 var(--shine), 0 2px 6px var(--shadow); }
 .button-primary[role="button"]:not([aria-disabled="true"]):hover { background: var(--primary-hover); color: var(--primary-text); border-color: var(--primary-hover); }
 .button-primary[role="button"]:not([aria-disabled="true"]):active { background: var(--primary-pressed); color: var(--primary-text); border-color: var(--primary-pressed); box-shadow: none; }
