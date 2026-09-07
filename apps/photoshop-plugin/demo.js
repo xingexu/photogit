@@ -66,6 +66,9 @@ function setupDemoPanel() {
   byId("branch-name-detail").textContent = "live-option-b";
   byId("helper-status").className = "repo-state ok";
   byId("repo-sync-status").textContent = "Synced";
+  const railLabel = byId("rail-sync-label");
+  if (railLabel) { railLabel.textContent = "Synced"; byId("rail-sync").className = "rail-sync ok"; }
+  renderDemoDocumentPreview();
   byId("sync-status").textContent = "Status";
   replaceDemoDropdown();
   renderDemoBranches();
@@ -493,6 +496,28 @@ function demoPosterFor(version) {
   let hash = 0;
   for (let index = 0; index < key.length; index++) hash = (hash * 31 + key.charCodeAt(index)) >>> 0;
   return { demo: true, src: DEMO_POSTERS[hash % DEMO_POSTERS.length], alt: "Representative demo poster artwork" };
+}
+
+// Simulated document facts and artwork for the labelled prototype only.
+// Production fills these from the real scan and the newest saved version.
+function renderDemoDocumentPreview() {
+  const section = byId("document-preview");
+  const list = byId("document-facts");
+  if (!section || !list) return;
+  list.textContent = "";
+  for (const [label, value] of [["Size", "3456 × 5184 px"], ["Resolution", "300 ppi"], ["Mode", "RGB"], ["Depth", "16 bpc"], ["Document", "document.psd"]]) {
+    const row = document.createElement("div");
+    const term = document.createElement("dt"); term.textContent = label;
+    const detail = document.createElement("dd"); detail.textContent = value;
+    row.append(term, detail); list.appendChild(row);
+  }
+  section.hidden = false;
+  const figure = byId("document-preview-figure");
+  const image = byId("document-preview-image");
+  if (!figure || !image) return;
+  image.addEventListener("error", () => { figure.hidden = true; }, { once: true });
+  figure.hidden = false;
+  image.src = DEMO_POSTERS[0];
 }
 
 function renderDemoVersion(container, version) {
