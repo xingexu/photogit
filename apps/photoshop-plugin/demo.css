@@ -141,7 +141,7 @@
 
 .plugin-panel { position: absolute; z-index: 5; inset: 0; height: 100%; overflow-y: auto; background: #090a0c; scrollbar-width: thin; scrollbar-color: #4c4c4c transparent; transform: translateX(0); transition: transform .52s cubic-bezier(.2,.8,.2,1), opacity .35s ease; }
 .right-rail.panel-closed .plugin-panel { opacity: 0; transform: translateX(102%); pointer-events: none; }
-.plugin-panel .panel-root { min-width: 0; min-height: 100%; padding: 14px; }
+.plugin-panel .panel-root { min-width: 0; min-height: 100%; }
 .plugin-panel .app-header { position: sticky; top: 0; z-index: 5; }
 .panel-loading { display: grid; place-items: center; height: 100%; color: #8f8f8f; font-size: 11px; }
 .pg-dock-tab { position: absolute; z-index: 9; top: 142px; right: 0; display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; padding: 4px; border: 1px solid #74757a; border-right: 0; border-radius: 4px 0 0 4px; background: #111214; }
@@ -233,12 +233,10 @@
 .panel-only .photoshop-workspace { display: block; height: auto; }
 .panel-only .right-rail { overflow: visible; border: 0; background: #090a0c; }
 .panel-only .plugin-panel { height: auto; overflow: visible; }
-.panel-only .plugin-panel .panel-root { padding: 14px; }
 .panel-only .plugin-panel .app-header { position: static; }
 
 /* The matrix is the production panel, not a second visual design system. */
 .panel-only, .panel-only .demo-window, .panel-only .right-rail, .plugin-panel { background: var(--bg); color: var(--text); }
 .panel-only .plugin-panel { position: static; transform: none !important; opacity: 1 !important; transition: none; }
-.panel-only .plugin-panel .panel-root { padding: 0 var(--space-3) var(--space-3); }
 .simulation-label { max-width: 680px; margin: 0 auto; padding: 4px 12px; font-size: 11px; color: var(--muted); border-bottom: 1px solid var(--line); }
 .demo-select { color: var(--text); background: var(--input); border: 1px solid var(--border); border-radius: var(--radius); }

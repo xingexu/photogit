@@ -17,7 +17,7 @@
     if (!canvas) return null;
     const entries = [];
     let captured = 0;
-    const nodes = [element, ...element.querySelectorAll("h1,h2,p,span,strong,small,label,input,svg,[role=button],[role=tab],[role=menuitem],.content-card,.scan-card,.section-nav,.list-row,.field-shell,.sync-panel")];
+    const nodes = [element, ...element.querySelectorAll("h1,h2,h3,p,span,strong,small,label,input,svg,kbd,[role=button],[role=tab],[role=menuitem],.content-card,.scan-card,.section-nav,.list-row,.field-shell,.sync-panel,.repo-context,.task-card,.branch-create-card,.review-card,.activity")];
     for (const node of nodes) {
       if (node.hidden || node.closest("[hidden]")) continue;
       if (captured++ >= 180) break; // Bound style reads and work per frame.

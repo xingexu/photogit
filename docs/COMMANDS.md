@@ -1,6 +1,8 @@
 # PhotoGit command directory
 
-Click **Commands** in the panel header. Search by name or type a command, then press Enter. The leading slash is optional. Escape closes the palette; arrows browse results. The **Docs** tab contains the same searchable command registry and setup instructions. Native testing found modifier-key combinations intercepted or not delivered by Photoshop, so no modifier shortcut is advertised or registered. Cmd+K remains Photoshop Preferences.
+Click **Commands** in the panel header. Search by name or type a command, then press Enter. The leading slash is optional. Escape closes the palette; arrows browse results. The **Docs** tab contains the same searchable command registry and setup instructions.
+
+The panel handles `/` outside text fields and Cmd/Ctrl+K when it receives those key events. Shortcuts never replace an open dialog/menu or interrupt startup or an exclusive operation. These are panel-local listeners, not registered Photoshop-wide shortcuts. Photoshop can intercept keys (including Cmd+K for Preferences), so **Commands** remains the reliable entry point. Browser keyboard tests do not establish physical-keyboard behavior inside Photoshop.
 
 | Command | Result |
 | --- | --- |
@@ -36,4 +38,4 @@ Save work you want to keep before branch operations. Earlier PSDs open separatel
 
 ## Verification scope
 
-Command dispatch, argument validation, aliases, keyboard navigation, modal focus, busy guards, and sync confirmations are exercised against production JavaScript with mocked Photoshop/UXP. Native Photoshop checks cover the revised panel, opening the palette, and navigating with `/docs`; these do not claim a new native save/merge command acceptance run or the complete size/scale matrix.
+Command dispatch, argument validation, aliases, keyboard navigation, modal focus, busy guards, and sync confirmations are exercised against production JavaScript with mocked Photoshop/UXP. The September 7 Studio redesign also has browser coverage for display filters, shortcut navigation, simulated saves, version inspection and both themes. Prior native results apply to earlier revisions; the current redesign still needs live Photoshop visual and physical-keyboard acceptance.
