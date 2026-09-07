@@ -62,9 +62,9 @@ async function panel() {
     return runInContext(code, context);
   };
   const id = <T extends HTMLElement = HTMLElement>(name: string) => document.getElementById(name)! as T;
-  const keyboard = (element: any, key: string, shiftKey = false) => {
+  const keyboard = (element: any, key: string, shiftKey = false, extra: Record<string, unknown> = {}) => {
     const event = new window.Event("keydown", { bubbles: true, cancelable: true });
-    Object.assign(event, { key, shiftKey });
+    Object.assign(event, { key, shiftKey, ...extra });
     element.dispatchEvent(event);
     return event;
   };
@@ -147,6 +147,8 @@ describe("PhotoGit command palette — production behavior with mocked host", ()
   });
   it("searches aliases and renders a browsable command directory", async () => {
     const p = await panel();
+    p.document.body.classList.remove("is-initializing");
+    p.evaluate('selectTab("docs", false)');
     p.id<HTMLInputElement>("docs-search").value = "commit";
     p.evaluate("renderCommandDocs()");
     expect(p.id("command-directory").textContent).toContain("Save a version");
@@ -166,6 +168,20 @@ describe("PhotoGit command palette — production behavior with mocked host", ()
     p.keyboard(p.id("command-input"), "Escape");
     expect(p.id("detail-sheet").hidden).toBe(true);
     expect(p.document.activeElement).toBe(p.id("global-search"));
+  });
+  it.each(["repeat", "isComposing"])("does not execute palette input on Enter while %s", async flag => {
+    const p = await panel(); p.connect();
+    const execute = vi.fn(async () => undefined); p.context.executeCommand = execute;
+    p.evaluate('openCommandPalette("/save Keep this draft")');
+    const input = p.id<HTMLInputElement>("command-input");
+    const ignored = p.keyboard(input, "Enter", false, { [flag]: true });
+    expect(execute).not.toHaveBeenCalled();
+    expect(ignored.defaultPrevented).toBe(false);
+    expect(input.value).toBe("/save Keep this draft");
+    expect(p.id("detail-sheet").hidden).toBe(false);
+    const submitted = p.keyboard(input, "Enter");
+    expect(execute).toHaveBeenCalledExactlyOnceWith("/save Keep this draft");
+    expect(submitted.defaultPrevented).toBe(true);
   });
   it.each(["/save", "/merge", "/switch", "/branch", "/compare", "/status extra", "rm -rf anything", "/save " + "x".repeat(501)])("rejects invalid command %s without mutation", async input => {
     const p = await panel(); p.connect();
@@ -274,6 +290,22 @@ describe("PhotoGit production panel behavior — host mocked", () => {
     expect(action).toHaveBeenCalledTimes(2);
   });
 
+  it.each(["message", "new-branch-name", "tag-name"])("submits %s only on deliberate Enter, not repeats or IME confirmation", async field => {
+    const p = await panel(); const action = vi.fn();
+    p.evaluate("bindInputAction(field, submit)", { field, submit: action });
+    const input = p.id<HTMLInputElement>(field); input.value = "Keep input unchanged";
+    const repeated = p.keyboard(input, "Enter", false, { repeat: true });
+    const composing = p.keyboard(input, "Enter", false, { isComposing: true });
+    p.keyboard(input, " ");
+    expect(action).not.toHaveBeenCalled();
+    expect(repeated.defaultPrevented).toBe(false);
+    expect(composing.defaultPrevented).toBe(false);
+    expect(input.value).toBe("Keep input unchanged");
+    const submitted = p.keyboard(input, "Enter");
+    expect(action).toHaveBeenCalledExactlyOnceWith(submitted);
+    expect(submitted.defaultPrevented).toBe(true);
+  });
+
   it("keeps dialog content literal, traps focus, and returns focus on Escape", async () => {
     const p = await panel();
     p.id("header-menu").focus();
@@ -304,13 +336,18 @@ describe("PhotoGit production panel behavior — host mocked", () => {
     expect(p.id("changes-empty").hidden).toBe(true);
   });
 
-  it("keeps Save version before a large change list in reading and keyboard order", async () => {
+  it("keeps the layer list before the composer with a keyboard shortcut past large lists", async () => {
     const p = await panel();
+    p.connect(); p.evaluate("bindPanelEvents()");
+    p.document.body.classList.remove("is-initializing"); p.id("workspace").hidden = false;
     p.evaluate("renderChanges(testChanges)", { testChanges: Array.from({ length: 600 }, (_, index) => change(index + 1)) });
-    const sections = [...p.id("changes-view").children];
-    expect(sections.indexOf(p.document.querySelector(".capture-panel")!)).toBeLessThan(sections.indexOf(p.document.querySelector(".changes-card")!));
+    const sections = [...p.id("changes-view").querySelectorAll(".changes-card, .capture-panel")];
+    expect(sections).toEqual([p.document.querySelector(".changes-card"), p.document.querySelector(".capture-panel")]);
     const controls = [...p.id("changes-view").querySelectorAll('[tabindex="0"], input')];
-    expect(controls.indexOf(p.id("save-version"))).toBeLessThan(controls.indexOf(p.document.querySelector(".change-row")!));
+    expect(controls.indexOf(p.id("jump-save"))).toBeGreaterThanOrEqual(0);
+    expect(controls.indexOf(p.id("jump-save"))).toBeLessThan(controls.indexOf(p.document.querySelector(".change-row")!));
+    p.keyboard(p.id("jump-save"), "Enter");
+    expect(p.document.activeElement).toBe(p.id("message"));
     expect(p.id<HTMLInputElement>("message").disabled).toBeFalsy();
   });
 
@@ -365,6 +402,37 @@ describe("PhotoGit production panel behavior — host mocked", () => {
     expect(p.id("changes-count").textContent).toBe("0");
   });
 
+  it("routes current-project branch rows through confirmation but rejects retained rows after a project change", async () => {
+    const p = await panel(); p.connect();
+    p.document.body.classList.remove("is-initializing"); p.id("workspace").hidden = false;
+    p.evaluate('selectTab("branches", false)');
+    const execute = vi.fn(async () => undefined); p.context.executeCommand = execute;
+    await p.evaluate("loadBranches(result)", { result: { current: "main", branches: [{ name: "main", current: true }, { name: "alternate", current: false }] } });
+    const button = p.id("branch-list").querySelector<HTMLElement>(".branch-switch")!;
+    button.click(); expect(execute).toHaveBeenCalledExactlyOnceWith("switch alternate");
+    execute.mockClear();
+    p.evaluate('projectFolder = { nativePath: "/different-project" }');
+    button.click(); p.keyboard(button, "Enter");
+    expect(execute).not.toHaveBeenCalled();
+    expect(p.id("result").textContent).toContain("project changed");
+  });
+
+  it("does not overwrite new-project branch rows or the picker with a late branch-list response", async () => {
+    const p = await panel(); p.connect();
+    const waiting = deferred<Record<string, unknown>>(); p.context.callHelper = vi.fn(() => waiting.promise);
+    const loading = p.evaluate("loadBranches()"); await settle();
+    p.evaluate('projectFolder = { nativePath: "/different-project" }');
+    await p.evaluate("loadBranches(result)", { result: { current: "new-main", branches: [{ name: "new-main", current: true }] } });
+    waiting.resolve({ current: "old-main", branches: [{ name: "old-main", current: true }, { name: "old-direction", current: false }] });
+    await loading;
+    expect(p.id("branch-name").textContent).toBe("new-main");
+    expect(p.id("branch-name-detail").textContent).toBe("new-main");
+    expect(p.id("branch-list").textContent).toContain("new-main");
+    expect(p.id("branch-list").textContent).not.toContain("old-");
+    expect([...p.id("branch-menu").children].map(item => (item as HTMLElement).dataset.branch)).toEqual(["new-main"]);
+    expect(p.id("branches-count").textContent).toBe("1");
+  });
+
   it("preserves interleaved author chronology and opens actual version details on click", async () => {
     const p = await panel();
     p.connect();
@@ -377,11 +445,128 @@ describe("PhotoGit production panel behavior — host mocked", () => {
     p.document.querySelector<HTMLElement>(".history-row")!.click();
     await settle();
     expect(helper).toHaveBeenCalledWith("versionDetails", { version: versions[0]!.id });
-    expect(p.id("detail-title").textContent).toBe("Design 1");
+    expect(p.id("detail-title").textContent).toBe(`Version ${versions[0]!.shortId}`);
+    expect(p.id("detail-content").querySelector(".version-inspector-heading")!.textContent).toBe("Design 1");
     expect(p.id("detail-content").textContent).toContain("Layer renamed");
     expect(p.id("detail-content").textContent).toContain("snapshot/document.psd");
     expect(p.id("detail-content").textContent).not.toContain("[object Object]");
     expect(p.id("detail-action").textContent).toBe("Open version copy");
+  });
+
+  it("shows wide History details inline and opens an independent copy only on explicit activation", async () => {
+    const p = await panel(); const doc = p.connect();
+    p.document.body.classList.remove("is-initializing");
+    p.id("workspace").hidden = false;
+    p.context.matchMedia = () => ({ matches: true });
+    p.evaluate('selectTab("history", false)');
+    const version = { id: "a".repeat(40), shortId: "aaaaaaaa", author: "Designer", date: "2026-09-07", message: "Cover <img src=x>" };
+    const details = { changes: [change(1, { summary: "Heading <script>literal</script>" })], files: [{ status: "M", path: "snapshot/document.psd" }], snapshotAvailable: true };
+    const helper = vi.fn(async () => details); const open = vi.fn(async () => undefined);
+    p.context.callHelper = helper; p.context.openSnapshot = open;
+    p.evaluate("renderHistory(versions)", { versions: [version] });
+    const row = p.document.querySelector<HTMLElement>(".history-row")!;
+    row.click(); await settle();
+    expect(helper).toHaveBeenCalledWith("versionDetails", { version: version.id });
+    expect(row.classList.contains("selected")).toBe(true);
+    expect(row.getAttribute("aria-pressed")).toBe("true");
+    expect(p.id("history-inspector").textContent).toContain(version.message);
+    expect(p.id("history-inspector").textContent).toContain("Heading <script>literal</script>");
+    expect(p.id("history-inspector").textContent).toContain("snapshot/document.psd");
+    expect(p.id("history-inspector").querySelector("img, script")).toBeNull();
+    expect(p.id("detail-sheet").hidden).toBe(true);
+    expect(p.document.body.classList.contains("has-surface")).toBe(false);
+    expect(open).not.toHaveBeenCalled();
+    p.keyboard(p.id("history-inspector").querySelector(".version-inspector-open"), "Enter");
+    await settle();
+    expect(open).toHaveBeenCalledOnce();
+    expect(open).toHaveBeenCalledWith(version.id, false);
+    expect(p.app.activeDocument).toBe(doc);
+  });
+
+  it("replaces an old inline version action with a loading state while fetching the next version", async () => {
+    const p = await panel(); p.connect();
+    p.context.matchMedia = () => ({ matches: true });
+    const version = { id: "a".repeat(40), shortId: "aaaaaaaa", author: "Designer", date: "2026-09-07", message: "First version" };
+    p.context.callHelper = vi.fn(async () => ({ changes: [], files: [], snapshotAvailable: true }));
+    await p.evaluate("inspectVersion(version)", { version });
+    expect(p.id("history-inspector").querySelector(".version-inspector-open")).not.toBeNull();
+    const waiting = deferred<{ changes: unknown[]; files: unknown[]; snapshotAvailable: boolean }>();
+    p.context.callHelper = vi.fn(() => waiting.promise);
+    const inspection = p.evaluate("inspectVersion(version)", { version: { ...version, id: "b".repeat(40), message: "Second version" } });
+    await settle();
+    expect(p.id("history-inspector").getAttribute("aria-busy")).toBe("true");
+    expect(p.id("history-inspector").querySelector(".version-inspector-open")).toBeNull();
+    waiting.resolve({ changes: [], files: [], snapshotAvailable: false }); await inspection;
+    expect(p.id("history-inspector").getAttribute("aria-busy")).toBe("false");
+    expect(p.id("history-inspector").textContent).toContain("Second version");
+    expect(p.id("history-inspector").textContent).toContain("No valid PSD snapshot");
+    expect(p.id("history-inspector").querySelector(".version-inspector-open")).toBeNull();
+  });
+
+  it("keeps an inline version-opening action inert after the connected project changes", async () => {
+    const p = await panel(); p.connect();
+    p.document.body.classList.remove("is-initializing");
+    p.id("workspace").hidden = false;
+    p.context.matchMedia = () => ({ matches: true });
+    p.evaluate('selectTab("history", false)');
+    p.context.callHelper = vi.fn(async () => ({ changes: [], files: [], snapshotAvailable: true }));
+    const open = vi.fn(async () => undefined); p.context.openSnapshot = open;
+    await p.evaluate("inspectVersion(version)", { version: { id: "a".repeat(40), shortId: "aaaaaaaa", message: "Old project design" } });
+    p.evaluate('projectFolder = { nativePath: "/different-project" }');
+    p.id("history-inspector").querySelector<HTMLElement>(".version-inspector-open")!.click();
+    await settle();
+    expect(open).not.toHaveBeenCalled();
+    expect(p.id("result").textContent).toContain("project changed");
+  });
+
+  it("does not render late version details into a different project's inspector", async () => {
+    const p = await panel(); p.connect();
+    p.context.matchMedia = () => ({ matches: true });
+    const waiting = deferred<{ changes: unknown[]; files: unknown[]; snapshotAvailable: boolean }>();
+    p.context.callHelper = vi.fn(() => waiting.promise);
+    const inspection = p.evaluate("inspectVersion(version)", { version: { id: "a".repeat(40), message: "Old project design" } });
+    await settle();
+    p.evaluate('projectFolder = { nativePath: "/different-project" }');
+    waiting.resolve({ changes: [], files: [], snapshotAvailable: true }); await inspection;
+    expect(p.id("history-inspector").textContent).not.toContain("Old project design");
+    expect(p.id("history-inspector").querySelector(".version-inspector-open")).toBeNull();
+    expect(p.evaluate("selectedVersionId")).not.toBe("a".repeat(40));
+  });
+
+  it("clears the selected version and its inline action when choosing a different project", async () => {
+    const p = await panel(); p.connect();
+    p.context.matchMedia = () => ({ matches: true });
+    p.context.callHelper = vi.fn(async () => ({ changes: [], files: [], snapshotAvailable: true }));
+    await p.evaluate("inspectVersion(version)", { version: { id: "a".repeat(40), message: "Previous project design" } });
+    await p.evaluate("loadBranches(result)", { result: { current: "main", branches: [{ name: "main", current: true }, { name: "old-direction", current: false }] } });
+    const nextFolder = { name: "New project", nativePath: "/next-project" };
+    Object.assign(p.storage.localFileSystem, { getFolder: vi.fn(async () => nextFolder), createPersistentToken: vi.fn(async () => "next-project-token") });
+    p.context.loadPairing = vi.fn(async () => undefined);
+    p.context.refreshWorkspace = vi.fn(async () => undefined);
+    await p.evaluate("chooseProject()");
+    expect(p.evaluate("projectFolder")).toBe(nextFolder);
+    expect(p.evaluate("selectedVersionId")).toBeNull();
+    expect(p.id("history-inspector").dataset.state).toBe("empty");
+    expect(p.id("history-inspector").textContent).not.toContain("Previous project design");
+    expect(p.id("history-inspector").querySelector(".version-inspector-open")).toBeNull();
+    expect(p.id("branch-list").querySelector(".branch-row")).toBeNull();
+    expect(p.id("branch-menu").children).toHaveLength(0);
+    expect((p.id("branch-picker") as HTMLElement & { selectedIndex: number }).selectedIndex).toBe(-1);
+  });
+
+  it("shows a recoverable inline History error without retaining an old version-opening action", async () => {
+    const p = await panel(); p.connect();
+    p.context.matchMedia = () => ({ matches: true });
+    const version = { id: "a".repeat(40), message: "Saved design" };
+    p.context.callHelper = vi.fn(async () => ({ changes: [], files: [], snapshotAvailable: true }));
+    await p.evaluate("inspectVersion(version)", { version });
+    p.context.callHelper = vi.fn(async () => { throw new Error("Helper unavailable"); });
+    await p.evaluate("inspectVersion(version)", { version });
+    expect(p.id("history-inspector").getAttribute("aria-busy")).toBe("false");
+    expect(p.id("history-inspector").textContent).toContain("Could not load this version");
+    expect(p.id("history-inspector").querySelector('[role="alert"]')!.textContent).toContain("Helper unavailable");
+    expect(p.id("history-inspector").querySelector(".version-inspector-open")).toBeNull();
+    expect(p.evaluate("busyNow")).toBe(false);
   });
 
   it("filters history by author without changing retained chronological order", async () => {
@@ -418,9 +603,100 @@ describe("PhotoGit production panel behavior — host mocked", () => {
     p.document.querySelector<HTMLElement>(".compare-action")!.click();
     await settle();
     expect(helper).toHaveBeenCalledWith("compareBranches", { branch: "feature" });
-    expect(p.id("detail-content").textContent).toContain("main ← feature");
+    const endpoints = [...p.id("detail-content").querySelectorAll(".comparison-endpoint")];
+    expect(endpoints.map(endpoint => endpoint.textContent)).toEqual(["Sourcefeature", "Destinationmain"]);
     expect(p.id("detail-content").textContent).toContain("Headline text changed");
     expect(p.id("detail-content").textContent).toContain("Git merge blocked");
+  });
+
+  it.each([false, true])("routes comparison review through a fresh check and confirmation (wide: %s)", async wide => {
+    const p = await panel(); p.connect();
+    p.document.body.classList.remove("is-initializing"); p.id("workspace").hidden = false;
+    p.context.matchMedia = () => ({ matches: wide });
+    p.evaluate('selectTab("reviews", false)');
+    const comparison = { baseBranch: "main", incomingBranch: "feature", ahead: 2, behind: 1, changes: [change(1)], files: [{ status: "M", path: "snapshot/document.psd" }], conflicts: [], warnings: [], gitMergeable: true };
+    const helper = vi.fn(async () => comparison); const merge = vi.fn(async () => undefined);
+    p.context.callHelper = helper; p.context.performMerge = merge;
+    await p.evaluate('compareBranch("feature")');
+    const content = p.id(wide ? "review-inspector" : "detail-content");
+    expect(content.querySelector(".comparison-summary")!.textContent).toContain("Layer 1: Opacity changed");
+    expect(content.querySelector(".comparison-status")!.textContent).toContain("Git merge available");
+    expect(content.textContent).toContain("does not blend PSD layers");
+    expect(p.id("detail-sheet").hidden).toBe(wide);
+    expect(merge).not.toHaveBeenCalled();
+    p.keyboard(content.querySelector(".comparison-merge"), "Enter"); await settle();
+    expect(helper).toHaveBeenCalledTimes(2);
+    expect(helper).toHaveBeenNthCalledWith(2, "compareBranches", { branch: "feature" });
+    expect(p.id("detail-title").textContent).toBe("Merge this branch?");
+    expect(p.id("detail-content").textContent).toContain("Base: main");
+    expect(p.id("detail-content").textContent).toContain("Incoming: feature");
+    expect(p.id("detail-action").hidden).toBe(false);
+    expect(merge).not.toHaveBeenCalled();
+  });
+
+  it.each([false, true])("keeps conflicting comparisons inert and literal even with contradictory mergeability (wide: %s)", async wide => {
+    const p = await panel(); p.connect();
+    p.document.body.classList.remove("is-initializing"); p.id("workspace").hidden = false;
+    p.context.matchMedia = () => ({ matches: wide });
+    p.evaluate('selectTab("reviews", false)');
+    const comparison = { baseBranch: "main", incomingBranch: "<img src=x>", ahead: 1, behind: 1, changes: [change(1, { summary: "<script>literal</script>" })], files: [], conflicts: ["snapshot/document.psd"], warnings: ["Keep both originals"], gitMergeable: true };
+    const merge = vi.fn(); p.context.mergeReview = merge;
+    p.context.callHelper = vi.fn(async () => comparison);
+    await p.evaluate('compareBranch("feature")');
+    const content = p.id(wide ? "review-inspector" : "detail-content");
+    expect(content.textContent).toContain("<img src=x>");
+    expect(content.textContent).toContain("<script>literal</script>");
+    expect(content.querySelector("img, script")).toBeNull();
+    expect(content.querySelector(".comparison-merge")).toBeNull();
+    expect(content.textContent).toContain("Git merge blocked");
+    expect(content.textContent).toContain("Resolve conflicting files outside PhotoGit");
+    expect(content.textContent).toContain("snapshot/document.psd");
+    expect(merge).not.toHaveBeenCalled();
+  });
+
+  it("refuses an old comparison's merge action after changing projects", async () => {
+    const p = await panel(); p.connect();
+    p.document.body.classList.remove("is-initializing"); p.id("workspace").hidden = false;
+    p.context.matchMedia = () => ({ matches: true });
+    p.evaluate('selectTab("reviews", false)');
+    const merge = vi.fn(); p.context.mergeReview = merge;
+    p.context.callHelper = vi.fn(async () => ({ baseBranch: "main", incomingBranch: "feature", ahead: 1, behind: 0, changes: [], files: [], conflicts: [], warnings: [], gitMergeable: true }));
+    await p.evaluate('compareBranch("feature")');
+    p.evaluate('projectFolder = { nativePath: "/different-project" }');
+    p.id("review-inspector").querySelector<HTMLElement>(".comparison-merge")!.click();
+    await settle();
+    expect(merge).not.toHaveBeenCalled();
+    expect(p.id("result").textContent).toContain("project changed");
+  });
+
+  it("does not leave a previous wide comparison actionable when the next comparison fails", async () => {
+    const p = await panel(); p.connect();
+    p.document.body.classList.remove("is-initializing"); p.id("workspace").hidden = false;
+    p.context.matchMedia = () => ({ matches: true });
+    p.context.callHelper = vi.fn(async () => ({ baseBranch: "main", incomingBranch: "first-direction", ahead: 1, behind: 0, changes: [], files: [], conflicts: [], warnings: [], gitMergeable: true }));
+    await p.evaluate('compareBranch("first-direction")');
+    expect(p.id("review-inspector").querySelector(".comparison-merge")).not.toBeNull();
+    p.context.callHelper = vi.fn(async () => { throw new Error("Helper unavailable"); });
+    await p.evaluate('compareBranch("next-direction")');
+    expect(p.id("result").textContent).toContain("Helper unavailable");
+    expect(p.id("review-inspector").querySelector(".comparison-merge")).toBeNull();
+    expect(p.id("review-inspector").textContent).not.toContain("first-direction");
+    expect(p.evaluate("busyNow")).toBe(false);
+  });
+
+  it("does not render a late comparison from a previously connected project", async () => {
+    const p = await panel(); p.connect();
+    p.context.matchMedia = () => ({ matches: true });
+    const waiting = deferred<Record<string, unknown>>();
+    p.context.callHelper = vi.fn(() => waiting.promise);
+    const comparison = p.evaluate('compareBranch("old-project-branch")');
+    await settle();
+    p.evaluate('projectFolder = { nativePath: "/different-project" }');
+    waiting.resolve({ baseBranch: "main", incomingBranch: "old-project-branch", ahead: 1, behind: 0, changes: [], files: [], conflicts: [], warnings: [], gitMergeable: true });
+    await comparison;
+    expect(p.id("review-inspector").textContent).not.toContain("old-project-branch");
+    expect(p.id("review-inspector").querySelector(".comparison-merge")).toBeNull();
+    expect(p.id("detail-sheet").hidden).toBe(true);
   });
 
   it("reports a PSD opening failure after Git changed and refreshes before recovery", async () => {
@@ -1005,16 +1281,18 @@ describe("PhotoGit rounded design and label clarity", () => {
     expect(themes).toHaveLength(2);
     for (const block of themes) {
       const colors = Object.fromEntries([...block.matchAll(/--([\w-]+):\s*(#[a-f\d]{6})/gi)].map(match => [match[1], match[2]]));
-      for (const surface of ["bg", "surface", "elevated", "input", "selected"]) {
+      for (const surface of ["bg", "surface", "elevated", "input", "overlay", "selected", "hover", "pressed"]) {
         for (const text of ["text", "muted"]) expect(contrast(colors[text]!, colors[surface]!)).toBeGreaterThanOrEqual(4.5);
         for (const boundary of ["border", "focus"]) expect(contrast(colors[boundary]!, colors[surface]!)).toBeGreaterThanOrEqual(3);
       }
       for (const state of ["primary", "primary-hover", "primary-pressed"]) {
         expect(contrast(colors["primary-text"]!, colors[state]!)).toBeGreaterThanOrEqual(4.5);
       }
+      expect(contrast(colors.accent!, colors.selected!)).toBeGreaterThanOrEqual(4.5);
+      for (const status of ["success", "warning", "error"]) {
+        expect(contrast(colors[status]!, colors[`${status}-surface`]!)).toBeGreaterThanOrEqual(4.5);
+      }
     }
-    expect(css).toContain("--radius: 10px");
-    expect(css).toContain("--radius-panel: 16px");
     expect(css).toContain("prefers-reduced-transparency: reduce");
   });
 });
@@ -1085,7 +1363,13 @@ describe("PhotoGit production helper result validation — host mocked", () => {
     ["pullRequestLink", { url: "https://github.com.evil.example/person/project/compare/main...branch" }],
     ["pullRequestLink", { url: "http://github.com/person/project/compare/main...branch" }],
     ["versionDetails", { files: [], changes: [], snapshotAvailable: "yes" }],
-    ["compareBranches", { baseBranch: "main", incomingBranch: "feature", ahead: -1, behind: 0, files: [], changes: [], conflicts: [], warnings: [], gitMergeable: true }]
+    ["compareBranches", { baseBranch: "main", incomingBranch: "feature", ahead: -1, behind: 0, files: [], changes: [], conflicts: [], warnings: [], gitMergeable: true }],
+    ["versionPreview", { available: "yes" }],
+    ["versionPreview", { available: true, contentType: "image/svg+xml", bytes: 4, png: "AAAA" }],
+    ["versionPreview", { available: true, contentType: "image/png", bytes: -1, png: "AAAA" }],
+    ["versionPreview", { available: true, contentType: "image/png", bytes: 4, png: "not base64!" }],
+    ["versionPreview", { available: true, contentType: "image/png", bytes: 4, png: "data:image/png;base64,AAAA" }],
+    ["versionPreview", { available: true, contentType: "image/png", bytes: 4 }]
   ])("rejects malformed %s data", async (operation, value) => {
     const p = await panel();
     expect(() => p.evaluate("validateHelperResult(operation, value)", { operation, value })).toThrow();
@@ -1097,6 +1381,10 @@ describe("PhotoGit production helper result validation — host mocked", () => {
     expect(p.evaluate('validateHelperResult("openVersion", value)', { value: recovered })).toEqual(recovered);
     const details = { files: [{ status: "M", path: "snapshot/document.psd" }], changes: [{ summary: "Layer changed" }], snapshotAvailable: true };
     expect(p.evaluate('validateHelperResult("versionDetails", value)', { value: details })).toEqual(details);
+    const absent = { available: false, version: "7263180" };
+    expect(p.evaluate('validateHelperResult("versionPreview", value)', { value: absent })).toEqual(absent);
+    const preview = { available: true, contentType: "image/png", bytes: 6, version: "7263180", png: "iVBORw0KGgo=" };
+    expect(p.evaluate('validateHelperResult("versionPreview", value)', { value: preview })).toEqual(preview);
   });
 });
 

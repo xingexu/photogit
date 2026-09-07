@@ -1,5 +1,6 @@
 // Shared presentation controls only: never writes PSDs, stages files or calls Git.
 function refreshChanges(document) {
+  updateMessageCount(document);
   const rows = Array.from(document.querySelectorAll("#changes .change-row"));
   const search = document.getElementById("changes-search");
   const chips = Array.from(document.querySelectorAll("[data-change-filter]"));
@@ -25,6 +26,11 @@ function refreshChanges(document) {
 }
 
 const initialized = new WeakMap();
+function updateMessageCount(document) {
+  const field = document.getElementById("message");
+  const count = document.getElementById("message-count");
+  if (field && count) count.textContent = `${field.value.length}/500`;
+}
 function setup(document, { navigate, openCommands }) {
   if (initialized.has(document)) return initialized.get(document);
   const blocked = () => document.body.classList.contains("is-initializing") || document.body.classList.contains("is-busy") ||
@@ -36,8 +42,23 @@ function setup(document, { navigate, openCommands }) {
     };
     element.addEventListener("click", invoke);
     element.addEventListener("keydown", event => {
-      if (!["Enter", " "].includes(event.key) || event.repeat) return;
+      if (!["Enter", " "].includes(event.key) || event.repeat || event.isComposing) return;
       event.preventDefault(); event.stopPropagation(); invoke();
+    });
+  }
+  const message = document.getElementById("message");
+  message.addEventListener("input", () => updateMessageCount(document));
+  activate(document.getElementById("jump-save"), () => {
+    message.focus(); message.scrollIntoView?.({ block: "center" });
+  });
+  for (const preset of document.querySelectorAll("[data-message-preset]")) {
+    activate(preset, () => {
+      const draft = message.value;
+      const addition = preset.dataset.messagePreset;
+      const next = draft ? `${draft} · ${addition}` : addition;
+      // Suggestions never truncate or replace an existing draft.
+      if (next.length <= 500) message.value = next;
+      updateMessageCount(document); message.focus();
     });
   }
   for (const chip of document.querySelectorAll("[data-change-filter]")) {
@@ -73,5 +94,31 @@ function setup(document, { navigate, openCommands }) {
   controls.refreshChanges();
   return controls;
 }
-if (typeof module !== "undefined") module.exports = { setup, refreshChanges };
-else window.PhotoGitWorkspace = { setup, refreshChanges };
+function commandRow(document, command, activate) {
+  const row = document.createElement("div"); row.className = "command-row";
+  row.setAttribute("role", "button"); row.tabIndex = 0;
+  const glyph = document.createElement("div"); glyph.className = "command-glyph"; glyph.setAttribute("aria-hidden", "true");
+  const paths = ["branch", "branches", "switch", "merge", "compare"].includes(command.id)
+    ? '<circle cx="6" cy="5" r="2"/><circle cx="18" cy="7" r="2"/><circle cx="6" cy="19" r="2"/><path d="M6 7v10m2-2c6 0 8-2 8-6"/>'
+    : ["history", "activity"].includes(command.id) ? '<circle cx="12" cy="12" r="8"/><path d="M12 7v5l3 2"/>'
+    : '<path d="M6 3.5h8l4 4V20H6z"/><path d="M14 3.5V8h4M9 12h6m-6 4h6"/>';
+  glyph.innerHTML = `<svg viewBox="0 0 24 24">${paths}</svg>`;
+  const copy = document.createElement("div"); copy.className = "command-copy";
+  const title = document.createElement("strong"); title.textContent = command.label;
+  const syntax = document.createElement("code"); syntax.textContent = `/${command.example}`;
+  const description = document.createElement("span"); description.textContent = command.description;
+  copy.appendChild(title); copy.appendChild(syntax); copy.appendChild(description);
+  row.appendChild(glyph); row.appendChild(copy);
+  const invoke = () => {
+    if (row.getAttribute("aria-disabled") === "true" || row.closest("[hidden]") ||
+      document.body.classList.contains("is-busy") || document.body.classList.contains("is-initializing")) return;
+    activate();
+  };
+  row.addEventListener("click", invoke);
+  row.addEventListener("keydown", event => {
+    if (["Enter", " "].includes(event.key) && !event.repeat && !event.isComposing) { event.preventDefault(); event.stopPropagation(); invoke(); }
+  });
+  return row;
+}
+if (typeof module !== "undefined") module.exports = { setup, refreshChanges, commandRow };
+else window.PhotoGitWorkspace = { setup, refreshChanges, commandRow };

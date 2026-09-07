@@ -18,6 +18,7 @@ let changes = [
 ];
 let activityEntries = 0;
 let surfaceReturnFocus = null;
+let selectedDemoVersion = null;
 const surfaceTimers = new Map();
 const demoReviews = [
   { branch: "campaign-type-b", ahead: 3, changeCount: 8, mergeable: true },
@@ -67,9 +68,12 @@ function setupDemoPanel() {
   byId("repo-sync-status").textContent = "Synced";
   byId("sync-status").textContent = "Status";
   replaceDemoDropdown();
+  renderDemoBranches();
   renderChanges();
   renderHistory();
   renderReviews();
+  addActivity("Simulation: helper connected. Ready to inspect this example workspace.");
+  addActivity("Simulation: background scan completed. Three recorded edits found.");
   setCount("branches-count", 3);
   bind("changes-tab", () => selectTab("changes"));
   bind("history-tab", () => selectTab("history"));
@@ -111,7 +115,7 @@ function setupDemoPanel() {
   ["message", "history-search", "new-branch-name", "tag-name"].forEach(bindFieldState);
   for (const [id, submit] of [["message", saveVersion], ["new-branch-name", createBranch], ["tag-name", createTag]]) {
     byId(id).addEventListener("keydown", event => {
-      if (event.key !== "Enter" || event.repeat || busyNow) return;
+      if (event.key !== "Enter" || event.repeat || event.isComposing || busyNow) return;
       event.preventDefault(); event.stopPropagation(); submit();
     });
   }
@@ -123,6 +127,8 @@ function setupDemoPanel() {
 // Palette presentation mirrors production; dispatch below is explicitly simulation-only.
 let busyNow = false;
 function openDetail(title) {
+  byId("detail-content").className = "detail-content";
+  for (const attribute of ["role", "aria-label", "aria-busy", "data-state", "data-mergeable"]) byId("detail-content").removeAttribute(attribute);
   surfaceReturnFocus = document.activeElement;
   byId("detail-title").textContent = title;
   byId("detail-content").innerHTML = "";
@@ -146,19 +152,7 @@ async function executeCommand(input) {
   flashResult("Simulation only: /" + command.id + " — no Photoshop or Git operation performed.");
 }
 function commandRow(command, activate) {
-  const row = document.createElement("div");
-  row.className = "command-row";
-  row.setAttribute("role", "button");
-  row.tabIndex = 0;
-  const title = document.createElement("strong"); title.textContent = command.label;
-  const syntax = document.createElement("code"); syntax.textContent = `/${command.example}`;
-  const description = document.createElement("span"); description.textContent = command.description;
-  row.appendChild(title); row.appendChild(syntax); row.appendChild(description);
-  row.addEventListener("click", activate);
-  row.addEventListener("keydown", event => {
-    if (event.key === "Enter" || event.key === " ") { event.preventDefault(); event.stopPropagation(); activate(); }
-  });
-  return row;
+  return window.PhotoGitWorkspace.commandRow(document, command, activate);
 }
 
 function renderCommandDocs() {
@@ -196,6 +190,7 @@ function openCommandPalette(initial = "") {
   };
   field.addEventListener("input", render);
   field.addEventListener("keydown", event => {
+    if (event.repeat || event.isComposing) return;
     if (event.key === "Enter") { event.preventDefault(); event.stopPropagation(); void executeCommand(field.value); }
     if (event.key === "ArrowDown") { event.preventDefault(); results.firstElementChild?.focus(); }
   });
@@ -395,6 +390,24 @@ function replaceDemoDropdown() {
   original.replaceWith(select);
 }
 
+function renderDemoBranches() {
+  const picker = byId("branch-picker");
+  window.PhotoGitBranches.render(byId("branch-list"), {
+    branches: Array.from(picker.options, option => ({ name: option.value })), current: picker.value,
+    onSwitch: name => {
+      openDetail("Switch design direction?");
+      const description = document.createElement("p");
+      description.textContent = `Simulation: switch to ${name}. In Photoshop, PhotoGit checks for unsaved work before switching.`;
+      const confirm = document.createElement("div");
+      confirm.className = "button button-primary"; confirm.setAttribute("role", "button"); confirm.tabIndex = 0;
+      confirm.textContent = "Switch branch";
+      confirm.addEventListener("click", () => { picker.value = name; switchBranch({ target: picker }); closeDetail(); });
+      confirm.addEventListener("keydown", activateOnKeyboard);
+      byId("detail-content").append(description, confirm); confirm.focus();
+    }
+  });
+}
+
 function renderChanges() {
   const container = byId("changes");
   container.innerHTML = "";
@@ -411,7 +424,7 @@ function renderChanges() {
     row.setAttribute("role", "button");
     row.setAttribute("aria-pressed", "false");
     row.setAttribute("aria-label", `Select changed layer ${change.layerName}, Photoshop layer ${change.photoshopId}. ${change.summary}`);
-    row.innerHTML = `<span class="row-glyph" aria-hidden="true">${domainIcon(change.domain)}</span><span class="row-copy"><strong>${escapeHtml(change.layerName)}</strong><span class="layer-identity">Layer #${escapeHtml(change.photoshopId)}</span><span class="change-detail">${escapeHtml(change.summary)}</span></span><span class="change-domain">${escapeHtml(change.domain)}</span>`;
+    row.innerHTML = `<span class="row-glyph" aria-hidden="true">${domainIcon(change.domain)}</span><span class="row-copy"><strong>${escapeHtml(change.layerName)}</strong><span class="layer-identity">Layer #${escapeHtml(change.photoshopId)}</span><span class="change-detail">${escapeHtml(change.summary)}</span></span><span class="change-domain"><span class="change-state">Modified</span>${escapeHtml(change.domain)}</span>`;
     const select = () => {
       document.querySelectorAll(".layer").forEach((layer) => layer.classList.remove("active"));
       document.querySelectorAll(".layer")[index]?.classList.add("active");
@@ -421,7 +434,7 @@ function renderChanges() {
       });
       row.classList.add("selected");
       row.setAttribute("aria-pressed", "true");
-      flashResult(`Selected “${change.layerName}” in Photoshop.`);
+      flashResult(`Simulation: selected “${change.layerName}”. No Photoshop document was changed.`);
     };
     row.addEventListener("click", select);
     row.addEventListener("keydown", (event) => {
@@ -450,21 +463,49 @@ function renderHistory() {
     group.entries.forEach((version) => {
       const row = document.createElement("div");
       row.className = "list-row history-row";
+      row.dataset.version = version.shortId;
+      row.classList.toggle("selected", selectedDemoVersion === version.shortId);
       const message = escapeHtml(version.message);
       const shortId = escapeHtml(version.shortId);
-      row.innerHTML = `<span class="history-marker" aria-hidden="true">${historyIcon()}</span><span class="row-copy"><strong title="${message}">${message}</strong></span><span class="commit-id" title="Checkpoint ${shortId}">${shortId}</span>`;
+      row.innerHTML = `<span class="history-marker" aria-hidden="true">${historyIcon()}</span><span class="row-copy"><strong title="${message}">${message}</strong><span>${escapeHtml(version.author)} · ${escapeHtml(version.date)}</span></span><span class="commit-id" title="Checkpoint ${shortId}">${shortId}</span>`;
       row.setAttribute("role", "button"); row.tabIndex = 0;
+      row.setAttribute("aria-pressed", String(selectedDemoVersion === version.shortId));
       row.setAttribute("aria-label", `Inspect version ${version.shortId}: ${version.message}`);
       row.addEventListener("click", () => {
-        openDetail(`Version ${version.shortId}`);
-        byId("detail-content").textContent = `${version.message}\n${version.author} · ${version.date}\n\nSimulated preview only. The Photoshop panel can inspect and open a separate PSD copy; no file is opened here.`;
-        byId("close-detail").focus();
+        selectedDemoVersion = version.shortId;
+        for (const entry of container.querySelectorAll(".history-row")) { entry.classList.toggle("selected", entry.dataset.version === version.shortId); entry.setAttribute("aria-pressed", String(entry.dataset.version === version.shortId)); }
+        if (matchMedia("(min-width: 900px)").matches) renderDemoVersion(byId("history-inspector"), version);
+        else { openDetail(`Version ${version.shortId}`); renderDemoVersion(byId("detail-content"), version); }
       });
       row.addEventListener("keydown", activateOnKeyboard);
       entries.appendChild(row);
     });
     container.appendChild(section);
   }
+}
+
+// Representative artwork for the simulated prototype only. Production has no
+// version preview channel, so the inspector falls back to metadata there.
+const DEMO_POSTERS = ["assets/poster-main.jpg", "assets/poster-type.jpg", "assets/poster-home.jpg"];
+
+function demoPosterFor(version) {
+  const key = String(version?.shortId || version?.message || "");
+  let hash = 0;
+  for (let index = 0; index < key.length; index++) hash = (hash * 31 + key.charCodeAt(index)) >>> 0;
+  return { demo: true, src: DEMO_POSTERS[hash % DEMO_POSTERS.length], alt: "Representative demo poster artwork" };
+}
+
+function renderDemoVersion(container, version) {
+  window.PhotoGitVersionInspector.render(container, {
+    demoPreview: demoPosterFor(version),
+    details: {
+      version: { ...version, id: version.shortId }, snapshotAvailable: true,
+      changes: [{ domain: "text", layerName: "Hero typography", summary: "Refined the title spacing and hierarchy." }, { domain: "appearance", layerName: "Color grade", summary: "Adjusted contrast and color balance." }],
+      files: [{ status: "M", path: "snapshot/document.psd" }, { status: "M", path: ".photogit/document.json" }],
+      warnings: ["Simulated preview only. No Photoshop or Git operations occur here."]
+    },
+    onOpen: () => flashResult("Simulation only: a separate version copy would open. No file was opened.")
+  });
 }
 
 function groupHistory(entries) {
@@ -482,7 +523,7 @@ function renderReviews() {
   const container = byId("reviews");
   container.innerHTML = "";
   setCount("reviews-count", demoReviews.length);
-  byId("review-provider").textContent = "GitHub · main ← live-option-b";
+  byId("review-provider").textContent = `Simulated local reviews · merging into ${byId("branch-name").textContent}`;
   for (const review of demoReviews) container.appendChild(createDemoReviewCard(review));
   byId("reviews-empty").hidden = demoReviews.length > 0;
   const preview = byId("review-preview");
@@ -495,25 +536,46 @@ function renderReviews() {
 function createDemoReviewCard(review) {
   const card = document.createElement("article");
   card.className = "review-card";
-  card.innerHTML = `<div class="review-title"><strong>${escapeHtml(review.branch)}</strong><span>${review.ahead} ahead</span></div><div class="review-meta"><span class="${review.mergeable ? "ready" : "blocked"}">${review.mergeable ? "Ready to merge" : "Review conflicts"}</span><span>·</span><span>${review.changeCount} files</span></div><div class="review-files" aria-hidden="true">document.psd\npreview.png</div><div class="review-actions"><div class="button button-quiet button-small compare-action" role="button" tabindex="0" aria-expanded="false">Compare</div><div class="button ${review.mergeable ? "button-primary" : "button-disabled"} button-small merge-action" role="button" tabindex="${review.mergeable ? "0" : "-1"}" ${review.mergeable ? "" : "aria-disabled=\"true\""}>${review.mergeable ? "Merge" : "Blocked"}</div></div>`;
+  card.innerHTML = `<div class="review-title"><strong>${escapeHtml(review.branch)}</strong><span>${review.ahead} ahead</span></div><p class="review-direction muted">${escapeHtml(review.branch)} → ${escapeHtml(byId("branch-name").textContent)}</p><div class="review-meta"><span class="${review.mergeable ? "ready" : "blocked"}">${review.mergeable ? "Git merge available" : "Git merge blocked"}</span><span>·</span><span>2 files</span></div><div class="review-actions"><div class="button button-quiet button-small compare-action" role="button" tabindex="0">Compare</div><div class="button ${review.mergeable ? "button-primary" : "button-disabled"} button-small merge-action" role="button" tabindex="${review.mergeable ? "0" : "-1"}" ${review.mergeable ? "" : "aria-disabled=\"true\""}>${review.mergeable ? "Merge" : "Blocked"}</div></div>`;
   if (!review.mergeable) {
     const unavailable = card.querySelector(".merge-action");
     unavailable.textContent = "Resolve conflicts to merge";
     unavailable.setAttribute("role", "note"); unavailable.removeAttribute("tabindex");
   }
-  card.querySelector(".compare-action").addEventListener("click", (event) => {
-    const expanded = card.classList.toggle("details-open");
-    card.querySelector(".review-files").setAttribute("aria-hidden", expanded ? "false" : "true");
-    event.currentTarget.setAttribute("aria-expanded", expanded ? "true" : "false");
-    event.currentTarget.textContent = expanded ? "Hide details" : "Compare";
-  });
+  card.querySelector(".compare-action").addEventListener("click", () => showDemoComparison(review));
   card.querySelector(".compare-action").addEventListener("keydown", activateOnKeyboard);
-  if (review.mergeable) card.querySelector(".merge-action").addEventListener("click", () => {
-    addActivity(`Merged ${review.branch} into live-option-b.`);
-    flashResult(`Merged ${review.branch}.`);
-  });
+  if (review.mergeable) card.querySelector(".merge-action").addEventListener("click", () => confirmDemoMerge(review));
   card.querySelector(".merge-action").addEventListener("keydown", activateOnKeyboard);
   return card;
+}
+
+function showDemoComparison(review) {
+  let container;
+  if (matchMedia("(min-width: 900px)").matches) { selectTab("reviews"); container = byId("review-inspector"); }
+  else { openDetail("Compare branches"); container = byId("detail-content"); }
+  window.PhotoGitReviewInspector.render(container, {
+    comparison: {
+      incomingBranch: review.branch, baseBranch: byId("branch-name").textContent,
+      ahead: review.ahead, behind: 1, gitMergeable: review.mergeable,
+      changes: [{ layerName: "Hero typography", summary: "Adjusted title spacing and scale." }, { layerName: "Color grade", summary: "Updated the recorded contrast settings." }],
+      files: [{ status: "M", path: "snapshot/document.psd" }, { status: "M", path: ".photogit/document.json" }],
+      conflicts: review.mergeable ? [] : ["snapshot/document.psd"],
+      warnings: ["Simulation only. No branches or files will be changed."]
+    }, onMerge: () => confirmDemoMerge(review)
+  });
+}
+
+function confirmDemoMerge(review) {
+  if (!review.mergeable || busyNow) return;
+  openDetail("Review merge");
+  const description = document.createElement("p");
+  description.textContent = `Simulation: ${review.branch} → ${byId("branch-name").textContent}. This demonstrates the confirmation step only. PhotoGit uses ordinary Git merge; it does not blend PSD layers.`;
+  const confirm = document.createElement("div");
+  confirm.className = "button button-primary"; confirm.setAttribute("role", "button"); confirm.tabIndex = 0;
+  confirm.textContent = "Simulate merge";
+  confirm.addEventListener("click", () => { addActivity(`Simulation: merged ${review.branch}. No Git operation occurred.`); closeDetail(); flashResult("Simulation complete. No branches or files were changed."); });
+  confirm.addEventListener("keydown", activateOnKeyboard);
+  byId("detail-content").append(description, confirm); confirm.focus();
 }
 
 async function scan() {
@@ -553,6 +615,8 @@ function createBranch() {
   byId("branch-picker").value = name;
   byId("branch-name").textContent = name;
   byId("branch-name-detail").textContent = name;
+  renderDemoBranches();
+  renderReviews();
   setCount("branches-count", byId("branch-picker").options.length);
   input.value = "";
   input.closest(".field-shell")?.classList.remove("has-value");
@@ -563,6 +627,9 @@ function createBranch() {
 function switchBranch(event) {
   byId("branch-name").textContent = event.target.value;
   byId("branch-name-detail").textContent = event.target.value;
+  renderDemoBranches();
+  renderReviews();
+  window.PhotoGitReviewInspector.render(byId("review-inspector"));
   addActivity(`Switched to ${event.target.value}.`);
   flashResult(`Switched to ${event.target.value}.`);
 }
@@ -599,7 +666,14 @@ function flashResult(message, error = false) {
 
 function addActivity(message) {
   const stamp = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  byId("activity").textContent = `[${stamp}] ${message}\n${byId("activity").textContent === "Ready." ? "" : byId("activity").textContent}`;
+  const feed = byId("activity");
+  if (feed.textContent === "Ready.") feed.textContent = "";
+  const row = document.createElement("div"); row.className = "activity-row";
+  const summary = document.createElement("div"); summary.className = "activity-summary";
+  const icon = document.createElement("span"); icon.className = "activity-icon"; icon.setAttribute("aria-hidden", "true"); icon.textContent = "✓";
+  const time = document.createElement("span"); time.className = "activity-time"; time.textContent = stamp;
+  const copy = document.createElement("span"); copy.className = "activity-copy"; copy.textContent = message;
+  summary.append(icon, time, copy); row.appendChild(summary); feed.prepend(row);
   activityEntries += 1;
   setCount("activity-count", activityEntries);
 }
@@ -731,7 +805,7 @@ function bind(id, handler) {
   if (["button", "tab", "menuitem"].includes(element.getAttribute("role"))) element.addEventListener("keydown", activateOnKeyboard);
 }
 function activateOnKeyboard(event) {
-  if (event.key !== "Enter" && event.key !== " ") return;
+  if ((event.key !== "Enter" && event.key !== " ") || event.repeat || event.isComposing) return;
   event.preventDefault();
   event.currentTarget.click();
 }

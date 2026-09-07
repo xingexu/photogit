@@ -21,6 +21,13 @@ function psd(): Buffer {
   return bytes;
 }
 
+function png(): Buffer {
+  return Buffer.from(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+    "base64"
+  );
+}
+
 async function fixture(): Promise<GitRepository> {
   const root = await mkdtemp(join(tmpdir(), "photogit-history-recovery-"));
   const repository = new GitRepository(root);
@@ -45,6 +52,40 @@ describe("immutable history, recovery, and Git comparison", () => {
     await repo.run(["commit", "-m", "Corrupted externally"]);
     await expect(repo.readStateAt()).rejects.toThrow();
     await expect(repo.readStateAt("missing-version")).rejects.toThrow(/does not exist/);
+  });
+
+  it("reads a committed preview for a version and refuses versions without a valid PNG", async () => {
+    const repo = await fixture();
+    const snapshot = join(repo.root, ".photogit/capture.psd");
+    const previewSource = join(repo.root, ".photogit/capture.png");
+    await writeFile(snapshot, psd());
+
+    // A version saved before previews existed has none, and must not fail.
+    const withoutPreview = await repo.saveVersion(state(), "No preview yet", { snapshotPath: snapshot });
+    expect(await repo.readVersionPreview(withoutPreview)).toBeNull();
+
+    await writeFile(previewSource, png());
+    const withPreview = await repo.saveVersion(state(), "With preview", { snapshotPath: snapshot, previewPath: previewSource });
+    const preview = await repo.readVersionPreview(withPreview);
+    expect(preview?.bytes).toBe(png().length);
+    expect(preview?.png.subarray(0, 8)).toEqual(png().subarray(0, 8));
+    expect(preview?.version).toBe(withPreview);
+
+    // Reading a preview never moves HEAD or rewrites the working tree.
+    expect(await repo.run(["rev-parse", "HEAD"])).toBe(withPreview);
+    expect((await repo.status()).some(entry => entry.includes("previews"))).toBe(false);
+
+    // An earlier version still reports no preview once a later one has one.
+    expect(await repo.readVersionPreview(withoutPreview)).toBeNull();
+
+    // A committed file that is not a PNG is rejected rather than surfaced.
+    await writeFile(join(repo.root, ".photogit/previews/document.png"), "this is not a PNG");
+    await repo.run(["add", "--force", ".photogit/previews/document.png"]);
+    await repo.run(["commit", "-m", "Corrupt preview"]);
+    const corrupt = await repo.run(["rev-parse", "HEAD"]);
+    expect(await repo.readVersionPreview(corrupt)).toBeNull();
+
+    await expect(repo.readVersionPreview("not-a-version")).rejects.toThrow();
   });
 
   it("inspects version details and exports prior PSD bytes without changing HEAD or current files", async () => {

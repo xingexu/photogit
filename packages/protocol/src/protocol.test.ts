@@ -37,6 +37,11 @@ describe("helper protocol", () => {
     expect(parseHelperRequest({ ...base, operation: "openVersion", version: "HEAD" })).toHaveProperty("version", "HEAD");
     expect(parseHelperRequest({ ...base, operation: "versionDetails", version: "HEAD" })).toHaveProperty("version", "HEAD");
     for (const version of ["--help", "main", "../file", "abcd\n1234"]) expect(() => parseHelperRequest({ ...base, operation: "versionDetails", version })).toThrow(/version ID/);
+    expect(parseHelperRequest({ ...base, operation: "versionPreview", version: "HEAD" })).toHaveProperty("version", "HEAD");
+    expect(parseHelperRequest({ ...base, operation: "versionPreview", version: "7263180" })).toHaveProperty("operation", "versionPreview");
+    for (const version of ["--help", "main", "../file", "abcd\n1234"]) expect(() => parseHelperRequest({ ...base, operation: "versionPreview", version })).toThrow(/version ID/);
+    expect(() => parseHelperRequest({ ...base, operation: "versionPreview" })).toThrow(/version ID/);
+    expect(() => parseHelperRequest({ ...base, operation: "versionPreview", version: "7263180", branch: "main" })).toThrow();
     expect(parseHelperRequest({ ...base, operation: "compareBranches", branch: "origin/design", base: "main" })).toHaveProperty("base", "main");
     expect(() => parseHelperRequest({ ...base, operation: "compareBranches", branch: "" })).toThrow(/branch name/);
   });
