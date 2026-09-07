@@ -54,6 +54,7 @@ async function boot() {
 }
 
 function setupDemoPanel() {
+  window.PhotoGitWorkspace.setup(document, { navigate: selectTab, openCommands: openCommandPalette });
   byId("startup-state").hidden = true;
   for (const id of ["global-search", "header-menu"]) byId(id).setAttribute("aria-disabled", "false");
   byId("onboarding").hidden = true;
@@ -108,6 +109,12 @@ function setupDemoPanel() {
   byId("section-nav").addEventListener("keydown", handleTabKeyboard);
   document.addEventListener("keydown", handleGlobalKeyboard);
   ["message", "history-search", "new-branch-name", "tag-name"].forEach(bindFieldState);
+  for (const [id, submit] of [["message", saveVersion], ["new-branch-name", createBranch], ["tag-name", createTag]]) {
+    byId(id).addEventListener("keydown", event => {
+      if (event.key !== "Enter" || event.repeat || busyNow) return;
+      event.preventDefault(); event.stopPropagation(); submit();
+    });
+  }
   document.getElementById("plugins-menu-trigger").addEventListener("click", togglePluginsMenu);
   document.getElementById("open-photogit").addEventListener("click", openPhotoGit);
   document.getElementById("pg-dock-tab").addEventListener("click", openPhotoGit);
@@ -399,6 +406,7 @@ function renderChanges() {
   changes.forEach((change, index) => {
     const row = document.createElement("div");
     row.className = "list-row change-row";
+    row.dataset.domain = change.domain;
     row.tabIndex = 0;
     row.setAttribute("role", "button");
     row.setAttribute("aria-pressed", "false");
@@ -423,6 +431,7 @@ function renderChanges() {
     });
     container.appendChild(row);
   });
+  window.PhotoGitWorkspace.refreshChanges(document);
 }
 
 function renderHistory() {
@@ -444,6 +453,14 @@ function renderHistory() {
       const message = escapeHtml(version.message);
       const shortId = escapeHtml(version.shortId);
       row.innerHTML = `<span class="history-marker" aria-hidden="true">${historyIcon()}</span><span class="row-copy"><strong title="${message}">${message}</strong></span><span class="commit-id" title="Checkpoint ${shortId}">${shortId}</span>`;
+      row.setAttribute("role", "button"); row.tabIndex = 0;
+      row.setAttribute("aria-label", `Inspect version ${version.shortId}: ${version.message}`);
+      row.addEventListener("click", () => {
+        openDetail(`Version ${version.shortId}`);
+        byId("detail-content").textContent = `${version.message}\n${version.author} · ${version.date}\n\nSimulated preview only. The Photoshop panel can inspect and open a separate PSD copy; no file is opened here.`;
+        byId("close-detail").focus();
+      });
+      row.addEventListener("keydown", activateOnKeyboard);
       entries.appendChild(row);
     });
     container.appendChild(section);
@@ -500,6 +517,7 @@ function createDemoReviewCard(review) {
 }
 
 async function scan() {
+  if (busyNow) return;
   await simulateBusy("Reviewing Photoshop layers…", 420);
   renderChanges();
   addActivity(`Found ${changes.length} semantic layer changes.`);
@@ -507,6 +525,7 @@ async function scan() {
 }
 
 async function saveVersion() {
+  if (busyNow) return;
   const message = byId("message").value.trim();
   if (!message) return flashResult("Describe what changed before saving.", true);
   await simulateBusy("Saving exact PSD, preview, and semantic data…", 620);
@@ -555,12 +574,22 @@ function sync(message, status) {
 }
 
 async function simulateBusy(label, duration) {
+  busyNow = true;
+  document.body.classList.add("is-busy");
   const card = mount.querySelector(".capture-panel");
   card.classList.add("is-busy");
   byId("result").textContent = label;
   byId("result").className = "";
-  await wait(duration);
-  card.classList.remove("is-busy");
+  byId("save-version").setAttribute("aria-disabled", "true");
+  byId("progress").hidden = false;
+  try { await wait(duration); }
+  finally {
+    busyNow = false;
+    document.body.classList.remove("is-busy");
+    card.classList.remove("is-busy");
+    byId("save-version").setAttribute("aria-disabled", "false");
+    byId("progress").hidden = true;
+  }
 }
 
 function flashResult(message, error = false) {

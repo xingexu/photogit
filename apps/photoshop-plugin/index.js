@@ -2,6 +2,7 @@ const { app, core, action, imaging } = require("photoshop");
 const { storage, entrypoints, shell } = require("uxp");
 const panelModel = require("./panel-model.js");
 const commandDirectory = require("./commands.js");
+const workspaceUI = require("./workspace-ui.js");
 const scans = new panelModel.ScanCoordinator();
 
 entrypoints.setup({
@@ -54,6 +55,7 @@ const surfaceTimers = new Map();
 document.addEventListener("DOMContentLoaded", () => { void initializePanel(); });
 
 function bindPanelEvents() {
+  workspaceUI.setup(document, { navigate: selectTab, openCommands: openCommandPalette });
   bind("choose-project", "click", chooseProject);
   bind("setup-toggle", "click", () => {
     const instructions = document.getElementById("setup-instructions");
@@ -1211,6 +1213,7 @@ function renderChanges(changes, { baselineMissing = false, changeCount = changes
   for (const change of changes.slice(0, MAX_VISIBLE_CHANGES)) {
     const row = document.createElement("div");
     row.className = "list-row change-row";
+    row.dataset.domain = change.domain;
     const selectable = Boolean(change.photoshopId) && change.domain !== "document" && change.category !== "removed";
     if (selectable) {
       row.tabIndex = 0;
@@ -1245,6 +1248,7 @@ function renderChanges(changes, { baselineMissing = false, changeCount = changes
     note.textContent = `Showing ${Math.min(changes.length, MAX_VISIBLE_CHANGES)} of ${changeCount} changes. All layers are included when saving a version.`;
     container.appendChild(note);
   }
+  workspaceUI.refreshChanges(document);
 }
 
 function changeSummary(change) {

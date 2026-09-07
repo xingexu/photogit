@@ -946,6 +946,18 @@ describe("PhotoGit production startup — mocked host and filesystem", () => {
 });
 
 describe("PhotoGit rounded design and label clarity", () => {
+  it("filters actual rendered edits without changing the total or save message", async () => {
+    const p = await panel(); p.connect(); p.evaluate("bindPanelEvents()");
+    p.document.body.classList.remove("is-initializing"); p.id("workspace").hidden = false;
+    p.evaluate("renderChanges(items)", { items: [change(1, { domain: "text" }), change(2, { domain: "structure" })] });
+    p.id<HTMLInputElement>("message").value = "Keep the full document";
+    const filter = p.document.querySelector('[data-change-filter="text"]')! as HTMLElement;
+    filter.click();
+    expect(p.document.querySelectorAll("#changes .change-row:not([hidden])")).toHaveLength(1);
+    expect(p.id("changes-count").textContent).toBe("2");
+    expect(p.id<HTMLInputElement>("message").value).toBe("Keep the full document");
+    expect(p.action.batchPlay).not.toHaveBeenCalled();
+  });
   it("groups scan events with expandable details and separates user actions", async () => {
     const p = await panel();
     p.evaluate('clearActivity(); log("Captured 3 Photoshop layer(s); comparing with the latest version."); log("2 semantic edits found.")');
@@ -989,11 +1001,11 @@ describe("PhotoGit rounded design and label clarity", () => {
       return channels[0]! * 0.2126 + channels[1]! * 0.7152 + channels[2]! * 0.0722;
     };
     const contrast = (a: string, b: string) => { const values = [luminance(a), luminance(b)].sort((x, y) => y - x); return (values[0]! + 0.05) / (values[1]! + 0.05); };
-    const themes = css.match(/^:root(?:\[data-theme="light"\])? \{[^}]+}/gm)!.slice(-2);
+    const themes = css.match(/^:root(?:\[data-theme="light"\])? \{[^}]+}/gm)!;
     expect(themes).toHaveLength(2);
     for (const block of themes) {
       const colors = Object.fromEntries([...block.matchAll(/--([\w-]+):\s*(#[a-f\d]{6})/gi)].map(match => [match[1], match[2]]));
-      for (const surface of ["bg", "surface", "elevated", "input", "selected", "glass-top", "glass-bottom", "glass-well"]) {
+      for (const surface of ["bg", "surface", "elevated", "input", "selected"]) {
         for (const text of ["text", "muted"]) expect(contrast(colors[text]!, colors[surface]!)).toBeGreaterThanOrEqual(4.5);
         for (const boundary of ["border", "focus"]) expect(contrast(colors[boundary]!, colors[surface]!)).toBeGreaterThanOrEqual(3);
       }
@@ -1001,9 +1013,8 @@ describe("PhotoGit rounded design and label clarity", () => {
         expect(contrast(colors["primary-text"]!, colors[state]!)).toBeGreaterThanOrEqual(4.5);
       }
     }
-    expect(css).toContain("--radius: 8px");
-    expect(css).toContain("--radius-panel: 12px");
-    expect(css).toContain("--glass-radius: 22px");
+    expect(css).toContain("--radius: 10px");
+    expect(css).toContain("--radius-panel: 16px");
     expect(css).toContain("prefers-reduced-transparency: reduce");
   });
 });

@@ -1,113 +1,53 @@
-# PhotoGit design system
+# PhotoGit Studio design system
 
-September 5, 2026 · development revision · native UXP, no framework migration.
+September 7, 2026 · development UI · native UXP, no framework migration.
 
 ## Direction
 
-### Silver and graphite (current)
+A neutral silver/graphite workspace with clear task hierarchy, rounded surfaces and restrained depth. This replaces the accumulated editorial/glass/blue-accent overrides with one stylesheet and exactly two theme-token blocks. Green, amber and red are reserved for semantic status. Text remains opaque and readable; there is no backdrop blur or refraction.
 
-All decorative blue accents are removed in favour of neutral glass. Dark primary: #DEDEDE, hover #FFFFFF, pressed #BCBCBC; Light primary: #373737, hover #505050, pressed #202020. Dark/Light focus: #D6D6D6/#555555; selection: #383838/#E2E2E2. Glass borders, wells, reflections, shadows and ambient tints now have equal RGB channels. Green success, amber warning and red error remain semantic signals. The existing glossy gradients, depth, radii and quintic motion are unchanged. Regression tests prevent blue from returning to chrome or primary states. Earlier colour tables below are historical.
-
-### Liquid material revision
-
-Prominent-glass revision (current): surface radius 22px, control radius 18px, active tabs 16px. Dark/Light base tint alpha is now 36%/42%, upper reflection 18%/88%, ambient tint 20%/20%, and lower reflection 7% pale blue/36% white. Dark rim is #D5E0F2. Layered lower reflections and shaded edges make the material visible without backdrop blur. Browser-only progressive shadows add inset rims and two levels of cast shadow; hover raises the shadow and press insets it without moving hit targets. Primary buttons use only their contrast-tested primary/hover/pressed colours for the gradient, never a white sheen. The softer quintic motion from the preceding follow-up is retained. README preview is refreshed from simulated data. Earlier values below describe prior checkpoints.
-
-Depth follow-up: surfaces now use `--glass-tint` at 52% alpha in Dark and 54% in Light, a directional reflection (12% / 72% white), shaded lower edges (#24272D / #AEB8C9), and a faint ambient canvas tint. Floating menus remain opaque for legibility. Supported browsers additionally render inset highlights and lifted shadows; native UXP must be judged by its gradient/rim fallback, not browser screenshots. Reduced-transparency mode restores opaque surfaces and removes decorative gradients.
-
-Motion now uses quintic smootherstep: page/sheet entrance 62%→100% over 320ms, theme out/in 100%→50%→100% over 160ms + 320ms, click feedback 82%→100% over 220ms. The lighter fades avoid full-panel blackouts; action dispatch remains immediate and rapid-toggle cancellation/reduced-motion behavior remains covered by tests.
-
-The latest user-directed style follows [Apple Icon Composer](https://developer.apple.com/icon-composer/): layered surfaces, specular rims, rounded controls, and crisp text. This supersedes the prior no-gradient editorial direction. It is an adaptation, not Apple's native Liquid Glass engine; no refraction or live backdrop blur is claimed. Adobe documents linear gradients as supported UXP backgrounds, so gradients and border highlights provide the native treatment without dependencies or a manifest feature-flag change.
-
-New tokens (dark / light): `--glass-top` #343940 / #FFFFFF; `--glass-bottom` #272727 / #F1F3F7; `--glass-edge` #747D8C / #A5ACB8; `--glass-glint` #B3BFD3 / #FFFFFF; `--glass-well` #202329 / #E8ECF2; `--glass-sheen` white at 10% / 65%; `--glass-shadow` black at 18% / #1B273E at 10%. `--glass-radius` is 18px, controls 12px, list rows 10px. Page/form titles and branding are 16px; body and controls remain 12px. Text stays opaque instead of blurred or refracted. Contrast tests include both gradient endpoints and inset wells. Reduced-transparency media queries remove decorative gradients when supported; shadows are progressive enhancement only. Existing motion timings, commands, IDs, helper operations, and startup logic are unchanged.
-
-Compact, typography-led workspace: small identity, project and connection, document context, natural-width section tabs, active task, quiet sync footer. The restrained navigation and composition of [Martin Sit’s site](https://martinsit.ca/) informed the direction, without copying assets or layout. Save version stays above long change lists. Earlier versions still open separate PSDs; merge remains ordinary Git, not visual blending.
-
-## Tokens
-
-The single production stylesheet `apps/photoshop-plugin/styles.css` defines both themes. Theme colors belong only in the root token blocks; component rules reference semantic names.
-
-| Role/token | Dark | Light |
+| Token | Dark | Light |
 | --- | --- | --- |
-| Canvas `--bg` | #1B1B1B | #EEEEEE |
-| Surface `--surface` | #272727 | #FFFFFF |
-| Elevated `--elevated` | #333333 | #F5F5F5 |
-| Text `--text` | #FFFFFF | #202020 |
-| Supporting text `--muted` | #C9C9C9 | #4B4B4B |
-| Separator `--line` | #3A3A3A | #CCCCCC |
-| Control boundary `--border` | #A0A0A0 | #747474 |
-| Focus `--focus` | #AFC5FF | #365BBB |
-| Selection `--selected` | #30394B | #E1E7F5 |
-| Hover `--hover` | #414141 | #DEDEDE |
-| Pressed `--pressed` | #525252 | #C8C8C8 |
-| Primary `--primary` | #B6C7FF | #365BBB |
-| Primary hover `--primary-hover` | #CCD7FF | #294B9F |
-| Primary pressed `--primary-pressed` | #A4B8F0 | #203E88 |
-| Success `--success` | #91C6A0 | #24683C |
-| Warning `--warning` | #E3C17C | #805900 |
-| Error `--error` | #EEA19A | #A32E28 |
+| Canvas | `#181818` | `#F2F2F2` |
+| Surface | `#242424` | `#FFFFFF` |
+| Supporting text | `#BDBDBD` | `#555555` |
+| Primary control | `#E6E6E6` | `#333333` |
+| Hover | `#393939` | `#E4E4E4` |
+| Pressed | `#494949` | `#D0D0D0` |
 
-Additional tokens define input background, hover/pressed states, inverse primary controls, status surfaces and backdrop. Disabled controls retain their label and use reduced opacity plus `aria-disabled`; disabled controls are not a color-only status signal. Spacing tokens are 4/8/12/16/24/32px. One system sans-serif family throughout, including commands and identifiers: 12px body, controls and supporting text; 14px headings; 18px onboarding title. Semibold is consistently 600. The header title uses 12px at the minimum width. Controls are 32–34px, compact controls at least 28px, radius 8px (12px cards/sheets), motion 120ms with reduced-motion override.
+System sans-serif: 13px body, 12px controls/supporting copy, 18px page titles. Identifiers and command syntax use system monospace. Spacing follows 4/8/12/16/24px. Controls have 10px radii; task surfaces 16px. Primary controls are at least 36px high. Quiet metadata is smaller; it never replaces an accessible control name.
 
-Automated token checks require text and supporting text to exceed 4.5:1, and interactive boundaries/focus to exceed 3:1, against canvas, surface, elevated, input and selected backgrounds in both themes. Primary-button text also exceeds 4.5:1. Separators are intentionally quieter and must not substitute for control boundaries. Native widget internals are an exception requiring separate host verification (below).
+Text/supporting-text tokens meet 4.5:1 on the main surfaces; border/focus tokens meet 3:1 there. Primary text is contrast-tested in all three button states. Decorative separators/rims are intentionally quieter. These source-token tests are not a complete accessibility certification or a measurement of native widget internals.
 
-## Component and responsive rules
+## Page hierarchy
 
-### Editorial refinement (current)
+- **Shared shell:** compact brand, Commands, sun/moon and tools; repository context with a branch-management shortcut; six evenly sized destinations; a quiet sync footer.
+- **Changes:** scan status, save composer, searchable/filterable edit list, optional branch review. A filter is explicitly display-only: the saved PSD still includes the whole document. No-match and no-edits states are distinct.
+- **History:** searchable versions grouped into a timeline. Each row opens inspection. Prior PSDs still open as separate copies.
+- **Branches:** separate working-branch and new-direction tasks, with the original document/branch safety explanation retained.
+- **Reviews:** individual comparison cards, meaningful availability labels and explicit Compare/Merge actions. Conflicts remain explanatory notes, not fake clickable controls.
+- **Activity:** readable session log; existing bounded/expandable scan grouping remains intact.
+- **Docs:** searchable command cards and separate Terminal setup instructions. Commands still use the fixed dispatcher, not a shell.
+- **Setup/loading/dialogs:** shared type, radii and spacing; one loading surface; bounded opaque dialogs with Escape/focus return. No delayed visibility gates were introduced.
 
-Canvas-backed lists replace repeated cards. Only saving and branch management use raised task surfaces; navigation is a quiet segmented surface and sync is a separator-led utility strip. Unavailable merges are explanatory notes rather than disabled buttons. Current branch is visible. Consecutive scan events collapse into expandable groups retaining the latest 50 details; user actions remain separate. Commands use `--mono: "SFMono-Regular", Consolas, monospace`; other typography remains unchanged.
+At narrow widths the six tabs form two equal rows, rather than leaving orphan tabs. At 640px they fit one row. Icons/counts recede at minimum width without removing labels. Reading width is bounded to 760px. The document remains the primary scroll region; no sticky element covers controls in a short Photoshop panel.
 
-Current motion tokens: `--motion-control: 200ms` ease-out; `--motion-nav: 240ms` cubic-bezier(.22,1,.36,1). JS entrances remain 300ms, click feedback 240ms, theme out/in 170/280ms with smoothstep. Native fades interpolate painted colours, with a 180-node ceiling. Empty inline properties are removed, not assigned empty strings (UXP otherwise leaves black borders). No translate, scale, shadows or delayed closing is claimed: host-safe painted fades are preferred over unsupported compositing. Browser reduced motion is covered; native OS preference propagation and physical keyboard testing remain manual acceptance items.
+## Interactions and host constraints
 
-Changed implementation files: `styles.css`, `index.html`, `index.js`, `demo.js`, `motion.js`; verification files: `motion.test.ts`, `ui-contract.test.ts`, `scripts/verify-native-design.mjs`; documentation: this file and `docs/ACCEPTANCE_REPORT.md`. Earlier component notes below describe the preceding boxed revision where they conflict with this section.
+`workspace-ui.js` is shared by production and the simulated preview. It implements case-insensitive change search, All/Visual/Text/Structure display filters, one-click filter reset, branch navigation and panel-local command shortcuts. Rendered changes retain their full count and original selection handlers. Repeated setup is idempotent; startup, busy state and open surfaces block shortcuts. Filter state survives a refresh and resets when no edits remain.
 
-- Rounded task cards separate scanning, saving, changes and reviews. The save card has one field prompt, “What changed?”, instead of a repeated heading, data caption and field label. Duplicate edit-count status and section eyebrows are removed. Layer IDs remain concise inline metadata (and full accessible row names); document identity, warnings and action labels remain.
-- One dominant action per task: Save version, Create branch, or the explicit confirmation. Never hide essential actions behind hover.
-- Changes retains one visible Scan now control and command access. Version message and Save precede the list; error and cancellation controls remain intact.
-- Six text-labeled tabs wrap by content width rather than occupying an oversized equal-column grid. Changes/History/Branches have stronger weight. Active secondary destinations remain visible. Arrow/Home/End navigation and tab semantics are preserved.
-- At 230px, counts in navigation are suppressed, context wraps and Scan takes a full row. At 320px, tabs wrap naturally. At 420px tabs can wrap to a second row without shrinking text. At 900px, reading width remains bounded to 680px. Existing detail sheets are capped at 600px rather than stretched across the window.
-- The document is the primary scrolling region; no sticky header/footer can cover task controls at 200px height. Menus and sheets have their own bounded overflow while open.
-- Setup instructions start collapsed behind an explicit button with expanded state. Technical activity entries over 160 characters disclose their full text on demand; the log retains at most 50 rows, newest first.
-- Docs and the palette use the same fixed command registry. Syntax uses the same readable font; purpose remains one short line where space permits. Terminal setup is separate from panel commands.
-- Focus rings, accessible labels, Escape, dialog focus containment and trigger focus return remain. No Photoshop global modifier shortcut is registered.
+Use **Commands** as the reliable palette entry. `/` outside a field and Cmd/Ctrl+K are handled only if Photoshop delivers those events. Photoshop may intercept modifier keys. No Photoshop-wide shortcut is registered. Enter in the message field still invokes the existing guarded save path.
 
-## Appearance behavior
+CSS hover/press states use distinct gray shades without moving hit targets. Existing timer-driven motion stays bounded: 82%→100% entrance over 380ms, theme 100%→82%→100% over 180ms + 380ms, click 90%→100% over 240ms. Native color blending covers the new surfaces and restores inline styles; work is capped at 180 visible nodes. Reduced motion bypasses fades; reduced transparency removes decorative gradients where supported.
 
-Stronger-motion correction: the earlier native computed-opacity measurements did **not** prove visible container compositing. Holding opacity at 0.2 still rendered full-strength content. Native fades now blend actual text/background/border colours toward the canvas and restore every inline style afterward; a captured intermediate frame visibly dims the content. Work is capped at 180 nodes per animation. Overlapping parent/child animations cancel or skip competing paint snapshots. Raster branding remains unchanged. Browsers retain opacity-based fades.
+Layout uses the [Adobe UXP CSS reference](https://developer.adobe.com/photoshop/uxp/2022/uxp-api/reference-css/) as the host baseline. Shadows, CSS transitions and pointer-only focus suppression are progressive enhancements. Spectrum picker/progress internals may follow Photoshop's own theme. Browser appearance does not establish native appearance.
 
-Current timing is 240ms button feedback, 300ms entrances, and a 170ms fade-out plus 280ms fade-in for themes, using smoothstep easing. Repeated toggles continue from the current fade level instead of flashing back to full opacity. The palette is neutral grey, with distinct hover/pressed shades. Final interaction rules override Light-theme backgrounds; disabled controls do not gain hover feedback. Keyboard focus keeps a distinct blue outline. Historical motion notes below describe the preceding revision.
+## Verification for this revision
 
-Motion refinement: Docs now has only its searchable command directory; the duplicate “Open palette” action is removed. The global Commands button remains available on every page. A shared `motion.js` supplies 140ms button feedback, 160ms tab/sheet entrances and an 80ms fade-out plus 160ms fade-in for appearance changes. Actions are never dispatched by the motion layer or delayed for a button animation. Theme intent is saved immediately; rapid toggles cancel obsolete visual callbacks. Every completed/cancelled fade restores the prior inline opacity. Disabled controls are skipped. Browser reduced-motion and a computed CSS-token fallback bypass motion; native OS preference propagation still depends on host media-query support.
+- 293 tests across 17 files passed, including production panel contracts, motion, 12 shared-workspace tests and a production-rendered filtering regression.
+- Type checks, source security inventory and the 14-file development-package verification passed.
+- `scripts/verify-design.mjs`: six destinations in both themes at 230×200, 320×600, 420×800 and 900×800; empty, 500-long-row, error, setup and loading states; persistence, palette navigation and focus return.
+- `scripts/verify-workspace-interactions.mjs`: both themes; type/text filters, no-match/reset, source-count preservation, branch shortcut, keyboard palette navigation, simulated save with an active filter, version inspection and appearance toggle. No Photoshop or Git operation occurs in this script.
+- Initial native checking was blocked by the unavailable debugger. After Adobe sign-in and relaunching Developer Tools, the loader reported **Loaded** and a local native screenshot confirmed the redesigned dark panel, restored project and **Helper online** status. Runtime debugger evaluation still timed out; native Light mode, all-page layout, Spectrum internals and physical-keyboard acceptance remain unverified. No user artwork was changed, and the native screenshot is not included in the repository.
 
-Opacity is only decorative: actual visibility, focus, busy state and safety guards remain independent. Adobe's [opacity reference](https://developer.adobe.com/photoshop/uxp/2021/uxp/reference-css/Styles/opacity/) documents older host limitations, so CSS transition declarations alone are not counted as native animation evidence. In the installed native host, computed opacity was observed at 1 → 0.63009 → 0.55 → 1 while Dark changed to Light, settling by the 320ms observation. A native Docs click exposed the view immediately at opacity 0.78. Browser timed checks independently observed the fade, clean completion and rapid-toggle correctness. This is not exhaustive frame-rate or all-host accessibility acceptance.
-
-Startup now paints a single rounded loading surface in the saved theme. Setup and workspace stay hidden until restoration finishes, so a connected project never flashes the onboarding screen. Project-grant and pairing reads each have a 15-second deadline; startup helper reads use 5-second deadlines instead of the Git-operation timeout. Late filesystem results cannot reconnect a stale project. A `finally` path releases loading on failures and exposes setup/reconnect controls; theme switching remains available throughout. No animated shimmer, fake percentages or artificial minimum wait is used. Lifecycle initialization is idempotent, and commands/automatic scans are gated during restoration.
-
-Dark is the new-install default. Click the header sun to switch to Light or the moon to switch to Dark. The large appearance selector and saved-preference copy have been removed. The compact repository menu retains its actions and is capped at 256px. `appearance.js` runs synchronously in the document head before the stylesheet/UI startup, validates `photogit.appearance` in localStorage, applies `data-theme`, then updates the icon button’s accessible action name after DOM readiness. Unknown values and read failures use Dark. Write failures retain the selection for the session and show a storage-unavailable message. Project-token storage read failure also no longer prevents startup.
-
-This is an explicit panel preference, not “Match Photoshop.” Text fields use `appearance: none` so native host chrome does not paint dark backgrounds inside Light. Existing native input/keyboard handlers and Spectrum controls are preserved. Native background fields are hidden while sheets or menus are open to prevent UXP paint-through; values are not removed.
-
-Adobe documents [CSS variable support](https://developer.adobe.com/photoshop/uxp/2021/uxp/reference-css/General/variables/) and [UXP layout/control limitations](https://developer.adobe.com/photoshop/uxp/2022/uxp/known-issues/). Native rendering is not assumed to match Chromium.
-
-## Evidence and remaining gaps
-
-Startup follow-up: 267 tests passed (135 panel tests), including restoration, duplicate lifecycle events, command gating, malformed/expired pairing, unavailable preferences, offline helper, late responses, cleanup and notification failure. Final type, source-security and development-package verification passed. [Current simulated matrix](../artifacts/startup-ui-20260905/demo-matrix.json) covers all previous sizes/stress states plus the loading surface in both themes. Final label cleanup keeps Status a stable action, removes the repeated current-branch card and moves “Inspect version” from every visible history row to its accessible action name.
-
-All six destinations were also inspected in both themes in an **actual 318×800 native viewport**, with no inline width constraints or browser emulation. [Native matrix](../artifacts/startup-ui-20260905/native-matrix.json), [Light Branches](../artifacts/startup-ui-20260905/native-light-branches-318x800.png), [Dark History](../artifacts/startup-ui-20260905/native-dark-history-318x800.png). Reload restored the helper and five edits and released the loading gate. Injected native DOM Enter dispatched `/docs`, closed the palette, and searching “merge” returned two commands. This is not physical-keyboard acceptance. `node scripts/verify-native-design.mjs <confirmed-native-window-id> <artifact-directory>` reproduces read-only tab/theme captures through the existing local UDT debugger and restores the original theme/tab.
-
-The 318px evidence closes one actual narrow-window gap only. Spectrum's picker interior and native placeholder styling still follow host conventions; other native sizes, OS/UI scales and all destructive Photoshop scenarios remain outside this pass. No artwork was saved, switched or merged.
-
-Rounded-UI follow-up: 255 tests passed across the full suite and corrected UI-test rerun (123 panel tests). The [updated matrix](../artifacts/rounded-ui-20260905/demo-matrix.json) includes screenshots of all six destinations in both themes at 420×800, plus all previous viewport/stress checks. [Native Dark Changes](../artifacts/rounded-ui-20260905/native-dark-changes-814x800.png) confirms the new tokens, rounded surfaces, concise field prompt and layer labels in Photoshop at 814×800. No artwork was mutated. Earlier evidence below is historical.
-
-Automated source checks: 253 tests passed, including appearance/activity cases, icon-child clicks, Enter/Space, held-key suppression, storage failure and reload persistence; TypeScript, security inventory and development package verification passed. Tests execute production panel behavior with mocked host APIs, not real Photoshop mutations.
-
-`scripts/verify-design.mjs` drives the installed agent-browser CLI against a loopback static server on port 8766. Run `python3 -m http.server 8766 --bind 127.0.0.1 --directory apps/photoshop-plugin`, then `node scripts/verify-design.mjs` (set `PHOTOGIT_BROWSER_CLI` if the executable is not on PATH).
-
-The explicitly simulated demo imports production HTML, CSS, appearance startup and command registry. It does not perform Photoshop/Git operations. Its native Spectrum dropdown is represented by a browser select; do not use that as native Spectrum evidence. The demo’s dispatch remains simulated.
-
-The [matrix results](../artifacts/appearance-toggle-20260905/demo-matrix.json) cover both themes at 230×200, 320×600, 420×800 and 900×800 logical pixels, all six destinations at each size, plus empty, error, setup and 500-long-row states at 320×600. It verifies horizontal bounds after layout settles, theme reload persistence, `/docs` navigation, Escape and focus return. Representative [dark](../artifacts/appearance-toggle-20260905/demo-dark-420x800.png) and [light](../artifacts/appearance-toggle-20260905/demo-light-420x800.png) screenshots are simulated, 420×800 at 1×.
-
-Native Photoshop 27.10.0 was available. Actual panel rendering, menu, appearance changes and branch controls were inspected in an 814×800 logical viewport, captured with native window chrome at 2×. Light persisted after a developer-tools reload; an injected native DOM Enter event dispatched `/docs` successfully. The [Light palette](../artifacts/design-system-20260905/native-light-palette-814x800.png) is native, not simulated. The [320px Dark content constraint](../artifacts/design-system-20260905/native-dark-constrained320-in814x800.png) is explicitly **not** a native viewport resize. Automated mouse resize and system-keyboard delivery did not establish narrow native window or physical text-entry acceptance; those remain unverified. No artwork was saved, switched or merged for this UI pass.
-
-**Remaining theme gap:** the built-in Spectrum branch picker retains Photoshop’s host-theme interior despite panel CSS. It remains readable in the tested dark-host/light-panel combination, but does not fully match the selected panel theme. Native placeholder/selection colors, the picker popup, progress internals, all host themes, Windows and all requested actual native sizes still need acceptance. Do not claim complete native theme coverage. Replacing Spectrum with another library or changing Photoshop’s global theme was deliberately not performed.
-
-The moon/sun follow-up authorizes committing and pushing the complete UI update to GitHub. Native follow-up confirmed the old selector is absent, the accessible action changes with the selected theme, and the preference is saved. See the [native Light header](../artifacts/appearance-toggle-20260905/native-light-814x800.png). Earlier native screenshots linked above are historical evidence; host-widget limitations still apply.
+Run a loopback static preview with `python3 -m http.server 8766 --bind 127.0.0.1 --directory apps/photoshop-plugin`, then run either verification script. Set `PHOTOGIT_BROWSER_CLI` if agent-browser is not on PATH and `PHOTOGIT_DESIGN_ARTIFACTS` to choose a private output directory. Older native screenshots/results remain historical evidence, not proof of this redesign.

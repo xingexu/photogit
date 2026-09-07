@@ -73,14 +73,15 @@ describe("Shared native-compatible PhotoGit motion", () => {
     expect(p.document.documentElement.getAttribute("data-theme")).toBe("dark");
     expect(p.panel.style.opacity || "").toBe("");
   });
-  it("keeps surfaces calm and defines a distinct interactive accent in both themes", async () => {
+  it("keeps chrome neutral silver/graphite with distinct interactive states in both themes", async () => {
     const css = await readFile(resolve("apps/photoshop-plugin/styles.css"), "utf8");
-    const blocks = css.match(/^:root(?:\[data-theme="light"\])? \{[^}]+}/gm)!.slice(-2);
+    const blocks = css.match(/^:root(?:\[data-theme="light"\])? \{[^}]+}/gm)!;
+    expect(blocks).toHaveLength(2);
     for (const block of blocks) {
       const colors = Object.fromEntries([...block.matchAll(/--([\w-]+):\s*(#[a-f\d]{6})/gi)].map(match => [match[1], match[2]]));
-      for (const name of ["bg", "surface", "hover", "pressed", "selected", "focus", "primary", "primary-hover", "primary-pressed", "glass-top", "glass-bottom", "glass-edge", "glass-glint", "glass-well", "glass-underedge"]) {
+      for (const name of ["bg", "surface", "hover", "pressed", "selected", "focus", "primary", "primary-hover", "primary-pressed"]) {
         const rgb = colors[name]!.slice(1).match(/../g)!;
-        expect(rgb).toHaveLength(3);
+        expect(new Set(rgb).size).toBe(1);
       }
       expect(colors.hover).not.toBe(colors.surface);
       expect(colors.pressed).not.toBe(colors.hover);
