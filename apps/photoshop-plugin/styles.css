@@ -9,6 +9,7 @@
   --success: #a6d6ad; --success-surface: #26382d; --warning: #efce8a; --warning-surface: #3d3220;
   --error: #ffb2ac; --error-surface: #432a29; --backdrop: rgba(0,0,0,.5);
   --rim: #494d52; --shine: rgba(255,255,255,.055); --shadow: rgba(0,0,0,.28); --press-veil: rgba(0,0,0,.12);
+  --glass: rgba(44,48,54,.62); --glass-rim: rgba(255,255,255,.085); --glass-top: rgba(255,255,255,.05);
   --space: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-6: 24px;
   --text-small: 12px; --text-body: 13px; --text-subhead: 15px; --text-title: 18px; --text-heading: 22px;
   --control: 32px; --control-tall: 40px;
@@ -26,6 +27,7 @@
   --success: #2b653b; --success-surface: #e8f2eb; --warning: #765006; --warning-surface: #fbf1db;
   --error: #a12e29; --error-surface: #fceceb; --backdrop: rgba(21,29,42,.24);
   --rim: #c5cbd3; --shine: rgba(255,255,255,.65); --shadow: rgba(27,35,48,.11); --press-veil: rgba(0,0,0,.12);
+  --glass: rgba(255,255,255,.78); --glass-rim: rgba(20,28,40,.10); --glass-top: rgba(255,255,255,.85);
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; width: 100%; height: 100%; }
@@ -115,6 +117,30 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .rail-sync svg { width: 15px; height: 15px; margin-right: 9px; }
 .rail-sync.ok { color: var(--success); }
 .rail-sync.warning { color: var(--warning); }
+
+/* Liquid glass: rim light, top sheen and a soft drop, layered on a translucent
+   fill. Blur is applied only where the host supports it; without it the same
+   hierarchy survives as an opaque tonal surface. */
+.view-panel > .liquid-card, .capture-panel, .scan-card.liquid-card, .content-card.liquid-card, .onboarding.liquid-card {
+  border: 1px solid var(--glass-rim); border-radius: var(--radius-panel); background-color: var(--glass);
+  background-image: linear-gradient(180deg, var(--glass-top), rgba(255,255,255,0) 58%);
+  box-shadow: 0 1px 0 var(--shine) inset, 0 14px 30px -18px var(--shadow);
+}
+@supports (backdrop-filter: blur(2px)) {
+  .view-panel > .liquid-card, .capture-panel, .scan-card.liquid-card, .content-card.liquid-card, .onboarding.liquid-card,
+  .tools-menu, .tool-sheet { backdrop-filter: blur(22px) saturate(150%); }
+}
+/* The rail is a solid column, never a floating card. */
+.workspace-rail .liquid-card { border: 0; border-radius: 0; background-image: none; box-shadow: none; }
+
+/* Reference 02: project, branch and document sit in one glass card, each led
+   by a circular badge. Below the rail breakpoint this stays a plain block. */
+@media (min-width: 640px) {
+  .repo-context { padding: 14px 16px; }
+  .repo-meta { display: flex; align-items: center; }
+  .repo-branch, .repo-document { flex: 1 1 0; }
+}
+.repo-branch svg, .repo-document svg { box-sizing: content-box; width: 16px; height: 16px; padding: 8px; margin-right: 10px; border: 1px solid var(--glass-rim); border-radius: 50%; background: var(--elevated); color: var(--muted); }
 /* Changes: dense list first, complete-document composer second. */
 .scan-card { display: flex; align-items: center; flex-wrap: wrap; margin-bottom: 18px; padding-bottom: 16px; border-bottom: 1px solid var(--line); }
 .scan-copy { flex: 1 1 160px; min-width: 0; padding-right: 10px; }
@@ -123,12 +149,18 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 #changes-total, #scan, .progress-track { display: none; }
 .scan-detail { color: var(--muted); font-size: var(--text-small); margin-top: 4px; white-space: pre-line; }
 .watch-status { display: flex; align-items: center; color: var(--muted); font-size: var(--text-small); margin-top: 4px; }
+.change-tally { display: flex; flex-wrap: wrap; width: 100%; margin: 16px -5px 0; }
+.tally-tile { flex: 1 1 90px; min-width: 0; margin: 5px; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--elevated); }
+.tally-tile dd { margin: 0; font-size: var(--text-heading); font-weight: 600; letter-spacing: -.5px; line-height: 1.1; }
+.tally-tile:first-child dd { color: var(--accent); }
+.tally-tile dt { margin-top: 5px; color: var(--muted); font-size: var(--text-small); }
 .watch-status.ready, .watch-status.changed { display: none; }
 .watch-status.error { color: var(--error); }
 .changes-layout { min-width: 0; }
 .changes-card .section-heading h2 { font-size: var(--text-subhead); }
 .capture-panel { padding: 18px 0 4px; border-top: 1px solid var(--line); background: transparent; }
-.capture-title { font-size: var(--text-subhead); font-weight: 600; letter-spacing: -.2px; margin-bottom: 14px; }
+.capture-title { display: flex; align-items: center; font-size: var(--text-subhead); font-weight: 600; letter-spacing: -.2px; margin-bottom: 14px; }
+.capture-title svg { box-sizing: content-box; width: 16px; height: 16px; padding: 9px; margin-right: 11px; border: 1px solid var(--glass-rim); border-radius: 50%; background: var(--elevated); color: var(--muted); }
 .capture-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
 .version-label { color: var(--text); font-weight: 600; }
 .capture-hint { color: var(--muted); font-size: var(--text-small); margin-top: 10px; }
@@ -387,7 +419,7 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
   .nav-item { flex-basis: 14%; }
   .tool-sheet { left: 50%; right: auto; width: 580px; margin-left: -290px; }
 }
-@media (min-width: 900px) {
+@media (min-width: 720px) {
   /* Reference 01: the brand sits in the rail's column so the sidebar reads to
      the top edge, and the remaining header becomes the content top bar. */
   /* The sidebar column runs unbroken from the logo down, so the header carries
@@ -428,6 +460,9 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
   .workspace-content { flex: 1; min-width: 0; padding: 24px; }
   .changes-heading { display: flex; }
   .rail-footer { display: block; margin-top: auto; padding: 16px; border-top: 1px solid var(--line); }
+}
+
+@media (min-width: 900px) {
   .changes-layout { display: flex; align-items: flex-start; }
   .changes-card { flex: 1; min-width: 0; padding-right: 24px; }
   .capture-panel { flex: 0 0 320px; min-width: 0; margin: 0 0 20px; padding: 20px; border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--surface); }
