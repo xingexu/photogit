@@ -3,6 +3,9 @@ const { storage, entrypoints, shell } = require("uxp");
 const panelModel = require("./panel-model.js");
 const commandDirectory = require("./commands.js");
 const workspaceUI = require("./workspace-ui.js");
+const versionInspector = require("./version-inspector.js");
+const branchView = require("./branch-view.js");
+const reviewInspector = require("./review-inspector.js");
 const scans = new panelModel.ScanCoordinator();
 
 entrypoints.setup({
@@ -30,6 +33,7 @@ let projectFolder = null;
 let helperToken = null;
 let busyNow = false;
 let historyEntries = [];
+let selectedVersionId = null;
 let reviewEntries = [];
 let repositoryDetails = null;
 let activityEntryCount = 0;
@@ -179,7 +183,7 @@ function bind(id, event, handler) {
   element.addEventListener(event, invoke);
   if (event === "click" && ["button", "tab", "menuitem"].includes(element.getAttribute("role"))) {
     element.addEventListener("keydown", (keyEvent) => {
-      if (keyEvent.key !== "Enter" && keyEvent.key !== " ") return;
+      if ((keyEvent.key !== "Enter" && keyEvent.key !== " ") || keyEvent.repeat || keyEvent.isComposing) return;
       keyEvent.preventDefault();
       invoke(keyEvent);
     });
@@ -188,7 +192,7 @@ function bind(id, event, handler) {
 
 function bindInputAction(id, handler) {
   document.getElementById(id).addEventListener("keydown", (event) => {
-    if (event.key !== "Enter") return;
+    if (event.key !== "Enter" || event.repeat || event.isComposing) return;
     event.preventDefault();
     event.stopPropagation();
     handler(event);
@@ -284,6 +288,13 @@ async function chooseProject() {
   lastScanCount = null;
   helperToken = null;
   projectFolder = folder;
+  branchPreviews = {};
+  branchView.render(document.getElementById("branch-list"));
+  document.getElementById("branch-menu").textContent = "";
+  document.getElementById("branch-picker").selectedIndex = -1;
+  selectedVersionId = null;
+  versionInspector.render(document.getElementById("history-inspector"), { state: "empty" });
+  reviewInspector.render(document.getElementById("review-inspector"));
   busy(true);
   try {
   const token = await storage.localFileSystem.createPersistentToken(folder);
@@ -365,7 +376,9 @@ async function loadStatus(existingResult) {
 }
 
 async function loadBranches(existingResult) {
+  const folder = projectFolder;
   const result = existingResult || await callHelper("branches");
+  if (folder !== projectFolder) return;
   const picker = document.getElementById("branch-picker");
   const menu = document.getElementById("branch-menu");
   menu.innerHTML = "";
@@ -380,6 +393,28 @@ async function loadBranches(existingResult) {
   document.getElementById("branch-name").textContent = result.current;
   document.getElementById("branch-name-detail").textContent = result.current;
   setCount("branches-count", result.branches.length);
+  const onSwitch = branch => {
+    if (folder !== projectFolder) return show("The project changed. Refresh the branch list before switching.", true);
+    return executeCommand(`switch ${branch}`);
+  };
+  branchView.render(document.getElementById("branch-list"), { branches: result.branches, current: result.current, previews: branchPreviews, onSwitch });
+  // Previews are decorative. Load them in the background so the branch list stays
+  // immediately usable and a slow or missing preview never delays switching.
+  void loadBranchPreviews(folder, result, onSwitch);
+}
+
+async function loadBranchPreviews(folder, result, onSwitch) {
+  const pending = result.branches.filter(branch => /^[a-f0-9]{40,64}$/.test(branch.tip || "") && !(branch.name in branchPreviews)).slice(0, MAX_BRANCH_PREVIEWS);
+  if (!pending.length) return;
+  let loaded = 0;
+  for (const branch of pending) {
+    const preview = await readVersionPreview(branch.tip);
+    if (folder !== projectFolder) return;
+    branchPreviews[branch.name] = preview ? preview.src : null;
+    if (preview) loaded += 1;
+  }
+  if (!loaded || folder !== projectFolder) return;
+  branchView.render(document.getElementById("branch-list"), { branches: result.branches, current: result.current, previews: branchPreviews, onSwitch });
 }
 
 async function loadHistory(existingResult) {
@@ -435,6 +470,10 @@ function createReviewCard(review, compact) {
   const changes = review.changes.length ? review.changes.join("\n") : "No file-level differences.";
   card.innerHTML = `<div class="review-title"><strong>${escapeHtml(review.branch)}</strong><span>${review.ahead} ahead</span></div><div class="review-meta"><span class="${statusClass}">${statusLabel}</span><span>·</span><span>${review.changeCount} ${review.changeCount === 1 ? "file" : "files"}</span></div><div class="review-files" aria-hidden="true">${escapeHtml(changes)}</div><div class="review-actions"><div class="button button-quiet button-small compare-action" role="button" tabindex="0" aria-expanded="false">Compare</div><div class="button ${mergeClass} button-small merge-action" role="button" tabindex="${review.mergeable ? "0" : "-1"}" data-mergeable="${review.mergeable ? "true" : "false"}" ${review.mergeable ? "" : "aria-disabled=\"true\""}>${mergeLabel}</div></div>`;
   const details = card.querySelector(".review-files");
+  const direction = document.createElement("p");
+  direction.className = "review-direction muted";
+  direction.textContent = `${review.branch} → ${repositoryDetails?.currentBranch || document.getElementById("branch-name").textContent || "working branch"}`;
+  card.insertBefore(direction, card.querySelector(".review-meta"));
   const compareAction = card.querySelector(".compare-action");
   const mergeAction = card.querySelector(".merge-action");
   if (!review.mergeable) { mergeAction.setAttribute("role", "note"); mergeAction.removeAttribute("tabindex"); }
@@ -463,10 +502,13 @@ function renderHistory(versions) {
     for (const version of group.entries) {
       const row = document.createElement("div");
       row.className = "list-row history-row";
+      row.dataset.version = version.id;
+      row.classList.toggle("selected", version.id === selectedVersionId);
       const message = escapeHtml(version.message);
       const shortId = escapeHtml(version.shortId);
-      row.innerHTML = `<span class="history-marker" aria-hidden="true">${historyIcon()}</span><span class="row-copy"><strong title="${message}">${message}</strong></span><span class="commit-id" title="Version ${shortId}">${shortId}</span>`;
+      row.innerHTML = `<span class="history-marker" aria-hidden="true">${historyIcon()}</span><span class="row-copy"><strong title="${message}">${message}</strong><span>${escapeHtml(version.author)} · ${escapeHtml(versionInspector.formatDate(version.date, true))}</span></span><span class="commit-id" title="Version ${shortId}">${shortId}</span>`;
       row.setAttribute("role", "button");
+      row.setAttribute("aria-pressed", String(version.id === selectedVersionId));
       row.setAttribute("aria-label", `Inspect version ${version.shortId}: ${version.message}`);
       row.tabIndex = 0;
       row.addEventListener("click", () => inspectVersion(version));
@@ -920,7 +962,9 @@ function openDetail(title, content, actionLabel = "", action = null) {
   closeToolsMenu(true);
   surfaceReturnFocus = document.activeElement;
   document.getElementById("detail-title").textContent = title;
-  document.getElementById("detail-content").textContent = content;
+  const details = document.getElementById("detail-content");
+  details.textContent = content; details.className = "detail-content";
+  for (const attribute of ["role", "aria-label", "aria-busy", "data-state", "data-mergeable"]) details.removeAttribute(attribute);
   const button = document.getElementById("detail-action");
   button.hidden = !action;
   button.textContent = actionLabel;
@@ -939,17 +983,92 @@ function closeDetail() {
 
 function inspectVersion(version) {
   return run("Loading version…", async () => {
-    const details = await callHelper("versionDetails", { version: version.id });
-    const changes = details.changes.map(change => change.summary).join("\n") || "No semantic differences recorded.";
-    openDetail(version.message, `${version.shortId} · ${version.author}\n${version.date}\n\n${changes}\n\nFiles\n${fileSummary(details.files)}\n\nOpen an independent PSD copy. The current document and branch stay unchanged. To restore this design, connect the opened copy and save a new version.`, details.snapshotAvailable ? "Open version copy" : "", details.snapshotAvailable ? () => run("Opening version copy…", async () => { await openSnapshot(version.id, false); closeDetail(); show("Opened a version copy. Connect it explicitly to save it as a new version.", false); }) : null);
+    const folder = projectFolder;
+    const inline = wideWorkspace();
+    const inspector = document.getElementById("history-inspector");
+    if (inline) versionInspector.render(inspector, { state: "loading" });
+    try {
+      const details = await callHelper("versionDetails", { version: version.id });
+      if (folder !== projectFolder) return;
+      // A missing or unreadable preview must never block the version details.
+      const preview = await readVersionPreview(version.id);
+      if (folder !== projectFolder) return;
+      selectedVersionId = version.id;
+      for (const row of document.querySelectorAll(".history-row")) {
+        const active = row.dataset.version === version.id;
+        row.classList.toggle("selected", active); row.setAttribute("aria-pressed", String(active));
+      }
+      const open = () => {
+        if (folder !== projectFolder) return show("The project changed. Select this version again.", true);
+        return run("Opening version copy…", async () => { await openSnapshot(version.id, false); closeDetail(); show("Opened a version copy. Connect it explicitly to save it as a new version.", false); });
+      };
+      if (inline) versionInspector.render(inspector, { details, version, preview, onOpen: open });
+      else {
+        openDetail(`Version ${version.shortId || version.id.slice(0, 8)}`, "", details.snapshotAvailable ? "Open version copy" : "", details.snapshotAvailable ? open : null);
+        versionInspector.render(document.getElementById("detail-content"), { details, version, preview });
+      }
+    } catch (error) {
+      if (inline && folder === projectFolder) versionInspector.render(inspector, { state: "error", error: error.message });
+      throw error;
+    }
   });
+}
+
+// UXP host builds do not all implement window.matchMedia, which would strand the
+// wide inspectors behind a sheet while the stylesheet had already switched to the
+// rail layout. Measure the panel first; keep the query for environments without layout.
+// Saved previews are optional: older versions predate them and a project may not
+// commit one. Any failure degrades to the metadata inspector rather than an error.
+const MAX_BRANCH_PREVIEWS = 12;
+let branchPreviews = {};
+
+async function readVersionPreview(versionId) {
+  try {
+    const result = await callHelper("versionPreview", { version: versionId });
+    if (!result || result.available !== true || typeof result.png !== "string") return null;
+    return { src: `data:${result.contentType === "image/jpeg" ? "image/jpeg" : "image/png"};base64,${result.png}` };
+  } catch { return null; }
+}
+
+function wideWorkspace() {
+  const width = Number(document.documentElement && document.documentElement.clientWidth) || Number(window.innerWidth) || 0;
+  if (width > 0) return width >= 900;
+  return typeof matchMedia === "function" && matchMedia("(min-width: 900px)").matches;
 }
 
 function compareBranch(branch) {
   return run("Comparing branches…", async () => {
-    const result = await callHelper("compareBranches", { branch });
-    const summary = result.changes.map(change => change.summary).join("\n") || "No semantic changes.";
-    openDetail("Compare branches", `${result.baseBranch} ← ${result.incomingBranch}\n${result.ahead} ahead · ${result.behind} behind\n\n${summary}\n\nFiles\n${fileSummary(result.files)}\n\n${result.gitMergeable ? "Ordinary Git merge is available." : "Git merge blocked. Conflicting files must be resolved outside PhotoGit."}\n${result.conflicts.join("\n")}\n${result.warnings.join("\n")}\n\nLayer-level PSD merging is not available in this build.`);
+    const folder = projectFolder;
+    const inline = wideWorkspace();
+    const inspector = document.getElementById("review-inspector");
+    if (inline) {
+      selectTab("reviews"); reviewInspector.render(inspector);
+      inspector.setAttribute("aria-busy", "true");
+      inspector.querySelector("h3").textContent = "Comparing branches…";
+      inspector.querySelector("p").textContent = "Checking incoming changes and merge safeguards.";
+    }
+    try {
+      const result = await callHelper("compareBranches", { branch });
+      if (folder !== projectFolder) return;
+      const review = incoming => {
+        if (folder !== projectFolder) return show("The project changed. Compare this branch again.", true);
+        return mergeReview(incoming);
+      };
+      if (inline) reviewInspector.render(inspector, { comparison: result, onMerge: review, previews: branchPreviews });
+      else {
+        openDetail("Compare branches", "");
+        reviewInspector.render(document.getElementById("detail-content"), { comparison: result, onMerge: review, previews: branchPreviews });
+      }
+    } catch (error) {
+      if (inline && folder === projectFolder) {
+        reviewInspector.render(inspector);
+        inspector.querySelector("h3").textContent = "Comparison unavailable";
+        inspector.querySelector("p").textContent = `${safeInlineText(error.message, 500) || "The comparison could not be loaded."} Try Compare again.`;
+      }
+      throw error;
+    } finally {
+      if (inline && folder === projectFolder) inspector.setAttribute("aria-busy", "false");
+    }
   });
 }
 
@@ -1038,6 +1157,7 @@ function validateHelperResult(operation, value) {
       const entry = requireHelperRecord(branch, `branches.branches[${index}]`);
       requireHelperText(entry.name, `branches.branches[${index}].name`, 200);
       if (typeof entry.current !== "boolean") throw invalidHelperData(`branches.branches[${index}].current`);
+      if (entry.tip !== undefined && (typeof entry.tip !== "string" || (entry.tip !== "" && !/^[a-f0-9]{40,64}$/.test(entry.tip)))) throw invalidHelperData(`branches.branches[${index}].tip`);
     });
   } else if (operation === "refresh") {
     if (result.baselineMissing !== undefined && typeof result.baselineMissing !== "boolean") throw invalidHelperData("refresh.baselineMissing");
@@ -1096,6 +1216,15 @@ function validateHelperResult(operation, value) {
       requireHelperTextArray(result.warnings, "warnings", 1000, 4096);
       if (typeof result.gitMergeable !== "boolean") throw invalidHelperData("gitMergeable");
     } else if (typeof result.snapshotAvailable !== "boolean") throw invalidHelperData("snapshotAvailable");
+  } else if (operation === "versionPreview") {
+    if (typeof result.available !== "boolean") throw invalidHelperData("versionPreview.available");
+    if (result.available) {
+      if (result.contentType !== "image/png") throw invalidHelperData("versionPreview.contentType");
+      requireHelperCount(result.bytes, "versionPreview.bytes");
+      // Strict base64 only; the panel builds the image URL itself and never
+      // interpolates helper text into markup.
+      if (typeof result.png !== "string" || result.png.length < 8 || result.png.length > 24_000_000 || !/^[A-Za-z0-9+/]+={0,2}$/.test(result.png)) throw invalidHelperData("versionPreview.png");
+    }
   } else {
     throw new Error("The PhotoGit helper returned data for an unknown operation.");
   }
@@ -1222,7 +1351,9 @@ function renderChanges(changes, { baselineMissing = false, changeCount = changes
       row.setAttribute("aria-label", `Select changed layer ${change.layerName}, Photoshop layer ${change.photoshopId}. ${changeSummary(change)}`);
     }
     const identityLabel = change.domain === "document" ? "" : `Layer ${change.photoshopId ? `#${change.photoshopId}` : "ID unavailable"}`;
-    row.innerHTML = `<span class="row-glyph ${domainClass(change.domain)}" aria-hidden="true">${domainIcon(change.domain)}</span><span class="row-copy"><strong>${escapeHtml(change.layerName)}</strong><span class="layer-identity">${escapeHtml(identityLabel)}</span><span class="change-detail">${escapeHtml(changeSummary(change))}</span></span><span class="change-domain">${escapeHtml(change.domain)}</span>`;
+    const category = ["added", "removed"].includes(change.category) ? change.category : "modified";
+    const status = { added: "Added", removed: "Removed", modified: "Modified" }[category];
+    row.innerHTML = `<span class="row-glyph ${domainClass(change.domain)}" aria-hidden="true">${domainIcon(change.domain)}</span><span class="row-copy"><strong>${escapeHtml(change.layerName)}</strong><span class="layer-identity">${escapeHtml(identityLabel)}</span><span class="change-detail">${escapeHtml(changeSummary(change))}</span></span><span class="change-domain"><span class="change-state ${category}">${status}</span>${escapeHtml(change.domain)}</span>`;
     const select = () => {
       if (!selectable) return;
       if (!app.documents.length || app.activeDocument.id !== changesDocumentId) return show("The active document changed. Scan it before selecting a layer.", true);
@@ -1277,19 +1408,7 @@ async function selectPhotoshopLayer(photoshopId) {
 }
 
 function commandRow(command, activate) {
-  const row = document.createElement("div");
-  row.className = "command-row";
-  row.setAttribute("role", "button");
-  row.tabIndex = 0;
-  const title = document.createElement("strong"); title.textContent = command.label;
-  const syntax = document.createElement("code"); syntax.textContent = `/${command.example}`;
-  const description = document.createElement("span"); description.textContent = command.description;
-  row.appendChild(title); row.appendChild(syntax); row.appendChild(description);
-  row.addEventListener("click", activate);
-  row.addEventListener("keydown", event => {
-    if (event.key === "Enter" || event.key === " ") { event.preventDefault(); event.stopPropagation(); activate(); }
-  });
-  return row;
+  return workspaceUI.commandRow(document, command, activate);
 }
 
 function renderCommandDocs() {
@@ -1328,6 +1447,7 @@ function openCommandPalette(initial = "") {
   };
   field.addEventListener("input", render);
   field.addEventListener("keydown", event => {
+    if (event.repeat || event.isComposing) return;
     if (event.key === "Enter") { event.preventDefault(); event.stopPropagation(); void executeCommand(field.value); }
     if (event.key === "ArrowDown") { event.preventDefault(); results.firstElementChild?.focus(); }
   });
@@ -1634,12 +1754,15 @@ function busy(active) {
   document.getElementById("workspace").setAttribute("aria-busy", active ? "true" : "false");
   document.getElementById("progress").hidden = !active;
   document.querySelector(".capture-panel").classList.toggle("is-busy", active);
-  for (const id of ["save-version", "scan", "rescan", "pull", "push", "show-status", "new-branch", "refresh", "new-pull-request", "create-tag", "tools-toggle", "header-menu"]) {
+  for (const id of ["save-version", "jump-save", "scan", "rescan", "pull", "push", "show-status", "new-branch", "refresh", "new-pull-request", "create-tag", "tools-toggle", "header-menu"]) {
     const control = document.getElementById(id);
     control.setAttribute("aria-disabled", active ? "true" : "false");
     control.tabIndex = active ? -1 : 0;
   }
   for (const id of ["message", "new-branch-name", "tag-name", "branch-picker"]) document.getElementById(id).disabled = active;
+  for (const control of document.querySelectorAll("[data-message-preset],.branch-switch,.version-inspector-open,.comparison-merge")) {
+    control.setAttribute("aria-disabled", String(active)); control.tabIndex = active ? -1 : 0;
+  }
   for (const control of document.querySelectorAll(".merge-action")) {
     const disabled = active || control.dataset.mergeable !== "true";
     control.setAttribute("aria-disabled", disabled ? "true" : "false");
@@ -1690,8 +1813,14 @@ function log(message) {
     activityEntryCount += 1; setCount("activity-count", activityEntryCount); return;
   }
   const row = document.createElement("div"); row.className = "activity-row";
-  const summary = document.createElement("div");
-  summary.textContent = `[${stamp}] ${text.length > 160 ? text.slice(0, 160) + "…" : text}`;
+  const summary = document.createElement("div"); summary.className = "activity-summary";
+  const icon = document.createElement("span"); icon.className = "activity-icon"; icon.setAttribute("aria-hidden", "true");
+  const errorEvent = /error|failed|timed out|blocked|unavailable/i.test(text);
+  icon.textContent = errorEvent ? "!" : "·"; icon.classList.toggle("error", errorEvent);
+  const time = document.createElement("span"); time.className = "activity-time"; time.textContent = `[${stamp}] `;
+  const copy = document.createElement("span"); copy.className = "activity-copy";
+  copy.textContent = text.length > 160 ? text.slice(0, 160) + "…" : text;
+  summary.appendChild(icon); summary.appendChild(time); summary.appendChild(copy);
   row.appendChild(summary);
   if (text.length > 160) {
     const toggle = document.createElement("div"); toggle.className = "text-link";

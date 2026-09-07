@@ -1,53 +1,124 @@
-# PhotoGit Studio design system
+# PhotoGit: Graphite Studio design system
 
-September 7, 2026 · development UI · native UXP, no framework migration.
+Reference-led redesign · September 7, 2026 · HTML/CSS/JavaScript in Photoshop UXP.
 
-## Direction
+## Reference → component map
 
-A neutral silver/graphite workspace with clear task hierarchy, rounded surfaces and restrained depth. This replaces the accumulated editorial/glass/blue-accent overrides with one stylesheet and exactly two theme-token blocks. Green, amber and red are reserved for semantic status. Text remains opaque and readable; there is no backdrop blur or refraction.
+| Reference | Implementation |
+| --- | --- |
+| Graphite Studio | Shared header; project, branch and document context consolidated into the wide navigation rail; purposeful content/inspector columns. |
+| Compact Inspector | Narrow, labeled two-row navigation; dense changed-layer list; complete-document save composer below it. |
+| Liquid Glass | Restrained overlay rims, tonal depth and soft shadows. Opaque content and fallback surfaces; no simulated refraction or glass around every row. |
+| Silver Workspace | White/silver light theme, restrained blue selection, chronological History beside version details. |
+| Midnight Timeline | Selected-version hierarchy, artwork-led inspector column and separate-copy inspection. Artwork is the preview PNG committed with that version, read back through the `versionPreview` operation. Versions saved before previews existed fall back to the metadata banner. No filmstrip: history is a list, not a reel. |
+| Branch Atelier | Current branch first, then a card grid led by each branch tip's saved preview; branches without one keep the compact row. Separate create action. No fabricated previews or relationship graph. |
+| Review Desk | Source → destination, paired branch-tip previews (shown only when both sides have one), incoming changes, and a separate merge-safety inspector. No fictional accounts, comments or reviewer assignments. |
 
-| Token | Dark | Light |
+These concepts define composition, not new capabilities. Existing project pairing, scan cancellation, operation locking, version saving, branch recovery, merge confirmation and command validation remain authoritative. Do not add fake macOS window controls.
+
+## Tokens and typography
+
+`apps/photoshop-plugin/styles.css` owns the base theme and one light-theme override. Reuse semantic tokens instead of introducing local color palettes.
+
+| Token | Graphite | Silver |
 | --- | --- | --- |
-| Canvas | `#181818` | `#F2F2F2` |
-| Surface | `#242424` | `#FFFFFF` |
-| Supporting text | `#BDBDBD` | `#555555` |
-| Primary control | `#E6E6E6` | `#333333` |
-| Hover | `#393939` | `#E4E4E4` |
-| Pressed | `#494949` | `#D0D0D0` |
+| `--bg` / canvas | `#191a1b` | `#f3f4f6` |
+| `--surface` / content | `#202224` | `#ffffff` |
+| `--elevated` | `#2b2d30` | `#eaedf1` |
+| `--input` | `#191b1d` | `#f6f7f9` |
+| `--overlay` | `#27292c` | `#ffffff` |
+| `--text` | `#f2f3f4` | `#1c2330` |
+| `--muted` | `#b4b7bd` | `#505966` |
+| `--disabled` | `#8c9199` | `#6f7781` |
+| `--line` / decorative separator | `#383b3f` | `#dde1e7` |
+| `--border` / interactive boundary | `#828891` | `#78818d` |
+| `--hover` | `#30343a` | `#e8ecf2` |
+| `--pressed` | `#383e47` | `#dce3ed` |
+| `--selected` | `#293849` | `#e0eafb` |
+| `--focus` | `#9ac6ff` | `#245bb6` |
+| `--accent` | `#afd0ff` | `#245bb6` |
+| `--primary` / `--primary-text` | `#cdd7e4` / `#192330` | `#2d60b5` / `#ffffff` |
+| `--primary-hover` / `--primary-pressed` | `#e5eaf0` / `#bac9dc` | `#234e98` / `#1c4080` |
+| `--success` / `--success-surface` | `#a6d6ad` / `#26382d` | `#2b653b` / `#e8f2eb` |
+| `--warning` / `--warning-surface` | `#efce8a` / `#3d3220` | `#765006` / `#fbf1db` |
+| `--error` / `--error-surface` | `#ffb2ac` / `#432a29` | `#a12e29` / `#fceceb` |
+| `--rim` | `#494d52` | `#c5cbd3` |
+| `--shine` | `rgba(255,255,255,.055)` | `rgba(255,255,255,.65)` |
+| `--shadow` | `rgba(0,0,0,.28)` | `rgba(27,35,48,.11)` |
+| `--backdrop` | `rgba(0,0,0,.5)` | `rgba(21,29,42,.24)` |
 
-System sans-serif: 13px body, 12px controls/supporting copy, 18px page titles. Identifiers and command syntax use system monospace. Spacing follows 4/8/12/16/24px. Controls have 10px radii; task surfaces 16px. Primary controls are at least 36px high. Quiet metadata is smaller; it never replaces an accessible control name.
+- UI family: `-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`. Inputs, placeholders and Spectrum controls request the same family and upright style. Photoshop may retain host-owned italic placeholders; native inspection confirmed this fallback without replacing the actual input with decorative text.
+- `--text-body: 13px`, `--text-small: 12px`, `--text-title: 18px`. Body line-height is 1.5; heading weight 600. Compact section headings use 15–16px; count facts 17px. Only identifiers, syntax, keycaps and minor badges use 11px. Minimum-width navigation also uses 11px to retain every label.
+- `--mono: "SFMono-Regular", Consolas, monospace` for command syntax, commit IDs and technical paths.
+- Spacing tokens: `--space: 4px`, `--space-2: 8px`, `--space-3: 12px`, `--space-4: 16px`, `--space-6: 24px`.
+- Radii: `--radius: 8px` controls, `--radius-panel: 12px` grouped tasks, `--radius-overlay: 16px` menus/sheets. Badges and compact chips use 4–6px.
 
-Text/supporting-text tokens meet 4.5:1 on the main surfaces; border/focus tokens meet 3:1 there. Primary text is contrast-tested in all three button states. Decorative separators/rims are intentionally quieter. These source-token tests are not a complete accessibility certification or a measurement of native widget internals.
+Accent indicates selection/action; green, amber and red communicate actual status. Preserve neutral artwork colors. Decorative separators are intentionally quieter than input boundaries. Contrast tests are source-token checks, not a certification of native widget rendering.
 
-## Page hierarchy
+## Responsive composition
 
-- **Shared shell:** compact brand, Commands, sun/moon and tools; repository context with a branch-management shortcut; six evenly sized destinations; a quiet sync footer.
-- **Changes:** scan status, save composer, searchable/filterable edit list, optional branch review. A filter is explicitly display-only: the saved PSD still includes the whole document. No-match and no-edits states are distinct.
-- **History:** searchable versions grouped into a timeline. Each row opens inspection. Prior PSDs still open as separate copies.
-- **Branches:** separate working-branch and new-direction tasks, with the original document/branch safety explanation retained.
-- **Reviews:** individual comparison cards, meaningful availability labels and explicit Compare/Merge actions. Conflicts remain explanatory notes, not fake clickable controls.
-- **Activity:** readable session log; existing bounded/expandable scan grouping remains intact.
-- **Docs:** searchable command cards and separate Terminal setup instructions. Commands still use the fixed dispatcher, not a shell.
-- **Setup/loading/dialogs:** shared type, radii and spacing; one loading surface; bounded opaque dialogs with Escape/focus return. No delayed visibility gates were introduced.
+All dimensions are logical pixels, not screenshot raster pixels. The manifest supports 230×200 through 2000×2000, with preferred docked size 400×760 and floating size 420×800. The application reading shell stops growing at 1600px.
 
-At narrow widths the six tabs form two equal rows, rather than leaving orphan tabs. At 640px they fit one row. Icons/counts recede at minimum width without removing labels. Reading width is bounded to 760px. The document remains the primary scroll region; no sticky element covers controls in a short Photoshop panel.
+| Available width | Composition |
+| --- | --- |
+| 230–639px | Compact header/context; six labeled tabs in two rows; layer list before save composer. Version/review selection opens a sheet. No permanent sidebar or sticky composer covering content. |
+| 640–899px | Six tabs in one row; otherwise stacked content. Sheets are centered at 580px. |
+| 900–1199px | 236px navigation rail carrying project, branch and document context above the six destinations. Changes: flexible list + 280px composer. History: 250px list + details. Reviews: 290px list + comparison, with status stacked inside the inspector. Branch creation is a separate 260px column. |
+| 1200px+ | 264px navigation rail; 330px composer; 300px History list; 330px review list. Comparison summary and 220px safety inspector can sit side by side. |
 
-## Interactions and host constraints
+Below 360px, decorative navigation glyphs and the extra change-domain column recede. Below 280px, tab counts and footer glyphs recede; destination labels remain. Long names/paths wrap, flex children use `min-width: 0`, and the document remains the main scroll region. At minimum height, controls stay reachable by scrolling rather than being overlaid.
 
-`workspace-ui.js` is shared by production and the simulated preview. It implements case-insensitive change search, All/Visual/Text/Structure display filters, one-click filter reset, branch navigation and panel-local command shortcuts. Rendered changes retain their full count and original selection handlers. Repeated setup is idempotent; startup, busy state and open surfaces block shortcuts. Filter state survives a refresh and resets when no edits remain.
+## Screen and interaction rules
 
-Use **Commands** as the reliable palette entry. `/` outside a field and Cmd/Ctrl+K are handled only if Photoshop delivers those events. Photoshop may intercept modifier keys. No Photoshop-wide shortcut is registered. Enter in the message field still invokes the existing guarded save path.
+- **Changes:** compact scan summary; searchable All/Visual/Text/Structure display filters; aligned name, layer identity, summary and semantic status. No selective-commit checkboxes. Save captures the whole PSD, including filtered-out edits. The 500-character composer has a live count, append-only suggestions and a jump-to-message action; suggestions never truncate an existing draft. No-match and no-edits states are distinct.
+- **History:** chronological, searchable version list with localized times. Selection reveals real commit, author, date, snapshot availability, warnings and recorded edits/files. Narrow sheets and wide inspectors share `version-inspector.js`; opening remains an explicit separate-copy action. Without preview data, a compact metadata banner replaces the artwork column and facts wrap into two columns when space allows. When a preview is supplied, the artwork column leads at a 1.35:1 ratio against the metadata column; `version-inspector.js` accepts only relative `assets/*` image paths flagged `demo: true`, and always captions them as illustrative rather than as a saved PSD preview. Inspector edit/file lists show 40 records initially, with more available on demand.
+- **Branches:** `branch-view.js` presents actual local branch names and current state, current first. Row selection itself does not switch. Explicit Switch delegates to the existing command/confirmation path; the current branch has no Switch button.
+- **Reviews:** `review-inspector.js` separates source → destination, common-ancestor-to-source changes, and safety status. Edits/files/conflicts are limited to 100/500/500 displayed entries with accurate total notices; every warning remains visible. Only an eligible comparison offers **Review merge…**, which delegates to revalidation and confirmation. Known conflicts or contradictory readiness are inert. Ordinary Git merge does not blend PSD layers or resolve Photoshop conflicts.
+- **Activity:** compact chronological feed with aligned time, status mark, existing repetitive-scan grouping and expandable technical detail.
+- **Docs/Commands:** aligned glyph, title, monospace syntax and short description. Search and palette navigation use the fixed command dispatcher, never a shell. Terminal instructions remain separate.
+- **Setup/notices/dialogs:** same type and surface hierarchy; useful next actions, bounded scrollable sheets, visible errors, Escape dismissal and focus return. Native fields beneath a modal are hidden to prevent painting through it.
 
-CSS hover/press states use distinct gray shades without moving hit targets. Existing timer-driven motion stays bounded: 82%→100% entrance over 380ms, theme 100%→82%→100% over 180ms + 380ms, click 90%→100% over 240ms. Native color blending covers the new surfaces and restores inline styles; work is capped at 180 visible nodes. Reduced motion bypasses fades; reduced transparency removes decorative gradients where supported.
+Regular controls are at least 34px high; small controls 30px; fields 36px; the Save action 38px; navigation and menu rows at least 36px. Controls change tone on hover/press without moving their hit areas. Primary actions carry the strongest contrast; not every container gets a bright outline.
 
-Layout uses the [Adobe UXP CSS reference](https://developer.adobe.com/photoshop/uxp/2022/uxp-api/reference-css/) as the host baseline. Shadows, CSS transitions and pointer-only focus suppression are progressive enhancements. Spectrum picker/progress internals may follow Photoshop's own theme. Browser appearance does not establish native appearance.
+Custom controls retain roles, names, Enter/Space activation and explicit disabled checks. Navigation uses labeled tabs and selected state. Buttons respect busy/initializing state and hidden ancestors. Use 2px focus rings; `:focus-visible` suppresses pointer-only rings where supported, with ordinary focus as the fallback. Reduced motion is honored. **Commands** is the reliable palette entry: `/` outside fields and Cmd/Ctrl+K only work when Photoshop delivers those events; no host-wide shortcut is registered.
 
-## Verification for this revision
+## Material, motion and UXP boundaries
 
-- 293 tests across 17 files passed, including production panel contracts, motion, 12 shared-workspace tests and a production-rendered filtering regression.
-- Type checks, source security inventory and the 14-file development-package verification passed.
-- `scripts/verify-design.mjs`: six destinations in both themes at 230×200, 320×600, 420×800 and 900×800; empty, 500-long-row, error, setup and loading states; persistence, palette navigation and focus return.
-- `scripts/verify-workspace-interactions.mjs`: both themes; type/text filters, no-match/reset, source-count preservation, branch shortcut, keyboard palette navigation, simulated save with an active filter, version inspection and appearance toggle. No Photoshop or Git operation occurs in this script.
-- Initial native checking was blocked by the unavailable debugger. After Adobe sign-in and relaunching Developer Tools, the loader reported **Loaded** and a local native screenshot confirmed the redesigned dark panel, restored project and **Helper online** status. Runtime debugger evaluation still timed out; native Light mode, all-page layout, Spectrum internals and physical-keyboard acceptance remain unverified. No user artwork was changed, and the native screenshot is not included in the repository.
+The [Adobe UXP styles reference](https://developer.adobe.com/photoshop/uxp/2022/uxp-api/reference-css/styles/) is the baseline for supported flex layout, colors, borders, radii and typography. Base surfaces remain opaque. Shadows, CSS transitions and selector/media enhancements are optional decoration; losing them must not remove hierarchy or functionality. There is no backdrop blur or refraction dependency. Spectrum styling is explicitly themed, but host-owned internals require native inspection.
 
-Run a loopback static preview with `python3 -m http.server 8766 --bind 127.0.0.1 --directory apps/photoshop-plugin`, then run either verification script. Set `PHOTOGIT_BROWSER_CLI` if agent-browser is not on PATH and `PHOTOGIT_DESIGN_ARTIFACTS` to choose a private output directory. Older native screenshots/results remain historical evidence, not proof of this redesign.
+`--motion-control: 200ms` and `--motion-nav: 288ms` define the timing vocabulary. `motion.js` applies only shallow local opacity: view entry 94%→100% over 288ms, clicked control 96%→100% over 200ms, and the foreground surface after a theme change 97%→100% over 280ms. Theme preference changes immediately. Header/navigation do not fade, no layout dimensions animate, no descendant colors are repainted frame by frame, and no action waits for animation. Overlapping effects cancel cleanly and restore original opacity. If native compositing differs, retain the opaque tonal feedback instead of claiming browser animation proves native behavior.
+
+## Saved previews
+
+PhotoGit commits a preview PNG to `.photogit/previews/document.png` when it saves a version. The `versionPreview` helper operation reads that blob back for any version or branch tip, so every artwork surface shows a real saved preview rather than decoration.
+
+- **Boundaries.** Git-engine caps a preview at 12 MB, requires the committed size to match the bytes read, and verifies the PNG magic number; anything else returns `null`. Reading never moves `HEAD` or touches the working tree. Previews are ordinary blobs — only `*.psd`/`*.psb` are LFS-tracked — so an LFS pointer means the bytes are not in the object database and the preview is treated as absent.
+- **Transport.** The helper returns base64 with an explicit `image/png` content type. The panel validates `available`, `contentType`, `bytes` and a strict base64 charset before building the image URL itself; helper text is never interpolated into markup.
+- **Rendering.** Every preview surface accepts only `data:image/png` or `data:image/jpeg` base64 — never remote URLs, SVG, or filesystem paths. UXP only loads an image once it is attached to the document, so previews are appended before their source is set. Any load failure degrades to the metadata state.
+- **Absence is normal.** Versions saved before previews existed, and branches whose tip has none, show the metadata banner or compact row. Reviews show paired previews only when both branches have one, so a comparison never reads as a diff against nothing.
+- **Cost.** Branch previews load in the background after the branch list is usable, are bounded to 12 per project, and are cached until the project changes. A slow or missing preview never delays branch switching.
+
+## Honest data and validation
+
+The current `versionDetails` response contains version metadata, files, semantic changes, snapshot availability and warnings—not renderable previews, dimensions, color mode or total layer count. The compact PSD-summary fallback explains this; it must not invent a canvas or sample document facts. Branches expose names/current flags, not previews or graph relationships. Reviews expose change data, not side-by-side artwork. A clearly labeled demo may illustrate supported data shapes; it must not imply Photoshop/Git operations occurred. The version renderer's optional local demo-image path is explicitly demo-only and is not a production preview API.
+
+Validation for this revision is pending the implementation report. Historical screenshots or test counts are not acceptance evidence for this redesign. Run:
+
+```sh
+npm test
+npm run check
+npm run verify:security
+npm run package:development
+npm run verify:package
+git diff --check
+```
+
+For the simulated preview, serve `apps/photoshop-plugin` on loopback port 8766, then run `node scripts/verify-design.mjs`, `node scripts/verify-workspace-interactions.mjs`, and `node scripts/verify-reference-layout.mjs`. Set `PHOTOGIT_BROWSER_CLI` if needed and `PHOTOGIT_DESIGN_ARTIFACTS` / `PHOTOGIT_REFERENCE_ARTIFACTS` to private screenshot directories. Browser simulation verifies layout and presentation interactions, not real save/merge correctness.
+
+- [ ] Inspect narrow dark Changes and wide dark Changes at the declared minimum and representative 400/420px, 900px and 1200px+ widths.
+- [ ] Inspect dark/light History selection, Branches, Reviews, Activity and Docs.
+- [ ] Inspect command palette, one dialog, empty, disabled, error and loading states.
+- [ ] Verify wrapping, scroll access, focus return, command navigation, theme persistence, filtering and immediate action dispatch.
+- [ ] Verify the actual Photoshop panel independently, including narrow/wide layout, Spectrum controls and keyboard delivery. Do not change or close user artwork for visual testing.
+
+The final implementation report should state which checks actually ran, link actual screenshots with demo/native labels, and list outstanding native verification. Keep private artwork/screenshots local. No push, publish or deploy step is part of this redesign.

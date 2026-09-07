@@ -30,7 +30,7 @@ async function fixture() {
     const event = new window.Event("keydown", { bubbles: true, cancelable: true });
     Object.assign(event, { key: value, ...extra }); target.dispatchEvent(event); return event;
   };
-  return { document, id, rows, input, search, chip, visible, key, navigate, openCommands, controls, options };
+  return { document, window, id, rows, input, search, chip, visible, key, navigate, openCommands, controls, options };
 }
 
 describe("Studio workspace interactions", () => {
@@ -97,5 +97,102 @@ describe("Studio workspace interactions", () => {
   it("binds listeners once even when setup is repeated", async () => {
     const p = await fixture(); ui.setup(p.document, p.options);
     p.key(p.id("changes-tab"), "/"); expect(p.openCommands).toHaveBeenCalledOnce();
+  });
+});
+
+describe("Version-message presentation controls", () => {
+  it("tracks typed and programmatically reset messages against the actual 500-character limit", async () => {
+    const p = await fixture(); const message = p.id("message") as HTMLInputElement;
+    expect(message.getAttribute("maxlength")).toBe("500");
+    expect(p.id("message-count").textContent).toBe("0/500");
+    message.value = "Color 🎨"; message.dispatchEvent(new p.window.Event("input"));
+    expect(p.id("message-count").textContent).toBe(`${message.value.length}/500`);
+    message.value = ""; p.controls.refreshChanges();
+    expect(p.id("message-count").textContent).toBe("0/500");
+  });
+  it("appends literal suggestions, updates the count, and focuses the draft without running a command", async () => {
+    const p = await fixture(); const message = p.id("message") as HTMLInputElement;
+    const preset = p.document.querySelector<HTMLElement>("[data-message-preset]")!;
+    const focus = vi.spyOn(message, "focus");
+    preset.click();
+    expect(message.value).toBe(preset.dataset.messagePreset);
+    message.value = "Existing draft";
+    p.key(preset, "Enter");
+    expect(message.value).toBe(`Existing draft · ${preset.dataset.messagePreset}`);
+    expect(p.id("message-count").textContent).toBe(`${message.value.length}/500`);
+    expect(focus).toHaveBeenCalledTimes(2);
+    expect(p.navigate).not.toHaveBeenCalled(); expect(p.openCommands).not.toHaveBeenCalled();
+  });
+  it("accepts an exact-limit suggestion but never truncates a draft that is already too long to append", async () => {
+    const p = await fixture(); const message = p.id("message") as HTMLInputElement;
+    const preset = p.document.querySelector<HTMLElement>("[data-message-preset]")!;
+    message.value = "x".repeat(500 - preset.dataset.messagePreset!.length - 3);
+    preset.click(); expect(message.value).toHaveLength(500);
+    expect(p.id("message-count").textContent).toBe("500/500");
+    const preserved = message.value; preset.click();
+    expect(message.value).toBe(preserved);
+  });
+  it("preserves an existing draft exactly when adding a suggestion", async () => {
+    const p = await fixture(); const message = p.id("message") as HTMLInputElement;
+    const preset = p.document.querySelector<HTMLElement>("[data-message-preset]")!;
+    message.value = "  Spaced draft  "; preset.click();
+    expect(message.value).toBe(`  Spaced draft   · ${preset.dataset.messagePreset}`);
+  });
+  it.each(["is-busy", "is-initializing", "detail-sheet", "tag-sheet", "tools-menu", "hidden", "disabled"])("does not change the draft or steal focus while %s", async state => {
+    const p = await fixture(); const message = p.id("message") as HTMLInputElement;
+    const preset = p.document.querySelector<HTMLElement>("[data-message-preset]")!;
+    const focus = vi.spyOn(message, "focus"); message.value = "Keep my draft";
+    if (state.startsWith("is-")) p.document.body.classList.add(state);
+    else if (state === "hidden") p.id("changes-view").hidden = true;
+    else if (state === "disabled") preset.setAttribute("aria-disabled", "true");
+    else p.id(state).hidden = false;
+    preset.click(); p.key(preset, " ");
+    expect(message.value).toBe("Keep my draft"); expect(focus).not.toHaveBeenCalled();
+  });
+  it("ignores key repeats and composition events and does not duplicate listeners", async () => {
+    const p = await fixture(); const message = p.id("message") as HTMLInputElement;
+    const preset = p.document.querySelector<HTMLElement>("[data-message-preset]")!;
+    ui.setup(p.document, p.options);
+    p.key(preset, "Enter", { repeat: true });
+    p.key(preset, "Enter", { isComposing: true });
+    expect(message.value).toBe("");
+    p.key(preset, " "); expect(message.value).toBe(preset.dataset.messagePreset);
+  });
+});
+
+describe("Shared command-row renderer", () => {
+  const command = { id: "branch", label: "Create a branch", example: "branch My direction", description: "Explore another design." };
+  it("renders dynamic command content as text with one decorative icon", async () => {
+    const p = await fixture(); const activate = vi.fn();
+    const row = ui.commandRow(p.document, { id: "<img src=x>", label: "<img src=x onerror=fail()>", example: "save <b>Draft</b>", description: "<script>fail()</script>" }, activate);
+    p.document.body.appendChild(row);
+    expect(row.querySelector("strong").textContent).toBe("<img src=x onerror=fail()>");
+    expect(row.querySelector("code").textContent).toBe("/save <b>Draft</b>");
+    expect(row.querySelector(".command-copy > span").textContent).toBe("<script>fail()</script>");
+    expect(row.querySelector("img, script, b")).toBeNull();
+    expect(row.querySelectorAll("svg")).toHaveLength(1);
+    expect(row.querySelector(".command-glyph").getAttribute("aria-hidden")).toBe("true");
+    expect(row.getAttribute("role")).toBe("button");
+    expect(row.getAttribute("tabindex")).toBe("0");
+    expect(activate).not.toHaveBeenCalled();
+  });
+  it("supports click, Enter and Space exactly once without handling navigation keys", async () => {
+    const p = await fixture(); const activate = vi.fn();
+    const row = ui.commandRow(p.document, command, activate); p.document.body.appendChild(row);
+    row.querySelector("code").click();
+    expect(p.key(row, "Enter").defaultPrevented).toBe(true);
+    expect(p.key(row, " ").defaultPrevented).toBe(true);
+    p.key(row, "ArrowDown"); p.key(row, "Escape"); p.key(row, "Enter", { repeat: true });
+    expect(activate).toHaveBeenCalledTimes(3);
+  });
+  it.each(["disabled", "hidden", "is-busy", "is-initializing", "composing"])("does not activate a command while %s", async state => {
+    const p = await fixture(); const activate = vi.fn();
+    const row = ui.commandRow(p.document, command, activate); p.document.body.appendChild(row);
+    if (state === "disabled") row.setAttribute("aria-disabled", "true");
+    else if (state === "hidden") row.hidden = true;
+    else if (state.startsWith("is-")) p.document.body.classList.add(state);
+    if (state !== "composing") row.click();
+    p.key(row, "Enter", { isComposing: state === "composing" });
+    expect(activate).not.toHaveBeenCalled();
   });
 });

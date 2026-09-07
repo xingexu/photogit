@@ -27,6 +27,8 @@ async function fixture(reduce = false, cssFallback = false) {
     now = end;
   };
   const id = (name: string) => document.getElementById(name)!;
+  id("startup-state").hidden = true;
+  id("workspace").hidden = false;
   return { document, window, context, advance, id, timers, storage, panel: document.querySelector<HTMLElement>(".panel-root")! };
 }
 
@@ -35,21 +37,24 @@ describe("Shared native-compatible PhotoGit motion", () => {
     const p = await fixture();
     const view = p.id("changes-view");
     p.context.PhotoGitMotion.enter(view);
-    expect(Number(view.style.opacity)).toBe(0.82);
-    p.advance(160);
-    expect(Number(view.style.opacity)).toBeCloseTo(0.88, 2);
-    p.advance(240);
+    expect(Number(view.style.opacity)).toBe(0.94);
+    p.advance(144);
+    expect(Number(view.style.opacity)).toBeCloseTo(0.97, 3);
+    p.advance(144);
     expect(view.style.opacity || "").toBe("");
     expect(p.timers.size).toBe(0);
   });
-  it("fades theme out/in, persists intent before the midpoint, and restores opacity", async () => {
+  it("applies and persists the theme immediately with only shallow foreground feedback", async () => {
     const p = await fixture();
     p.id("appearance-toggle").click();
     expect(p.storage.setItem).toHaveBeenCalledWith("photogit.appearance", "light");
-    expect(p.document.documentElement.getAttribute("data-theme")).toBe("dark");
-    p.advance(48); expect(Number(p.panel.style.opacity)).toBeLessThan(1);
-    p.advance(144); expect(p.document.documentElement.getAttribute("data-theme")).toBe("light");
-    p.advance(400); expect(p.panel.style.opacity || "").toBe("");
+    expect(p.document.documentElement.getAttribute("data-theme")).toBe("light");
+    expect(Number(p.id("changes-view").style.opacity)).toBe(0.97);
+    for (const element of [p.panel, p.document.querySelector<HTMLElement>(".app-header")!, p.document.querySelector<HTMLElement>(".section-nav")!]) {
+      expect(element.style.opacity || "").toBe("");
+    }
+    p.advance(288);
+    expect(p.id("changes-view").style.opacity || "").toBe("");
     expect(p.timers.size).toBe(0);
   });
   it("rapid toggles settle on the last intended theme without stale callbacks", async () => {
@@ -62,50 +67,54 @@ describe("Shared native-compatible PhotoGit motion", () => {
     expect(p.timers.size).toBe(0);
     expect(p.panel.style.opacity || "").toBe("");
   });
-  it("reverses a theme fade from its current opacity without flashing fully opaque", async () => {
+  it("restarts local feedback from its current opacity without delaying the next theme", async () => {
     const p = await fixture();
     p.id("appearance-toggle").click(); p.advance(96);
-    const midway = p.panel.style.opacity;
-    expect(Number(midway)).toBeLessThan(0.95);
+    const view = p.id("changes-view");
+    const midway = view.style.opacity;
+    expect(Number(midway)).toBeGreaterThan(0.97);
+    expect(Number(midway)).toBeLessThan(1);
     p.id("appearance-toggle").click();
-    expect(p.panel.style.opacity).toBe(midway);
+    expect(view.style.opacity).toBe(midway);
+    expect(p.document.documentElement.getAttribute("data-theme")).toBe("dark");
     p.advance(800);
     expect(p.document.documentElement.getAttribute("data-theme")).toBe("dark");
     expect(p.panel.style.opacity || "").toBe("");
   });
-  it("keeps chrome neutral silver/graphite with distinct interactive states in both themes", async () => {
-    const css = await readFile(resolve("apps/photoshop-plugin/styles.css"), "utf8");
-    const blocks = css.match(/^:root(?:\[data-theme="light"\])? \{[^}]+}/gm)!;
-    expect(blocks).toHaveLength(2);
-    for (const block of blocks) {
-      const colors = Object.fromEntries([...block.matchAll(/--([\w-]+):\s*(#[a-f\d]{6})/gi)].map(match => [match[1], match[2]]));
-      for (const name of ["bg", "surface", "hover", "pressed", "selected", "focus", "primary", "primary-hover", "primary-pressed"]) {
-        const rgb = colors[name]!.slice(1).match(/../g)!;
-        expect(new Set(rgb).size).toBe(1);
-      }
-      expect(colors.hover).not.toBe(colors.surface);
-      expect(colors.pressed).not.toBe(colors.hover);
-      expect(colors.primary).not.toBe(colors.surface);
-    }
-  });
-  it("animates actual native paint colours and restores all styles, including overlapping controls", async () => {
+  it("never inspects or repaints descendant colours, borders, or layout in the native host", async () => {
     const p = await fixture();
     p.context.require = () => ({});
-    p.context.getComputedStyle = (node: HTMLElement) => ({
+    p.context.getComputedStyle = vi.fn((node: HTMLElement) => ({
       color: "#FFFFFF", backgroundColor: node === p.document.body ? "#1B1B1B" : "#272727", borderColor: "#505050"
-    });
-    p.id("workspace").hidden = false;
+    }));
     const button = p.id("save-version"); const view = p.id("changes-view");
+    button.style.color = "#cccccc";
+    button.style.backgroundColor = "#252525";
+    button.style.borderColor = "#707070";
+    const descendants = vi.spyOn(view, "querySelectorAll");
     p.context.PhotoGitMotion.enter(button);
-    expect(button.style.color).toMatch(/^rgb\(/);
     p.context.PhotoGitMotion.enter(view);
-    expect(view.style.color).toMatch(/^rgb\(/);
-    p.advance(420);
-    for (const node of [view, button]) {
-      expect(node.style.color || "").toBe("");
-      expect(node.style.backgroundColor || "").toBe("");
-      expect(node.style.borderColor || "").toBe("");
-    }
+    expect(button.style.opacity || "").toBe("");
+    p.advance(320);
+    expect(descendants).not.toHaveBeenCalled();
+    expect(p.context.getComputedStyle).not.toHaveBeenCalled();
+    expect(button.style.color).toBe("#cccccc");
+    expect(button.style.backgroundColor).toBe("#252525");
+    expect(button.style.borderColor).toBe("#707070");
+    expect(view.style.transform || "").toBe("");
+    expect(view.style.opacity || "").toBe("");
+    expect(p.timers.size).toBe(0);
+  });
+  it("prioritizes a visible dialog during a theme change without fading its background view", async () => {
+    const p = await fixture(); const dialog = p.id("detail-sheet");
+    dialog.hidden = false;
+    const change = vi.fn();
+    p.context.PhotoGitMotion.theme(change);
+    expect(change).toHaveBeenCalledOnce();
+    expect(Number(dialog.style.opacity)).toBe(0.97);
+    expect(p.id("changes-view").style.opacity || "").toBe("");
+    expect(p.panel.style.opacity || "").toBe("");
+    p.advance(288);
     expect(p.timers.size).toBe(0);
   });
   it.each([false, true])("respects reduced motion (CSS fallback: %s)", async fallback => {
@@ -133,6 +142,56 @@ describe("Shared native-compatible PhotoGit motion", () => {
     view.hidden = false;
     expect(view.style.opacity || "").toBe("");
     expect(p.timers.size).toBe(0);
+  });
+  it("skips hidden ancestors and cancels pending motion when an ancestor becomes hidden", async () => {
+    const p = await fixture(); const view = p.id("changes-view");
+    p.context.PhotoGitMotion.enter(view);
+    p.id("workspace").hidden = true;
+    p.advance(16);
+    expect(view.style.opacity || "").toBe("");
+    p.context.PhotoGitMotion.enter(view);
+    expect(p.timers.size).toBe(0);
+  });
+  it("cancels a running transition when reduced motion becomes enabled", async () => {
+    const p = await fixture(); const view = p.id("changes-view");
+    p.context.PhotoGitMotion.enter(view);
+    p.context.matchMedia = () => ({ matches: true });
+    p.advance(16);
+    expect(view.style.opacity || "").toBe("");
+    expect(p.timers.size).toBe(0);
+  });
+  it("restores an element's original inline opacity on cancellation and completion", async () => {
+    const p = await fixture(); const view = p.id("changes-view");
+    view.style.opacity = "0.8";
+    p.context.PhotoGitMotion.enter(view);
+    expect(Number(view.style.opacity)).toBeCloseTo(0.8 * 0.94);
+    p.context.PhotoGitMotion.cancel(view);
+    expect(view.style.opacity).toBe("0.8");
+    p.context.PhotoGitMotion.enter(view);
+    p.advance(288);
+    expect(view.style.opacity).toBe("0.8");
+    expect(p.timers.size).toBe(0);
+  });
+  it("keeps nested click feedback from competing with its parent view's entrance", async () => {
+    const p = await fixture(); const view = p.id("changes-view"); const button = p.id("save-version");
+    button.setAttribute("aria-disabled", "false");
+    p.context.PhotoGitMotion.enter(view);
+    const action = vi.fn(); button.addEventListener("click", action);
+    button.click();
+    expect(action).toHaveBeenCalledOnce();
+    expect(button.style.opacity || "").toBe("");
+    expect(p.timers.size).toBe(1);
+    p.advance(288);
+    expect(p.timers.size).toBe(0);
+  });
+  it("still changes theme synchronously when no foreground surface is available", async () => {
+    const p = await fixture();
+    p.id("workspace").hidden = true;
+    const change = vi.fn();
+    p.context.PhotoGitMotion.theme(change);
+    expect(change).toHaveBeenCalledOnce();
+    expect(p.timers.size).toBe(0);
+    expect(p.panel.style.opacity || "").toBe("");
   });
   it("still changes theme after a storage failure and reports the session-only preference", async () => {
     const p = await fixture(); p.storage.setItem.mockImplementation(() => { throw new Error("Unavailable"); });

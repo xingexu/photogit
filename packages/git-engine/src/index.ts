@@ -26,7 +26,7 @@ export class GitCommandError extends Error {
 }
 
 export type VersionEntry = { id: string; shortId: string; author: string; date: string; message: string };
-export type BranchEntry = { name: string; current: boolean };
+export type BranchEntry = { name: string; current: boolean; tip: string };
 export type ReviewEntry = { branch: string; baseBranch: string; ahead: number; behind: number; changeCount: number; changes: string[]; mergeable: boolean; mergeKind: "git" };
 export type RepositoryInfo = { remoteUrl: string | null; provider: "github" | "local" | "other"; currentBranch: string; baseBranch: string };
 export type FileChange = { path: string; status: string };
@@ -101,9 +101,14 @@ export class GitRepository {
     await this.assertRepository();
     const [current, output] = await Promise.all([
       this.currentBranch(),
-      this.run(["for-each-ref", "--format=%(refname:short)", "refs/heads"])
+      this.run(["for-each-ref", "--format=%(refname:short)%09%(objectname)", "refs/heads"])
     ]);
-    return output.split("\n").filter(Boolean).sort().map((name) => ({ name, current: name === current }));
+    return output.split("\n").filter(Boolean).map((line) => {
+      const separator = line.lastIndexOf("\t");
+      const name = separator === -1 ? line : line.slice(0, separator);
+      const tip = separator === -1 ? "" : line.slice(separator + 1);
+      return { name, current: name === current, tip: /^[a-f0-9]{40,64}$/.test(tip) ? tip : "" };
+    }).sort((first, second) => first.name.localeCompare(second.name));
   }
 
   async createBranch(name: string): Promise<void> {
@@ -437,6 +442,21 @@ export class GitRepository {
     return destination;
   }
 
+  // Reads the preview PNG committed alongside a version. Previews are ordinary
+  // small blobs (only *.psd/*.psb are LFS-tracked), so an LFS pointer here means
+  // the project tracks PNGs too and the bytes are not in the object database.
+  async readVersionPreview(version: string): Promise<{ version: string; bytes: number; png: Buffer } | null> {
+    const id = await this.resolveVersion(version);
+    const entry = await this.run(["ls-tree", "-l", id, "--", ".photogit/previews/document.png"], { allowFailure: true });
+    const match = /^100(?:644|755) blob ([a-f0-9]+)\s+(\d+)\t\.photogit\/previews\/document\.png$/.exec(entry.trim());
+    if (!match) return null;
+    const declared = Number(match[2]);
+    if (!Number.isFinite(declared) || declared < PNG_MAGIC.length || declared > MAX_PREVIEW_BYTES) return null;
+    const png = await readGitBlobBounded(this.root, match[1]!, MAX_PREVIEW_BYTES);
+    if (png.length !== declared || !png.subarray(0, PNG_MAGIC.length).equals(PNG_MAGIC)) return null;
+    return { version: id, bytes: png.length, png };
+  }
+
   private async snapshotSource(version: string): Promise<{ version: string; bytes: number; path?: string; objectId?: string }> {
     const id = await this.resolveVersion(version);
     const entry = await this.run(["ls-tree", "-l", id, "--", "snapshot/document.psd"]);
@@ -502,8 +522,17 @@ export class GitRepository {
   private async reviewBranches(): Promise<BranchEntry[]> {
     const local = await this.branches();
     const names = new Set(local.map(({ name }) => name));
-    const remote = await this.run(["for-each-ref", "--format=%(refname:short)", "refs/remotes"]);
-    return [...local, ...remote.split("\n").filter((name) => name && !name.endsWith("/HEAD") && !names.has(name.slice(name.indexOf("/") + 1))).map((name) => ({ name, current: false }))];
+    const remote = await this.run(["for-each-ref", "--format=%(refname:short)%09%(objectname)", "refs/remotes"]);
+    const remoteEntries: BranchEntry[] = [];
+    for (const line of remote.split("\n")) {
+      if (!line) continue;
+      const separator = line.lastIndexOf("\t");
+      const name = separator === -1 ? line : line.slice(0, separator);
+      const tip = separator === -1 ? "" : line.slice(separator + 1);
+      if (name.endsWith("/HEAD") || names.has(name.slice(name.indexOf("/") + 1))) continue;
+      remoteEntries.push({ name, current: false, tip: /^[a-f0-9]{40,64}$/.test(tip) ? tip : "" });
+    }
+    return [...local, ...remoteEntries];
   }
 
   private async assertAuthorConfigured(): Promise<void> {
@@ -594,6 +623,25 @@ function assertPsdHeader(header: Buffer, bytes: number): void {
     || header.subarray(6, 12).some((value) => value !== 0) || header.readUInt16BE(12) < 1 || header.readUInt16BE(12) > 56
     || header.readUInt32BE(14) < 1 || header.readUInt32BE(18) < 1 || ![1, 8, 16, 32].includes(header.readUInt16BE(22))
     || header.readUInt16BE(24) > 9) throw new Error("The saved snapshot does not have a valid Photoshop PSD/PSB header. No branch changes were made.");
+}
+
+const MAX_PREVIEW_BYTES = 12 * 1024 * 1024;
+const PNG_MAGIC = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+
+async function readGitBlobBounded(root: string, id: string, limit: number): Promise<Buffer> {
+  return new Promise((resolveBlob, reject) => {
+    const child = spawn("git", ["cat-file", "blob", id], { cwd: root, stdio: ["ignore", "pipe", "ignore"] });
+    const timer = setTimeout(() => { child.kill("SIGKILL"); reject(new Error("Reading the saved preview timed out.")); }, GIT_TIMEOUT_MS);
+    const chunks: Buffer[] = [];
+    let total = 0;
+    child.stdout.on("data", (chunk: Buffer) => {
+      total += chunk.length;
+      if (total > limit) { child.kill("SIGKILL"); clearTimeout(timer); reject(new Error("The saved preview is larger than PhotoGit reads into the panel.")); return; }
+      chunks.push(chunk);
+    });
+    child.on("error", (error) => { clearTimeout(timer); reject(error); });
+    child.on("close", () => { clearTimeout(timer); resolveBlob(Buffer.concat(chunks)); });
+  });
 }
 
 async function readGitBlobPrefix(root: string, id: string): Promise<Buffer> {

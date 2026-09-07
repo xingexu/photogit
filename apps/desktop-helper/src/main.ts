@@ -93,6 +93,11 @@ async function executeRequest(payload: HelperRequest, helperConfig: HelperConfig
   }
   if (payload.operation === "history") return { versions: await repository.history(40) };
   if (payload.operation === "versionDetails") return boundedComparison(await repository.versionDetails(payload.version!));
+  if (payload.operation === "versionPreview") {
+    const preview = await repository.readVersionPreview(payload.version!);
+    if (!preview) return { available: false, version: payload.version };
+    return { available: true, version: preview.version, bytes: preview.bytes, contentType: "image/png", png: preview.png.toString("base64") };
+  }
   if (payload.operation === "openVersion") return { outcome: "success", snapshotPath: relative(projectRoot, await repository.exportVersionSnapshot(payload.version!)), version: payload.version };
   if (payload.operation === "compareBranches") return boundedComparison(await repository.compareBranches(payload.branch!, payload.base));
   if (payload.operation === "branches") return { branches: await repository.branches(), current: await repository.currentBranch() };

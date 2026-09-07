@@ -33,7 +33,7 @@ export type StatusRequest = {
 
 export type ProjectActionRequest = {
   protocolVersion: typeof PROTOCOL_VERSION;
-  operation: "history" | "branches" | "refresh" | "createBranch" | "switchBranch" | "pull" | "push" | "reviews" | "mergeBranch" | "createTag" | "pullRequestLink" | "connectDocument" | "versionDetails" | "openVersion" | "compareBranches";
+  operation: "history" | "branches" | "refresh" | "createBranch" | "switchBranch" | "pull" | "push" | "reviews" | "mergeBranch" | "createTag" | "pullRequestLink" | "connectDocument" | "versionDetails" | "openVersion" | "versionPreview" | "compareBranches";
   requestId: string;
   projectRoot: string;
   capture?: DocumentCapture;
@@ -70,7 +70,7 @@ export type BridgeEnvelope = {
 export function parseHelperRequest(value: unknown): HelperRequest {
   if (!isRecord(value)) throw new Error("Request body must be an object.");
   if (value.protocolVersion !== PROTOCOL_VERSION) throw new Error(`Protocol version ${String(value.protocolVersion)} is not supported.`);
-  const operations = ["capture", "status", "history", "branches", "refresh", "createBranch", "switchBranch", "pull", "push", "reviews", "mergeBranch", "createTag", "pullRequestLink", "connectDocument", "versionDetails", "openVersion", "compareBranches"];
+  const operations = ["capture", "status", "history", "branches", "refresh", "createBranch", "switchBranch", "pull", "push", "reviews", "mergeBranch", "createTag", "pullRequestLink", "connectDocument", "versionDetails", "openVersion", "versionPreview", "compareBranches"];
   if (typeof value.operation !== "string" || !operations.includes(value.operation)) throw new Error("Unknown helper operation.");
   if (typeof value.requestId !== "string" || !SAFE_REQUEST_ID.test(value.requestId)) throw new Error("Invalid request ID.");
   if (!isSafePathString(value.projectRoot)) throw new Error("A valid project root is required.");
@@ -79,6 +79,7 @@ export function parseHelperRequest(value: unknown): HelperRequest {
     refresh: ["capture", "documentIdentity"],
     connectDocument: ["documentIdentity", "adopt"],
     versionDetails: ["version"],
+    versionPreview: ["version"],
     openVersion: ["version"],
     compareBranches: ["branch", "base"],
     createBranch: ["branch"],
@@ -100,7 +101,7 @@ export function parseHelperRequest(value: unknown): HelperRequest {
     validateDocumentIdentity(value.documentIdentity);
     if (value.adopt !== undefined && typeof value.adopt !== "boolean") throw new Error("The document adoption choice must be a boolean.");
   }
-  if (["versionDetails", "openVersion"].includes(value.operation) && (typeof value.version !== "string" || (value.version !== "HEAD" && !/^[a-fA-F0-9]{7,64}$/.test(value.version)))) throw new Error("A saved version ID or HEAD is required.");
+  if (["versionDetails", "openVersion", "versionPreview"].includes(value.operation) && (typeof value.version !== "string" || (value.version !== "HEAD" && !/^[a-fA-F0-9]{7,64}$/.test(value.version)))) throw new Error("A saved version ID or HEAD is required.");
   if (["createBranch", "switchBranch", "mergeBranch", "compareBranches"].includes(value.operation) && !isBoundedString(value.branch, 200)) throw new Error("This operation requires a branch name of at most 200 characters.");
   if (value.operation === "createTag" && !isBoundedString(value.tag, 100)) throw new Error("This operation requires a tag name of at most 100 characters.");
   if (["pullRequestLink", "compareBranches"].includes(value.operation) && value.base !== undefined && !isBoundedString(value.base, 200)) throw new Error("The comparison base branch is invalid.");
