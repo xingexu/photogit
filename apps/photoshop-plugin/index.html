@@ -6,16 +6,18 @@
     <title>PhotoGit</title>
     <script src="motion.js"></script>
     <script src="appearance.js"></script>
-    <link rel="stylesheet" href="styles.css?v=41">
-    <script src="index.js?v=41"></script>
+    <link rel="stylesheet" href="styles.css?v=47">
+    <script src="index.js?v=47"></script>
   </head>
   <body class="is-initializing">
     <main class="panel-root">
       <header class="app-header liquid-bar">
-        <div class="pg-mark" role="img" aria-label="PhotoGit"><img src="icons/photogit.png" alt=""></div>
-        <div class="app-title">
-          <h1>PhotoGit</h1>
-          <span>Your creative history</span>
+        <div class="app-brand">
+          <div class="pg-mark" role="img" aria-label="PhotoGit"><img src="icons/photogit.png" alt=""></div>
+          <div class="app-title">
+            <h1>PhotoGit</h1>
+            <span>Your creative history</span>
+          </div>
         </div>
         <div id="global-search" class="header-action command-trigger" role="button" tabindex="0" aria-disabled="true" aria-label="Open commands" title="Open the searchable command palette">
           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 4.5 4.5"/></svg>
@@ -107,9 +109,13 @@
           </div>
           <div id="docs-tab" class="nav-item" role="tab" tabindex="-1" aria-label="Commands and docs" aria-controls="docs-view" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v15M3 4h5c2 0 4 1 4 3 0-2 2-3 4-3h5v14h-5c-2 0-4 1-4 2 0-1-2-2-4-2H3z"/></svg><span>Docs</span></div>
         </nav>
+          <div class="rail-footer">
+            <div id="rail-sync" class="rail-sync"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6v5h-5"/><path d="M18.2 15.4A7 7 0 1 1 18.5 8L20 11"/></svg><span id="rail-sync-label">Not connected</span></div>
+          </div>
         </div>
         <div class="workspace-content">
         <section id="changes-view" class="view-panel" role="tabpanel" aria-labelledby="changes-tab">
+          <div class="view-heading changes-heading"><h2>Changes</h2></div>
           <section class="liquid-card scan-card">
             <div class="scan-copy">
               <div class="title-with-count"><h2 id="change-summary">Waiting for a scan</h2><span id="changes-total">—</span></div>
@@ -147,6 +153,7 @@
           </section>
 
           <section class="liquid-card content-card capture-panel">
+            <h2 class="capture-title">Save new version</h2>
             <div class="capture-heading"><label class="version-label" for="message">What changed?</label><span id="message-count" class="meta-chip" aria-live="off">0/500</span></div>
             <div class="field-shell">
               <span class="field-placeholder" aria-hidden="true">Refined cover typography…</span>
@@ -161,6 +168,14 @@
               <div id="save-version" class="button button-primary" role="button" tabindex="0">Save version</div>
             </div>
             <p class="capture-hint">Saves the whole PSD, including edits hidden by filters.</p>
+            <section id="document-preview" class="document-preview" hidden>
+              <h3 class="preview-title">Preview</h3>
+              <figure id="document-preview-figure" class="preview-figure" hidden>
+                <img id="document-preview-image" alt="Preview saved with the latest version">
+                <figcaption class="fine-print">Latest saved version. Unsaved edits are not shown.</figcaption>
+              </figure>
+              <dl id="document-facts" class="document-facts"></dl>
+            </section>
             <div class="progress-track" aria-hidden="true"><span></span></div>
             <sp-progressbar id="progress" indeterminate hidden aria-label="PhotoGit operation in progress"></sp-progressbar>
           </section>

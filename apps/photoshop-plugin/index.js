@@ -289,6 +289,8 @@ async function chooseProject() {
   helperToken = null;
   projectFolder = folder;
   branchPreviews = {};
+  document.getElementById("document-preview").hidden = true;
+  document.getElementById("document-preview-figure").hidden = true;
   branchView.render(document.getElementById("branch-list"));
   document.getElementById("branch-menu").textContent = "";
   document.getElementById("branch-picker").selectedIndex = -1;
@@ -411,7 +413,7 @@ async function loadBranchPreviews(folder, result, onSwitch) {
     const preview = await readVersionPreview(branch.tip);
     if (folder !== projectFolder) return;
     branchPreviews[branch.name] = preview ? preview.src : null;
-    if (preview) loaded += 1;
+    if (preview) { loaded += 1; if (branch.current === true) setDocumentPreview(preview.src); }
   }
   if (!loaded || folder !== projectFolder) return;
   branchView.render(document.getElementById("branch-list"), { branches: result.branches, current: result.current, previews: branchPreviews, onSwitch });
@@ -570,6 +572,7 @@ async function scanChanges({ automatic = false, eventName = "manual" } = {}) {
         }), { commandName: "Scan PhotoGit document layers" });
       } finally { suppressNotifications = false; }
       check();
+      renderDocumentFacts(capture.document);
       runtimeLog("info", "scan_capture", { source: automatic ? "automatic" : "manual", eventName, layerCount: capture.layers.length });
       log(`Captured ${capture.layers.length} Photoshop layer(s); comparing with the latest version.`);
       setWatchStatus(`Comparing ${capture.layers.length} layers…`, "scanning");
@@ -1028,6 +1031,39 @@ async function readVersionPreview(versionId) {
     if (!result || result.available !== true || typeof result.png !== "string") return null;
     return { src: `data:${result.contentType === "image/jpeg" ? "image/jpeg" : "image/png"};base64,${result.png}` };
   } catch { return null; }
+}
+
+// Reference 01's preview column. Facts come from the scan PhotoGit already runs;
+// the image is the newest saved version, never a render of unsaved edits.
+function renderDocumentFacts(meta) {
+  const section = document.getElementById("document-preview");
+  const list = document.getElementById("document-facts");
+  if (!section || !list) return;
+  list.textContent = "";
+  const facts = [];
+  if (Number(meta?.width) > 0 && Number(meta?.height) > 0) facts.push(["Size", `${Math.round(meta.width)} × ${Math.round(meta.height)} px`]);
+  if (Number(meta?.resolution) > 0) facts.push(["Resolution", `${Math.round(meta.resolution)} ppi`]);
+  if (typeof meta?.mode === "string" && meta.mode) facts.push(["Mode", meta.mode.toUpperCase()]);
+  if (Number(meta?.bitDepth) > 0) facts.push(["Depth", `${Math.round(meta.bitDepth)} bpc`]);
+  if (typeof meta?.name === "string" && meta.name) facts.push(["Document", meta.name]);
+  for (const [label, value] of facts) {
+    const row = document.createElement("div");
+    const term = document.createElement("dt"); term.textContent = label;
+    const detail = document.createElement("dd"); detail.textContent = value;
+    row.append(term, detail); list.appendChild(row);
+  }
+  section.hidden = facts.length === 0;
+}
+
+// The current branch tip is HEAD, so the inspector preview reuses the branch
+// preview already loaded in the background rather than issuing its own request.
+function setDocumentPreview(src) {
+  const figure = document.getElementById("document-preview-figure");
+  const image = document.getElementById("document-preview-image");
+  if (!figure || !image || !src) return;
+  image.addEventListener("error", () => { figure.hidden = true; }, { once: true });
+  figure.hidden = false;
+  image.src = src;
 }
 
 function wideWorkspace() {
@@ -1747,6 +1783,12 @@ function setHelper(label, ok) {
   const element = document.getElementById("helper-status");
   element.className = `repo-state ${ok ? "ok" : "warning"}`;
   document.getElementById("repo-sync-status").textContent = label;
+  // The rail footer mirrors the same real state; it never reports its own.
+  const railLabel = document.getElementById("rail-sync-label");
+  if (railLabel) {
+    railLabel.textContent = label;
+    document.getElementById("rail-sync").className = `rail-sync ${ok ? "ok" : "warning"}`;
+  }
 }
 function busy(active) {
   busyNow = active;
