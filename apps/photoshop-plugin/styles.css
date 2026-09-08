@@ -124,6 +124,9 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .section-nav { display: flex; flex-wrap: wrap; padding: 8px 10px; margin: 0; border-bottom: 1px solid var(--line); background: var(--surface); }
 .nav-item { display: flex; align-items: center; justify-content: center; flex: 1 1 29%; min-width: 0; min-height: 36px; margin: 2px; padding: 8px 5px; border: 1px solid transparent; border-radius: var(--radius); color: var(--muted); font-size: var(--text-small); }
 .nav-item svg { width: 16px; height: 16px; margin-right: 7px; }
+/* A destination name is one word. The global break-anywhere rule let "Changes"
+   split into "Chang / es" once the row stopped wrapping at 640px. */
+.nav-item span { min-width: 0; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .nav-item b { margin-left: 7px; min-width: 20px; padding: 2px 7px; border-radius: 10px; background: var(--primary); color: var(--primary-text); font-size: 11px; font-weight: 600; text-align: center; }
 .nav-item b[data-empty="true"] { display: none; }
 .nav-item.active { background: var(--selected); color: var(--accent); border-color: var(--line); }
@@ -480,7 +483,14 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
 /* Logical pixel breakpoints: minimum 230×200, docked 400, wide workspace 900+. */
 @media (min-width: 640px) {
   .section-nav { flex-wrap: nowrap; }
-  .nav-item { flex-basis: 14%; }
+  /* Equal tracks from zero rather than from 14% of the row, so the count pill
+     and label share the space instead of the label losing it. */
+  .nav-item { flex: 1 1 0; padding-left: 4px; padding-right: 4px; }
+  /* Six destinations share 640px here. The icon is the part that can go: the
+     label names the destination and the pill carries its count. Icons return
+     with the rail at 720px. */
+  .nav-item svg { display: none; }
+  .nav-item b { margin-left: 5px; }
   .tool-sheet { left: 50%; right: auto; width: 580px; margin-left: -290px; }
 }
 @media (min-width: 720px) {
@@ -506,7 +516,7 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
   /* Separate destinations with space rather than rules, so the selected tile
      never collides with a divider. */
   .nav-item { position: relative; flex: 0 0 auto; flex-direction: column; align-items: flex-start; justify-content: center; min-height: 76px; padding: 14px 14px 15px; margin: 3px 0; border: 1px solid transparent; border-radius: var(--radius); font-size: var(--text-body); }
-  .nav-item svg { width: 20px; height: 20px; margin: 0 0 11px; transition: transform var(--motion-nav) var(--ease-liquid); }
+  .nav-item svg { display: block; width: 20px; height: 20px; margin: 0 0 11px; transition: transform var(--motion-nav) var(--ease-liquid); }
   #changes-tab svg { margin-left: -5px; }
   #history-tab svg, #branches-tab svg, #reviews-tab svg { margin-left: -3px; }
   #activity-tab svg, #docs-tab svg { margin-left: -2px; }
