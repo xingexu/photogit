@@ -55,4 +55,16 @@ describe("PhotoGit reveal", () => {
     expect(list.some((row: any) => row.classList.contains("is-revealing"))).toBe(false);
     expect(list[1].style.getPropertyValue("--reveal-delay")).toBe("");
   });
+
+  it("never hides a row or removes it from the document", async () => {
+    const { document, reveal, rows } = await revealFixture();
+    const list = rows(5);
+    reveal.stagger(list);
+    expect(document.getElementById("list")!.children.length).toBe(5);
+    for (const row of list) {
+      expect(row.hidden).toBeFalsy();
+      expect(row.style.getPropertyValue("display")).toBe("");
+      expect(row.getAttribute("aria-hidden")).toBeNull();
+    }
+  });
 });
