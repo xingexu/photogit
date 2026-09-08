@@ -207,7 +207,6 @@
 .recording .demo-cursor { transition-duration: 1.38s, 1.38s, .48s; }
 .recording .demo-cursor.click span { animation-duration: 1.44s; }
 .recording .demo-finale { transition-duration: 2.1s; }
-.recording .progress-track span { animation-duration: 3.45s; }
 
 @keyframes cursor-click {
   0% { opacity: .8; transform: scale(.4); }

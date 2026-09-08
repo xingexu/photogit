@@ -202,7 +202,6 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .scan-card { display: flex; align-items: flex-start; flex-wrap: wrap; margin-bottom: 18px; }
 .scan-copy { flex: 1 1 160px; min-width: 0; padding-right: 10px; }
 .scan-copy h2 { font-size: var(--text-subhead); font-weight: 600; letter-spacing: -.2px; }
-.progress-track { display: none; }
 .scan-detail { color: var(--muted); font-size: var(--text-small); margin-top: 4px; white-space: pre-line; }
 .watch-status { display: flex; align-items: center; color: var(--muted); font-size: var(--text-small); margin-top: 4px; }
 .change-tally { display: flex; flex-wrap: wrap; width: 100%; gap: 10px; margin: var(--space-4) 0 2px; }
@@ -238,7 +237,14 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .capture-actions > .button { flex: 1; }
 .message-presets { display: flex; flex-wrap: wrap; margin: 8px -3px 0; }
 .preset { padding: 5px 8px; margin: 3px; border: 1px solid var(--line); border-radius: var(--radius-chip); color: var(--muted); font-size: var(--text-small); background: var(--elevated); }
-sp-progressbar { width: 100%; margin-top: 12px; color: var(--accent); }
+/* Busy feedback. One CSS track serves both hosts: the browser preview has no
+   <sp-progressbar>, and a host that cannot animate still shows the bar. */
+.progress-track { position: relative; width: 100%; height: 3px; margin-top: 10px; overflow: hidden; border-radius: 2px; background: var(--line); }
+.progress-track span { position: absolute; top: 0; bottom: 0; left: 0; width: 40%; border-radius: inherit; background: var(--accent); animation: photogit-progress 1.4s var(--ease-liquid) infinite; }
+@keyframes photogit-progress {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(250%); }
+}
 .button { display: flex; align-items: center; justify-content: center; min-height: 38px; padding: 8px 14px; border: 1px solid transparent; border-radius: var(--radius); font-size: var(--text-body); font-weight: 500; text-align: center; line-height: 1.4; }
 .button svg { position: relative; width: 16px; height: 16px; margin-right: 7px; }
 .button-primary { background: var(--primary); color: var(--primary-text); border-color: var(--primary); box-shadow: inset 0 1px 0 var(--shine), 0 2px 6px var(--shadow); }
@@ -619,6 +625,8 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
   [data-depth]::before { opacity: 0 !important; }
   .tool-sheet:not([hidden]) { animation: none !important; opacity: 1 !important; transform: none !important; }
   .is-revealing { animation: none !important; opacity: 1 !important; transform: none !important; }
+  /* A still bar is still a busy signal. */
+  .progress-track span { animation: none !important; width: 100%; transform: none !important; opacity: .6; }
   [role="button"]:active, [role="tab"]:active, [role="menuitem"]:active,
   .nav-item:hover svg, .nav-item:hover b { transform: none !important; }
 }
