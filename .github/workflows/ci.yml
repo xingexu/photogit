@@ -46,6 +46,41 @@ jobs:
           path: release/photogit-*-development.zip
           if-no-files-found: error
 
+  suites:
+    name: Suite · ${{ matrix.suite }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        suite:
+          - panel-depth
+          - panel-counter
+          - panel-motion
+          - panel-contract
+          - panel-branches
+          - panel-versions
+          - panel-reviews
+          - panel-workspace
+          - panel-manifest
+          - helper
+          - engine
+          - protocol
+          - differ
+          - merge
+          - serializer
+          - schema
+          - cli
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npm run test:${{ matrix.suite }}
+
   audit:
     name: Dependency audit
     runs-on: ubuntu-latest
