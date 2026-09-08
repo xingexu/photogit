@@ -23,6 +23,8 @@
   --radius-chip: 9px; --radius: 13px; --radius-panel: 20px; --radius-overlay: 26px;
   --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --mono: "SFMono-Regular", Consolas, monospace;
+  --tilt-x: 0deg; --tilt-y: 0deg; --pointer-x: 50%; --pointer-y: 50%;
+  --depth-lift: 0px; --depth-perspective: 900px; --depth-sheen: rgba(255,255,255,.16);
   --motion-enabled: 1; --motion-control: 320ms; --motion-nav: 480ms; --motion-press: 200ms;
   --ease-liquid: cubic-bezier(.22,.9,.24,1);
 }
@@ -36,6 +38,7 @@
   --error: #a12e29; --error-surface: #fceceb; --backdrop: rgba(21,29,42,.24);
   --rim: #c5cbd3; --shine: rgba(255,255,255,.65); --shadow: rgba(27,35,48,.11); --press-veil: rgba(0,0,0,.12);
   --glass: rgba(255,255,255,.86); --glass-rim: rgba(90,120,180,.28); --glass-top: rgba(255,255,255,1); --nested: #ffffff;
+  --depth-sheen: rgba(255,255,255,.55);
   --glass-glow:
     0 1px 0 rgba(255,255,255,1) inset,
     0 0 0 1px rgba(255,255,255,.9),
@@ -79,7 +82,8 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
    (a lightening veil dropped the primary button's label to 4.24). The command
    trigger is excluded because its ::after carries the shortcut hint. */
 [role="button"]:not(.command-trigger)::after, [role="tab"]::after, [role="menuitem"]::after {
-  content: ""; position: absolute; inset: 0; border-radius: inherit; background: var(--press-veil);
+  content: ""; position: absolute; inset: 0; border-radius: inherit;
+  background: radial-gradient(circle at var(--ripple-x, 50%) var(--ripple-y, 50%), var(--press-veil) 0%, var(--press-veil) 40%, transparent 78%);
   opacity: 0; pointer-events: none; transition: opacity var(--motion-nav) var(--ease-liquid);
 }
 [role="button"]:not(.command-trigger):not([aria-disabled="true"]):active::after,
@@ -150,6 +154,28 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 }
 /* Every glass card gets the same internal room, so nothing sits on its border. */
 .view-panel > .liquid-card, .capture-panel, .scan-card.liquid-card, .content-card.liquid-card, .onboarding.liquid-card { padding: 18px var(--space-5); }
+/* Depth · a surface marked data-depth leans a couple of degrees away from the
+   pointer and lifts slightly toward it. The tilt tokens are written by depth.js
+   and default to flat, so a host that never fires the events, or one that
+   cannot composite 3D transforms, renders exactly the surface above. */
+@supports (transform: perspective(600px) rotateX(1deg)) {
+  [data-depth] {
+    transform: perspective(var(--depth-perspective)) rotateX(var(--tilt-x)) rotateY(var(--tilt-y)) translateZ(var(--depth-lift));
+    transition: transform var(--motion-nav) var(--ease-liquid), box-shadow var(--motion-nav) var(--ease-liquid);
+  }
+  [data-depth].is-depth-active { --depth-lift: 5px; }
+}
+/* A specular highlight that follows the pointer across the glass. It sits in a
+   pseudo-element behind pointer events, so it can never intercept a click. */
+[data-depth] { position: relative; }
+[data-depth]::before {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 0;
+  background: radial-gradient(200px circle at var(--pointer-x) var(--pointer-y), var(--depth-sheen), rgba(255,255,255,0) 70%);
+  opacity: 0; transition: opacity var(--motion-nav) var(--ease-liquid);
+}
+[data-depth].is-depth-active::before { opacity: 1; }
+[data-depth] > * { position: relative; z-index: 1; }
+
 /* The rail is a solid column, never a floating card. */
 .workspace-rail .liquid-card { border: 0; border-radius: 0; background-image: none; box-shadow: none; }
 
@@ -566,6 +592,13 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
   /* Removing the transition alone would leave the press and hover transforms
      snapping between states, which is the movement the setting asks to avoid.
      Drop the displacement itself and let colour carry the feedback. */
+  /* Depth is movement by definition; reduced motion removes it outright rather
+     than freezing it mid-lean. */
+  [data-depth] { transform: none !important; }
+  [role="button"]::after, [role="tab"]::after, [role="menuitem"]::after { background: var(--press-veil) !important; }
+  [data-depth]::before { opacity: 0 !important; }
+  .tool-sheet:not([hidden]) { animation: none !important; opacity: 1 !important; transform: none !important; }
+  .is-revealing { animation: none !important; opacity: 1 !important; transform: none !important; }
   [role="button"]:active, [role="tab"]:active, [role="menuitem"]:active,
   .nav-item:hover svg, .nav-item:hover b { transform: none !important; }
 }
@@ -579,3 +612,114 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
   }
   .app-header, .tools-menu, .tool-sheet { box-shadow: none; }
 }
+
+/* --- Interaction polish ------------------------------------------------- */
+/* The tally tiles are readouts, not controls, so they get a light hover only:
+   the rim warms and the surface rises. No cursor change, no press state. */
+.tally-tile { transition: border-color var(--motion-control) var(--ease-liquid), box-shadow var(--motion-control) var(--ease-liquid), background-color var(--motion-control) var(--ease-liquid); }
+.tally-tile:hover { border-color: var(--focus); box-shadow: 0 1px 0 var(--shine) inset, 0 0 22px -8px rgba(150,190,255,.55); }
+
+/* The context badges are the panel's only circular forms; letting them take the
+   accent on hover ties the row to the pointer without moving any text. */
+.context-badge { transition: color var(--motion-control) var(--ease-liquid), border-color var(--motion-control) var(--ease-liquid), background-color var(--motion-control) var(--ease-liquid); }
+.repo-project:hover .context-badge, .repo-branch:hover .context-badge, .repo-document:hover .context-badge { color: var(--accent); border-color: var(--focus); background: var(--selected); }
+
+/* Message presets read as chips; on hover they fill rather than just brighten,
+   which is the difference between a label and something you can pick. */
+.preset { transition: color var(--motion-control) var(--ease-liquid), border-color var(--motion-control) var(--ease-liquid), background-color var(--motion-control) var(--ease-liquid); }
+.preset[role="button"]:not([aria-disabled="true"]):hover { color: var(--text); border-color: var(--focus); background: var(--selected); }
+
+/* Document facts are static chips. A rim that lifts on hover makes the row
+   scannable with the pointer without suggesting any of them can be clicked. */
+.document-facts div { transition: border-color var(--motion-control) var(--ease-liquid); }
+.document-facts div:hover { border-color: var(--border); }
+
+/* The saved preview is the one piece of real artwork in the panel. Hovering it
+   eases in a slight zoom inside a clipped frame, so the frame never moves. */
+.preview-figure { overflow: hidden; border-radius: var(--radius); }
+.preview-figure img { transition: transform var(--motion-nav) var(--ease-liquid); }
+.preview-figure:hover img { transform: scale(1.03); }
+
+/* A button's icon leads its label, so it leads the hover too — a couple of
+   pixels of travel, which reads as intent rather than as a jump. */
+.button svg { transition: transform var(--motion-control) var(--ease-liquid); }
+.button[role="button"]:not([aria-disabled="true"]):hover svg { transform: translateX(-2px); }
+
+/* The active section is already coloured; a short rule under it gives the tab
+   row a fixed reading line, which is what makes the selection obvious at a
+   glance in a narrow panel. */
+.nav-item.active::before {
+  content: ""; position: absolute; left: 50%; bottom: 3px; width: 18px; height: 2px; margin-left: -9px;
+  border-radius: 2px; background: var(--accent); pointer-events: none;
+}
+
+/* The badge count is the one number in the navigation. Growing it very
+   slightly on hover confirms the row is live without moving its neighbours. */
+.nav-item b { transition: transform var(--motion-control) var(--ease-liquid); }
+.nav-item:hover b { transform: scale(1.08); }
+
+/* A change row slides a few pixels toward the pointer. The list has a fixed
+   left edge, so the travel reads as focus rather than as reflow. */
+.list-row[role="button"]:hover { transform: translateX(3px); }
+.list-row.selected { transform: translateX(3px); }
+
+/* A selected row keeps a solid accent edge so the selection survives when the
+   row is scrolled under the pointer of a different row. */
+.list-row.selected { box-shadow: inset 3px 0 0 var(--accent), 0 0 26px -12px rgba(150,190,255,.5); }
+
+/* Branch rows are cards in a grid. Lifting one on hover separates it from the
+   grid without changing any cell's size. */
+.branch-row { transition: border-color var(--motion-control) var(--ease-liquid), background-color var(--motion-control) var(--ease-liquid), box-shadow var(--motion-control) var(--ease-liquid); }
+.branch-row:hover { border-color: var(--glass-rim); background: var(--hover); box-shadow: 0 0 28px -12px rgba(150,190,255,.5); }
+
+/* Focus is a keyboard state and must outrank every pointer decoration, so it
+   carries a glow in addition to the outline the panel already draws. */
+[role="button"]:focus-visible, [role="tab"]:focus-visible, [role="menuitem"]:focus-visible {
+  box-shadow: 0 0 0 4px rgba(154,198,255,.22);
+}
+
+/* Reveal · a freshly rendered row eases up into place. The animation runs on a
+   row that is already present and already interactive, so it can only ever be
+   decoration over content the user can use. */
+@keyframes photogit-reveal {
+  from { opacity: .01; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+.is-revealing { animation: photogit-reveal var(--motion-nav) var(--ease-liquid) var(--reveal-delay, 0ms) both; }
+
+/* The host scrollbar is the one piece of chrome the panel does not control by
+   default, and its light track cuts a bright stripe down the glass. */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { border: 3px solid transparent; border-radius: 8px; background: var(--rim); background-clip: content-box; }
+::-webkit-scrollbar-thumb:hover { background: var(--border); background-clip: content-box; }
+
+/* The header stays put while a long view scrolls under it, so the branch and
+   document you are working on never leave the screen. */
+.app-header { position: sticky; top: 0; z-index: 5; }
+
+/* A primary button is the panel's heaviest element, so it earns real depth:
+   it rises toward the pointer on hover and settles flush on press. */
+@supports (transform: perspective(600px) rotateX(1deg)) {
+  .button-primary { transition: transform var(--motion-control) var(--ease-liquid), background-color var(--motion-control) var(--ease-liquid), box-shadow var(--motion-control) var(--ease-liquid); }
+  .button-primary[role="button"]:not([aria-disabled="true"]):hover { transform: perspective(var(--depth-perspective)) translateZ(6px); }
+}
+
+/* Notices carry the panel's only coloured surfaces. A matching rim glow keeps
+   them legible as one object when they sit on glass. */
+.notice { transition: box-shadow var(--motion-control) var(--ease-liquid); }
+.notice:hover { box-shadow: 0 0 30px -14px rgba(150,190,255,.5); }
+
+/* The active section icon takes the accent alongside its label, so the tab
+   reads as selected from the glyph alone at the narrowest widths where the
+   label is dropped. */
+.nav-item svg { transition: transform var(--motion-control) var(--ease-liquid), color var(--motion-control) var(--ease-liquid); }
+.nav-item.active svg { color: var(--accent); transform: scale(1.06); }
+
+/* A tool sheet is a dialog over the panel. Easing it up from a few pixels
+   below signals that it arrived rather than that the view was replaced. */
+@keyframes photogit-sheet-in {
+  from { opacity: .01; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+.tool-sheet:not([hidden]) { animation: photogit-sheet-in var(--motion-nav) var(--ease-liquid) both; }

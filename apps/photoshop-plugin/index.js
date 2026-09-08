@@ -519,6 +519,8 @@ function renderHistory(versions) {
     }
     container.appendChild(section);
   }
+  const reveal = globalThis.PhotoGitReveal;
+  if (reveal && typeof reveal.stagger === "function") reveal.stagger(container.querySelectorAll(".history-row"));
 }
 
 function groupHistory(versions) {
@@ -1041,9 +1043,19 @@ function renderChangeTally(changes) {
   if (!tally) return;
   const list = Array.isArray(changes) ? changes : [];
   const count = category => list.filter(change => (["added", "removed"].includes(change?.category) ? change.category : "modified") === category).length;
-  document.getElementById("tally-changed").textContent = String(count("modified"));
-  document.getElementById("tally-added").textContent = String(count("added"));
-  document.getElementById("tally-removed").textContent = String(count("removed"));
+  // The counter module is decoration. When it is absent — as it is in the
+  // contract tests, which run this script alone — the totals are written
+  // directly, which is the same value by a shorter path.
+  const counter = globalThis.PhotoGitCounter;
+  const show = (id, value) => {
+    const node = document.getElementById(id);
+    if (!node) return;
+    if (counter && typeof counter.set === "function") counter.set(node, value);
+    else node.textContent = String(value);
+  };
+  show("tally-changed", count("modified"));
+  show("tally-added", count("added"));
+  show("tally-removed", count("removed"));
   tally.hidden = list.length === 0;
 }
 
@@ -1422,6 +1434,10 @@ function renderChanges(changes, { baselineMissing = false, changeCount = changes
     });
     container.appendChild(row);
   }
+  // Decoration over a list that is already complete and already interactive.
+  // Absent module, absent stagger, identical list.
+  const reveal = globalThis.PhotoGitReveal;
+  if (reveal && typeof reveal.stagger === "function") reveal.stagger(container.querySelectorAll(".change-row"));
   if (changeCount > Math.min(changes.length, MAX_VISIBLE_CHANGES)) {
     const note = document.createElement("p");
     note.className = "list-limit-note";

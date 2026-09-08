@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, 'codex/**']
+    branches: [main, 'codex/**', 'feat/**', 'fix/**']
   pull_request:
   workflow_dispatch:
 
@@ -36,6 +36,7 @@ jobs:
       - run: npm test
       - run: npm run verify:security
       - run: npm run verify:tokens
+      - run: npm run verify:panel-dom
       - run: npm run verify:assets
       - run: npm run package:development
       - run: npm run verify:package
@@ -45,6 +46,43 @@ jobs:
           name: photogit-development-panel
           path: release/photogit-*-development.zip
           if-no-files-found: error
+
+  suites:
+    name: Suite · ${{ matrix.suite }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        suite:
+          - panel-depth
+          - panel-counter
+          - panel-reveal
+          - panel-motion
+          - panel-contract
+          - panel-escaping
+          - panel-branches
+          - panel-versions
+          - panel-reviews
+          - panel-workspace
+          - panel-manifest
+          - helper
+          - engine
+          - protocol
+          - differ
+          - merge
+          - serializer
+          - schema
+          - cli
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npm run test:${{ matrix.suite }}
 
   audit:
     name: Dependency audit

@@ -1,5 +1,25 @@
 # Changelog
 
+## Interaction pass · pointer depth, settling counters, staggered lists
+
+- Added `depth.js`: a delegated pointer listener that gives glass surfaces a
+  capped 2.4-degree lean, a pointer-tracking specular highlight, and a press
+  veil that starts from under the finger. Guarded by an `@supports` check for
+  3D transforms and removed outright under reduced motion.
+- Added `counter.js`: detected-change tallies settle into place instead of
+  snapping. `data-value` carries the authoritative number from the first
+  frame and only whole numbers are ever rendered.
+- Added `reveal.js`: change and history rows ease up into view on a capped
+  stagger. Rows are appended complete and interactive first; the stagger is
+  applied afterwards and never hides a row.
+- Interaction polish across tally tiles, context badges, message presets,
+  document facts, the saved preview, navigation, change rows, branch cards,
+  notices, tool sheets, the scrollbar and the keyboard focus ring.
+- The panel header is now sticky, so the branch and document stay in view.
+- Each test suite runs as its own CI check, so a red check names the
+  functionality that broke.
+
+
 ## 0.2.0 — unreleased development
 
 Hardening candidate for the Photoshop version workflow. This entry describes changes under verification, not a declaration of release acceptance.
