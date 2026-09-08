@@ -1404,7 +1404,7 @@ function renderChanges(changes, { baselineMissing = false, changeCount = changes
     // constants in practice.
     const category = change.category === "added" ? "added" : change.category === "removed" ? "removed" : "modified";
     const status = category === "added" ? "Added" : category === "removed" ? "Removed" : "Modified";
-    row.innerHTML = `<span class="row-glyph ${domainClass(change.domain)}" aria-hidden="true">${domainIcon(change.domain)}</span><span class="row-copy"><strong>${escapeHtml(change.layerName)}</strong><span class="layer-identity">${escapeHtml(identityLabel)}</span><span class="change-detail">${escapeHtml(changeSummary(change))}</span></span><span class="change-domain"><span class="change-state ${category}">${status}</span>${escapeHtml(change.domain)}</span>`;
+    row.innerHTML = `<span class="row-glyph ${domainClass(change.domain)}" aria-hidden="true">${domainIcon(change.domain)}</span><span class="row-copy"><strong>${escapeHtml(change.layerName)}</strong><span class="layer-identity">${escapeHtml(identityLabel)}</span><span class="change-detail">${escapeHtml(changeSummary(change))}</span></span><span class="change-domain"><span class="change-state ${category}">${status}</span><span class="change-kind">${escapeHtml(change.domain)}</span></span>`;
     const select = () => {
       if (!selectable) return;
       if (!app.documents.length || app.activeDocument.id !== changesDocumentId) return show("The active document changed. Scan it before selecting a layer.", true);
