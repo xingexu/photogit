@@ -266,6 +266,10 @@ describe("PhotoGit production panel behavior — host mocked", () => {
     p.keyboard(p.id("changes-tab"), "ArrowRight");
     expect(p.id("history-view").hidden).toBe(false);
     expect(p.id("changes-view").hidden).toBe(true);
+    p.keyboard(p.id("history-tab"), "ArrowDown");
+    expect(p.id("branches-view").hidden).toBe(false);
+    p.keyboard(p.id("branches-tab"), "ArrowUp");
+    expect(p.id("history-view").hidden).toBe(false);
     p.keyboard(p.id("history-tab"), "End");
     expect([...p.document.querySelectorAll('[role="tab"][aria-selected="true"]')]).toHaveLength(1);
     expect(p.id("docs-view").hidden).toBe(false);

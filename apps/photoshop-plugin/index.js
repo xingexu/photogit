@@ -205,14 +205,18 @@ function bindFieldState(id) {
 }
 
 function handleTabKeyboard(event) {
-  if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+  // The tab list is a row below 720px and a column from 720px, so both axes
+  // move through it; a rail that answered only Left and Right was a dead end
+  // for the keys a vertical list is expected to take.
+  if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End"].includes(event.key)) return;
   const tabs = Array.from(document.querySelectorAll(".nav-item"));
   const current = Math.max(0, tabs.indexOf(event.target));
+  const forward = event.key === "ArrowRight" || event.key === "ArrowDown";
   const next = event.key === "Home"
     ? 0
     : event.key === "End"
       ? tabs.length - 1
-      : (current + (event.key === "ArrowRight" ? 1 : -1) + tabs.length) % tabs.length;
+      : (current + (forward ? 1 : -1) + tabs.length) % tabs.length;
   event.preventDefault();
   tabs[next].focus();
   selectTab(tabs[next].id.replace("-tab", ""));
