@@ -42,6 +42,7 @@ The helper must be running for repository actions. Change detection uses sampled
 npm run check
 npm test
 npm run verify:security
+npm run verify:tokens
 npm run package:development
 npm run verify:package
 ```

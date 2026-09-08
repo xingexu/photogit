@@ -22,4 +22,4 @@ These controls are defenses, not a sandbox for untrusted Git repositories. Git c
 
 ## Verification
 
-Run `npm audit`, `npm run verify:security`, and `npm test`. The secret inventory checks tracked and untracked non-ignored source files for known key/token forms without printing matching values; it does not inspect Git history or detect every possible credential. Tests cover authentication, containment, symlinks, malformed input, request/response bounds, rollback, and redaction. See [the acceptance report](docs/ACCEPTANCE_REPORT.md) for the evidence and live gaps for this build.
+Run `npm audit`, `npm run verify:security`, `npm run verify:tokens`, and `npm test`. The secret inventory checks tracked and untracked non-ignored source files for known key/token forms without printing matching values; it does not inspect Git history or detect every possible credential. Tests cover authentication, containment, symlinks, malformed input, request/response bounds, rollback, and redaction. See [the acceptance report](docs/ACCEPTANCE_REPORT.md) for the evidence and live gaps for this build.
