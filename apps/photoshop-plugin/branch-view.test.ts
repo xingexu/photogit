@@ -92,4 +92,23 @@ describe("branch design directions", () => {
     p.render({ onSwitch: undefined }); expect(p.container.querySelector(".branch-switch")).toBeNull();
     expect(p.container.querySelectorAll(".branch-row")).toHaveLength(3);
   });
+
+  it("accepts local demo artwork only through the demo channel", () => {
+    const p = fixture();
+    p.render({ branches: [{ name: "main", current: true }], current: "main", demoPreviews: { main: "assets/poster-main.jpg" } });
+    expect(p.container.querySelector(".branch-row-preview img")!.getAttribute("src")).toBe("assets/poster-main.jpg");
+  });
+
+  it.each(["https://example.invalid/a.png", "assets/a.svg", "../a.png", "data:image/png;base64,iVBORw0KGgo="])("rejects unsafe demo artwork %s", src => {
+    const p = fixture();
+    p.render({ branches: [{ name: "main", current: true }], current: "main", demoPreviews: { main: src } });
+    expect(p.container.querySelector(".branch-row-preview")).toBeNull();
+  });
+
+  it("prefers a real saved preview over demo artwork", () => {
+    const p = fixture();
+    p.render({ branches: [{ name: "main", current: true }], current: "main",
+      previews: { main: "data:image/png;base64,iVBORw0KGgo=" }, demoPreviews: { main: "assets/poster-main.jpg" } });
+    expect(p.container.querySelector(".branch-row-preview img")!.getAttribute("src")).toBe("data:image/png;base64,iVBORw0KGgo=");
+  });
 });
