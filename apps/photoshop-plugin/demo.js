@@ -96,7 +96,7 @@ function setupDemoPanel() {
   bind("pull", () => sync("Pulled live-option-b successfully.", "Pulled just now"));
   bind("push", () => sync("Changes shared successfully.", "Pushed just now"));
   bind("show-status", () => flashResult(changes.length ? `${changes.length} semantic changes ready to save.` : "Project is clean."));
-  bind("refresh", () => flashResult("Workspace refreshed."));
+  bind("refresh", () => { closeToolsMenu(); flashResult("Simulation: workspace refreshed."); });
   bind("new-branch", createBranch);
   bind("clear-activity", clearActivity);
   bind("global-search", () => openCommandPalette());

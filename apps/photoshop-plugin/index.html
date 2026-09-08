@@ -83,9 +83,6 @@
           <div class="repo-meta">
             <div class="repo-branch" data-destination="branches" role="button" tabindex="0" aria-label="Go to branches" title="Manage branches"><span class="context-badge" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="6" cy="5" r="2"/><circle cx="18" cy="7" r="2"/><circle cx="6" cy="19" r="2"/><path d="M6 7v10m2-2c6 0 8-2 8-6"/></svg></span><span class="context-copy"><span class="context-label">Branch</span><span class="context-value"><strong id="branch-name">—</strong><svg class="branch-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></span></span></div>
             <span class="repo-document"><span class="context-badge" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 3.5h8l4 4V20H6z"/><path d="M14 3.5V8h4"/></svg></span><span class="context-copy"><span class="context-label">Document</span><span id="document-name">None open</span></span></span>
-            <div id="refresh" class="strip-action" role="button" tabindex="0" aria-label="Refresh and scan Photoshop" title="Refresh and scan Photoshop">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6v5h-5"/><path d="M18.2 15.4A7 7 0 1 1 18.5 8L20 11"/></svg>
-            </div>
           </div>
         </section>
         <div class="workspace-body">
@@ -296,6 +293,7 @@
       </section>
 
       <section id="tools-menu" class="tools-menu liquid-card" role="menu" hidden aria-label="Repository tools">
+        <div id="refresh" class="tool-item" role="menuitem" tabindex="-1"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6v5h-5"/><path d="M18.2 15.4A7 7 0 1 1 18.5 8L20 11"/></svg><span>Refresh project</span></div>
         <div id="tool-new-branch" class="tool-item" role="menuitem" tabindex="-1"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="5" r="2"/><circle cx="18" cy="7" r="2"/><circle cx="6" cy="19" r="2"/><path d="M6 7v10m2-2c6 0 8-2 8-6"/></svg><span>New branch</span></div>
         <div id="tool-new-pr" class="tool-item" role="menuitem" tabindex="-1" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8m-8 3h5"/></svg><span>Open GitHub comparison</span></div>
         <div id="tool-conflicts" class="tool-item" role="menuitem" tabindex="-1"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 5v.01"/><path d="m4 20 8-17 8 17z"/></svg><span>View conflicts</span></div>

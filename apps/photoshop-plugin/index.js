@@ -360,6 +360,7 @@ async function refreshWorkspace(announceErrors = false, readTimeoutMs = HELPER_T
 }
 
 async function refreshAndScan() {
+  closeToolsMenu();
   if (!ensureReady() || busyNow) return;
   await cancelScan();
   await refreshWorkspace(true);
@@ -1830,11 +1831,13 @@ function busy(active) {
   document.getElementById("workspace").setAttribute("aria-busy", active ? "true" : "false");
   document.getElementById("progress").hidden = !active;
   document.querySelector(".capture-panel").classList.toggle("is-busy", active);
-  for (const id of ["save-version", "jump-save", "scan", "rescan", "pull", "push", "show-status", "new-branch", "refresh", "new-pull-request", "create-tag", "tools-toggle", "header-menu"]) {
+  for (const id of ["save-version", "jump-save", "scan", "rescan", "pull", "push", "show-status", "new-branch", "new-pull-request", "create-tag", "tools-toggle", "header-menu"]) {
     const control = document.getElementById(id);
     control.setAttribute("aria-disabled", active ? "true" : "false");
     control.tabIndex = active ? -1 : 0;
   }
+  // A menu item keeps its roving tabindex; only its availability changes.
+  document.getElementById("refresh").setAttribute("aria-disabled", active ? "true" : "false");
   for (const id of ["message", "new-branch-name", "tag-name", "branch-picker"]) document.getElementById(id).disabled = active;
   for (const control of document.querySelectorAll("[data-message-preset],.branch-switch,.version-inspector-open,.comparison-merge")) {
     control.setAttribute("aria-disabled", String(active)); control.tabIndex = active ? -1 : 0;
