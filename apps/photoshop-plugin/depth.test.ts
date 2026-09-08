@@ -141,3 +141,21 @@ describe("PhotoGit depth · property writes", () => {
     }
   });
 });
+
+describe("PhotoGit depth · press origin", () => {
+  it("records where a control was pressed", async () => {
+    const { document, depth } = await depthFixture();
+    const control = box(document.createElement("div"), { left: 0, top: 0, width: 100, height: 40 });
+    control.setAttribute("role", "button");
+    expect(depth.pressOrigin(control, { clientX: 100, clientY: 0 })).toBe(true);
+    expect(control.style.getPropertyValue("--ripple-x")).toBe("100%");
+    expect(control.style.getPropertyValue("--ripple-y")).toBe("0%");
+  });
+
+  it("reports failure rather than guessing for an unmeasured control", async () => {
+    const { document, depth } = await depthFixture();
+    const control = box(document.createElement("div"), { left: 0, top: 0, width: 0, height: 0 });
+    expect(depth.pressOrigin(control, { clientX: 1, clientY: 1 })).toBe(false);
+    expect(control.style.getPropertyValue("--ripple-x")).toBe("");
+  });
+});
