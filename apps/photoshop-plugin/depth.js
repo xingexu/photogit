@@ -67,5 +67,28 @@
     element.classList.remove("is-depth-active");
   }
 
-  globalThis.PhotoGitDepth = { enabled, supports3d: () => has3d, position, tiltFor, write, clear, MAX_TILT };
+  // One delegated pointer listener for the whole panel. Per-element listeners
+  // would have to be attached and detached as views re-render; delegation
+  // survives every re-render for free.
+  function bind(root) {
+    const host = root || document;
+    const track = event => {
+      const surface = event.target && event.target.closest ? event.target.closest("[data-depth]") : null;
+      if (!surface) return;
+      if (!enabled()) { clear(surface); return; }
+      const point = position(surface, event);
+      if (!point) return;
+      surface.classList.add("is-depth-active");
+      write(surface, point);
+    };
+    host.addEventListener("pointermove", track);
+    host.addEventListener("pointerdown", track);
+    host.addEventListener("pointerout", event => {
+      const surface = event.target && event.target.closest ? event.target.closest("[data-depth]") : null;
+      if (surface) clear(surface);
+    });
+    return host;
+  }
+
+  globalThis.PhotoGitDepth = { enabled, supports3d: () => has3d, position, tiltFor, write, clear, bind, MAX_TILT };
 })();
