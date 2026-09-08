@@ -448,7 +448,7 @@ function renderReviews(reviews, conflicts) {
   const empty = document.getElementById("reviews-empty");
   container.innerHTML = "";
   empty.hidden = reviews.length > 0;
-  for (const review of reviews) container.appendChild(createReviewCard(review, false));
+  for (const review of reviews) container.appendChild(createReviewCard(review));
   const conflictPanel = document.getElementById("conflict-panel");
   conflictPanel.hidden = conflicts.length === 0;
   const visibleConflicts = conflicts.slice(0, MAX_VISIBLE_CONFLICTS);
@@ -462,19 +462,19 @@ function renderReviewPreview(review) {
   const container = document.getElementById("review-preview-content");
   container.innerHTML = "";
   section.hidden = !review;
-  if (review) container.appendChild(createReviewCard(review, true));
+  if (review) container.appendChild(createReviewCard(review));
 }
 
-function createReviewCard(review, compact) {
+function createReviewCard(review) {
   const card = document.createElement("article");
   card.className = "review-card";
   const statusClass = review.mergeable ? "ready" : "blocked";
   const statusLabel = review.mergeable ? "Git merge available" : "Git merge blocked";
   const mergeClass = review.mergeable ? "button-primary" : "button-disabled";
   const mergeLabel = review.mergeable ? "Merge" : "Resolve conflicts to merge";
-  const changes = review.changes.length ? review.changes.join("\n") : "No file-level differences.";
-  card.innerHTML = `<div class="review-title"><strong>${escapeHtml(review.branch)}</strong><span>${escapeHtml(review.ahead)} ahead</span></div><div class="review-meta"><span class="${statusClass}">${statusLabel}</span><span>·</span><span>${escapeHtml(review.changeCount)} ${review.changeCount === 1 ? "file" : "files"}</span></div><div class="review-files" aria-hidden="true">${escapeHtml(changes)}</div><div class="review-actions"><div class="button button-quiet button-small compare-action" role="button" tabindex="0" aria-expanded="false">Compare</div><div class="button ${mergeClass} button-small merge-action" role="button" tabindex="${review.mergeable ? "0" : "-1"}" data-mergeable="${review.mergeable ? "true" : "false"}" ${review.mergeable ? "" : "aria-disabled=\"true\""}>${mergeLabel}</div></div>`;
-  const details = card.querySelector(".review-files");
+  // The changed-file list belongs to the comparison inspector, which Compare
+  // opens; the card only summarises the count.
+  card.innerHTML = `<div class="review-title"><strong>${escapeHtml(review.branch)}</strong><span>${escapeHtml(review.ahead)} ahead</span></div><div class="review-meta"><span class="${statusClass}">${statusLabel}</span><span>·</span><span>${escapeHtml(review.changeCount)} ${review.changeCount === 1 ? "file" : "files"}</span></div><div class="review-actions"><div class="button button-quiet button-small compare-action" role="button" tabindex="0" aria-label="Compare ${escapeHtml(review.branch)} with the current branch">Compare</div><div class="button ${mergeClass} button-small merge-action" role="button" tabindex="${review.mergeable ? "0" : "-1"}" data-mergeable="${review.mergeable ? "true" : "false"}" ${review.mergeable ? "" : "aria-disabled=\"true\""}>${mergeLabel}</div></div>`;
   const direction = document.createElement("p");
   direction.className = "review-direction muted";
   direction.textContent = `${review.branch} → ${repositoryDetails?.currentBranch || document.getElementById("branch-name").textContent || "working branch"}`;
@@ -490,7 +490,6 @@ function createReviewCard(review, compact) {
   mergeAction.addEventListener("click", merge);
   activateOnKeyboard(compareAction, compare);
   activateOnKeyboard(mergeAction, merge);
-  if (compact) card.classList.add("review-card-compact");
   return card;
 }
 
