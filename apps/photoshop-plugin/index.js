@@ -1432,6 +1432,10 @@ function renderChanges(changes, { baselineMissing = false, changeCount = changes
     });
     container.appendChild(row);
   }
+  // Decoration over a list that is already complete and already interactive.
+  // Absent module, absent stagger, identical list.
+  const reveal = globalThis.PhotoGitReveal;
+  if (reveal && typeof reveal.stagger === "function") reveal.stagger(container.querySelectorAll(".change-row"));
   if (changeCount > Math.min(changes.length, MAX_VISIBLE_CHANGES)) {
     const note = document.createElement("p");
     note.className = "list-limit-note";
