@@ -268,6 +268,10 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .field-label { display: block; margin: 14px 0 7px; color: var(--muted); font-size: var(--text-small); }
 .field-shell { display: flex; align-items: center; width: 100%; min-width: 0; min-height: var(--control-tall); border: 1px solid var(--glass-rim); border-radius: var(--radius); background: var(--input); transition: border-color var(--motion-control) var(--ease-liquid), box-shadow var(--motion-control) var(--ease-liquid); }
 .field-shell:focus-within { border-color: var(--focus); box-shadow: 0 0 0 1px var(--focus); }
+/* The shell draws the focus ring for the field it wraps; the input's own
+   outline inside it drew a second, smaller ring — visibly so in the search
+   fields, where the magnifier pushes the input in from the shell's edge. */
+.field-shell input:focus { outline: none; }
 @supports (box-shadow: 0 0 0 1px color-mix(in srgb, red 20%, transparent)) {
   .field-shell:focus-within { box-shadow: 0 0 0 3px color-mix(in srgb, var(--focus) 22%, transparent); }
 }
