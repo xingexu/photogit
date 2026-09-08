@@ -39,4 +39,12 @@ describe("PhotoGit reveal", () => {
     expect(reveal.delayFor(reveal.CAP)).toBe(ceiling);
     expect(reveal.delayFor(500)).toBe(ceiling);
   });
+
+  it("marks every row it is given", async () => {
+    const { reveal, rows } = await revealFixture();
+    const list = rows(4);
+    expect(reveal.stagger(list)).toBe(4);
+    expect(list.every((row: any) => row.classList.contains("is-revealing"))).toBe(true);
+    expect(list[2].style.getPropertyValue("--reveal-delay")).toBe(`${reveal.STEP * 2}ms`);
+  });
 });
