@@ -1271,7 +1271,7 @@ function validateHelperResult(operation, value) {
       requireHelperCount(result.bytes, "versionPreview.bytes");
       // Strict base64 only; the panel builds the image URL itself and never
       // interpolates helper text into markup.
-      if (typeof result.png !== "string" || result.png.length < 8 || result.png.length > 24_000_000 || !/^[A-Za-z0-9+/]+={0,2}$/.test(result.png)) throw invalidHelperData("versionPreview.png");
+      if (typeof result.png !== "string" || result.png.length < 8 || result.png.length > MAX_HELPER_IO_BYTES || !/^[A-Za-z0-9+/]+={0,2}$/.test(result.png)) throw invalidHelperData("versionPreview.png");
     }
   } else {
     throw new Error("The PhotoGit helper returned data for an unknown operation.");

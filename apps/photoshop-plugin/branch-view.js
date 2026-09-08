@@ -3,7 +3,7 @@
 // Same strict rule as the version inspector: only helper-decoded base64 raster
 // data, never remote URLs, SVG or arbitrary paths.
 function safePreview(src) {
-  return typeof src === "string" && src.length < 24_000_000 &&
+  return typeof src === "string" && src.length <= 8_000_000 &&
     /^data:image\/(?:png|jpeg);base64,[A-Za-z0-9+/]+={0,2}$/.test(src);
 }
 
