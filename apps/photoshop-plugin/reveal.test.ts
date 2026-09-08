@@ -47,4 +47,12 @@ describe("PhotoGit reveal", () => {
     expect(list.every((row: any) => row.classList.contains("is-revealing"))).toBe(true);
     expect(list[2].style.getPropertyValue("--reveal-delay")).toBe(`${reveal.STEP * 2}ms`);
   });
+
+  it("leaves rows untouched and unmarked under reduced motion", async () => {
+    const { reveal, rows } = await revealFixture(true);
+    const list = rows(3);
+    expect(reveal.stagger(list)).toBe(0);
+    expect(list.some((row: any) => row.classList.contains("is-revealing"))).toBe(false);
+    expect(list[1].style.getPropertyValue("--reveal-delay")).toBe("");
+  });
 });
