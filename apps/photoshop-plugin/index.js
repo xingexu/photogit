@@ -1041,9 +1041,19 @@ function renderChangeTally(changes) {
   if (!tally) return;
   const list = Array.isArray(changes) ? changes : [];
   const count = category => list.filter(change => (["added", "removed"].includes(change?.category) ? change.category : "modified") === category).length;
-  document.getElementById("tally-changed").textContent = String(count("modified"));
-  document.getElementById("tally-added").textContent = String(count("added"));
-  document.getElementById("tally-removed").textContent = String(count("removed"));
+  // The counter module is decoration. When it is absent — as it is in the
+  // contract tests, which run this script alone — the totals are written
+  // directly, which is the same value by a shorter path.
+  const counter = globalThis.PhotoGitCounter;
+  const show = (id, value) => {
+    const node = document.getElementById(id);
+    if (!node) return;
+    if (counter && typeof counter.set === "function") counter.set(node, value);
+    else node.textContent = String(value);
+  };
+  show("tally-changed", count("modified"));
+  show("tally-added", count("added"));
+  show("tally-removed", count("removed"));
   tally.hidden = list.length === 0;
 }
 
