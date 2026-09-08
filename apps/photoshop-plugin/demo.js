@@ -702,7 +702,10 @@ function addActivity(message) {
   if (feed.textContent === "Ready.") feed.textContent = "";
   const row = document.createElement("div"); row.className = "activity-row";
   const summary = document.createElement("div"); summary.className = "activity-summary";
-  const icon = document.createElement("span"); icon.className = "activity-icon"; icon.setAttribute("aria-hidden", "true"); icon.textContent = "✓";
+  // Same marks as the production feed: a dot for an event, a bang for a failure.
+  const errorEvent = /error|failed|timed out|blocked|unavailable/i.test(message);
+  const icon = document.createElement("span"); icon.className = "activity-icon"; icon.setAttribute("aria-hidden", "true");
+  icon.textContent = errorEvent ? "!" : "·"; icon.classList.toggle("error", errorEvent);
   const time = document.createElement("span"); time.className = "activity-time"; time.textContent = stamp;
   const copy = document.createElement("span"); copy.className = "activity-copy"; copy.textContent = message;
   summary.append(icon, time, copy); row.appendChild(summary); feed.prepend(row);
