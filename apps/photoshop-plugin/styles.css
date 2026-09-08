@@ -118,7 +118,7 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .section-nav { display: flex; flex-wrap: wrap; padding: 8px 10px; margin: 0; border-bottom: 1px solid var(--line); background: var(--surface); }
 .nav-item { display: flex; align-items: center; justify-content: center; flex: 1 1 29%; min-width: 0; min-height: 36px; margin: 2px; padding: 8px 5px; border: 1px solid transparent; border-radius: var(--radius); color: var(--muted); font-size: var(--text-small); }
 .nav-item svg { width: 16px; height: 16px; margin-right: 7px; }
-.nav-item b { margin-left: 6px; font-size: 11px; padding: 0 4px; border-radius: 4px; background: var(--elevated); font-weight: 400; }
+.nav-item b { margin-left: 7px; min-width: 20px; padding: 2px 7px; border-radius: 10px; background: var(--primary); color: var(--primary-text); font-size: 11px; font-weight: 600; text-align: center; }
 .nav-item b[data-empty="true"] { display: none; }
 .nav-item.active { background: var(--selected); color: var(--accent); border-color: var(--line); }
 .workspace-content { padding: 18px 16px 8px; }
@@ -170,7 +170,7 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .repo-project .project-switch { margin: 2px 0 0 -4px; }
 @media (max-width: 719px) { .repo-project { flex: 1 1 100%; } .repo-branch, .repo-document { flex: 1 1 45%; } }
 /* Changes: dense list first, complete-document composer second. */
-.scan-card { display: flex; align-items: center; flex-wrap: wrap; margin-bottom: 18px; }
+.scan-card { display: flex; align-items: flex-start; flex-wrap: wrap; margin-bottom: 18px; }
 .scan-copy { flex: 1 1 160px; min-width: 0; padding-right: 10px; }
 .scan-copy h2 { font-size: var(--text-subhead); font-weight: 600; letter-spacing: -.2px; }
 .title-with-count { display: flex; align-items: center; }
@@ -478,6 +478,9 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
      never collides with a divider. */
   .nav-item { position: relative; flex: 0 0 auto; flex-direction: column; align-items: flex-start; justify-content: center; min-height: 76px; padding: 14px 14px 15px; margin: 3px 0; border: 1px solid transparent; border-radius: var(--radius); font-size: var(--text-body); }
   .nav-item svg { width: 20px; height: 20px; margin: 0 0 11px; transition: transform var(--motion-nav) var(--ease-liquid); }
+  #changes-tab svg { margin-left: -5px; }
+  #history-tab svg, #branches-tab svg, #reviews-tab svg { margin-left: -3px; }
+  #activity-tab svg, #docs-tab svg { margin-left: -2px; }
   .nav-item span { flex: none; }
   .nav-item b { position: absolute; top: 13px; right: 13px; min-width: 21px; padding: 2px 7px; border-radius: 10px; background: var(--primary); color: var(--primary-text); font-size: 11px; font-weight: 600; text-align: center; transition: transform var(--motion-nav) var(--ease-liquid), box-shadow var(--motion-nav) var(--ease-liquid); }
   /* Hover lights the tile; the icon and count lift with it. */
