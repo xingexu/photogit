@@ -544,6 +544,13 @@ function historyDateLabel(value) {
 
 function filterHistory() {
   const query = document.getElementById("history-search").value.trim().toLowerCase();
+  // An empty list means two different things: nothing saved yet, or nothing
+  // matching the search. Each gets its own explanation and next step.
+  const filtering = Boolean(query) && historyEntries.length > 0;
+  document.getElementById("history-empty-title").textContent = filtering ? "No matching versions" : "No saved versions yet";
+  document.getElementById("history-empty-copy").textContent = filtering
+    ? "Search by message, author, date, or version ID, or clear the search."
+    : "Save your first version to start this document’s history.";
   if (!query) return renderHistory(historyEntries);
   renderHistory(historyEntries.filter((version) => [version.message, version.shortId, version.author, version.date].some((value) => String(value).toLowerCase().includes(query))));
 }
