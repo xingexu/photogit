@@ -714,3 +714,11 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
    label is dropped. */
 .nav-item svg { transition: transform var(--motion-control) var(--ease-liquid), color var(--motion-control) var(--ease-liquid); }
 .nav-item.active svg { color: var(--accent); transform: scale(1.06); }
+
+/* A tool sheet is a dialog over the panel. Easing it up from a few pixels
+   below signals that it arrived rather than that the view was replaced. */
+@keyframes photogit-sheet-in {
+  from { opacity: .01; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+.tool-sheet:not([hidden]) { animation: photogit-sheet-in var(--motion-nav) var(--ease-liquid) both; }
