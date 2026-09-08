@@ -32,5 +32,16 @@
     return has3d && !reduced();
   }
 
-  globalThis.PhotoGitDepth = { enabled, supports3d: () => has3d };
+  // Normalised pointer position within an element, as -1..1 on both axes with
+  // the origin at the centre. Returns null when the element has no box yet,
+  // which is the case in every host that has not laid the panel out.
+  function position(element, event) {
+    const box = element.getBoundingClientRect ? element.getBoundingClientRect() : null;
+    if (!box || !box.width || !box.height) return null;
+    const x = clamp(((event.clientX - box.left) / box.width) * 2 - 1, -1, 1);
+    const y = clamp(((event.clientY - box.top) / box.height) * 2 - 1, -1, 1);
+    return { x: round(x), y: round(y) };
+  }
+
+  globalThis.PhotoGitDepth = { enabled, supports3d: () => has3d, position };
 })();
