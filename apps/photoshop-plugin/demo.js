@@ -419,7 +419,6 @@ function renderChanges() {
   const container = byId("changes");
   container.innerHTML = "";
   setCount("changes-count", changes.length);
-  byId("changes-total").textContent = String(changes.length);
   byId("change-summary").textContent = changes.length ? `${changes.length} unsaved ${changes.length === 1 ? "edit" : "edits"}` : "Your canvas is clean";
   byId("last-scan").textContent = "Scanned just now · Updates automatically";
   byId("changes-empty").hidden = changes.length > 0;
