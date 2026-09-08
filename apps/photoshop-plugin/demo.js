@@ -115,7 +115,6 @@ function setupDemoPanel() {
   byId("tools-menu").addEventListener("keydown", handleMenuKeyboard);
   byId("section-nav").addEventListener("keydown", handleTabKeyboard);
   document.addEventListener("keydown", handleGlobalKeyboard);
-  ["message", "history-search", "new-branch-name", "tag-name"].forEach(bindFieldState);
   for (const [id, submit] of [["message", saveVersion], ["new-branch-name", createBranch], ["tag-name", createTag]]) {
     byId(id).addEventListener("keydown", event => {
       if (event.key !== "Enter" || event.repeat || event.isComposing || busyNow) return;
@@ -206,13 +205,6 @@ function openCommandPalette(initial = "") {
     if (next < 0) field.focus(); else rows[Math.min(next, rows.length - 1)]?.focus();
   });
   render(); field.focus();
-}
-
-function bindFieldState(id) {
-  const field = byId(id);
-  const sync = () => field.closest(".field-shell")?.classList.toggle("has-value", Boolean(field.value));
-  field.addEventListener("input", sync);
-  sync();
 }
 
 function handleTabKeyboard(event) {
@@ -361,7 +353,6 @@ function createTag() {
   const tag = input.value.trim();
   if (!tag) return flashResult("Enter a tag such as v1.0.0.", true);
   input.value = "";
-  input.closest(".field-shell")?.classList.remove("has-value");
   closeTagSheet();
   addActivity(`Created repository tag ${tag}.`);
   flashResult(`Created tag ${tag}.`);
@@ -635,8 +626,6 @@ async function saveVersion() {
   changes = [];
   byId("message").value = "";
   byId("history-search").value = "";
-  byId("message").closest(".field-shell")?.classList.remove("has-value");
-  byId("history-search").closest(".field-shell")?.classList.remove("has-value");
   renderChanges();
   renderHistory();
   addActivity(`Saved c84f2a7: ${message}`);
@@ -659,7 +648,6 @@ function createBranch() {
   renderReviews();
   setCount("branches-count", byId("branch-picker").options.length);
   input.value = "";
-  input.closest(".field-shell")?.classList.remove("has-value");
   addActivity(`Created and switched to ${name}.`);
   flashResult(`Created branch ${name}.`);
 }
