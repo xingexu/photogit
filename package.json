@@ -23,6 +23,7 @@
     "test:panel-contract": "vitest run apps/photoshop-plugin/ui-contract.test.ts",
     "test:panel-counter": "vitest run apps/photoshop-plugin/counter.test.ts",
     "test:panel-depth": "vitest run apps/photoshop-plugin/depth.test.ts",
+    "test:panel-escaping": "vitest run apps/photoshop-plugin/escaping.test.ts",
     "test:panel-manifest": "vitest run apps/photoshop-plugin/manifest.test.ts",
     "test:panel-motion": "vitest run apps/photoshop-plugin/motion.test.ts",
     "test:panel-reveal": "vitest run apps/photoshop-plugin/reveal.test.ts",
