@@ -2,7 +2,7 @@
    Glass is limited to chrome/dialog depth. Artwork and content stay neutral. */
 :root {
   color-scheme: dark;
-  --bg: #191a1b; --rail: #141517; --surface: #202224; --elevated: #2b2d30; --input: #191b1d; --overlay: #27292c;
+  --bg: #191a1b; --surface: #202224; --elevated: #2b2d30; --input: #191b1d; --overlay: #27292c;
   --text: #f2f3f4; --muted: #b4b7bd; --disabled: #8c9199; --line: #383b3f; --border: #828891;
   --hover: #30343a; --pressed: #383e47; --selected: #293849; --focus: #9ac6ff;
   --accent: #7ea9ff; --primary: #2a62d2; --primary-text: #ffffff; --primary-hover: #2f6fed; --primary-pressed: #2456bd;
@@ -17,7 +17,7 @@
     0 0 26px -2px rgba(150,190,255,.30),
     0 0 64px -10px rgba(120,170,255,.24),
     0 28px 58px -26px rgba(0,0,0,.78);
-  --space: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-6: 24px;
+  --space: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-5: 20px; --space-6: 24px;
   --text-small: 12px; --text-body: 13px; --text-subhead: 15px; --text-title: 18px; --text-heading: 22px;
   --control: 32px; --control-tall: 40px;
   --radius-chip: 9px; --radius: 13px; --radius-panel: 20px; --radius-overlay: 26px;
@@ -28,7 +28,7 @@
 }
 :root[data-theme="light"] {
   color-scheme: light;
-  --bg: #f3f4f6; --rail: #fbfbfc; --surface: #ffffff; --elevated: #eaedf1; --input: #f6f7f9; --overlay: #ffffff;
+  --bg: #f3f4f6; --surface: #ffffff; --elevated: #eaedf1; --input: #f6f7f9; --overlay: #ffffff;
   --text: #1c2330; --muted: #505966; --disabled: #6f7781; --line: #dde1e7; --border: #78818d;
   --hover: #e8ecf2; --pressed: #dce3ed; --selected: #e0eafb; --focus: #245bb6;
   --accent: #245bb6; --primary: #2d60b5; --primary-text: #ffffff; --primary-hover: #234e98; --primary-pressed: #1c4080;
@@ -110,7 +110,7 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .repo-meta svg { width: 16px; height: 16px; margin-right: 7px; }
 .repo-branch { border: 1px solid transparent; border-radius: var(--radius); font-size: var(--text-body); }
 .repo-branch strong { min-width: 0; }
-.branch-chevron { flex-shrink: 0; width: 12px; height: 12px; margin-left: 8px; color: var(--muted); }
+.branch-chevron { flex-shrink: 0; width: 12px; height: 12px; margin-left: var(--space-2); color: var(--muted); }
 .repo-document { color: var(--text); font-size: var(--text-body); }
 .repo-document span { min-width: 0; overflow-wrap: break-word; }
 #refresh { display: none; }
@@ -132,7 +132,7 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .changes-heading { display: none; }
 .rail-footer { display: none; }
 .rail-sync { display: flex; align-items: center; color: var(--muted); font-size: var(--text-small); }
-.rail-sync svg { width: 15px; height: 15px; margin-right: 9px; }
+.rail-sync svg { width: 15px; height: 15px; margin-right: var(--space-2); }
 .rail-sync.ok { color: var(--success); }
 .rail-sync.warning { color: var(--warning); }
 
@@ -149,7 +149,7 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
   .tools-menu, .tool-sheet { backdrop-filter: blur(22px) saturate(150%); }
 }
 /* Every glass card gets the same internal room, so nothing sits on its border. */
-.view-panel > .liquid-card, .capture-panel, .scan-card.liquid-card, .content-card.liquid-card, .onboarding.liquid-card { padding: 18px 20px; }
+.view-panel > .liquid-card, .capture-panel, .scan-card.liquid-card, .content-card.liquid-card, .onboarding.liquid-card { padding: 18px var(--space-5); }
 /* The rail is a solid column, never a floating card. */
 .workspace-rail .liquid-card { border: 0; border-radius: 0; background-image: none; box-shadow: none; }
 
@@ -157,10 +157,10 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
    by a circular badge. Below the rail breakpoint this stays a plain block. */
 /* Reference: project, branch and document are one card of labelled cells, each
    led by a circular badge. */
-.repo-context { display: flex; flex-wrap: wrap; align-items: stretch; padding: 12px 14px; border: 1px solid var(--glass-rim); border-radius: var(--radius-panel); background-color: var(--glass); background-image: linear-gradient(180deg, var(--glass-top), rgba(255,255,255,0) 58%); box-shadow: var(--glass-glow); }
+.repo-context { display: flex; flex-wrap: wrap; align-items: stretch; padding: var(--space-3) 14px; border: 1px solid var(--glass-rim); border-radius: var(--radius-panel); background-color: var(--glass); background-image: linear-gradient(180deg, var(--glass-top), rgba(255,255,255,0) 58%); box-shadow: var(--glass-glow); }
 .repo-topline, .repo-meta { display: contents; }
 .repo-project, .repo-branch, .repo-document { display: flex; align-items: flex-start; flex: 1 1 0; min-width: 0; margin: 4px 0; padding: 4px 6px; }
-.context-badge { display: flex; align-items: center; justify-content: center; flex-shrink: 0; width: 38px; height: 38px; margin-right: 12px; border: 1px solid var(--glass-rim); border-radius: 50%; background: var(--elevated); color: var(--muted); }
+.context-badge { display: flex; align-items: center; justify-content: center; flex-shrink: 0; width: 38px; height: 38px; margin-right: var(--space-3); border: 1px solid var(--glass-rim); border-radius: 50%; background: var(--elevated); color: var(--muted); }
 .context-badge svg { width: 17px; height: 17px; }
 .context-copy { display: block; flex: 0 1 auto; min-width: 0; }
 .context-label { display: block; color: var(--muted); font-size: var(--text-small); margin-bottom: 2px; }
@@ -177,7 +177,7 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 #changes-total, #scan, .progress-track { display: none; }
 .scan-detail { color: var(--muted); font-size: var(--text-small); margin-top: 4px; white-space: pre-line; }
 .watch-status { display: flex; align-items: center; color: var(--muted); font-size: var(--text-small); margin-top: 4px; }
-.change-tally { display: flex; flex-wrap: wrap; width: 100%; gap: 10px; margin: 16px 0 2px; }
+.change-tally { display: flex; flex-wrap: wrap; width: 100%; gap: 10px; margin: var(--space-4) 0 2px; }
 .tally-tile { flex: 1 1 90px; min-width: 0; margin: 0; padding: 14px 16px; border: 1px solid var(--glass-rim); border-radius: var(--radius); background: var(--elevated); box-shadow: 0 1px 0 var(--shine) inset; }
 .tally-tile dd { margin: 0; font-size: var(--text-heading); font-weight: 600; letter-spacing: -.5px; line-height: 1.1; }
 .tally-tile:first-child dd { color: var(--accent); }
@@ -247,7 +247,7 @@ sp-menu, sp-menu-item { background: var(--overlay); color: var(--text); }
 .row-copy strong { display: block; font-size: var(--text-body); font-weight: 500; }
 .row-copy > span { display: block; color: var(--muted); font-size: var(--text-small); overflow-wrap: break-word; }
 .row-copy .layer-identity { margin-top: 1px; }
-.change-detail { margin-top: 3px; }
+.change-detail { margin-top: var(--space); }
 .change-domain { flex-shrink: 0; text-align: right; color: var(--muted); font-size: var(--text-small); margin-left: 8px; max-width: 80px; }
 .change-state { display: block; color: var(--warning); }
 .change-state.added { color: var(--success); }
@@ -491,8 +491,8 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
   .nav-item.active { border-color: var(--glass-rim); background: var(--elevated); color: var(--text); box-shadow: 0 1px 0 var(--shine) inset, 0 0 34px -10px rgba(150,190,255,.42); }
   .nav-item.active b { box-shadow: 0 0 18px -4px var(--primary); }
   .workspace-content { flex: 1; min-width: 0; padding: 0; }
-  .workspace-body { padding: 0 24px 24px; }
-  .repo-context { margin: 0 24px 18px; }
+  .workspace-body { padding: 0 var(--space-6) var(--space-6); }
+  .repo-context { margin: 0 var(--space-6) 18px; }
   .changes-heading { display: flex; }
   .rail-footer { display: block; margin-top: auto; padding: 16px; border-top: 1px solid var(--line); }
 }
@@ -508,7 +508,7 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
   .branch-list-panel { flex: 1; padding-right: 24px; }
   /* A grid keeps every card one track wide, so a lone card on the last row does
      not stretch to fill it the way a flex item would. */
-  .branch-list-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(228px, 1fr)); gap: 12px; margin: 0 0 20px; }
+  .branch-list-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(228px, 1fr)); gap: var(--space-3); margin: 0 0 var(--space-5); }
   .branch-list-cards .branch-row { max-width: 100%; margin: 0; }
   .branch-list-cards .branch-row.has-preview { padding-top: 0; }
   .branch-list-cards .branch-row-preview { margin-top: 0; }
