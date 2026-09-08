@@ -34,10 +34,20 @@ number before it reaches the DOM, so none of them can interpolate caller data
 into a stylesheet or into markup. They issue no bridge requests and read no
 files.
 
-Elsewhere the panel does build markup from templates. Every string that comes
-from outside the panel passes through `escapeHtml`, which escapes `&`, `<`,
-`>`, `"` and `'`, and every number is validated as a count by the helper
-response validator before it is interpolated. `npm run verify:panel-dom` holds
-the remaining line: no panel script may evaluate a value as code or name a
-remote origin.
+Elsewhere the panel does build markup from templates. That property is
+enforced by two build gates rather than by review:
+
+- `npm run verify:panel-escaping` parses every panel script into a TypeScript
+  AST and classifies every `${...}` in every `innerHTML` template. An
+  interpolation passes only if it is a call to `escapeHtml()`, an expression
+  built solely from literals, a call to a function in the same file whose every
+  return is itself provably constant, or an identifier bound by a `const` whose
+  initialiser is provably constant. Nothing in it is an allowlist of names, so
+  it cannot rot: change a helper to interpolate a layer name and its call sites
+  begin to fail. It also checks that any file relying on `escapeHtml` declares
+  it and that the declaration escapes all five of `&`, `<`, `>`, `"` and `'`.
+  The gate has its own suite, including fixtures that prove it rejects an
+  unescaped interpolation and a weakened escaper.
+- `npm run verify:panel-dom` holds the separate line: no panel script may
+  evaluate a value as code or name a remote origin.
 
