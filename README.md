@@ -43,6 +43,7 @@ npm run check
 npm test
 npm run verify:security
 npm run verify:tokens
+npm run verify:assets
 npm run package:development
 npm run verify:package
 ```
