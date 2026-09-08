@@ -386,8 +386,6 @@ sp-menu, sp-menu-item { background: var(--overlay); color: var(--text); }
 .review-actions { display: flex; flex-wrap: wrap; margin: 12px -3px 0; }
 .review-actions > .button { flex: 1 1 90px; margin: 3px; }
 .review-actions > .merge-action[aria-disabled="true"] { flex-basis: 100%; justify-content: flex-start; padding-left: 3px; background: transparent; opacity: 1; border: 0; color: var(--warning); font-weight: 400; }
-.review-files { display: none; white-space: pre-wrap; overflow-wrap: break-word; padding: 12px 0; color: var(--muted); }
-.details-open .review-files[aria-hidden="false"] { display: block; }
 .review-preview { display: none; }
 .review-inspector { min-width: 0; color: var(--text); }
 #review-inspector { display: none; }
