@@ -80,7 +80,7 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
    trigger is excluded because its ::after carries the shortcut hint. */
 [role="button"]:not(.command-trigger)::after, [role="tab"]::after, [role="menuitem"]::after {
   content: ""; position: absolute; inset: 0; border-radius: inherit; background: var(--press-veil);
-  opacity: 0; pointer-events: none; transition: opacity var(--motion-nav) ease;
+  opacity: 0; pointer-events: none; transition: opacity var(--motion-nav) var(--ease-liquid);
 }
 [role="button"]:not(.command-trigger):not([aria-disabled="true"]):active::after,
 [role="tab"]:active::after, [role="menuitem"]:active::after { opacity: 1; transition-duration: var(--motion-press); }
