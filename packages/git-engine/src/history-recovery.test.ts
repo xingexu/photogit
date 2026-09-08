@@ -88,6 +88,22 @@ describe("immutable history, recovery, and Git comparison", () => {
     await expect(repo.readVersionPreview("not-a-version")).rejects.toThrow();
   });
 
+  it("refuses a committed preview larger than the bridge can carry", async () => {
+    const repo = await fixture();
+    const snapshot = join(repo.root, ".photogit/capture.psd");
+    await writeFile(snapshot, psd());
+    await repo.saveVersion(state(), "Baseline", { snapshotPath: snapshot });
+
+    // A valid PNG header followed by more bytes than the cap allows.
+    const oversized = Buffer.concat([png(), Buffer.alloc(4 * 1024 * 1024, 7)]);
+    await mkdir(join(repo.root, ".photogit/previews"), { recursive: true });
+    await writeFile(join(repo.root, ".photogit/previews/document.png"), oversized);
+    await repo.run(["add", "--force", ".photogit/previews/document.png"]);
+    await repo.run(["commit", "-m", "Oversized preview"]);
+
+    expect(await repo.readVersionPreview(await repo.run(["rev-parse", "HEAD"]))).toBeNull();
+  });
+
   it("inspects version details and exports prior PSD bytes without changing HEAD or current files", async () => {
     const repo = await fixture();
     const source = join(repo.root, ".photogit/capture.psd");
