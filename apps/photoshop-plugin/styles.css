@@ -621,6 +621,11 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
   .row-glyph { width: 24px; margin-right: 8px; }
   .inline-form .button { width: 100%; margin-left: 0; }
 }
+/* Three destinations to a row leaves about 50px for a label at 300px, which
+   is where "Branches" starts to ellipsize. Two to a row keeps every name. */
+@media (max-width: 330px) {
+  .nav-item { flex-basis: 45%; }
+}
 @media (max-width: 280px) {
   .view-panel > .liquid-card, .capture-panel, .scan-card.liquid-card, .content-card.liquid-card { padding: 12px 10px; }
   .pg-mark, .pg-mark img { width: 24px; height: 24px; }
