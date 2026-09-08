@@ -664,3 +664,8 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
 /* A selected row keeps a solid accent edge so the selection survives when the
    row is scrolled under the pointer of a different row. */
 .list-row.selected { box-shadow: inset 3px 0 0 var(--accent), 0 0 26px -12px rgba(150,190,255,.5); }
+
+/* Branch rows are cards in a grid. Lifting one on hover separates it from the
+   grid without changing any cell's size. */
+.branch-row { transition: border-color var(--motion-control) var(--ease-liquid), background-color var(--motion-control) var(--ease-liquid), box-shadow var(--motion-control) var(--ease-liquid); }
+.branch-row:hover { border-color: var(--glass-rim); background: var(--hover); box-shadow: 0 0 28px -12px rgba(150,190,255,.5); }
