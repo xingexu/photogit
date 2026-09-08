@@ -692,3 +692,7 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { border: 3px solid transparent; border-radius: 8px; background: var(--rim); background-clip: content-box; }
 ::-webkit-scrollbar-thumb:hover { background: var(--border); background-clip: content-box; }
+
+/* The header stays put while a long view scrolls under it, so the branch and
+   document you are working on never leave the screen. */
+.app-header { position: sticky; top: 0; z-index: 5; }
