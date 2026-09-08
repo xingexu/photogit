@@ -53,3 +53,37 @@ describe("PhotoGit depth · availability", () => {
     expect(depth.enabled()).toBe(false);
   });
 });
+
+// linkedom has no layout engine, so a box is supplied explicitly. That is also
+// an honest model of a host that has not laid the panel out yet.
+function box(element: any, rect = { left: 0, top: 0, width: 200, height: 100 }) {
+  element.getBoundingClientRect = () => rect;
+  return element;
+}
+
+describe("PhotoGit depth · pointer position", () => {
+  it("puts the origin at the centre of the surface", async () => {
+    const { document, depth } = await depthFixture();
+    const surface = box(document.createElement("div"));
+    expect(depth.position(surface, { clientX: 100, clientY: 50 })).toEqual({ x: 0, y: 0 });
+  });
+
+  it("reaches -1 and 1 at the edges on both axes", async () => {
+    const { document, depth } = await depthFixture();
+    const surface = box(document.createElement("div"));
+    expect(depth.position(surface, { clientX: 0, clientY: 0 })).toEqual({ x: -1, y: -1 });
+    expect(depth.position(surface, { clientX: 200, clientY: 100 })).toEqual({ x: 1, y: 1 });
+  });
+
+  it("clamps a pointer that has left the surface", async () => {
+    const { document, depth } = await depthFixture();
+    const surface = box(document.createElement("div"));
+    expect(depth.position(surface, { clientX: -400, clientY: 900 })).toEqual({ x: -1, y: 1 });
+  });
+
+  it("returns null for a surface the host has not laid out", async () => {
+    const { document, depth } = await depthFixture();
+    const surface = box(document.createElement("div"), { left: 0, top: 0, width: 0, height: 0 });
+    expect(depth.position(surface, { clientX: 5, clientY: 5 })).toBeNull();
+  });
+});
