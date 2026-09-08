@@ -634,6 +634,10 @@ function renderDocumentBinding() {
     document.getElementById("changes-empty").hidden = true;
     setCount("changes-count", 0);
     document.getElementById("changes-total").textContent = "—";
+    // The tally and the filter bar describe the list that was just cleared;
+    // leaving them up reported the previous document's counts against this one.
+    renderChangeTally([]);
+    workspaceUI.refreshChanges(document);
   }
 }
 
