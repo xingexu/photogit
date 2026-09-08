@@ -669,3 +669,9 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
    grid without changing any cell's size. */
 .branch-row { transition: border-color var(--motion-control) var(--ease-liquid), background-color var(--motion-control) var(--ease-liquid), box-shadow var(--motion-control) var(--ease-liquid); }
 .branch-row:hover { border-color: var(--glass-rim); background: var(--hover); box-shadow: 0 0 28px -12px rgba(150,190,255,.5); }
+
+/* Focus is a keyboard state and must outrank every pointer decoration, so it
+   carries a glow in addition to the outline the panel already draws. */
+[role="button"]:focus-visible, [role="tab"]:focus-visible, [role="menuitem"]:focus-visible {
+  box-shadow: 0 0 0 4px rgba(154,198,255,.22);
+}
