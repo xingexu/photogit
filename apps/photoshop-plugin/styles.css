@@ -470,7 +470,6 @@ kbd { font-family: var(--mono); font-size: 11px; padding: 1px 4px; border: 1px s
 #result.success, #result.error { padding: 10px 12px; border-radius: var(--radius); border: 1px solid var(--line); }
 #result.success { color: var(--success); background: var(--success-surface); }
 #result.error { color: var(--error); background: var(--error-surface); border-color: var(--error); }
-.toast { display: none; }
 /* Native fields must not paint through modal surfaces. */
 body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body.has-surface #workspace select { visibility: hidden; }
 .is-initializing #workspace, .is-initializing #onboarding, .is-initializing #connection-notice { display: none !important; }

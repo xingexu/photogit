@@ -37,8 +37,7 @@ let selectedVersionId = null;
 let reviewEntries = [];
 let repositoryDetails = null;
 let activityEntryCount = 0;
-let toastTimer = null;
-let toastHideTimer = null;
+let resultTimer = null;
 let surfaceReturnFocus = null;
 let autoScanTimer = null;
 let pendingPhotoshopEvent = null;
@@ -1853,18 +1852,11 @@ function show(message, error) {
   const safeMessage = safeInlineText(message, 800) || (error ? "PhotoGit could not complete that action." : "Done.");
   const result = document.getElementById("result");
   result.textContent = safeMessage;
-  result.className = error ? "error" : "success";
-  const toast = document.getElementById("toast");
-  toast.textContent = safeMessage;
-  toast.className = error ? "toast error" : "toast";
-  toast.hidden = false;
-  if (toastTimer) clearTimeout(toastTimer);
-  if (toastHideTimer) clearTimeout(toastHideTimer);
-  requestAnimationFrame(() => toast.classList.add("visible"));
-  toastTimer = setTimeout(() => {
-    toast.classList.remove("visible");
+  result.className = error ? "status-message error" : "status-message success";
+  // A success message clears itself once read; an error stays until replaced.
+  clearTimeout(resultTimer);
+  resultTimer = setTimeout(() => {
     if (!error && !busyNow && result.textContent === safeMessage) result.textContent = "";
-    toastHideTimer = setTimeout(() => { toast.hidden = true; }, 180);
   }, error ? 5200 : 3200);
 }
 function log(message) {
