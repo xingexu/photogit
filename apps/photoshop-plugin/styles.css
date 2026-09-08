@@ -23,7 +23,7 @@
   --radius-chip: 9px; --radius: 13px; --radius-panel: 20px; --radius-overlay: 26px;
   --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --mono: "SFMono-Regular", Consolas, monospace;
-  --motion-enabled: 1; --motion-control: 200ms; --motion-nav: 288ms; --motion-press: 140ms;
+  --motion-enabled: 1; --motion-control: 320ms; --motion-nav: 480ms; --motion-press: 200ms;
   --ease-liquid: cubic-bezier(.22,.9,.24,1);
 }
 :root[data-theme="light"] {
@@ -53,7 +53,7 @@ h1, h2, h3, p { margin: 0; }
 h1 { font-size: var(--text-title); line-height: 1.3; letter-spacing: -.4px; font-weight: 600; }
 h2 { font-size: var(--text-title); line-height: 1.3; letter-spacing: -.3px; font-weight: 600; }
 h3, strong, b { font-size: inherit; font-weight: 600; }
-p, strong, span { overflow-wrap: break-word; }
+p, strong, span, b, code, small, dd, dt, h1, h2, h3, label { min-width: 0; overflow-wrap: anywhere; word-break: break-word; }
 svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
 .panel-root { width: 100%; min-width: 0; max-width: 1600px; min-height: 100%; margin: 0 auto; }
 .app-header { display: flex; align-items: center; min-height: 64px; padding: 14px 16px; background: var(--surface); border-bottom: 1px solid var(--line); }
@@ -110,7 +110,7 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .repo-meta svg { width: 16px; height: 16px; margin-right: 7px; }
 .repo-branch { border: 1px solid transparent; border-radius: var(--radius); font-size: var(--text-body); }
 .repo-branch strong { min-width: 0; }
-.repo-branch .branch-chevron { flex-shrink: 0; margin: 0 0 0 8px; width: 12px; color: var(--muted); }
+.branch-chevron { flex-shrink: 0; width: 12px; height: 12px; margin-left: 8px; color: var(--muted); }
 .repo-document { color: var(--text); font-size: var(--text-body); }
 .repo-document span { min-width: 0; overflow-wrap: break-word; }
 #refresh { display: none; }
@@ -157,16 +157,18 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
    by a circular badge. Below the rail breakpoint this stays a plain block. */
 /* Reference: project, branch and document are one card of labelled cells, each
    led by a circular badge. */
-.repo-context { display: flex; flex-wrap: wrap; align-items: center; padding: 12px 14px; border: 1px solid var(--glass-rim); border-radius: var(--radius-panel); background-color: var(--glass); background-image: linear-gradient(180deg, var(--glass-top), rgba(255,255,255,0) 58%); box-shadow: var(--glass-glow); }
+.repo-context { display: flex; flex-wrap: wrap; align-items: stretch; padding: 12px 14px; border: 1px solid var(--glass-rim); border-radius: var(--radius-panel); background-color: var(--glass); background-image: linear-gradient(180deg, var(--glass-top), rgba(255,255,255,0) 58%); box-shadow: var(--glass-glow); }
 .repo-topline, .repo-meta { display: contents; }
-.repo-project, .repo-branch, .repo-document { display: flex; align-items: center; flex: 1 1 190px; min-width: 0; margin: 4px 0; padding: 4px 6px; }
+.repo-project, .repo-branch, .repo-document { display: flex; align-items: flex-start; flex: 1 1 0; min-width: 0; margin: 4px 0; padding: 4px 6px; }
 .context-badge { display: flex; align-items: center; justify-content: center; flex-shrink: 0; width: 38px; height: 38px; margin-right: 12px; border: 1px solid var(--glass-rim); border-radius: 50%; background: var(--elevated); color: var(--muted); }
 .context-badge svg { width: 17px; height: 17px; }
-.context-copy { display: block; min-width: 0; }
+.context-copy { display: block; flex: 0 1 auto; min-width: 0; }
 .context-label { display: block; color: var(--muted); font-size: var(--text-small); margin-bottom: 2px; }
-.context-copy strong, .context-copy > span:not(.context-label) { display: block; font-size: var(--text-body); font-weight: 600; overflow-wrap: break-word; }
+.context-copy strong, .context-copy > span:not(.context-label):not(.context-value) { display: block; font-size: var(--text-body); font-weight: 600; overflow-wrap: anywhere; }
+.context-value { display: flex; align-items: center; min-width: 0; font-size: var(--text-body); font-weight: 600; }
+.context-value strong { min-width: 0; }
 .repo-project .project-switch { margin: 2px 0 0 -4px; }
-@media (max-width: 719px) { .repo-project { flex-basis: 100%; } .repo-branch, .repo-document { flex-basis: 45%; } }
+@media (max-width: 719px) { .repo-project { flex: 1 1 100%; } .repo-branch, .repo-document { flex: 1 1 45%; } }
 /* Changes: dense list first, complete-document composer second. */
 .scan-card { display: flex; align-items: center; flex-wrap: wrap; margin-bottom: 18px; }
 .scan-copy { flex: 1 1 160px; min-width: 0; padding-right: 10px; }
