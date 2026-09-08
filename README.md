@@ -44,6 +44,7 @@ npm test
 npm run verify:security
 npm run verify:tokens
 npm run verify:panel-dom
+npm run verify:panel-escaping
 npm run verify:assets
 npm run package:development
 npm run verify:package

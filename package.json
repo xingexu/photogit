@@ -24,6 +24,7 @@
     "test:panel-counter": "vitest run apps/photoshop-plugin/counter.test.ts",
     "test:panel-depth": "vitest run apps/photoshop-plugin/depth.test.ts",
     "test:panel-escaping": "vitest run apps/photoshop-plugin/escaping.test.ts",
+    "test:panel-escaping-gate": "vitest run scripts/verify-panel-escaping.test.ts",
     "test:panel-manifest": "vitest run apps/photoshop-plugin/manifest.test.ts",
     "test:panel-motion": "vitest run apps/photoshop-plugin/motion.test.ts",
     "test:panel-reveal": "vitest run apps/photoshop-plugin/reveal.test.ts",
@@ -42,6 +43,7 @@
     "verify:assets": "node scripts/stamp-assets.mjs --verify",
     "verify:package": "node scripts/package-development.mjs --verify",
     "verify:panel-dom": "node scripts/verify-panel-dom.mjs",
+    "verify:panel-escaping": "node scripts/verify-panel-escaping.mjs",
     "verify:security": "node scripts/verify-security.mjs",
     "verify:tokens": "node scripts/verify-design-tokens.mjs"
   },
