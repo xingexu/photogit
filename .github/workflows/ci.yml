@@ -37,6 +37,7 @@ jobs:
       - run: npm run verify:security
       - run: npm run verify:tokens
       - run: npm run verify:panel-dom
+      - run: npm run verify:panel-escaping
       - run: npm run verify:assets
       - run: npm run package:development
       - run: npm run verify:package
@@ -61,6 +62,7 @@ jobs:
           - panel-motion
           - panel-contract
           - panel-escaping
+          - panel-escaping-gate
           - panel-branches
           - panel-versions
           - panel-reviews
