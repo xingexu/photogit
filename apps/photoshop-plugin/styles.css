@@ -685,3 +685,10 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
   to { opacity: 1; transform: none; }
 }
 .is-revealing { animation: photogit-reveal var(--motion-nav) var(--ease-liquid) var(--reveal-delay, 0ms) both; }
+
+/* The host scrollbar is the one piece of chrome the panel does not control by
+   default, and its light track cuts a bright stripe down the glass. */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { border: 3px solid transparent; border-radius: 8px; background: var(--rim); background-clip: content-box; }
+::-webkit-scrollbar-thumb:hover { background: var(--border); background-clip: content-box; }
