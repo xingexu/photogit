@@ -23,6 +23,8 @@
   --radius-chip: 9px; --radius: 13px; --radius-panel: 20px; --radius-overlay: 26px;
   --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --mono: "SFMono-Regular", Consolas, monospace;
+  --tilt-x: 0deg; --tilt-y: 0deg; --pointer-x: 50%; --pointer-y: 50%;
+  --depth-lift: 0px; --depth-perspective: 900px; --depth-sheen: rgba(255,255,255,.16);
   --motion-enabled: 1; --motion-control: 320ms; --motion-nav: 480ms; --motion-press: 200ms;
   --ease-liquid: cubic-bezier(.22,.9,.24,1);
 }
@@ -36,6 +38,7 @@
   --error: #a12e29; --error-surface: #fceceb; --backdrop: rgba(21,29,42,.24);
   --rim: #c5cbd3; --shine: rgba(255,255,255,.65); --shadow: rgba(27,35,48,.11); --press-veil: rgba(0,0,0,.12);
   --glass: rgba(255,255,255,.86); --glass-rim: rgba(90,120,180,.28); --glass-top: rgba(255,255,255,1); --nested: #ffffff;
+  --depth-sheen: rgba(255,255,255,.55);
   --glass-glow:
     0 1px 0 rgba(255,255,255,1) inset,
     0 0 0 1px rgba(255,255,255,.9),
