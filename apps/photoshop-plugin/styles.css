@@ -464,7 +464,9 @@ kbd { font-family: var(--mono); font-size: 11px; padding: 1px 4px; border: 1px s
 .command-row:focus { outline-offset: -2px; background: var(--selected); }
 #command-input { background: var(--input); border: 1px solid var(--border); border-radius: var(--radius); height: 38px; }
 #command-error { color: var(--error); white-space: normal; margin: 8px 0; }
-.setup-command { padding: 12px; margin-top: 12px; background: var(--input); border: 1px solid var(--line); border-radius: var(--radius); font: 11px/1.7 var(--mono); word-break: break-all; }
+/* A command is copied, not read: it stays on one line and scrolls sideways
+   in a narrow panel rather than breaking a path in the middle of a word. */
+.setup-command { padding: 12px; margin-top: 12px; background: var(--input); border: 1px solid var(--line); border-radius: var(--radius); font: 11px/1.7 var(--mono); white-space: pre; overflow-x: auto; overflow-wrap: normal; word-break: normal; }
 .tools-menu, .tool-sheet { position: fixed; z-index: 30; left: 10px; right: 10px; top: 12px; max-height: calc(100% - 24px); overflow: auto; padding: 18px; border: 1px solid var(--rim); border-radius: var(--radius-overlay); background: var(--overlay); box-shadow: 0 12px 40px var(--shadow); }
 .tools-menu { top: auto; bottom: 12px; left: auto; width: 264px; max-width: calc(100% - 20px); padding: 8px; }
 /* Opened from the header, the menu hangs just below it. The header is 64px
