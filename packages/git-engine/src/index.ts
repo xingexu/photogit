@@ -638,13 +638,23 @@ async function readGitBlobBounded(root: string, id: string, limit: number): Prom
     const timer = setTimeout(() => { child.kill("SIGKILL"); reject(new Error("Reading the saved preview timed out.")); }, GIT_TIMEOUT_MS);
     const chunks: Buffer[] = [];
     let total = 0;
+    let settled = false;
     child.stdout.on("data", (chunk: Buffer) => {
+      if (settled) return;
       total += chunk.length;
-      if (total > limit) { child.kill("SIGKILL"); clearTimeout(timer); reject(new Error("The saved preview is larger than PhotoGit reads into the panel.")); return; }
+      if (total > limit) {
+        settled = true;
+        chunks.length = 0;
+        child.stdout.destroy();
+        child.kill("SIGKILL");
+        clearTimeout(timer);
+        reject(new Error("The saved preview is larger than PhotoGit reads into the panel."));
+        return;
+      }
       chunks.push(chunk);
     });
-    child.on("error", (error) => { clearTimeout(timer); reject(error); });
-    child.on("close", () => { clearTimeout(timer); resolveBlob(Buffer.concat(chunks)); });
+    child.on("error", (error) => { if (settled) return; settled = true; clearTimeout(timer); reject(error); });
+    child.on("close", () => { if (settled) return; settled = true; clearTimeout(timer); resolveBlob(Buffer.concat(chunks)); });
   });
 }
 
