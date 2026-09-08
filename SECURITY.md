@@ -31,6 +31,13 @@ They read pointer coordinates and numbers the panel already has, and the only
 thing they write is a small fixed set of CSS custom properties, a class name,
 and integer text. Every written value is clamped and rounded to a finite
 number before it reaches the DOM, so none of them can interpolate caller data
-into a stylesheet or into markup. They issue no bridge requests, read no files,
-and never call `innerHTML`.
+into a stylesheet or into markup. They issue no bridge requests and read no
+files.
+
+Elsewhere the panel does build markup from templates. Every string that comes
+from outside the panel passes through `escapeHtml`, which escapes `&`, `<`,
+`>`, `"` and `'`, and every number is validated as a count by the helper
+response validator before it is interpolated. `npm run verify:panel-dom` holds
+the remaining line: no panel script may evaluate a value as code or name a
+remote origin.
 
