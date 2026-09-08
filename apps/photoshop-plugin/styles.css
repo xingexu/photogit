@@ -660,3 +660,7 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
    left edge, so the travel reads as focus rather than as reflow. */
 .list-row[role="button"]:hover { transform: translateX(3px); }
 .list-row.selected { transform: translateX(3px); }
+
+/* A selected row keeps a solid accent edge so the selection survives when the
+   row is scrolled under the pointer of a different row. */
+.list-row.selected { box-shadow: inset 3px 0 0 var(--accent), 0 0 26px -12px rgba(150,190,255,.5); }
