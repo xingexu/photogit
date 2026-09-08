@@ -100,10 +100,6 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 [aria-disabled="true"] { opacity: .55; cursor: default; }
 ::selection { background: var(--selected); color: var(--text); }
 /* Project context and responsive navigation. */
-.repo-context { padding: 14px 16px; background: var(--surface); border-bottom: 1px solid var(--line); }
-.repo-topline, .repo-meta, .repo-project { display: flex; align-items: center; flex-wrap: wrap; }
-.repo-topline { justify-content: space-between; }
-.repo-project { flex: 1; min-width: 0; padding-right: 10px; }
 .repo-project strong { font-size: var(--text-body); }
 .repo-project > span { min-width: 0; }
 .project-switch { margin-left: 8px; }
@@ -184,8 +180,6 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 /* The rail is a solid column, never a floating card. */
 .workspace-rail .liquid-card { border: 0; border-radius: 0; background-image: none; box-shadow: none; }
 
-/* Reference 02: project, branch and document sit in one glass card, each led
-   by a circular badge. Below the rail breakpoint this stays a plain block. */
 /* Reference: project, branch and document are one card of labelled cells, each
    led by a circular badge. */
 .repo-context { display: flex; flex-wrap: wrap; align-items: stretch; padding: var(--space-3) 14px; border: 1px solid var(--glass-rim); border-radius: var(--radius-panel); background-color: var(--glass); background-image: linear-gradient(180deg, var(--glass-top), rgba(255,255,255,0) 58%); box-shadow: var(--glass-glow); }
