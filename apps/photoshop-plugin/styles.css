@@ -195,11 +195,16 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .context-badge svg { width: 17px; height: 17px; }
 .context-copy { display: block; flex: 0 1 auto; min-width: 0; }
 .context-label { display: block; color: var(--muted); font-size: var(--text-small); margin-bottom: 2px; }
-.context-copy strong, .context-copy > span:not(.context-label):not(.context-value) { display: block; font-size: var(--text-body); font-weight: 600; overflow-wrap: anywhere; }
+/* Names break only when a single word cannot fit its cell, never at an
+   arbitrary character: "document.psd" was rendering as "document.p / sd". */
+.context-copy strong, .context-copy > span:not(.context-label):not(.context-value) { display: block; font-size: var(--text-body); font-weight: 600; overflow-wrap: break-word; word-break: normal; }
 .context-value { display: flex; align-items: center; min-width: 0; font-size: var(--text-body); font-weight: 600; }
 .context-value strong { min-width: 0; }
 .repo-project .project-switch { margin: 2px 0 0 -4px; }
 @media (max-width: 719px) { .repo-project { flex: 1 1 100%; } .repo-branch, .repo-document { flex: 1 1 45%; } }
+/* Below 360px two cells side by side leave each about 110px, which is less
+   than a typical branch name. Stack them so a name has the full width. */
+@media (max-width: 360px) { .repo-branch, .repo-document { flex-basis: 100%; } }
 /* Changes: dense list first, complete-document composer second. */
 .scan-card { display: flex; align-items: flex-start; flex-wrap: wrap; margin-bottom: 18px; }
 .scan-copy { flex: 1 1 160px; min-width: 0; padding-right: 10px; }
@@ -583,7 +588,6 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
   .view-panel > .liquid-card, .capture-panel, .scan-card.liquid-card, .content-card.liquid-card { padding: 14px 13px; }
   .workspace-content { padding: 16px 12px 8px; }
   .nav-item svg { display: none; }
-  .repo-project { flex-basis: 100%; }
   .repo-state { margin-top: 6px; }
   .scan-button { margin-top: 10px; }
   .scan-copy { flex-basis: 100%; }
