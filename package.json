@@ -14,6 +14,7 @@
     "check": "tsc -b --pretty false",
     "test": "tsc -b && vitest run",
     "test:watch": "vitest",
+    "test:serializer": "vitest run packages/serializer/src",
     "test:merge": "vitest run packages/merge-engine/src",
     "test:differ": "vitest run packages/differ/src",
     "test:protocol": "vitest run packages/protocol/src",
