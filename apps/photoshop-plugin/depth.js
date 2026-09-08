@@ -52,5 +52,20 @@
     return { rotateX: round(-point.y * MAX_TILT, 2), rotateY: round(point.x * MAX_TILT, 2) };
   }
 
-  globalThis.PhotoGitDepth = { enabled, supports3d: () => has3d, position, tiltFor, MAX_TILT };
+  // Written as custom properties rather than an inline transform so the
+  // stylesheet keeps full authority over how — and whether — depth is drawn.
+  function write(element, point) {
+    const tilt = tiltFor(point);
+    element.style.setProperty("--tilt-x", `${tilt.rotateX}deg`);
+    element.style.setProperty("--tilt-y", `${tilt.rotateY}deg`);
+    element.style.setProperty("--pointer-x", `${round((point.x + 1) * 50, 1)}%`);
+    element.style.setProperty("--pointer-y", `${round((point.y + 1) * 50, 1)}%`);
+  }
+
+  function clear(element) {
+    for (const name of ["--tilt-x", "--tilt-y", "--pointer-x", "--pointer-y"]) element.style.removeProperty(name);
+    element.classList.remove("is-depth-active");
+  }
+
+  globalThis.PhotoGitDepth = { enabled, supports3d: () => has3d, position, tiltFor, write, clear, MAX_TILT };
 })();
