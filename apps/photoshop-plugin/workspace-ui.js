@@ -122,5 +122,15 @@ function commandRow(document, command, activate) {
   });
   return row;
 }
-if (typeof module !== "undefined") module.exports = { setup, refreshChanges, commandRow };
-else window.PhotoGitWorkspace = { setup, refreshChanges, commandRow };
+// The same empty state the lists use, so an empty command search reads as a
+// result and not as a stray line of text under the field.
+function noMatches(document, advice) {
+  const empty = document.createElement("section"); empty.className = "empty-state command-empty";
+  empty.setAttribute("role", "status");
+  const title = document.createElement("strong"); title.textContent = "No matching commands";
+  const copy = document.createElement("p"); copy.textContent = advice;
+  empty.appendChild(title); empty.appendChild(copy);
+  return empty;
+}
+if (typeof module !== "undefined") module.exports = { setup, refreshChanges, commandRow, noMatches };
+else window.PhotoGitWorkspace = { setup, refreshChanges, commandRow, noMatches };

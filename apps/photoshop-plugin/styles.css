@@ -301,6 +301,7 @@ sp-menu, sp-menu-item { background: var(--overlay); color: var(--text); }
 .empty-state p { color: var(--muted); font-size: var(--text-small); margin-top: 6px; }
 .empty-symbol { display: none; }
 .empty-state .text-link { margin-top: 8px; }
+.command-empty { padding: 14px 8px; }
 .list-limit-note { color: var(--muted); padding: 10px 0; font-size: var(--text-small); }
 /* History selection and structured inspector. No fabricated preview data. */
 .history-list-panel { min-width: 0; }
