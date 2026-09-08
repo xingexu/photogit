@@ -15,6 +15,11 @@
     } catch { return false; }
   };
 
+  // Pointer maths is rounded before it reaches the DOM so a jittery pointer
+  // cannot produce a stream of imperceptibly different style writes.
+  const clamp = (value, low, high) => (value < low ? low : value > high ? high : value);
+  const round = (value, places = 3) => Number(value.toFixed(places));
+
   function reduced() {
     const motion = globalThis.PhotoGitMotion;
     if (motion && typeof motion.reduced === "function") return motion.reduced();
