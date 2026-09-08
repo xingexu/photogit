@@ -28,7 +28,10 @@ const demoReviews = [
 boot();
 
 async function boot() {
-  const html = await fetch("index.html?v=10", { cache: "no-store" }).then((response) => response.text());
+  // The panel document is requested with cache: no-store, so it needs no
+  // ?v= stamp — and a literal one here sat outside the stamp script's reach,
+  // frozen at a build id the rest of the demo left behind long ago.
+  const html = await fetch("index.html", { cache: "no-store" }).then((response) => response.text());
   const parsed = new DOMParser().parseFromString(html, "text/html");
   mount.innerHTML = "";
   mount.appendChild(document.importNode(parsed.querySelector(".panel-root"), true));
