@@ -87,3 +87,24 @@ describe("PhotoGit depth · pointer position", () => {
     expect(depth.position(surface, { clientX: 5, clientY: 5 })).toBeNull();
   });
 });
+
+describe("PhotoGit depth · tilt", () => {
+  it("stays within the shallow cap at the extremes", async () => {
+    const { depth } = await depthFixture();
+    for (const point of [{ x: 1, y: 1 }, { x: -1, y: -1 }]) {
+      const tilt = depth.tiltFor(point);
+      expect(Math.abs(tilt.rotateX)).toBeLessThanOrEqual(depth.MAX_TILT);
+      expect(Math.abs(tilt.rotateY)).toBeLessThanOrEqual(depth.MAX_TILT);
+    }
+  });
+
+  it("leans away from the pointer on the vertical axis", async () => {
+    const { depth } = await depthFixture();
+    expect(depth.tiltFor({ x: 0, y: 1 }).rotateX).toBeLessThan(0);
+    expect(depth.tiltFor({ x: 0, y: -1 }).rotateX).toBeGreaterThan(0);
+  });
+
+  it("is flat at the centre", async () => {
+    const { depth } = await depthFixture();
+    expect(depth.tiltFor({ x: 0, y: 0 })).toEqual({ rotateX: 0, rotateY: 0 });
+  });
