@@ -9,7 +9,7 @@ const root = fileURLToPath(new URL("../", import.meta.url));
 const stylesheet = "apps/photoshop-plugin/styles.css";
 const consumers = [
   stylesheet, "apps/photoshop-plugin/demo.css", "apps/photoshop-plugin/index.js",
-  "apps/photoshop-plugin/motion.js", "apps/photoshop-plugin/demo.js", "apps/photoshop-plugin/appearance.js",
+  "apps/photoshop-plugin/motion.js", "apps/photoshop-plugin/depth.js", "apps/photoshop-plugin/demo.js", "apps/photoshop-plugin/appearance.js",
   "apps/photoshop-plugin/branch-view.js", "apps/photoshop-plugin/version-inspector.js",
   "apps/photoshop-plugin/review-inspector.js"
 ];
