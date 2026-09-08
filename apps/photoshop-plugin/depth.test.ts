@@ -108,3 +108,36 @@ describe("PhotoGit depth · tilt", () => {
     const { depth } = await depthFixture();
     expect(depth.tiltFor({ x: 0, y: 0 })).toEqual({ rotateX: 0, rotateY: 0 });
   });
+});
+
+describe("PhotoGit depth · property writes", () => {
+  it("writes tilt and pointer properties the stylesheet can read", async () => {
+    const { document, depth } = await depthFixture();
+    const surface = document.createElement("div");
+    depth.write(surface, { x: 1, y: 0 });
+    expect(surface.style.getPropertyValue("--tilt-y")).toBe("2.4deg");
+    expect(surface.style.getPropertyValue("--pointer-x")).toBe("100%");
+    expect(surface.style.getPropertyValue("--pointer-y")).toBe("50%");
+  });
+
+  it("removes every property it wrote when the pointer leaves", async () => {
+    const { document, depth } = await depthFixture();
+    const surface = document.createElement("div");
+    surface.classList.add("is-depth-active");
+    depth.write(surface, { x: -1, y: 1 });
+    depth.clear(surface);
+    for (const name of ["--tilt-x", "--tilt-y", "--pointer-x", "--pointer-y"]) {
+      expect(surface.style.getPropertyValue(name)).toBe("");
+    }
+    expect(surface.classList.contains("is-depth-active")).toBe(false);
+  });
+
+  it("never writes a transform or any layout-affecting style", async () => {
+    const { document, depth } = await depthFixture();
+    const surface = document.createElement("div");
+    depth.write(surface, { x: 0.5, y: -0.5 });
+    for (const name of ["transform", "width", "height", "margin", "padding", "position", "display"]) {
+      expect(surface.style.getPropertyValue(name)).toBe("");
+    }
+  });
+});
