@@ -73,7 +73,6 @@ function setupDemoPanel() {
   const railLabel = byId("rail-sync-label");
   if (railLabel) { railLabel.textContent = "Synced"; byId("rail-sync").className = "rail-sync ok"; }
   renderDemoDocumentPreview();
-  renderDemoTally();
   byId("sync-status").textContent = "Status";
   replaceDemoDropdown();
   renderDemoBranches();
@@ -419,6 +418,7 @@ function renderChanges() {
   byId("change-summary").textContent = changes.length ? `${changes.length} unsaved ${changes.length === 1 ? "edit" : "edits"}` : "Your canvas is clean";
   byId("last-scan").textContent = "Scanned just now · Updates automatically";
   byId("changes-empty").hidden = changes.length > 0;
+  renderDemoTally();
   changes.forEach((change, index) => {
     const row = document.createElement("div");
     row.className = "list-row change-row";
