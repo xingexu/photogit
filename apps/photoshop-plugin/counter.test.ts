@@ -61,4 +61,21 @@ describe("PhotoGit counter", () => {
     expect(node.textContent).toBe("240");
     expect(timers.size).toBe(0);
   });
+
+  it("abandons a count in flight when a newer value arrives", async () => {
+    const { counter, node, advance } = await counterFixture();
+    counter.set(node, 500);
+    advance(100);
+    counter.set(node, 3);
+    advance(counter.DURATION + 32);
+    expect(node.textContent).toBe("3");
+    expect(node.dataset.value).toBe("3");
+  });
+
+  it("ignores a value that is not a finite number", async () => {
+    const { counter, node } = await counterFixture();
+    node.textContent = "12";
+    counter.set(node, Number.NaN);
+    expect(node.textContent).toBe("12");
+  });
 });
