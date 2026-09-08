@@ -573,6 +573,12 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
 }
 @media (max-width: 360px) {
   .app-header, .repo-context { padding-left: 12px; padding-right: 12px; }
+  /* Four header actions and a status label do not fit beside the wordmark
+     here. The status keeps its dot and colour; its label stays in the
+     accessibility tree and in the connection notice, so nothing is lost. */
+  .repo-state { margin-right: 8px; }
+  .repo-state i { margin-right: 0; width: 7px; height: 7px; }
+  .repo-state span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   /* Cards give content back the room their padding would otherwise take. */
   .view-panel > .liquid-card, .capture-panel, .scan-card.liquid-card, .content-card.liquid-card { padding: 14px 13px; }
   .workspace-content { padding: 16px 12px 8px; }
