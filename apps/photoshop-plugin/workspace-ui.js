@@ -98,11 +98,13 @@ function commandRow(document, command, activate) {
   const row = document.createElement("div"); row.className = "command-row";
   row.setAttribute("role", "button"); row.tabIndex = 0;
   const glyph = document.createElement("div"); glyph.className = "command-glyph"; glyph.setAttribute("aria-hidden", "true");
-  const paths = ["branch", "branches", "switch", "merge", "compare"].includes(command.id)
-    ? '<circle cx="6" cy="5" r="2"/><circle cx="18" cy="7" r="2"/><circle cx="6" cy="19" r="2"/><path d="M6 7v10m2-2c6 0 8-2 8-6"/>'
-    : ["history", "activity"].includes(command.id) ? '<circle cx="12" cy="12" r="8"/><path d="M12 7v5l3 2"/>'
-    : '<path d="M6 3.5h8l4 4V20H6z"/><path d="M14 3.5V8h4M9 12h6m-6 4h6"/>';
-  glyph.innerHTML = `<svg viewBox="0 0 24 24">${paths}</svg>`;
+  // Whole literals rather than an interpolated fragment, so no markup here is
+  // assembled at runtime and the build check can prove it by inspection.
+  const markup = ["branch", "branches", "switch", "merge", "compare"].includes(command.id)
+    ? '<svg viewBox="0 0 24 24"><circle cx="6" cy="5" r="2"/><circle cx="18" cy="7" r="2"/><circle cx="6" cy="19" r="2"/><path d="M6 7v10m2-2c6 0 8-2 8-6"/></svg>'
+    : ["history", "activity"].includes(command.id) ? '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 7v5l3 2"/></svg>'
+    : '<svg viewBox="0 0 24 24"><path d="M6 3.5h8l4 4V20H6z"/><path d="M14 3.5V8h4M9 12h6m-6 4h6"/></svg>';
+  glyph.innerHTML = markup;
   const copy = document.createElement("div"); copy.className = "command-copy";
   const title = document.createElement("strong"); title.textContent = command.label;
   const syntax = document.createElement("code"); syntax.textContent = `/${command.example}`;
