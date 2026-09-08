@@ -6,8 +6,11 @@
     <title>PhotoGit</title>
     <script src="motion.js"></script>
     <script src="appearance.js"></script>
-    <link rel="stylesheet" href="styles.css?v=84">
-    <script src="index.js?v=84"></script>
+    <script src="depth.js?v=85"></script>
+    <script src="counter.js?v=85"></script>
+    <script src="reveal.js?v=85"></script>
+    <link rel="stylesheet" href="styles.css?v=85">
+    <script src="index.js?v=85"></script>
   </head>
   <body class="is-initializing">
     <main class="panel-root">
@@ -69,7 +72,7 @@
           <div id="open-project-document" class="button button-quiet" role="button" tabindex="0">Open saved project version</div>
         </section>
 
-        <section class="repo-context liquid-card" aria-label="Current repository">
+        <section class="repo-context liquid-card" data-depth aria-label="Current repository">
           <div class="repo-topline">
             <div class="repo-item repo-project">
               <span class="context-badge" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 7h6l2 2h10v10H3z"/></svg></span>
@@ -117,7 +120,7 @@
         <div class="workspace-content">
         <section id="changes-view" class="view-panel" role="tabpanel" aria-labelledby="changes-tab">
           <div class="view-heading changes-heading"><h2>Changes</h2></div>
-          <section class="liquid-card scan-card">
+          <section class="liquid-card scan-card" data-depth>
             <div class="scan-copy">
               <div class="title-with-count"><h2 id="change-summary">Waiting for a scan</h2><span id="changes-total">—</span></div>
               <div id="watch-status" class="watch-status ready" role="status" aria-live="polite"><i aria-hidden="true"></i><span>Watching Photoshop</span></div>
@@ -129,9 +132,9 @@
               <span>Scan now</span>
             </div>
             <dl id="change-tally" class="change-tally" hidden>
-              <div class="tally-tile"><dd id="tally-changed">0</dd><dt>Changed layers</dt></div>
-              <div class="tally-tile"><dd id="tally-added">0</dd><dt>New layers</dt></div>
-              <div class="tally-tile"><dd id="tally-removed">0</dd><dt>Deleted layers</dt></div>
+              <div class="tally-tile" data-depth><dd id="tally-changed">0</dd><dt>Changed layers</dt></div>
+              <div class="tally-tile" data-depth><dd id="tally-added">0</dd><dt>New layers</dt></div>
+              <div class="tally-tile" data-depth><dd id="tally-removed">0</dd><dt>Deleted layers</dt></div>
             </dl>
           </section>
           <div id="cancel-scan" class="button button-quiet" role="button" tabindex="0" hidden>Cancel scan</div>
@@ -281,7 +284,7 @@
           </section>
         </section>
 
-        <footer class="sync-panel liquid-card" aria-label="Repository sync">
+        <footer class="sync-panel liquid-card" data-depth aria-label="Repository sync">
           <div id="pull" class="footer-action" role="button" tabindex="0" aria-label="Pull shared changes" title="Pull shared changes"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m-4-4 4 4 4-4"/><path d="M5 19h14"/></svg><span>Pull</span></div>
           <div id="push" class="footer-action" role="button" tabindex="0" aria-label="Push saved versions" title="Push saved versions"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V5m-4 4 4-4 4 4"/><path d="M5 19h14"/></svg><span>Push</span></div>
           <div id="show-status" class="footer-action" role="button" tabindex="0" aria-label="Check project status" title="Check project status"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6v5h-5"/><path d="M18.2 15.4A7 7 0 1 1 18.5 8L20 11"/></svg><span id="sync-status">Status</span></div>

@@ -43,10 +43,15 @@ npm run check
 npm test
 npm run verify:security
 npm run verify:tokens
+npm run verify:panel-dom
 npm run verify:assets
 npm run package:development
 npm run verify:package
 ```
+
+Each test suite also has its own script — `npm run test:panel-depth`,
+`npm run test:helper`, `npm run test:engine` and so on — and each runs as its
+own CI check, so a failure names the functionality rather than the run.
 
 Packaging produces `release/photogit-0.2.0-development.zip`, a development source bundle—not an installable `.ccx` or helper installer. Open `apps/photoshop-plugin/demo.html` for a simulated UI preview.
 

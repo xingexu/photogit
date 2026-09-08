@@ -133,3 +133,29 @@ For the simulated preview, serve `apps/photoshop-plugin` on loopback port 8766, 
 - [ ] Verify the actual Photoshop panel independently, including narrow/wide layout, Spectrum controls and keyboard delivery. Do not change or close user artwork for visual testing.
 
 The final implementation report should state which checks actually ran, link actual screenshots with demo/native labels, and list outstanding native verification. Keep private artwork/screenshots local. No push, publish or deploy step is part of this redesign.
+
+## Depth and interaction
+
+Depth is decoration layered over a panel that is complete without it. Three
+rules hold everywhere:
+
+- **Nothing waits on it.** No animation gates a click, delays a handler, moves
+  focus, or changes layout. Every effect is a transform, an opacity, or a
+  custom property the stylesheet reads.
+- **Nothing depends on it.** `depth.js`, `counter.js` and `reveal.js` are each
+  optional at the call site. When a module is absent — as it is in the contract
+  tests, which execute the panel script alone — the panel renders the same
+  values by a shorter path.
+- **Reduced motion removes it, rather than shortening it.** Depth drops its
+  transform outright, the counter jumps to its total with no timers scheduled,
+  and reveal clears its own marks.
+
+`depth.js` writes `--tilt-x`, `--tilt-y`, `--pointer-x` and `--pointer-y` from
+one delegated pointer listener; every one defaults to the flat, centred value,
+so a host that never fires the events renders exactly the card it renders
+today. The 3D rules are additionally wrapped in an `@supports` check, because
+UXP hosts do not all composite `perspective()`.
+
+The tilt is capped at 2.4 degrees. A card that leans further reads as a toy
+beside Photoshop's own chrome, and a steep lean shears the text it carries.
+
