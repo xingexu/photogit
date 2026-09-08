@@ -55,6 +55,16 @@ These concepts define composition, not new capabilities. Existing project pairin
 
 Accent indicates selection/action; green, amber and red communicate actual status. Preserve neutral artwork colors. Decorative separators are intentionally quieter than input boundaries. Contrast tests are source-token checks, not a certification of native widget rendering.
 
+## Material and geometry
+
+Radii run 9 / 13 / 20 / 26 for chips, controls, cards and overlays. Control heights are 32 and 40. A single spacing scale of 4 / 8 / 12 / 16 / 20 / 24 supplies every gap; `verify:tokens` fails the build when a declared token is not referenced, so the block stays a description rather than a wish list.
+
+Cards carry the glass material: a bright inset top edge, a hairline ring, an inner bloom and a deep soft drop over a translucent fill. The depth comes from the rim, gradient and shadow, so the hierarchy survives where the host cannot blur; the blur is applied only behind an `@supports` guard. Under `prefers-reduced-transparency` the glass token points at the opaque surface, the sheen is removed and the blur is turned off.
+
+Surfaces run canvas, content, glass, then nested. A card placed inside a glass card takes the nested tier, which sits just above the colour the glass composites to — the plain surface tone is darker than that on the dark theme and reads as sunken.
+
+Interaction eases on `cubic-bezier(.22,.9,.24,1)`. A press compresses in 200ms and releases over 480ms, pairing with a veil that fades in fast and out slowly; the veil always darkens, because a lightening veil dropped the primary button's label below the contrast floor. Hover lights a destination's rim and lifts its icon and count. Under `prefers-reduced-motion` the transitions and the displacement both go.
+
 ## Responsive composition
 
 All dimensions are logical pixels, not screenshot raster pixels. The manifest supports 230×200 through 2000×2000, with preferred docked size 400×760 and floating size 420×800. The application reading shell stops growing at 1600px.
@@ -62,9 +72,10 @@ All dimensions are logical pixels, not screenshot raster pixels. The manifest su
 | Available width | Composition |
 | --- | --- |
 | 230–639px | Compact header/context; six labeled tabs in two rows; layer list before save composer. Version/review selection opens a sheet. No permanent sidebar or sticky composer covering content. |
-| 640–899px | Six tabs in one row; otherwise stacked content. Sheets are centered at 580px. |
-| 900–1199px | 236px navigation rail carrying project, branch and document context above the six destinations. Changes: flexible list + 280px composer. History: 250px list + details. Reviews: 290px list + comparison, with status stacked inside the inspector. Branch creation is a separate 260px column. |
-| 1200px+ | 264px navigation rail; 330px composer; 300px History list; 330px review list. Comparison summary and 220px safety inspector can sit side by side. |
+| 640–719px | Six tabs in one row; otherwise stacked content. Sheets are centered at 580px. |
+| 720–899px | Navigation becomes the vertical rail card and the context card spans above it, so a floating panel gets its rail before it is wide enough to split content. |
+| 900–1199px | 148px navigation card; project, branch and document sit in their own card spanning above it. Changes: flexible list + 280px composer. History: 250px list + details. Reviews: 290px list + comparison, with status stacked inside the inspector. Branch creation is a separate 260px column. |
+| 1200px+ | 164px navigation card; 330px composer; 300px History list; 330px review list. Comparison summary and 220px safety inspector can sit side by side. |
 
 Below 360px, decorative navigation glyphs and the extra change-domain column recede. Below 280px, tab counts and footer glyphs recede; destination labels remain. Long names/paths wrap, flex children use `min-width: 0`, and the document remains the main scroll region. At minimum height, controls stay reachable by scrolling rather than being overlaid.
 
