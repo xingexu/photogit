@@ -622,7 +622,7 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
   [data-depth] { transform: none !important; }
   [role="button"]::after, [role="tab"]::after, [role="menuitem"]::after { background: var(--press-veil) !important; }
   [data-depth]::before { opacity: 0 !important; }
-  .tool-sheet:not([hidden]) { animation: none !important; opacity: 1 !important; transform: none !important; }
+  .tool-sheet:not([hidden]), .tools-menu:not([hidden]), .surface-backdrop { animation: none !important; opacity: 1 !important; transform: none !important; }
   .is-revealing { animation: none !important; opacity: 1 !important; transform: none !important; }
   /* A still bar is still a busy signal. */
   .progress-track span { animation: none !important; width: 100%; transform: none !important; opacity: .6; }
@@ -747,9 +747,19 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
 .nav-item.active svg { color: var(--accent); transform: scale(1.06); }
 
 /* A tool sheet is a dialog over the panel. Easing it up from a few pixels
-   below signals that it arrived rather than that the view was replaced. */
+   below signals that it arrived rather than that the view was replaced. The
+   tools menu arrives the same way, and both leave on the short fade the
+   script already waits for before it hides them: is-closing is the class it
+   adds for that window, and the backdrop follows the same is-open flag. */
 @keyframes photogit-sheet-in {
   from { opacity: .01; transform: translateY(10px); }
   to { opacity: 1; transform: none; }
 }
-.tool-sheet:not([hidden]) { animation: photogit-sheet-in var(--motion-nav) var(--ease-liquid) both; }
+@keyframes photogit-surface-out {
+  from { opacity: 1; }
+  to { opacity: .01; }
+}
+.tool-sheet:not([hidden]), .tools-menu:not([hidden]) { animation: photogit-sheet-in var(--motion-nav) var(--ease-liquid) both; }
+.tool-sheet.is-closing, .tools-menu.is-closing { animation: photogit-surface-out var(--motion-press) var(--ease-liquid) both; pointer-events: none; }
+.surface-backdrop { opacity: 0; transition: opacity var(--motion-press) var(--ease-liquid); }
+.surface-backdrop.is-open { opacity: 1; }
