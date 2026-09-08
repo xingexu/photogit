@@ -32,16 +32,17 @@
     "test:protocol": "vitest run packages/protocol/src",
     "test:schema": "vitest run packages/schema/src",
     "test:serializer": "vitest run packages/serializer/src",
-    "verify:security": "node scripts/verify-security.mjs",
-    "verify:tokens": "node scripts/verify-design-tokens.mjs",
-    "stamp:assets": "node scripts/stamp-assets.mjs",
-    "verify:assets": "node scripts/stamp-assets.mjs --verify",
+    "helper": "node apps/desktop-helper/dist/main.js",
     "package:development": "node scripts/package-development.mjs",
-    "verify:package": "node scripts/package-development.mjs --verify",
-    "prephotogit": "tsc -b --pretty false",
     "photogit": "node cli/dist/main.js",
     "prehelper": "tsc -b --pretty false",
-    "helper": "node apps/desktop-helper/dist/main.js"
+    "prephotogit": "tsc -b --pretty false",
+    "stamp:assets": "node scripts/stamp-assets.mjs",
+    "verify:assets": "node scripts/stamp-assets.mjs --verify",
+    "verify:package": "node scripts/package-development.mjs --verify",
+    "verify:panel-dom": "node scripts/verify-panel-dom.mjs",
+    "verify:security": "node scripts/verify-security.mjs",
+    "verify:tokens": "node scripts/verify-design-tokens.mjs"
   },
   "engines": {
     "node": ">=22.0.0"
