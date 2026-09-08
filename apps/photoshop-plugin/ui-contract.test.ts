@@ -584,6 +584,11 @@ describe("PhotoGit production panel behavior — host mocked", () => {
     p.evaluate("filterHistory()");
     expect(p.document.querySelectorAll(".history-row")).toHaveLength(0);
     expect(p.id("history-empty").hidden).toBe(false);
+    expect(p.id("history-empty-title").textContent).toBe("No matching versions");
+    p.id<HTMLInputElement>("history-search").value = "";
+    p.evaluate("historyEntries = []; filterHistory()");
+    expect(p.id("history-empty").hidden).toBe(false);
+    expect(p.id("history-empty-title").textContent).toBe("No saved versions yet");
   });
 
   it("hides GitHub actions for local and other remotes", async () => {
