@@ -1290,8 +1290,12 @@ describe("PhotoGit rounded design and label clarity", () => {
   it("removes repeated captions without removing input names or merge warnings", async () => {
     const p = await panel();
     expect(p.document.querySelectorAll(".eyebrow")).toHaveLength(0);
-    expect(p.id("message").getAttribute("aria-label")).toBe("Save-version message");
-    expect(p.document.querySelector('label[for="message"]')!.textContent).toBe("What changed?");
+    // A field with a visible label is named by that label, so what sighted
+    // users read and what voice control must say are the same words.
+    for (const [id, label] of [["message", "What changed?"], ["new-branch-name", "New branch"], ["tag-name", "Tag name"]]) {
+      expect(p.id(id).hasAttribute("aria-label")).toBe(false);
+      expect(p.document.querySelector(`label[for="${id}"]`)!.textContent).toBe(label);
+    }
     expect(p.id("docs-view").textContent).toContain("Merge uses ordinary Git, not layer blending");
     p.evaluate("renderChanges(testChanges)", { testChanges: [change(12), change(0, { domain: "document", layerName: "Document" })] });
     expect(p.id("changes").textContent).toContain("Layer #12");
