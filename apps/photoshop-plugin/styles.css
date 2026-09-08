@@ -616,3 +616,8 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
    the rim warms and the surface rises. No cursor change, no press state. */
 .tally-tile { transition: border-color var(--motion-control) var(--ease-liquid), box-shadow var(--motion-control) var(--ease-liquid), background-color var(--motion-control) var(--ease-liquid); }
 .tally-tile:hover { border-color: var(--focus); box-shadow: 0 1px 0 var(--shine) inset, 0 0 22px -8px rgba(150,190,255,.55); }
+
+/* The context badges are the panel's only circular forms; letting them take the
+   accent on hover ties the row to the pointer without moving any text. */
+.context-badge { transition: color var(--motion-control) var(--ease-liquid), border-color var(--motion-control) var(--ease-liquid), background-color var(--motion-control) var(--ease-liquid); }
+.repo-project:hover .context-badge, .repo-branch:hover .context-badge, .repo-document:hover .context-badge { color: var(--accent); border-color: var(--focus); background: var(--selected); }
