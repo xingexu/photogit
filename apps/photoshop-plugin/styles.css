@@ -9,6 +9,7 @@
   --success: #a6d6ad; --success-surface: #26382d; --warning: #efce8a; --warning-surface: #3d3220;
   --error: #ffb2ac; --error-surface: #432a29; --backdrop: rgba(0,0,0,.5);
   --rim: #494d52; --shine: rgba(255,255,255,.055); --shadow: rgba(0,0,0,.28); --press-veil: rgba(0,0,0,.12);
+  --glow: rgba(150,190,255,.5); --focus-halo: rgba(154,198,255,.22);
   --glass: rgba(50,55,63,.70); --glass-rim: rgba(255,255,255,.30); --glass-top: rgba(255,255,255,.12); --nested: #31353c;
   --glass-glow:
     0 1px 0 rgba(255,255,255,.45) inset,
@@ -37,6 +38,7 @@
   --success: #2b653b; --success-surface: #e8f2eb; --warning: #765006; --warning-surface: #fbf1db;
   --error: #a12e29; --error-surface: #fceceb; --backdrop: rgba(21,29,42,.24);
   --rim: #c5cbd3; --shine: rgba(255,255,255,.65); --shadow: rgba(27,35,48,.11); --press-veil: rgba(0,0,0,.12);
+  --glow: rgba(45,96,181,.32); --focus-halo: rgba(36,91,182,.22);
   --glass: rgba(255,255,255,.86); --glass-rim: rgba(90,120,180,.28); --glass-top: rgba(255,255,255,1); --nested: #ffffff;
   --depth-sheen: rgba(255,255,255,.55);
   --glass-glow:
@@ -259,7 +261,7 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .button-primary[role="button"]:not([aria-disabled="true"]):active { background: var(--primary-pressed); color: var(--primary-text); border-color: var(--primary-pressed); box-shadow: none; }
 #save-version { min-height: 44px; font-weight: 600; box-shadow: 0 1px 0 rgba(255,255,255,.22) inset, 0 10px 24px -12px var(--primary); }
 .button-quiet { color: var(--text); background: transparent; border-color: var(--border); }
-.button-quiet[role="button"]:not([aria-disabled="true"]):hover { border-color: var(--glass-rim); box-shadow: 0 0 22px -8px rgba(150,190,255,.45), 0 1px 0 var(--shine) inset; }
+.button-quiet[role="button"]:not([aria-disabled="true"]):hover { border-color: var(--glass-rim); box-shadow: 0 0 22px -8px var(--glow), 0 1px 0 var(--shine) inset; }
 .button-small { min-height: 30px; padding: 5px 9px; font-size: var(--text-small); }
 .button-wide { width: 100%; }
 .button-disabled { color: var(--disabled); border-color: var(--line); }
@@ -533,10 +535,10 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
   .nav-item span { flex: none; }
   .nav-item b { position: absolute; top: 13px; right: 13px; min-width: 21px; margin: 0; }
   /* Hover lights the tile; the icon and count lift with it. */
-  .nav-item:hover { border-color: var(--glass-rim); box-shadow: 0 0 0 1px rgba(255,255,255,.05), 0 0 26px -8px rgba(150,190,255,.45), 0 1px 0 var(--shine) inset; }
+  .nav-item:hover { border-color: var(--glass-rim); box-shadow: 0 0 0 1px rgba(255,255,255,.05), 0 0 26px -8px var(--glow), 0 1px 0 var(--shine) inset; }
   .nav-item:hover svg { transform: translateY(-2px) scale(1.07); }
   .nav-item:hover b { box-shadow: 0 0 16px -3px var(--primary); }
-  .nav-item.active { border-color: var(--glass-rim); background: var(--elevated); color: var(--text); box-shadow: 0 1px 0 var(--shine) inset, 0 0 34px -10px rgba(150,190,255,.42); }
+  .nav-item.active { border-color: var(--glass-rim); background: var(--elevated); color: var(--text); box-shadow: 0 1px 0 var(--shine) inset, 0 0 34px -10px var(--glow); }
   .nav-item.active b { box-shadow: 0 0 18px -4px var(--primary); }
   .workspace-content { flex: 1; min-width: 0; padding: 0; }
   .workspace-body { padding: 0 var(--space-6) var(--space-6); }
@@ -653,7 +655,7 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
 /* The tally tiles are readouts, not controls, so they get a light hover only:
    the rim warms and the surface rises. No cursor change, no press state. */
 .tally-tile { transition: border-color var(--motion-control) var(--ease-liquid), box-shadow var(--motion-control) var(--ease-liquid), background-color var(--motion-control) var(--ease-liquid); }
-.tally-tile:hover { border-color: var(--focus); box-shadow: 0 1px 0 var(--shine) inset, 0 0 22px -8px rgba(150,190,255,.55); }
+.tally-tile:hover { border-color: var(--focus); box-shadow: 0 1px 0 var(--shine) inset, 0 0 22px -8px var(--glow); }
 
 /* The context badges are the panel's only circular forms; letting the branch
    badge take the accent on hover ties that cell to the pointer. Only the
@@ -697,17 +699,17 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
    row holds the same offset and keeps a solid accent edge, so the selection
    survives when a different row is under the pointer. */
 .list-row[role="button"]:hover { transform: translateX(3px); }
-.list-row.selected { background: var(--selected); transform: translateX(3px); box-shadow: inset 3px 0 0 var(--accent), 0 0 26px -12px rgba(150,190,255,.5); }
+.list-row.selected { background: var(--selected); transform: translateX(3px); box-shadow: inset 3px 0 0 var(--accent), 0 0 26px -12px var(--glow); }
 
 /* Branch rows are cards in a grid. Lifting one on hover separates it from the
    grid without changing any cell's size. */
 .branch-row { transition: border-color var(--motion-control) var(--ease-liquid), background-color var(--motion-control) var(--ease-liquid), box-shadow var(--motion-control) var(--ease-liquid); }
-.branch-row:hover { border-color: var(--glass-rim); background: var(--hover); box-shadow: 0 0 28px -12px rgba(150,190,255,.5); }
+.branch-row:hover { border-color: var(--glass-rim); background: var(--hover); box-shadow: 0 0 28px -12px var(--glow); }
 
 /* Focus is a keyboard state and must outrank every pointer decoration, so it
    carries a glow in addition to the outline the panel already draws. */
 [role="button"]:focus-visible, [role="tab"]:focus-visible, [role="menuitem"]:focus-visible {
-  box-shadow: 0 0 0 4px rgba(154,198,255,.22);
+  box-shadow: 0 0 0 4px var(--focus-halo);
 }
 
 /* Reveal · a freshly rendered row eases up into place. The animation runs on a
@@ -740,7 +742,7 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
 /* Notices carry the panel's only coloured surfaces. A matching rim glow keeps
    them legible as one object when they sit on glass. */
 .notice { transition: box-shadow var(--motion-control) var(--ease-liquid); }
-.notice:hover { box-shadow: 0 0 30px -14px rgba(150,190,255,.5); }
+.notice:hover { box-shadow: 0 0 30px -14px var(--glow); }
 
 /* A tool sheet is a dialog over the panel. Easing it up from a few pixels
    below signals that it arrived rather than that the view was replaced. The
