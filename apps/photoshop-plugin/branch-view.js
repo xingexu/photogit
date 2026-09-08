@@ -7,7 +7,14 @@ function safePreview(src) {
     /^data:image\/(?:png|jpeg);base64,[A-Za-z0-9+/]+={0,2}$/.test(src);
 }
 
-function render(container, { branches = [], current, onSwitch, previews } = {}) {
+// Local demo artwork, kept to the same restricted shape the version inspector
+// allows: relative assets only, never remote URLs, SVG or data URIs.
+function safeDemoPreview(src) {
+  return typeof src === "string" &&
+    /^(?:\.\/)?assets\/(?:[A-Za-z0-9_-]+\/)*[A-Za-z0-9_-]+\.(?:png|jpe?g|webp)$/i.test(src);
+}
+
+function render(container, { branches = [], current, onSwitch, previews, demoPreviews } = {}) {
   const document = container.ownerDocument;
   container.textContent = "";
   container.classList.add("branch-list");
@@ -18,7 +25,9 @@ function render(container, { branches = [], current, onSwitch, previews } = {}) 
   const ordered = [...entries.filter(branch => branch.name === currentName), ...entries.filter(branch => branch.name !== currentName)];
   const previewFor = name => {
     const src = previews && typeof previews === "object" ? previews[name] : undefined;
-    return safePreview(src) ? src : null;
+    if (safePreview(src)) return src;
+    const demo = demoPreviews && typeof demoPreviews === "object" ? demoPreviews[name] : undefined;
+    return safeDemoPreview(demo) ? demo : null;
   };
   container.classList.toggle("branch-list-cards", ordered.some(branch => previewFor(branch.name)));
   if (!ordered.length) {
