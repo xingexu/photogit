@@ -625,7 +625,11 @@ function assertPsdHeader(header: Buffer, bytes: number): void {
     || header.readUInt16BE(24) > 9) throw new Error("The saved snapshot does not have a valid Photoshop PSD/PSB header. No branch changes were made.");
 }
 
-const MAX_PREVIEW_BYTES = 12 * 1024 * 1024;
+// A preview crosses the bridge base64-encoded inside a JSON envelope, which
+// costs about a third again in size. Cap it so an accepted preview always fits
+// the bridge's 5 MB response limit rather than being read, encoded and then
+// rejected as too large.
+const MAX_PREVIEW_BYTES = 3 * 1024 * 1024;
 const PNG_MAGIC = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 
 async function readGitBlobBounded(root: string, id: string, limit: number): Promise<Buffer> {
