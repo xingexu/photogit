@@ -563,6 +563,11 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
 @media (prefers-reduced-motion: reduce) {
   :root { --motion-enabled: 0; }
   * { transition: none !important; animation: none !important; }
+  /* Removing the transition alone would leave the press and hover transforms
+     snapping between states, which is the movement the setting asks to avoid.
+     Drop the displacement itself and let colour carry the feedback. */
+  [role="button"]:active, [role="tab"]:active, [role="menuitem"]:active,
+  .nav-item:hover svg, .nav-item:hover b { transform: none !important; }
 }
 @media (prefers-reduced-transparency: reduce) {
   /* Take the glass back to an opaque tonal surface: no translucent fill, no
