@@ -164,6 +164,16 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
   }
   [data-depth].is-depth-active { --depth-lift: 5px; }
 }
+/* A specular highlight that follows the pointer across the glass. It sits in a
+   pseudo-element behind pointer events, so it can never intercept a click. */
+[data-depth] { position: relative; }
+[data-depth]::before {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 0;
+  background: radial-gradient(200px circle at var(--pointer-x) var(--pointer-y), var(--depth-sheen), rgba(255,255,255,0) 70%);
+  opacity: 0; transition: opacity var(--motion-nav) var(--ease-liquid);
+}
+[data-depth].is-depth-active::before { opacity: 1; }
+[data-depth] > * { position: relative; z-index: 1; }
 
 /* The rail is a solid column, never a floating card. */
 .workspace-rail .liquid-card { border: 0; border-radius: 0; background-image: none; box-shadow: none; }
