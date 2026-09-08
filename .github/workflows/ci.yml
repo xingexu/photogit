@@ -60,6 +60,7 @@ jobs:
           - panel-reveal
           - panel-motion
           - panel-contract
+          - panel-escaping
           - panel-branches
           - panel-versions
           - panel-reviews
