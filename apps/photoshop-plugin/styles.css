@@ -675,3 +675,12 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
 [role="button"]:focus-visible, [role="tab"]:focus-visible, [role="menuitem"]:focus-visible {
   box-shadow: 0 0 0 4px rgba(154,198,255,.22);
 }
+
+/* Reveal · a freshly rendered row eases up into place. The animation runs on a
+   row that is already present and already interactive, so it can only ever be
+   decoration over content the user can use. */
+@keyframes photogit-reveal {
+  from { opacity: .01; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+.is-revealing { animation: photogit-reveal var(--motion-nav) var(--ease-liquid) var(--reveal-delay, 0ms) both; }
