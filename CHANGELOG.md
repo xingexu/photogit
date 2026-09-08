@@ -18,6 +18,13 @@
 - The panel header is now sticky, so the branch and document stay in view.
 - Each test suite runs as its own CI check, so a red check names the
   functionality that broke.
+- Added `verify:panel-escaping`: a TypeScript-AST gate that proves every
+  interpolation into panel markup is escaped or provably constant, and that
+  the escaper it trusts really escapes. It has its own suite, with fixtures
+  that prove it rejects an unescaped interpolation and a weakened escaper.
+- Fixed five interpolations the new gate found: two review counts and a demo
+  count now pass through `escapeHtml`, and the change-row category and status
+  are ternaries over literals rather than a lookup.
 
 
 ## 0.2.0 — unreleased development

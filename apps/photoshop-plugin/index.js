@@ -470,7 +470,7 @@ function createReviewCard(review, compact) {
   const mergeClass = review.mergeable ? "button-primary" : "button-disabled";
   const mergeLabel = review.mergeable ? "Merge" : "Resolve conflicts to merge";
   const changes = review.changes.length ? review.changes.join("\n") : "No file-level differences.";
-  card.innerHTML = `<div class="review-title"><strong>${escapeHtml(review.branch)}</strong><span>${review.ahead} ahead</span></div><div class="review-meta"><span class="${statusClass}">${statusLabel}</span><span>·</span><span>${review.changeCount} ${review.changeCount === 1 ? "file" : "files"}</span></div><div class="review-files" aria-hidden="true">${escapeHtml(changes)}</div><div class="review-actions"><div class="button button-quiet button-small compare-action" role="button" tabindex="0" aria-expanded="false">Compare</div><div class="button ${mergeClass} button-small merge-action" role="button" tabindex="${review.mergeable ? "0" : "-1"}" data-mergeable="${review.mergeable ? "true" : "false"}" ${review.mergeable ? "" : "aria-disabled=\"true\""}>${mergeLabel}</div></div>`;
+  card.innerHTML = `<div class="review-title"><strong>${escapeHtml(review.branch)}</strong><span>${escapeHtml(review.ahead)} ahead</span></div><div class="review-meta"><span class="${statusClass}">${statusLabel}</span><span>·</span><span>${escapeHtml(review.changeCount)} ${review.changeCount === 1 ? "file" : "files"}</span></div><div class="review-files" aria-hidden="true">${escapeHtml(changes)}</div><div class="review-actions"><div class="button button-quiet button-small compare-action" role="button" tabindex="0" aria-expanded="false">Compare</div><div class="button ${mergeClass} button-small merge-action" role="button" tabindex="${review.mergeable ? "0" : "-1"}" data-mergeable="${review.mergeable ? "true" : "false"}" ${review.mergeable ? "" : "aria-disabled=\"true\""}>${mergeLabel}</div></div>`;
   const details = card.querySelector(".review-files");
   const direction = document.createElement("p");
   direction.className = "review-direction muted";
@@ -1412,8 +1412,11 @@ function renderChanges(changes, { baselineMissing = false, changeCount = changes
       row.setAttribute("aria-label", `Select changed layer ${change.layerName}, Photoshop layer ${change.photoshopId}. ${changeSummary(change)}`);
     }
     const identityLabel = change.domain === "document" ? "" : `Layer ${change.photoshopId ? `#${change.photoshopId}` : "ID unavailable"}`;
-    const category = ["added", "removed"].includes(change.category) ? change.category : "modified";
-    const status = { added: "Added", removed: "Removed", modified: "Modified" }[category];
+    // Written as ternaries over literals rather than a lookup, so the two
+    // values that land in markup are constants by inspection and not merely
+    // constants in practice.
+    const category = change.category === "added" ? "added" : change.category === "removed" ? "removed" : "modified";
+    const status = category === "added" ? "Added" : category === "removed" ? "Removed" : "Modified";
     row.innerHTML = `<span class="row-glyph ${domainClass(change.domain)}" aria-hidden="true">${domainIcon(change.domain)}</span><span class="row-copy"><strong>${escapeHtml(change.layerName)}</strong><span class="layer-identity">${escapeHtml(identityLabel)}</span><span class="change-detail">${escapeHtml(changeSummary(change))}</span></span><span class="change-domain"><span class="change-state ${category}">${status}</span>${escapeHtml(change.domain)}</span>`;
     const select = () => {
       if (!selectable) return;
