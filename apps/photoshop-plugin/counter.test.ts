@@ -54,4 +54,11 @@ describe("PhotoGit counter", () => {
       advance(16);
     }
   });
+
+  it("skips straight to the total under reduced motion", async () => {
+    const { counter, node, timers } = await counterFixture(true);
+    counter.set(node, 240);
+    expect(node.textContent).toBe("240");
+    expect(timers.size).toBe(0);
+  });
 });
