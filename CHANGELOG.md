@@ -4,6 +4,13 @@
 
 Hardening candidate for the Photoshop version workflow. This entry describes changes under verification, not a declaration of release acceptance.
 
+- Read a version's committed preview back through a new `versionPreview` helper operation, so History, Branches and Reviews show the artwork actually saved rather than metadata alone. The engine verifies the PNG header and the committed size, caps the blob so its encoded form fits the bridge, and the panel re-checks the reported type, size and encoding before building an image URL itself.
+- Rebuild the panel around cards: project, branch and document in one context card; navigation as a rail card with icons above labels; detected-change tiles counted from the categories the scan already reports.
+- Add the glass material, a rounder geometry scale, and interaction that eases in and settles out. The press veil darkens rather than lightens, which keeps every label above the contrast floor.
+- Fix `wideWorkspace()` relying on `window.matchMedia`, which UXP host builds do not all implement; the wide inspectors were unreachable in Photoshop even though the stylesheet had switched.
+- Add `verify:tokens` and `verify:assets`, which catch design tokens declared without use and panel/demo asset versions drifting apart. The latter had been silently serving stale styles to browser verification.
+- Tighten spacing so no content sits on a card's border, and correct icon glyph insets that left icons a few pixels out from their labels.
+
 - Tighten logo/title alignment and panel spacing, remove redundant scan/save controls, and add a searchable command palette plus an in-panel Docs directory. Preserve mutation guards and confirm sync/branch-switch commands.
 - Include Adobe's explicitly requested `@1x` icon variant in packaging and manifest checks.
 

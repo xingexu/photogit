@@ -68,7 +68,7 @@ function pagedList(document, parent, entries, className, label, renderEntry) {
 function safeVersionPreview(preview) {
   // Only base64 PNG/JPEG produced by the helper from a committed preview blob.
   // No remote URLs, no SVG, no arbitrary helper paths.
-  return typeof preview?.src === "string" && preview.src.length < 24_000_000 &&
+  return typeof preview?.src === "string" && preview.src.length <= 8_000_000 &&
     /^data:image\/(?:png|jpeg);base64,[A-Za-z0-9+/]+={0,2}$/.test(preview.src);
 }
 

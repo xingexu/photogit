@@ -1,5 +1,19 @@
 # Acceptance report: 0.2.0 development
 
+## Saved previews and the card rebuild
+
+Verification: 413 tests, type, security, token, asset and package checks passed. Development bundle SHA-256 recorded with the packaging step of each commit.
+
+Added a `versionPreview` helper operation so History, Branches and Reviews show the preview committed with a version rather than metadata alone. The engine reads only the managed preview blob for a validated commit, checks the PNG header and that the committed size matches the bytes read, and caps the blob so its encoded form fits the bridge's response bound; the panel re-checks availability, content type, size and encoding before it builds an image URL. Every render surface accepts decoded PNG or JPEG data only.
+
+Rebuilt the panel around cards and restored blue to primary controls and navigation selection, reversing the neutral-palette entry below. The press veil darkens rather than lightens, because a lightening veil dropped the primary button's label to 4.24:1 against a 4.5 floor; the ramp is 5.56 / 4.55 / 6.69 and the worst pressed case across both themes is 4.62:1.
+
+Fixed `wideWorkspace()` depending on `window.matchMedia`, which UXP host builds do not all implement — the wide inspectors were unreachable in Photoshop while the stylesheet had already switched layouts. Browser testing could not have found this.
+
+Added `verify:tokens` and `verify:assets`. The second exists because the panel and demo asset versions had drifted, so the demo requested a stylesheet several versions old and the browser served it from cache; several rounds of browser verification were reading stale CSS as a result.
+
+Native limitation: the card shell, glass material, blue primary and change tiles were reloaded and inspected in Photoshop 27.10.0 against a real project. The later spacing, alignment, hover and reduced-motion work is browser-verified only. Contrast figures are computed, not measured on screen.
+
 ## Neutral silver/graphite theme
 
 Verification: 280 tests, type, security and package checks passed. All six pages passed the eight viewport/theme browser combinations, plus stress states, theme persistence, palette navigation and focus return. Dark/Light 420×800 previews were visually reviewed. Final development bundle SHA-256: `9f68faf2e9352dfdd345d53aba8dcf6406f7f0cd82869a2b9150cce3d3ba26c7`.

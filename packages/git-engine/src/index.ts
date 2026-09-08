@@ -625,7 +625,11 @@ function assertPsdHeader(header: Buffer, bytes: number): void {
     || header.readUInt16BE(24) > 9) throw new Error("The saved snapshot does not have a valid Photoshop PSD/PSB header. No branch changes were made.");
 }
 
-const MAX_PREVIEW_BYTES = 12 * 1024 * 1024;
+// A preview crosses the bridge base64-encoded inside a JSON envelope, which
+// costs about a third again in size. Cap it so an accepted preview always fits
+// the bridge's 5 MB response limit rather than being read, encoded and then
+// rejected as too large.
+const MAX_PREVIEW_BYTES = 3 * 1024 * 1024;
 const PNG_MAGIC = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 
 async function readGitBlobBounded(root: string, id: string, limit: number): Promise<Buffer> {
@@ -634,13 +638,23 @@ async function readGitBlobBounded(root: string, id: string, limit: number): Prom
     const timer = setTimeout(() => { child.kill("SIGKILL"); reject(new Error("Reading the saved preview timed out.")); }, GIT_TIMEOUT_MS);
     const chunks: Buffer[] = [];
     let total = 0;
+    let settled = false;
     child.stdout.on("data", (chunk: Buffer) => {
+      if (settled) return;
       total += chunk.length;
-      if (total > limit) { child.kill("SIGKILL"); clearTimeout(timer); reject(new Error("The saved preview is larger than PhotoGit reads into the panel.")); return; }
+      if (total > limit) {
+        settled = true;
+        chunks.length = 0;
+        child.stdout.destroy();
+        child.kill("SIGKILL");
+        clearTimeout(timer);
+        reject(new Error("The saved preview is larger than PhotoGit reads into the panel."));
+        return;
+      }
       chunks.push(chunk);
     });
-    child.on("error", (error) => { clearTimeout(timer); reject(error); });
-    child.on("close", () => { clearTimeout(timer); resolveBlob(Buffer.concat(chunks)); });
+    child.on("error", (error) => { if (settled) return; settled = true; clearTimeout(timer); reject(error); });
+    child.on("close", () => { if (settled) return; settled = true; clearTimeout(timer); resolveBlob(Buffer.concat(chunks)); });
   });
 }
 
