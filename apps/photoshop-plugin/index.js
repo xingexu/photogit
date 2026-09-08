@@ -105,7 +105,6 @@ function bindPanelEvents() {
   bindInputAction("message", saveVersion);
   bindInputAction("new-branch-name", createBranch);
   bindInputAction("tag-name", createTag);
-  ["message", "history-search", "new-branch-name", "tag-name"].forEach(bindFieldState);
   document.querySelector(".section-nav").addEventListener("keydown", handleTabKeyboard);
   document.getElementById("tools-menu").addEventListener("keydown", handleMenuKeyboard);
   document.addEventListener("keydown", handleGlobalKeyboard);
@@ -194,13 +193,6 @@ function bindInputAction(id, handler) {
     event.stopPropagation();
     handler(event);
   });
-}
-
-function bindFieldState(id) {
-  const input = document.getElementById(id);
-  const sync = () => input.closest(".field-shell")?.classList.toggle("has-value", Boolean(input.value));
-  input.addEventListener("input", sync);
-  sync();
 }
 
 function handleTabKeyboard(event) {
@@ -699,9 +691,7 @@ async function saveVersion() {
       capture,
       documentIdentity: identity
     });
-    const input = document.getElementById("message");
-    input.value = "";
-    input.closest(".field-shell")?.classList.remove("has-value");
+    document.getElementById("message").value = "";
     renderChanges([]);
     setWatchStatus("Watching Photoshop", "ready");
     log(`Saved ${result.shortId}: ${message}`);
@@ -752,7 +742,6 @@ async function createBranch() {
   return run("Creating branch…", async () => {
     await callHelper("createBranch", { branch: name });
     input.value = "";
-    input.closest(".field-shell")?.classList.remove("has-value");
     log(`Created and switched to ${name}.`);
     await Promise.all([loadBranches(), loadReviews()]);
     show(`Created branch ${name}.`, false);
@@ -926,7 +915,6 @@ async function createTag() {
   return run(`Creating ${tag}…`, async () => {
     await callHelper("createTag", { tag });
     input.value = "";
-    input.closest(".field-shell")?.classList.remove("has-value");
     closeTagSheet(false, true);
     await loadReviews();
     log(`Created repository tag ${tag}.`);
