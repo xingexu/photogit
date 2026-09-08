@@ -90,7 +90,6 @@ function setupDemoPanel() {
   byId("docs-search").addEventListener("input", renderCommandDocs);
   renderCommandDocs();
   bind("setup-toggle", () => { byId("setup-instructions").hidden = !byId("setup-instructions").hidden; byId("setup-toggle").setAttribute("aria-expanded", String(!byId("setup-instructions").hidden)); });
-  bind("scan", scan);
   bind("rescan", scan);
   bind("save-version", saveVersion);
   bind("pull", () => sync("Pulled live-option-b successfully.", "Pulled just now"));
@@ -799,7 +798,7 @@ async function autoplay() {
   setCaption("01", "Review live layer changes", "Readable content, appearance, and structure edits map back to Photoshop layers.");
   await clickWithCursor(mount.querySelector(".change-row"));
   await wait(450);
-  await clickWithCursor(byId("scan"));
+  await clickWithCursor(byId("rescan"));
   await wait(650);
 
   setCaption("02", "Save a complete checkpoint", "One version stores the PSD, preview, semantic data, and design intent.");

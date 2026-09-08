@@ -203,7 +203,7 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .scan-copy { flex: 1 1 160px; min-width: 0; padding-right: 10px; }
 .scan-copy h2 { font-size: var(--text-subhead); font-weight: 600; letter-spacing: -.2px; }
 .title-with-count { display: flex; align-items: center; }
-#changes-total, #scan, .progress-track { display: none; }
+#changes-total, .progress-track { display: none; }
 .scan-detail { color: var(--muted); font-size: var(--text-small); margin-top: 4px; white-space: pre-line; }
 .watch-status { display: flex; align-items: center; color: var(--muted); font-size: var(--text-small); margin-top: 4px; }
 .change-tally { display: flex; flex-wrap: wrap; width: 100%; gap: 10px; margin: var(--space-4) 0 2px; }
