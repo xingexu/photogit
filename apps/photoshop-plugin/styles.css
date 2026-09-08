@@ -565,5 +565,12 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
   * { transition: none !important; animation: none !important; }
 }
 @media (prefers-reduced-transparency: reduce) {
-  .app-header, .repo-context, .tools-menu, .tool-sheet { background-image: none; box-shadow: none; }
+  /* Take the glass back to an opaque tonal surface: no translucent fill, no
+     blur behind it, and no sheen gradient over it. */
+  :root { --glass: var(--surface); --glass-top: transparent; }
+  .view-panel > .liquid-card, .capture-panel, .scan-card.liquid-card, .content-card.liquid-card,
+  .onboarding.liquid-card, .repo-context, .section-nav, .tools-menu, .tool-sheet, .app-header {
+    background-image: none; backdrop-filter: none;
+  }
+  .app-header, .tools-menu, .tool-sheet { box-shadow: none; }
 }
