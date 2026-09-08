@@ -1030,11 +1030,15 @@ describe("PhotoGit production panel behavior — host mocked", () => {
     p.context.callHelper = vi.fn(async () => { expect(p.inModal()).toBe(false); events.push("version"); return { versionId: "a".repeat(40), shortId: "aaaaaaaa", warningCount: 0 }; });
     for (const name of ["loadStatus", "loadBranches", "loadHistory", "loadReviews"]) p.context[name] = vi.fn(async () => undefined);
     p.id<HTMLInputElement>("message").value = "Save modal regression";
+    p.id<HTMLInputElement>("history-search").value = "cover";
     await p.evaluate("saveVersion()");
     expect(events).toEqual(["pixels", "pixels", "psd", "png", "version"]);
     expect(p.core.executeAsModal).toHaveBeenCalledOnce();
     expect(p.id("changes-count").textContent).toBe("0");
     expect(p.evaluate("suppressNotifications")).toBe(false);
+    // The message was consumed; the History filter is the user's and stays.
+    expect(p.id<HTMLInputElement>("message").value).toBe("");
+    expect(p.id<HTMLInputElement>("history-search").value).toBe("cover");
   });
 
   it.each(["document during cancellation", "project during cancellation", "document during preparation", "project during preparation"])("keeps the clicked first-save target fixed: %s", async (scenario) => {
