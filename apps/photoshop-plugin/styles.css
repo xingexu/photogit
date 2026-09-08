@@ -631,3 +631,9 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
    scannable with the pointer without suggesting any of them can be clicked. */
 .document-facts div { transition: border-color var(--motion-control) var(--ease-liquid); }
 .document-facts div:hover { border-color: var(--border); }
+
+/* The saved preview is the one piece of real artwork in the panel. Hovering it
+   eases in a slight zoom inside a clipped frame, so the frame never moves. */
+.preview-figure { overflow: hidden; border-radius: var(--radius); }
+.preview-figure img { transition: transform var(--motion-nav) var(--ease-liquid); }
+.preview-figure:hover img { transform: scale(1.03); }
