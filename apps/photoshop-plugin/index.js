@@ -1583,9 +1583,6 @@ function selectTab(name, animate = true) {
   }
   if (!animate || !target) return;
   document.body.scrollTop = 0;
-  target.classList.remove("view-enter");
-  void target.offsetWidth;
-  target.classList.add("view-enter");
   globalThis.PhotoGitMotion?.enter(target);
 }
 
