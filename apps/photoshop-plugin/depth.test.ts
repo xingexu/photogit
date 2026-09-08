@@ -159,3 +159,24 @@ describe("PhotoGit depth · press origin", () => {
     expect(control.style.getPropertyValue("--ripple-x")).toBe("");
   });
 });
+
+describe("PhotoGit depth · malformed input", () => {
+  it("declines an event with no coordinates rather than writing NaN", async () => {
+    const { document, depth } = await depthFixture();
+    const surface = box(document.createElement("div"));
+    expect(depth.position(surface, {})).toBeNull();
+    expect(depth.position(surface, { clientX: Number.NaN, clientY: 0 })).toBeNull();
+    expect(surface.style.getPropertyValue("--tilt-x")).toBe("");
+  });
+
+  it("only ever writes finite, unit-suffixed values", async () => {
+    const { document, depth } = await depthFixture();
+    const surface = box(document.createElement("div"));
+    const point = depth.position(surface, { clientX: 137, clientY: 3 })!;
+    depth.write(surface, point);
+    expect(surface.style.getPropertyValue("--tilt-x")).toMatch(/^-?\d+(\.\d+)?deg$/);
+    expect(surface.style.getPropertyValue("--tilt-y")).toMatch(/^-?\d+(\.\d+)?deg$/);
+    expect(surface.style.getPropertyValue("--pointer-x")).toMatch(/^\d+(\.\d+)?%$/);
+    expect(surface.style.getPropertyValue("--pointer-y")).toMatch(/^\d+(\.\d+)?%$/);
+  });
+});
