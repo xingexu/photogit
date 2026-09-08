@@ -799,6 +799,21 @@ describe("PhotoGit production panel behavior — host mocked", () => {
     expect(p.id("change-summary").textContent).toBe("Connect a document");
   });
 
+  it("clears the tally and filter bar with the list when the document is not connected", async () => {
+    const p = await panel();
+    p.connect();
+    await p.evaluate("renderChanges(changes)", { changes: [change(1), change(2, { category: "added" })] });
+    expect(p.id("change-tally").hidden).toBe(false);
+    expect(p.id("change-filters").hidden).toBe(false);
+    p.app.activeDocument = syntheticDocument(2);
+    p.app.documents.push(p.app.activeDocument);
+    p.evaluate("renderDocumentBinding()");
+    expect(p.id("changes").children.length).toBe(0);
+    expect(p.id("change-tally").hidden).toBe(true);
+    expect(p.id("tally-changed").textContent).toBe("0");
+    expect(p.id("change-filters").hidden).toBe(true);
+  });
+
   it("adopts a document only after confirmation and reports a completed connection", async () => {
     const p = await panel();
     p.connect();
