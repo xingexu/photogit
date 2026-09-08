@@ -82,7 +82,8 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
    (a lightening veil dropped the primary button's label to 4.24). The command
    trigger is excluded because its ::after carries the shortcut hint. */
 [role="button"]:not(.command-trigger)::after, [role="tab"]::after, [role="menuitem"]::after {
-  content: ""; position: absolute; inset: 0; border-radius: inherit; background: var(--press-veil);
+  content: ""; position: absolute; inset: 0; border-radius: inherit;
+  background: radial-gradient(circle at var(--ripple-x, 50%) var(--ripple-y, 50%), var(--press-veil) 0%, var(--press-veil) 40%, transparent 78%);
   opacity: 0; pointer-events: none; transition: opacity var(--motion-nav) var(--ease-liquid);
 }
 [role="button"]:not(.command-trigger):not([aria-disabled="true"]):active::after,
