@@ -1465,13 +1465,16 @@ async function selectPhotoshopLayer(photoshopId) {
 function commandRow(command, activate) {
   return workspaceUI.commandRow(document, command, activate);
 }
+function noMatches(document, advice) {
+  return workspaceUI.noMatches(document, advice);
+}
 
 function renderCommandDocs() {
   const list = document.getElementById("command-directory");
   list.innerHTML = "";
   const matches = commandDirectory.search(document.getElementById("docs-search").value || "");
   for (const command of matches) list.appendChild(commandRow(command, () => openCommandPalette(command.id + " ")));
-  if (!matches.length) list.textContent = "No matching commands. Try save, branch, or history.";
+  if (!matches.length) list.appendChild(noMatches(document, "Try save, branch, or history."));
 }
 
 function openCommandPalette(initial = "") {
@@ -1498,7 +1501,7 @@ function openCommandPalette(initial = "") {
         field.value = command.id + " "; field.focus(); render();
       } else void executeCommand(command.id);
     }));
-    if (!matches.length) results.textContent = "No matching commands. Nothing will be run.";
+    if (!matches.length) results.appendChild(noMatches(document, "Nothing will be run."));
   };
   field.addEventListener("input", render);
   field.addEventListener("keydown", event => {
