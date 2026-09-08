@@ -519,6 +519,8 @@ function renderHistory(versions) {
     }
     container.appendChild(section);
   }
+  const reveal = globalThis.PhotoGitReveal;
+  if (reveal && typeof reveal.stagger === "function") reveal.stagger(container.querySelectorAll(".history-row"));
 }
 
 function groupHistory(versions) {
