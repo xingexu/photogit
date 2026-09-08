@@ -467,6 +467,11 @@ kbd { font-family: var(--mono); font-size: 11px; padding: 1px 4px; border: 1px s
 /* A command is copied, not read: it stays on one line and scrolls sideways
    in a narrow panel rather than breaking a path in the middle of a word. */
 .setup-command { padding: 12px; margin-top: 12px; background: var(--input); border: 1px solid var(--line); border-radius: var(--radius); font: 11px/1.7 var(--mono); white-space: pre; overflow-x: auto; overflow-wrap: normal; word-break: normal; }
+/* Both sheets close from the same corner glyph, so a dialog's heading row
+   always reads title left, close right. The heading keeps the title on one
+   line beside it rather than wrapping the control underneath. */
+.tool-sheet > .section-heading { flex-wrap: nowrap; align-items: flex-start; }
+.tool-sheet > .section-heading h2 { flex: 1; min-width: 0; }
 .tools-menu, .tool-sheet { position: fixed; z-index: 30; left: 10px; right: 10px; top: 12px; max-height: calc(100% - 24px); overflow: auto; padding: 18px; border: 1px solid var(--rim); border-radius: var(--radius-overlay); background: var(--overlay); box-shadow: 0 12px 40px var(--shadow); }
 .tools-menu { top: auto; bottom: 12px; left: auto; width: 264px; max-width: calc(100% - 20px); padding: 8px; }
 /* Opened from the header, the menu hangs just below it. The header is 64px
