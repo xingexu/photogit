@@ -43,5 +43,14 @@
     return { x: round(x), y: round(y) };
   }
 
-  globalThis.PhotoGitDepth = { enabled, supports3d: () => has3d, position };
+  // The tilt is deliberately shallow. A card that leans more than a couple of
+  // degrees reads as a toy next to Photoshop's own chrome, and a steep lean
+  // shears the text it carries.
+  const MAX_TILT = 2.4;
+
+  function tiltFor(point) {
+    return { rotateX: round(-point.y * MAX_TILT, 2), rotateY: round(point.x * MAX_TILT, 2) };
+  }
+
+  globalThis.PhotoGitDepth = { enabled, supports3d: () => has3d, position, tiltFor, MAX_TILT };
 })();
