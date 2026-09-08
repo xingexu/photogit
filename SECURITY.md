@@ -23,3 +23,14 @@ These controls are defenses, not a sandbox for untrusted Git repositories. Git c
 ## Verification
 
 Run `npm audit`, `npm run verify:security`, `npm run verify:tokens`, `npm run verify:assets`, and `npm test`. The secret inventory checks tracked and untracked non-ignored source files for known key/token forms without printing matching values; it does not inspect Git history or detect every possible credential. Tests cover authentication, containment, symlinks, malformed input, request/response bounds, rollback, and redaction. See [the acceptance report](docs/ACCEPTANCE_REPORT.md) for the evidence and live gaps for this build.
+
+## Panel interaction modules
+
+`depth.js`, `counter.js` and `reveal.js` are decoration and hold no privilege.
+They read pointer coordinates and numbers the panel already has, and the only
+thing they write is a small fixed set of CSS custom properties, a class name,
+and integer text. Every written value is clamped and rounded to a finite
+number before it reaches the DOM, so none of them can interpolate caller data
+into a stylesheet or into markup. They issue no bridge requests, read no files,
+and never call `innerHTML`.
+
