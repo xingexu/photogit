@@ -655,3 +655,8 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
    slightly on hover confirms the row is live without moving its neighbours. */
 .nav-item b { transition: transform var(--motion-control) var(--ease-liquid); }
 .nav-item:hover b { transform: scale(1.08); }
+
+/* A change row slides a few pixels toward the pointer. The list has a fixed
+   left edge, so the travel reads as focus rather than as reflow. */
+.list-row[role="button"]:hover { transform: translateX(3px); }
+.list-row.selected { transform: translateX(3px); }
