@@ -597,6 +597,7 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
   [data-depth] { transform: none !important; }
   [role="button"]::after, [role="tab"]::after, [role="menuitem"]::after { background: var(--press-veil) !important; }
   [data-depth]::before { opacity: 0 !important; }
+  .is-revealing { animation: none !important; opacity: 1 !important; transform: none !important; }
   [role="button"]:active, [role="tab"]:active, [role="menuitem"]:active,
   .nav-item:hover svg, .nav-item:hover b { transform: none !important; }
 }
