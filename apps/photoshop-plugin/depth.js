@@ -90,7 +90,29 @@
     return host;
   }
 
-  if (typeof document !== "undefined" && document.addEventListener) bind(document);
+  // Press origin. The existing press veil darkens the whole control; giving it
+  // an origin makes the press feel like it starts under the finger. It only
+  // ever darkens, so the label contrast floor the veil guarantees is unchanged.
+  function pressOrigin(control, event) {
+    const point = position(control, event);
+    if (!point) return false;
+    control.style.setProperty("--ripple-x", `${round((point.x + 1) * 50, 1)}%`);
+    control.style.setProperty("--ripple-y", `${round((point.y + 1) * 50, 1)}%`);
+    return true;
+  }
 
-  globalThis.PhotoGitDepth = { enabled, supports3d: () => has3d, position, tiltFor, write, clear, bind, MAX_TILT };
+  function bindPress(root) {
+    const host = root || document;
+    host.addEventListener("pointerdown", event => {
+      const control = event.target && event.target.closest
+        ? event.target.closest('[role="button"], [role="tab"], [role="menuitem"]') : null;
+      if (!control || control.getAttribute("aria-disabled") === "true") return;
+      pressOrigin(control, event);
+    });
+    return host;
+  }
+
+  if (typeof document !== "undefined" && document.addEventListener) { bind(document); bindPress(document); }
+
+  globalThis.PhotoGitDepth = { enabled, supports3d: () => has3d, position, tiltFor, write, clear, bind, bindPress, pressOrigin, MAX_TILT };
 })();
