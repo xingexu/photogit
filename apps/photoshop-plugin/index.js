@@ -703,11 +703,9 @@ async function saveVersion() {
       capture,
       documentIdentity: identity
     });
-    for (const id of ["message", "history-search"]) {
-      const input = document.getElementById(id);
-      input.value = "";
-      input.closest(".field-shell")?.classList.remove("has-value");
-    }
+    const input = document.getElementById("message");
+    input.value = "";
+    input.closest(".field-shell")?.classList.remove("has-value");
     renderChanges([]);
     setWatchStatus("Watching Photoshop", "ready");
     log(`Saved ${result.shortId}: ${message}`);
