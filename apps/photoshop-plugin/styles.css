@@ -703,3 +703,8 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
   .button-primary { transition: transform var(--motion-control) var(--ease-liquid), background-color var(--motion-control) var(--ease-liquid), box-shadow var(--motion-control) var(--ease-liquid); }
   .button-primary[role="button"]:not([aria-disabled="true"]):hover { transform: perspective(var(--depth-perspective)) translateZ(6px); }
 }
+
+/* Notices carry the panel's only coloured surfaces. A matching rim glow keeps
+   them legible as one object when they sit on glass. */
+.notice { transition: box-shadow var(--motion-control) var(--ease-liquid); }
+.notice:hover { box-shadow: 0 0 30px -14px rgba(150,190,255,.5); }
