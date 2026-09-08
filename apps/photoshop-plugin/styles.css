@@ -637,3 +637,8 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
 .preview-figure { overflow: hidden; border-radius: var(--radius); }
 .preview-figure img { transition: transform var(--motion-nav) var(--ease-liquid); }
 .preview-figure:hover img { transform: scale(1.03); }
+
+/* A button's icon leads its label, so it leads the hover too — a couple of
+   pixels of travel, which reads as intent rather than as a jump. */
+.button svg { transition: transform var(--motion-control) var(--ease-liquid); }
+.button[role="button"]:not([aria-disabled="true"]):hover svg { transform: translateX(-2px); }
