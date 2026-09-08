@@ -26,10 +26,18 @@ function refreshChanges(document) {
 }
 
 const initialized = new WeakMap();
-function updateMessageCount(document) {
+const MESSAGE_LIMIT = 500;
+// The counter is silent while typing — announcing every keystroke's count is
+// noise — and speaks only when it carries a limit note, which is the one
+// change worth hearing. `note` is that message; omit it to clear it.
+function updateMessageCount(document, note = "") {
   const field = document.getElementById("message");
   const count = document.getElementById("message-count");
-  if (field && count) count.textContent = `${field.value.length}/500`;
+  if (!field || !count) return;
+  const length = field.value.length;
+  count.textContent = note ? `${length}/${MESSAGE_LIMIT} · ${note}` : `${length}/${MESSAGE_LIMIT}`;
+  count.dataset.limit = length >= MESSAGE_LIMIT ? "full" : length >= MESSAGE_LIMIT - 50 ? "near" : "";
+  count.setAttribute("aria-live", note ? "polite" : "off");
 }
 function setup(document, { navigate, openCommands }) {
   if (initialized.has(document)) return initialized.get(document);
@@ -56,9 +64,11 @@ function setup(document, { navigate, openCommands }) {
       const draft = message.value;
       const addition = preset.dataset.messagePreset;
       const next = draft ? `${draft} · ${addition}` : addition;
-      // Suggestions never truncate or replace an existing draft.
-      if (next.length <= 500) message.value = next;
-      updateMessageCount(document); message.focus();
+      // Suggestions never truncate or replace an existing draft. When one does
+      // not fit, the counter says so rather than the click doing nothing.
+      const fits = next.length <= MESSAGE_LIMIT;
+      if (fits) message.value = next;
+      updateMessageCount(document, fits ? "" : "No room for this suggestion"); message.focus();
     });
   }
   for (const chip of document.querySelectorAll("[data-change-filter]")) {

@@ -129,8 +129,17 @@ describe("Version-message presentation controls", () => {
     message.value = "x".repeat(500 - preset.dataset.messagePreset!.length - 3);
     preset.click(); expect(message.value).toHaveLength(500);
     expect(p.id("message-count").textContent).toBe("500/500");
+    expect(p.id("message-count").dataset.limit).toBe("full");
+    expect(p.id("message-count").getAttribute("aria-live")).toBe("off");
     const preserved = message.value; preset.click();
     expect(message.value).toBe(preserved);
+    // A refused suggestion is said, not swallowed; the next keystroke clears it.
+    expect(p.id("message-count").textContent).toBe("500/500 · No room for this suggestion");
+    expect(p.id("message-count").getAttribute("aria-live")).toBe("polite");
+    message.value = "x".repeat(460); message.dispatchEvent(new p.window.Event("input"));
+    expect(p.id("message-count").textContent).toBe("460/500");
+    expect(p.id("message-count").dataset.limit).toBe("near");
+    expect(p.id("message-count").getAttribute("aria-live")).toBe("off");
   });
   it("preserves an existing draft exactly when adding a suggestion", async () => {
     const p = await fixture(); const message = p.id("message") as HTMLInputElement;
