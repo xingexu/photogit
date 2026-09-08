@@ -118,11 +118,18 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .workspace-body, .workspace-content { min-width: 0; }
 .section-nav { display: flex; flex-wrap: wrap; padding: 8px 10px; margin: 0; border-bottom: 1px solid var(--line); background: var(--surface); }
 .nav-item { display: flex; align-items: center; justify-content: center; flex: 1 1 29%; min-width: 0; min-height: 36px; margin: 2px; padding: 8px 5px; border: 1px solid transparent; border-radius: var(--radius); color: var(--muted); font-size: var(--text-small); }
-.nav-item svg { width: 16px; height: 16px; margin-right: 7px; }
+.nav-item svg { width: 16px; height: 16px; margin-right: 7px; transition: transform var(--motion-control) var(--ease-liquid), color var(--motion-control) var(--ease-liquid); }
 /* A destination name is one word. The global break-anywhere rule let "Changes"
    split into "Chang / es" once the row stopped wrapping at 640px. */
 .nav-item span { min-width: 0; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.nav-item b { margin-left: 7px; min-width: 20px; padding: 2px 7px; border-radius: 10px; background: var(--primary); color: var(--primary-text); font-size: 11px; font-weight: 600; text-align: center; }
+.nav-item b { margin-left: 7px; min-width: 20px; padding: 2px 7px; border-radius: 10px; background: var(--primary); color: var(--primary-text); font-size: 11px; font-weight: 600; text-align: center; transition: transform var(--motion-control) var(--ease-liquid), box-shadow var(--motion-control) var(--ease-liquid); }
+/* The badge count is the one number in the navigation. Growing it very
+   slightly on hover confirms the row is live without moving its neighbours. */
+.nav-item:hover b { transform: scale(1.07); }
+/* The active section icon takes the accent alongside its label, so the tab
+   reads as selected from the glyph alone at the narrowest widths where the
+   label is dropped. */
+.nav-item.active svg { color: var(--accent); transform: scale(1.06); }
 .nav-item b[data-empty="true"] { display: none; }
 .nav-item.active { background: var(--selected); color: var(--accent); border-color: var(--line); }
 .workspace-content { padding: 18px 16px 8px; }
@@ -519,16 +526,16 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
   /* Separate destinations with space rather than rules, so the selected tile
      never collides with a divider. */
   .nav-item { position: relative; flex: 0 0 auto; flex-direction: column; align-items: flex-start; justify-content: center; min-height: 76px; padding: 14px 14px 15px; margin: 3px 0; border: 1px solid transparent; border-radius: var(--radius); font-size: var(--text-body); }
-  .nav-item svg { display: block; width: 20px; height: 20px; margin: 0 0 11px; transition: transform var(--motion-nav) var(--ease-liquid); }
+  .nav-item svg { display: block; width: 20px; height: 20px; margin: 0 0 11px; }
   #changes-tab svg { margin-left: -5px; }
   #history-tab svg, #branches-tab svg, #reviews-tab svg { margin-left: -3px; }
   #activity-tab svg, #docs-tab svg { margin-left: -2px; }
   .nav-item span { flex: none; }
-  .nav-item b { position: absolute; top: 13px; right: 13px; min-width: 21px; padding: 2px 7px; border-radius: 10px; background: var(--primary); color: var(--primary-text); font-size: 11px; font-weight: 600; text-align: center; transition: transform var(--motion-nav) var(--ease-liquid), box-shadow var(--motion-nav) var(--ease-liquid); }
+  .nav-item b { position: absolute; top: 13px; right: 13px; min-width: 21px; margin: 0; }
   /* Hover lights the tile; the icon and count lift with it. */
   .nav-item:hover { border-color: var(--glass-rim); box-shadow: 0 0 0 1px rgba(255,255,255,.05), 0 0 26px -8px rgba(150,190,255,.45), 0 1px 0 var(--shine) inset; }
   .nav-item:hover svg { transform: translateY(-2px) scale(1.07); }
-  .nav-item:hover b { transform: scale(1.07); box-shadow: 0 0 16px -3px var(--primary); }
+  .nav-item:hover b { box-shadow: 0 0 16px -3px var(--primary); }
   .nav-item.active { border-color: var(--glass-rim); background: var(--elevated); color: var(--text); box-shadow: 0 1px 0 var(--shine) inset, 0 0 34px -10px rgba(150,190,255,.42); }
   .nav-item.active b { box-shadow: 0 0 18px -4px var(--primary); }
   .workspace-content { flex: 1; min-width: 0; padding: 0; }
@@ -685,11 +692,6 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
   border-radius: 2px; background: var(--accent); pointer-events: none;
 }
 
-/* The badge count is the one number in the navigation. Growing it very
-   slightly on hover confirms the row is live without moving its neighbours. */
-.nav-item b { transition: transform var(--motion-control) var(--ease-liquid); }
-.nav-item:hover b { transform: scale(1.08); }
-
 /* A change row slides a few pixels toward the pointer. The list has a fixed
    left edge, so the travel reads as focus rather than as reflow. A selected
    row holds the same offset and keeps a solid accent edge, so the selection
@@ -739,12 +741,6 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
    them legible as one object when they sit on glass. */
 .notice { transition: box-shadow var(--motion-control) var(--ease-liquid); }
 .notice:hover { box-shadow: 0 0 30px -14px rgba(150,190,255,.5); }
-
-/* The active section icon takes the accent alongside its label, so the tab
-   reads as selected from the glyph alone at the narrowest widths where the
-   label is dropped. */
-.nav-item svg { transition: transform var(--motion-control) var(--ease-liquid), color var(--motion-control) var(--ease-liquid); }
-.nav-item.active svg { color: var(--accent); transform: scale(1.06); }
 
 /* A tool sheet is a dialog over the panel. Easing it up from a few pixels
    below signals that it arrived rather than that the view was replaced. The
