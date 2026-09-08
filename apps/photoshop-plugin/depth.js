@@ -38,6 +38,9 @@
   function position(element, event) {
     const box = element.getBoundingClientRect ? element.getBoundingClientRect() : null;
     if (!box || !box.width || !box.height) return null;
+    // A synthetic or partial event can arrive without coordinates. Clamping a
+    // NaN yields a NaN, which would reach the DOM as `--tilt-x: NaNdeg`.
+    if (!Number.isFinite(event?.clientX) || !Number.isFinite(event?.clientY)) return null;
     const x = clamp(((event.clientX - box.left) / box.width) * 2 - 1, -1, 1);
     const y = clamp(((event.clientY - box.top) / box.height) * 2 - 1, -1, 1);
     return { x: round(x), y: round(y) };
