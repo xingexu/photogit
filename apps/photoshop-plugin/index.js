@@ -1814,6 +1814,8 @@ function setHelper(label, ok) {
   document.getElementById("connection-notice").hidden = ok || !projectFolder;
   const element = document.getElementById("helper-status");
   element.className = `repo-state ${ok ? "ok" : "warning"}`;
+  // Below 360px only the dot is visible; the title carries the label there.
+  element.setAttribute("title", label);
   document.getElementById("repo-sync-status").textContent = label;
   // The rail footer mirrors the same real state; it never reports its own.
   const railLabel = document.getElementById("rail-sync-label");

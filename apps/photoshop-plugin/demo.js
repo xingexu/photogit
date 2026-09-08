@@ -65,6 +65,7 @@ function setupDemoPanel() {
   byId("branch-name").textContent = "live-option-b";
   byId("branch-name-detail").textContent = "live-option-b";
   byId("helper-status").className = "repo-state ok";
+  byId("helper-status").setAttribute("title", "Synced");
   byId("repo-sync-status").textContent = "Synced";
   const railLabel = byId("rail-sync-label");
   if (railLabel) { railLabel.textContent = "Synced"; byId("rail-sync").className = "rail-sync ok"; }
