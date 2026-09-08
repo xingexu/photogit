@@ -14,6 +14,7 @@
     "check": "tsc -b --pretty false",
     "test": "tsc -b && vitest run",
     "test:watch": "vitest",
+    "test:differ": "vitest run packages/differ/src",
     "test:protocol": "vitest run packages/protocol/src",
     "test:engine": "vitest run packages/git-engine/src",
     "test:helper": "vitest run apps/desktop-helper/src",
