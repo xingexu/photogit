@@ -398,6 +398,9 @@ function renderDemoBranches() {
   const picker = byId("branch-picker");
   window.PhotoGitBranches.render(byId("branch-list"), {
     branches: Array.from(picker.options, option => ({ name: option.value })), current: picker.value,
+    // Representative artwork for the labelled prototype; production reads each
+    // branch tip's committed preview.
+    demoPreviews: Object.fromEntries(Array.from(picker.options, (option, index) => [option.value, DEMO_POSTERS[index % DEMO_POSTERS.length]])),
     onSwitch: name => {
       openDetail("Switch design direction?");
       const description = document.createElement("p");
