@@ -621,3 +621,8 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
    accent on hover ties the row to the pointer without moving any text. */
 .context-badge { transition: color var(--motion-control) var(--ease-liquid), border-color var(--motion-control) var(--ease-liquid), background-color var(--motion-control) var(--ease-liquid); }
 .repo-project:hover .context-badge, .repo-branch:hover .context-badge, .repo-document:hover .context-badge { color: var(--accent); border-color: var(--focus); background: var(--selected); }
+
+/* Message presets read as chips; on hover they fill rather than just brighten,
+   which is the difference between a label and something you can pick. */
+.preset { transition: color var(--motion-control) var(--ease-liquid), border-color var(--motion-control) var(--ease-liquid), background-color var(--motion-control) var(--ease-liquid); }
+.preset[role="button"]:not([aria-disabled="true"]):hover { color: var(--text); border-color: var(--focus); background: var(--selected); }
