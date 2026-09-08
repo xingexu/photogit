@@ -67,4 +67,10 @@ describe("PhotoGit reveal", () => {
       expect(row.getAttribute("aria-hidden")).toBeNull();
     }
   });
+
+  it("treats an empty or missing list as a no-op", async () => {
+    const { reveal } = await revealFixture();
+    expect(reveal.stagger([])).toBe(0);
+    expect(reveal.stagger(null)).toBe(0);
+  });
 });
