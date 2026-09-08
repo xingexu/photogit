@@ -444,7 +444,10 @@ kbd { font-family: var(--mono); font-size: 11px; padding: 1px 4px; border: 1px s
 .setup-command { padding: 12px; margin-top: 12px; background: var(--input); border: 1px solid var(--line); border-radius: var(--radius); font: 11px/1.7 var(--mono); word-break: break-all; }
 .tools-menu, .tool-sheet { position: fixed; z-index: 30; left: 10px; right: 10px; top: 12px; max-height: calc(100% - 24px); overflow: auto; padding: 18px; border: 1px solid var(--rim); border-radius: var(--radius-overlay); background: var(--overlay); box-shadow: 0 12px 40px var(--shadow); }
 .tools-menu { top: auto; bottom: 12px; left: auto; width: 264px; max-width: calc(100% - 20px); padding: 8px; }
-.tools-menu.from-header { top: 56px; bottom: auto; }
+/* Opened from the header, the menu hangs just below it. The header is 64px
+   tall here and 78px from 720px; a fixed 56px sat the menu across the
+   header's own controls. */
+.tools-menu.from-header { top: 68px; bottom: auto; }
 .tool-item { display: flex; align-items: center; min-height: 36px; padding: 8px 10px; border-radius: var(--radius-chip); }
 .tool-item svg { margin-right: 10px; color: var(--muted); }
 .surface-backdrop { position: fixed; z-index: 20; top: 0; left: 0; width: 100%; height: 100%; background: var(--backdrop); }
@@ -529,6 +532,7 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
   .workspace-content { flex: 1; min-width: 0; padding: 0; }
   .workspace-body { padding: 0 var(--space-6) var(--space-6); }
   .repo-context { margin: 0 var(--space-6) 18px; }
+  .tools-menu.from-header { top: 82px; right: var(--space-6); }
   .changes-heading { display: flex; }
   .rail-footer { display: block; margin-top: auto; padding: 16px; border-top: 1px solid var(--line); }
 }
