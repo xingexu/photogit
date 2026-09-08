@@ -614,6 +614,9 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
 @media (prefers-reduced-motion: reduce) {
   :root { --motion-enabled: 0; }
   * { transition: none !important; animation: none !important; }
+  /* Smooth scrolling is animation too: switching sections and jumping to the
+     message field both scroll, and both must land instantly here. */
+  body { scroll-behavior: auto; }
   /* Removing the transition alone would leave the press and hover transforms
      snapping between states, which is the movement the setting asks to avoid.
      Drop the displacement itself and let colour carry the feedback. */
