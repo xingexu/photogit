@@ -78,4 +78,13 @@ describe("PhotoGit counter", () => {
     counter.set(node, Number.NaN);
     expect(node.textContent).toBe("12");
   });
+
+  it("counts down as readily as up", async () => {
+    const { counter, node, advance } = await counterFixture();
+    counter.set(node, 90);
+    advance(counter.DURATION + 32);
+    counter.set(node, 4);
+    advance(counter.DURATION + 32);
+    expect(node.textContent).toBe("4");
+  });
 });
