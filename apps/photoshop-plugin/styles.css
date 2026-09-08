@@ -177,8 +177,8 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 #changes-total, #scan, .progress-track { display: none; }
 .scan-detail { color: var(--muted); font-size: var(--text-small); margin-top: 4px; white-space: pre-line; }
 .watch-status { display: flex; align-items: center; color: var(--muted); font-size: var(--text-small); margin-top: 4px; }
-.change-tally { display: flex; flex-wrap: wrap; width: 100%; margin: 16px -5px 2px; }
-.tally-tile { flex: 1 1 90px; min-width: 0; margin: 5px; padding: 14px 16px; border: 1px solid var(--glass-rim); border-radius: var(--radius); background: var(--elevated); box-shadow: 0 1px 0 var(--shine) inset; }
+.change-tally { display: flex; flex-wrap: wrap; width: 100%; gap: 10px; margin: 16px 0 2px; }
+.tally-tile { flex: 1 1 90px; min-width: 0; margin: 0; padding: 14px 16px; border: 1px solid var(--glass-rim); border-radius: var(--radius); background: var(--elevated); box-shadow: 0 1px 0 var(--shine) inset; }
 .tally-tile dd { margin: 0; font-size: var(--text-heading); font-weight: 600; letter-spacing: -.5px; line-height: 1.1; }
 .tally-tile:first-child dd { color: var(--accent); }
 .tally-tile dt { margin-top: 5px; color: var(--muted); font-size: var(--text-small); }
@@ -308,13 +308,14 @@ sp-menu, sp-menu-item { background: var(--overlay); color: var(--text); }
 .branch-row { display: flex; align-items: center; flex-wrap: wrap; padding: 14px 10px; border: 1px solid var(--line); border-radius: var(--radius); margin-bottom: 8px; background: var(--surface); }
 .branch-row.current { background: var(--selected); }
 .branch-row svg { color: var(--muted); margin-right: 10px; }
+.branch-row-icon svg { margin-left: -3px; }
 .branch-row-copy { flex: 1; min-width: 80px; }
 .branch-row-copy strong, .branch-row-copy span { display: block; }
 .branch-row-copy span { color: var(--muted); font-size: var(--text-small); margin-top: 3px; }
 .branch-row .button { margin: 6px 0 0 8px; }
 /* Reference 06: a branch with a saved preview becomes a card led by its artwork.
    Branches without one keep the compact row so the list never fabricates imagery. */
-.branch-row-preview { display: block; order: -1; flex: 0 0 100%; margin: -14px -10px 12px; overflow: hidden; border-radius: var(--radius) var(--radius) 0 0; background: var(--input); }
+.branch-row-preview { display: block; order: -1; flex: 0 0 calc(100% + 20px); margin: -14px -10px 12px; overflow: hidden; border-radius: calc(var(--radius) - 1px) calc(var(--radius) - 1px) 0 0; background: var(--input); }
 .branch-row-preview img { display: block; width: 100%; height: 132px; object-fit: cover; }
 .branch-row.has-preview { align-items: flex-start; align-content: flex-start; padding-bottom: 12px; }
 .branch-row.has-preview .branch-row-copy { flex-basis: 100%; }
@@ -505,8 +506,10 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
   #history-inspector { display: block; flex: 1; padding-left: 24px; border-left: 1px solid var(--line); min-height: 440px; }
   .branch-layout { display: flex; align-items: flex-start; }
   .branch-list-panel { flex: 1; padding-right: 24px; }
-  .branch-list-cards { display: flex; flex-wrap: wrap; margin: 0 -6px 20px; }
-  .branch-list-cards .branch-row { flex: 1 1 240px; max-width: 100%; margin: 0 6px 12px; }
+  /* A grid keeps every card one track wide, so a lone card on the last row does
+     not stretch to fill it the way a flex item would. */
+  .branch-list-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(228px, 1fr)); gap: 12px; margin: 0 0 20px; }
+  .branch-list-cards .branch-row { max-width: 100%; margin: 0; }
   .branch-list-cards .branch-row.has-preview { padding-top: 0; }
   .branch-list-cards .branch-row-preview { margin-top: 0; }
   .branch-create-card { flex: 0 0 260px; margin-top: 0; }
