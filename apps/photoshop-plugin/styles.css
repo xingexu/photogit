@@ -274,7 +274,6 @@ sp-menu, sp-menu-item { background: var(--overlay); color: var(--text); }
 .filter-chip[aria-pressed="true"] { color: var(--text); background: var(--elevated); border-color: var(--line); }
 .filter-note { margin: 8px 0; color: var(--muted); font-size: var(--text-small); }
 .list-row { display: flex; align-items: flex-start; min-width: 0; padding: 14px 6px; border-bottom: 1px solid var(--line); border-radius: var(--radius); background: transparent; transition: background-color var(--motion-control) var(--ease-liquid), transform var(--motion-nav) var(--ease-liquid); }
-.list-row.selected { background: var(--selected); box-shadow: 0 0 26px -12px rgba(150,190,255,.5); }
 .list-row[role="button"]:hover { background: var(--hover); }
 .row-glyph, .history-marker { display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; flex-shrink: 0; margin-right: 12px; color: var(--muted); background: var(--elevated); border-radius: var(--radius-chip); }
 .row-glyph svg { width: 17px; height: 17px; }
@@ -692,13 +691,11 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
 .nav-item:hover b { transform: scale(1.08); }
 
 /* A change row slides a few pixels toward the pointer. The list has a fixed
-   left edge, so the travel reads as focus rather than as reflow. */
+   left edge, so the travel reads as focus rather than as reflow. A selected
+   row holds the same offset and keeps a solid accent edge, so the selection
+   survives when a different row is under the pointer. */
 .list-row[role="button"]:hover { transform: translateX(3px); }
-.list-row.selected { transform: translateX(3px); }
-
-/* A selected row keeps a solid accent edge so the selection survives when the
-   row is scrolled under the pointer of a different row. */
-.list-row.selected { box-shadow: inset 3px 0 0 var(--accent), 0 0 26px -12px rgba(150,190,255,.5); }
+.list-row.selected { background: var(--selected); transform: translateX(3px); box-shadow: inset 3px 0 0 var(--accent), 0 0 26px -12px rgba(150,190,255,.5); }
 
 /* Branch rows are cards in a grid. Lifting one on hover separates it from the
    grid without changing any cell's size. */
