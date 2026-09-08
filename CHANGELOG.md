@@ -1,5 +1,45 @@
 # Changelog
 
+## UI pass · every panel surface audited at 230–1600px in both themes
+
+Fifty small commits, one defect each, verified against rendered
+screenshots of the simulated panel at six widths and both themes plus
+the existing suites. Nothing here changes what the helper or the engine
+do; everything is presentation, markup, or the script that drives it.
+
+- Text that broke mid-word: the wordmark below 320px, section labels
+  between 640 and 719px, branch and document names in the context card,
+  and setup commands in the onboarding and Docs cards.
+- Dead surfaces removed with their plumbing: a hidden Refresh control
+  (now a tools-menu item), a hidden second Scan button, a hidden change
+  total, a hidden toast that duplicated every status message, a hidden
+  branch-review card on the Changes view, placeholder spans no rule
+  showed, a dead disclosure on review cards, and four unstyled classes.
+- Busy feedback now renders in every host: one CSS progress track under
+  Save version replaces `<sp-progressbar>` and a track the stylesheet
+  hid, and holds still under reduced motion.
+- Surfaces that the script already waited to fade — the tools menu and
+  the backdrop — now fade; smooth scrolling is off under reduced motion.
+- Accessibility: inspector landmarks are regions rather than nested
+  asides; tally terms precede their values; the section rail answers Up
+  and Down; fields with visible labels are named by them; two controls
+  no longer announce different words from the ones they show; an empty
+  command search renders as a status; the message counter warns near
+  the limit and says when a suggestion does not fit.
+- State that went stale: the tally and filter bar now clear with the
+  list when a document is not connected; a save no longer wipes the
+  History search; History tells a new project apart from an empty
+  search.
+- Layout: the header status collapses to its dot below 360px; tabs run
+  two to a row below 330px; the header menu clears the header; first-run
+  cards centre on wide layouts and notices share the content margin;
+  previews on branch cards and in the comparison show whole.
+- Theme: hover and focus glows read from `--glow` and `--focus-halo`,
+  which the light theme sets to a visible blue.
+- Demo: the panel fetch no longer carries a stale build id, the tally
+  recounts with the list, activity rows use the production marks, and
+  the simulation banner spans the panel.
+
 ## Interaction pass · pointer depth, settling counters, staggered lists
 
 - Added `depth.js`: a delegated pointer listener that gives glass surfaces a
