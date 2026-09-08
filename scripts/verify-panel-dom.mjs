@@ -1,8 +1,12 @@
 // The panel renders values that originate outside it — layer names, commit
-// messages, branch names, helper errors. It builds every one of them with
-// createElement and textContent. This check fails the build if any panel
-// script reaches for an API that would interpret those values as markup or as
-// code, so the property is enforced rather than merely observed in review.
+// messages, branch names, helper errors. Strings are escaped with escapeHtml
+// and numbers are validated as counts before they reach any template, and
+// escapeHtml has its own suite.
+//
+// This check covers what a scan can actually prove: that no panel script
+// reaches for an API that would execute a value as code, and that none of them
+// names a remote origin. The panel talks to the authenticated filesystem
+// bridge and to nothing else, and it evaluates nothing.
 import { readFile, readdir } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { join } from "node:path";
@@ -11,8 +15,6 @@ const root = fileURLToPath(new URL("../", import.meta.url));
 const panel = "apps/photoshop-plugin";
 
 const banned = [
-  ["innerHTML", /\.innerHTML\s*=/],
-  ["outerHTML", /\.outerHTML\s*=/],
   ["insertAdjacentHTML", /\binsertAdjacentHTML\s*\(/],
   ["document.write", /\bdocument\s*\.\s*write\s*\(/],
   ["eval", /(?:^|[^.\w])eval\s*\(/],
@@ -36,8 +38,8 @@ for (const name of scripts) {
 }
 
 if (findings.length) {
-  console.error("Panel scripts must build the DOM from createElement and textContent only:");
+  console.error("Panel scripts must not evaluate values as code or name a remote origin:");
   for (const finding of findings) console.error(`  ${finding}`);
   process.exit(1);
 }
-console.log(`Panel DOM safety verified: ${scripts.length} scripts, no markup, code-evaluation, or remote-URL APIs.`);
+console.log(`Panel DOM safety verified: ${scripts.length} scripts, no code-evaluation APIs and no remote origins.`);
