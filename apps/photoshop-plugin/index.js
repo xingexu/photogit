@@ -92,7 +92,6 @@ function bindPanelEvents() {
   bind("activity-tab", "click", () => selectTab("activity"));
   bind("history-search", "input", filterHistory);
   bind("clear-activity", "click", clearActivity);
-  bind("open-reviews", "click", () => selectTab("reviews"));
   bind("new-pull-request", "click", openPullRequest);
   bind("tools-toggle", "click", toggleToolsMenu);
   bind("tool-new-branch", "click", openNewBranch);
@@ -440,7 +439,6 @@ async function loadReviews(existingResult) {
     ? `GitHub · ${result.repository.baseBranch} ← ${result.repository.currentBranch}`
     : `Local reviews · merging into ${result.repository.currentBranch}`;
   renderReviews(reviewEntries, result.conflicts || []);
-  renderReviewPreview(reviewEntries[0] || null);
 }
 
 function renderReviews(reviews, conflicts) {
@@ -455,14 +453,6 @@ function renderReviews(reviews, conflicts) {
   document.getElementById("conflicts").textContent = conflicts.length
     ? `${visibleConflicts.join("\n")}${conflicts.length > visibleConflicts.length ? `\n… ${conflicts.length - visibleConflicts.length} more conflicts not shown.` : ""}`
     : "";
-}
-
-function renderReviewPreview(review) {
-  const section = document.getElementById("review-preview");
-  const container = document.getElementById("review-preview-content");
-  container.innerHTML = "";
-  section.hidden = !review;
-  if (review) container.appendChild(createReviewCard(review));
 }
 
 function createReviewCard(review) {

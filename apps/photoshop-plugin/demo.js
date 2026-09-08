@@ -109,7 +109,6 @@ function setupDemoPanel() {
   bind("close-tag-sheet", () => closeTagSheet(false, true));
   bind("surface-backdrop", () => { closeTagSheet(false, true); closeDetail(); });
   bind("create-tag", createTag);
-  bind("open-reviews", () => selectTab("reviews"));
   bind("new-pull-request", () => flashResult("Pull-request review opened in GitHub."));
   byId("branch-picker").addEventListener("change", switchBranch);
   byId("history-search").addEventListener("input", renderHistory);
@@ -572,11 +571,6 @@ function renderReviews() {
   byId("review-provider").textContent = `Simulated local reviews · merging into ${byId("branch-name").textContent}`;
   for (const review of demoReviews) container.appendChild(createDemoReviewCard(review));
   byId("reviews-empty").hidden = demoReviews.length > 0;
-  const preview = byId("review-preview");
-  preview.hidden = false;
-  const previewContent = byId("review-preview-content");
-  previewContent.innerHTML = "";
-  previewContent.appendChild(createDemoReviewCard(demoReviews[0]));
 }
 
 function createDemoReviewCard(review) {
