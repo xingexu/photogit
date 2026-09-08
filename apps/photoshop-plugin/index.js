@@ -79,7 +79,6 @@ function bindPanelEvents() {
   bind("docs-search", "input", renderCommandDocs);
   renderCommandDocs();
   bind("header-menu", "click", toggleToolsMenu);
-  bind("scan", "click", () => scanChanges({ automatic: false }));
   bind("rescan", "click", () => scanChanges({ automatic: false }));
   bind("save-version", "click", saveVersion);
   bind("pull", "click", pull);
@@ -1835,7 +1834,7 @@ function busy(active) {
   document.getElementById("workspace").setAttribute("aria-busy", active ? "true" : "false");
   document.getElementById("progress").hidden = !active;
   document.querySelector(".capture-panel").classList.toggle("is-busy", active);
-  for (const id of ["save-version", "jump-save", "scan", "rescan", "pull", "push", "show-status", "new-branch", "new-pull-request", "create-tag", "tools-toggle", "header-menu"]) {
+  for (const id of ["save-version", "jump-save", "rescan", "pull", "push", "show-status", "new-branch", "new-pull-request", "create-tag", "tools-toggle", "header-menu"]) {
     const control = document.getElementById(id);
     control.setAttribute("aria-disabled", active ? "true" : "false");
     control.tabIndex = active ? -1 : 0;
