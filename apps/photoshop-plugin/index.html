@@ -6,7 +6,7 @@
     <title>PhotoGit</title>
     <script src="motion.js"></script>
     <script src="appearance.js"></script>
-    <link rel="stylesheet" href="styles.css?v=52">
+    <link rel="stylesheet" href="styles.css?v=56">
     <script src="index.js?v=50"></script>
   </head>
   <body class="is-initializing">
@@ -19,6 +19,7 @@
             <span>Your creative history</span>
           </div>
         </div>
+        <div id="helper-status" class="repo-state warning"><i></i><span id="repo-sync-status">Not connected</span></div>
         <div id="global-search" class="header-action command-trigger" role="button" tabindex="0" aria-disabled="true" aria-label="Open commands" title="Open the searchable command palette">
           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 4.5 4.5"/></svg>
           <span class="command-trigger-label">Commands</span>
@@ -68,24 +69,24 @@
           <div id="open-project-document" class="button button-quiet" role="button" tabindex="0">Open saved project version</div>
         </section>
 
-        <div class="workspace-body">
-        <div class="workspace-rail">
         <section class="repo-context liquid-card" aria-label="Current repository">
           <div class="repo-topline">
             <div class="repo-item repo-project">
-              <span><strong id="project-status">No project selected</strong></span>
-              <div id="change-project" class="text-link project-switch" role="button" tabindex="0">Change project</div>
+              <span class="context-badge" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 7h6l2 2h10v10H3z"/></svg></span>
+              <span class="context-copy"><span class="context-label">Project</span><strong id="project-status">No project selected</strong>
+              <div id="change-project" class="text-link project-switch" role="button" tabindex="0">Change project</div></span>
             </div>
-            <div id="helper-status" class="repo-state warning"><i></i><span id="repo-sync-status">Not connected</span></div>
           </div>
           <div class="repo-meta">
-            <div class="repo-branch" data-destination="branches" role="button" tabindex="0" aria-label="Go to branches" title="Manage branches"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="5" r="2"/><circle cx="18" cy="7" r="2"/><circle cx="6" cy="19" r="2"/><path d="M6 7v10m2-2c6 0 8-2 8-6"/></svg><strong id="branch-name">—</strong><svg class="branch-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></div>
-            <span class="repo-document"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3.5h8l4 4V20H6z"/><path d="M14 3.5V8h4"/></svg><span id="document-name">None open</span></span>
+            <div class="repo-branch" data-destination="branches" role="button" tabindex="0" aria-label="Go to branches" title="Manage branches"><span class="context-badge" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="6" cy="5" r="2"/><circle cx="18" cy="7" r="2"/><circle cx="6" cy="19" r="2"/><path d="M6 7v10m2-2c6 0 8-2 8-6"/></svg></span><span class="context-copy"><span class="context-label">Branch</span><strong id="branch-name">—</strong></span><svg class="branch-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></div>
+            <span class="repo-document"><span class="context-badge" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 3.5h8l4 4V20H6z"/><path d="M14 3.5V8h4"/></svg></span><span class="context-copy"><span class="context-label">Document</span><span id="document-name">None open</span></span></span>
             <div id="refresh" class="strip-action" role="button" tabindex="0" aria-label="Refresh and scan Photoshop" title="Refresh and scan Photoshop">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6v5h-5"/><path d="M18.2 15.4A7 7 0 1 1 18.5 8L20 11"/></svg>
             </div>
           </div>
         </section>
+        <div class="workspace-body">
+        <div class="workspace-rail">
         <nav id="section-nav" class="section-nav liquid-card" role="tablist" aria-label="PhotoGit sections">
           <div id="changes-tab" class="nav-item active" role="tab" tabindex="0" aria-label="Changes" aria-controls="changes-view" aria-selected="true">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3.5h8l4 4V20H6z"/><path d="M14 3.5V8h4"/></svg>
@@ -158,7 +159,7 @@
           </section>
 
           <section class="liquid-card content-card capture-panel">
-            <h2 class="capture-title"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10v16l-5-4-5 4z"/></svg>Save new version</h2>
+            <div class="capture-title"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10v16l-5-4-5 4z"/></svg><span><h2>Save version</h2><small>Describe what changed in this version</small></span></div>
             <div class="capture-heading"><label class="version-label" for="message">What changed?</label><span id="message-count" class="meta-chip" aria-live="off">0/500</span></div>
             <div class="field-shell">
               <span class="field-placeholder" aria-hidden="true">Refined cover typography…</span>
