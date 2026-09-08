@@ -90,5 +90,7 @@
     return host;
   }
 
+  if (typeof document !== "undefined" && document.addEventListener) bind(document);
+
   globalThis.PhotoGitDepth = { enabled, supports3d: () => has3d, position, tiltFor, write, clear, bind, MAX_TILT };
 })();
