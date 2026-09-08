@@ -16,6 +16,13 @@ and no layout style and only finite unit-suffixed values, the counter renders
 only whole numbers and carries the authoritative total in `data-value` from
 the first frame, and reveal never hides a row.
 
+**Escaping is now proven, not reviewed.** `verify:panel-escaping` walks a real
+AST and accounts for all 53 interpolations across the 8 markup templates in the
+panel. It found five that were safe only in practice — two validated review
+counts, a demo count, and a category/status pair derived by lookup — all now
+either escaped or literal by construction. The gate has fixtures proving it
+fails on an unescaped interpolation and on an escaper that misses a character.
+
 **Not verified.** None of this pass has been seen in Photoshop. The panel was
 exercised in the browser and through the suites only. UXP hosts differ from
 the browser on exactly the points this pass depends on — whether
