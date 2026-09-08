@@ -8,7 +8,7 @@ Version control for Photoshop. Track supported layer edits, save exact PSD versi
 
 ![PhotoGit panel with commands, version saving, and changed layers](docs/images/photogit-panel.png)
 
-420 × 800 demo preview using the production stylesheet and simulated data—not a live Photoshop document. See [design and native-host limitations](docs/DESIGN_SYSTEM.md).
+420 × 800 demo preview at 2x, using the production stylesheet and simulated data—not a live Photoshop document. Regenerate with `scripts/render-panel-preview.swift` after serving `apps/photoshop-plugin`. See [design and native-host limitations](docs/DESIGN_SYSTEM.md).
 
 ## Quick start
 
