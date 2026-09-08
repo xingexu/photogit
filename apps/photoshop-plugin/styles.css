@@ -642,3 +642,11 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
    pixels of travel, which reads as intent rather than as a jump. */
 .button svg { transition: transform var(--motion-control) var(--ease-liquid); }
 .button[role="button"]:not([aria-disabled="true"]):hover svg { transform: translateX(-2px); }
+
+/* The active section is already coloured; a short rule under it gives the tab
+   row a fixed reading line, which is what makes the selection obvious at a
+   glance in a narrow panel. */
+.nav-item.active::before {
+  content: ""; position: absolute; left: 50%; bottom: 3px; width: 18px; height: 2px; margin-left: -9px;
+  border-radius: 2px; background: var(--accent); pointer-events: none;
+}
