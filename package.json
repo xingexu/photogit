@@ -25,6 +25,7 @@
     "test:panel-depth": "vitest run apps/photoshop-plugin/depth.test.ts",
     "test:panel-manifest": "vitest run apps/photoshop-plugin/manifest.test.ts",
     "test:panel-motion": "vitest run apps/photoshop-plugin/motion.test.ts",
+    "test:panel-reveal": "vitest run apps/photoshop-plugin/reveal.test.ts",
     "test:panel-reviews": "vitest run apps/photoshop-plugin/review-inspector.test.ts",
     "test:panel-versions": "vitest run apps/photoshop-plugin/version-inspector.test.ts",
     "test:panel-workspace": "vitest run apps/photoshop-plugin/workspace-ui.test.ts",

@@ -56,6 +56,7 @@ jobs:
         suite:
           - panel-depth
           - panel-counter
+          - panel-reveal
           - panel-motion
           - panel-contract
           - panel-branches
