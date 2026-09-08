@@ -1,5 +1,30 @@
 # Acceptance report: 0.2.0 development
 
+## Interaction pass · pointer depth, settling counters, staggered lists
+
+**Verified.** All suites pass (`npm test`), including three new ones: depth
+(17 tests), counter (7), reveal (6) and panel escaping (8). `npm run check`,
+`verify:security`, `verify:tokens`, `verify:panel-dom`, `verify:assets` and
+`verify:package` all pass; the archive carries 20 files matching source bytes.
+Every test suite now also runs as its own CI check.
+
+**Verified by construction.** Depth, the counter and reveal are each optional
+at their call site and each removes itself under reduced motion; the 3D rules
+are additionally behind an `@supports` check for `perspective()`. The tests
+assert the properties the safety argument rests on: depth writes no transform
+and no layout style and only finite unit-suffixed values, the counter renders
+only whole numbers and carries the authoritative total in `data-value` from
+the first frame, and reveal never hides a row.
+
+**Not verified.** None of this pass has been seen in Photoshop. The panel was
+exercised in the browser and through the suites only. UXP hosts differ from
+the browser on exactly the points this pass depends on — whether
+`perspective()` composites, whether `position: sticky` behaves in the panel
+scroller, and whether `pointerout` fires reliably — so the native behaviour of
+the tilt, the specular highlight, the sticky header and the press ripple
+remains unconfirmed. No screenshot in this entry is a native capture.
+
+
 ## Saved previews and the card rebuild
 
 Verification: 413 tests, type, security, token, asset and package checks passed. Development bundle SHA-256 recorded with the packaging step of each commit.
