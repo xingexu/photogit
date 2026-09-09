@@ -127,11 +127,11 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .workspace-body, .workspace-content { min-width: 0; }
 .section-nav { display: flex; flex-wrap: wrap; padding: var(--space-2); margin: 0; border-bottom: 1px solid var(--line); background: var(--surface); }
 .nav-item { display: flex; align-items: center; justify-content: center; flex: 1 1 29%; min-width: 0; min-height: 36px; margin: 2px; padding: 8px 5px; border: 1px solid transparent; border-radius: var(--radius); color: var(--muted); font-size: var(--text-small); }
-.nav-item svg { width: 16px; height: 16px; margin-right: 7px; transition: transform var(--motion-control) var(--ease-liquid), color var(--motion-control) var(--ease-liquid); }
+.nav-item svg { width: 16px; height: 16px; margin-right: var(--space-2); transition: transform var(--motion-control) var(--ease-liquid), color var(--motion-control) var(--ease-liquid); }
 /* A destination name is one word. The global break-anywhere rule let "Changes"
    split into "Chang / es" once the row stopped wrapping at 640px. */
 .nav-item span { min-width: 0; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.nav-item b { margin-left: 7px; min-width: 20px; padding: 2px 7px; border-radius: 10px; background: var(--primary); color: var(--primary-text); font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; text-align: center; transition: transform var(--motion-control) var(--ease-liquid), box-shadow var(--motion-control) var(--ease-liquid); }
+.nav-item b { margin-left: var(--space-2); min-width: 20px; padding: 2px 7px; border-radius: 10px; background: var(--primary); color: var(--primary-text); font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; text-align: center; transition: transform var(--motion-control) var(--ease-liquid), box-shadow var(--motion-control) var(--ease-liquid); }
 /* The badge count is the one number in the navigation. Growing it very
    slightly on hover confirms the row is live without moving its neighbours. */
 .nav-item:hover b { transform: scale(1.07); }
@@ -611,7 +611,7 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
      label names the destination and the pill carries its count. Icons return
      with the rail at 720px. */
   .nav-item svg { display: none; }
-  .nav-item b { margin-left: 5px; }
+  .nav-item b { margin-left: var(--space); }
   .tool-sheet { left: 50%; right: auto; width: 580px; margin-left: -290px; }
 }
 @media (min-width: 720px) {
