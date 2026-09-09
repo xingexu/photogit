@@ -52,7 +52,7 @@
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; width: 100%; height: 100%; }
 html, body, .panel-root { background: var(--bg); color: var(--text); font-family: var(--font-ui); font-size: var(--text-body); line-height: 1.5; }
-body { overflow: auto; scroll-behavior: smooth; overscroll-behavior: contain; }
+body { overflow: auto; scroll-behavior: smooth; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: var(--rim) transparent; }
 [hidden] { display: none !important; }
 h1, h2, h3, p { margin: 0; }
 /* The wordmark is one word. Below 320px it was wrapping to "Photo / Git",
