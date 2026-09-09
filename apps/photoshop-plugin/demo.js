@@ -463,7 +463,7 @@ function renderHistory() {
   const container = byId("history");
   container.innerHTML = "";
   setCount("history-count", versions.length);
-  byId("history-total").textContent = `${versions.length} versions`;
+  byId("history-total").textContent = `${versions.length} ${versions.length === 1 ? "version" : "versions"}`;
   byId("history-empty").hidden = matching.length > 0;
   byId("history-empty-title").textContent = query && versions.length ? "No matching versions" : "No saved versions yet";
   byId("history-empty-copy").textContent = query && versions.length ? "Search by message, author, date, or version ID, or clear the search." : "Save your first version to start this document’s history.";
