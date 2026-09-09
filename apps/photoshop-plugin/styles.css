@@ -286,7 +286,7 @@ body.is-busy [aria-disabled="true"], body.is-busy input:disabled { cursor: progr
 .preview-figure img { display: block; width: 100%; max-height: 300px; object-fit: contain; border-radius: var(--radius); background: var(--input); }
 .preview-figure figcaption { margin-top: 7px; }
 .document-facts { display: flex; flex-wrap: wrap; margin: 0 -3px; }
-.document-facts div { display: flex; align-items: baseline; margin: 3px; padding: 4px 8px; border: 1px solid var(--line); border-radius: var(--radius-chip); background: var(--elevated); }
+.document-facts div { display: flex; align-items: baseline; margin: 3px; padding: var(--space) var(--space-2); border: 1px solid var(--line); border-radius: var(--radius-chip); background: var(--elevated); }
 .document-facts dt { color: var(--muted); font-size: 11px; margin-right: 6px; }
 .document-facts dd { margin: 0; font-size: var(--text-small); }
 .capture-actions { display: flex; margin-top: var(--space-3); }
