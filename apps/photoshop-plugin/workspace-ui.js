@@ -107,6 +107,7 @@ function setup(document, { navigate, openCommands }) {
     });
   }
   arrowRow(document.querySelector(".filter-bar"));
+  arrowRow(document.querySelector(".message-presets"));
   const search = document.getElementById("changes-search");
   search.addEventListener("input", () => refreshChanges(document));
   // Escape in a search field that has text clears it and re-runs the
