@@ -552,7 +552,7 @@ kbd { font-family: var(--mono); font-size: 11px; padding: 1px 4px; border: 1px s
 .detail-content { margin: var(--space-4) 0; }
 #detail-content .version-inspector-header, #detail-content .version-inspector-grid, #detail-content .comparison-layout { white-space: normal; }
 #detail-content.version-inspector, #detail-content.review-inspector { color: var(--text); }
-#create-tag { margin-top: 16px; }
+#create-tag { margin-top: var(--space-4); }
 /* A notice interrupts: the helper dropped, the document is not the project's.
    Arriving on the sheet's short rise marks it as new rather than as a
    region that was always there and just changed colour. */
