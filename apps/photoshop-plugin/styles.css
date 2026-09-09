@@ -550,6 +550,9 @@ kbd { font-family: var(--mono); font-size: 11px; padding: 1px 4px; border: 1px s
 /* Native fields must not paint through modal surfaces. */
 body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body.has-surface #workspace select { visibility: hidden; }
 .is-initializing #workspace, .is-initializing #onboarding, .is-initializing #connection-notice { display: none !important; }
+/* Startup ends with the skeleton giving way to the workspace or the first-run
+   card. Fading the arrival in makes that a hand-over instead of a cut. */
+.workspace, .onboarding { animation: photogit-fade-in var(--motion-nav) var(--ease-liquid) both; }
 .startup-card, .onboarding { margin: 24px 16px; padding: 24px; border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--surface); max-width: 560px; }
 .startup-card p { margin-top: 8px; color: var(--muted); }
 .startup-skeleton { margin-top: 22px; }
