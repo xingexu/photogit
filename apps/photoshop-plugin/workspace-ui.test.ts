@@ -116,6 +116,16 @@ describe("Studio workspace interactions", () => {
     expect(p.input.value).toBe(""); expect(p.visible()).toHaveLength(5);
     expect(p.key(p.input, "Escape").defaultPrevented).toBe(false);
   });
+  it("moves through the filter chips with arrow keys without changing the filter", async () => {
+    const p = await fixture();
+    const right = vi.spyOn(p.chip("visual"), "focus");
+    expect(p.key(p.chip("all"), "ArrowRight").defaultPrevented).toBe(true);
+    expect(right).toHaveBeenCalledOnce();
+    const wrap = vi.spyOn(p.chip("structure"), "focus");
+    p.key(p.chip("all"), "ArrowLeft"); expect(wrap).toHaveBeenCalledOnce();
+    expect(p.chip("all").getAttribute("aria-pressed")).toBe("true");
+    expect(p.visible()).toHaveLength(5);
+  });
   it("binds listeners once even when setup is repeated", async () => {
     const p = await fixture(); ui.setup(p.document, p.options);
     p.key(p.id("changes-tab"), "/"); expect(p.openCommands).toHaveBeenCalledOnce();

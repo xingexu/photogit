@@ -33,6 +33,23 @@ function refreshChanges(document) {
   return visible;
 }
 
+// Left and Right (plus Home and End) move through a row of related
+// controls the way a toolbar does. Every control stays a Tab stop, so
+// nothing that was reachable stops being reachable; the arrows are the
+// shorter route between neighbours.
+function arrowRow(container) {
+  if (!container) return;
+  container.addEventListener("keydown", event => {
+    if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key) || event.isComposing) return;
+    const items = [...container.querySelectorAll('[role="button"]')].filter(item => !item.hidden && item.getAttribute("aria-disabled") !== "true");
+    const index = items.indexOf(event.target);
+    if (index < 0) return;
+    event.preventDefault();
+    const next = event.key === "Home" ? 0 : event.key === "End" ? items.length - 1 : (index + (event.key === "ArrowRight" ? 1 : -1) + items.length) % items.length;
+    items[next].focus();
+  });
+}
+
 const initialized = new WeakMap();
 const MESSAGE_LIMIT = 500;
 // The counter is silent while typing — announcing every keystroke's count is
@@ -89,6 +106,7 @@ function setup(document, { navigate, openCommands }) {
       refreshChanges(document);
     });
   }
+  arrowRow(document.querySelector(".filter-bar"));
   const search = document.getElementById("changes-search");
   search.addEventListener("input", () => refreshChanges(document));
   // Escape in a search field that has text clears it and re-runs the
