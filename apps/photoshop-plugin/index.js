@@ -28,6 +28,7 @@ const MAX_VISIBLE_CHANGES = 500;
 const MAX_VISIBLE_CONFLICTS = 500;
 const CONTENT_FINGERPRINT_SIZE = 64;
 const AUTO_SCAN_DELAY_MS = 700;
+const SECTIONS = ["changes", "history", "branches", "reviews", "activity", "docs"];
 const IGNORED_PHOTOSHOP_EVENTS = new Set(["select", "deselect", "invokeCommand", "get", "save"]);
 let projectFolder = null;
 let helperToken = null;
@@ -109,7 +110,11 @@ function bindPanelEvents() {
   document.getElementById("tools-menu").addEventListener("keydown", handleMenuKeyboard);
   document.addEventListener("keydown", handleGlobalKeyboard);
   document.addEventListener("click", handleOutsideClick);
-  selectTab("changes", false);
+  // The panel reopens on the section it was closed on. An unknown name
+  // or unreadable preference storage falls back to Changes.
+  let lastSection = null;
+  try { lastSection = localStorage.getItem("photogit.section"); } catch { /* Default below. */ }
+  selectTab(SECTIONS.includes(lastSection) ? lastSection : "changes", false);
   window.setInterval(syncDocumentLabel, 1000);
 }
 
@@ -1593,7 +1598,7 @@ function selectTab(name, animate = true) {
     document.getElementById("onboarding").hidden = name === "docs";
   }
   let target = null;
-  for (const section of ["changes", "history", "branches", "reviews", "activity", "docs"]) {
+  for (const section of SECTIONS) {
     const active = section === name;
     const view = document.getElementById(`${section}-view`);
     view.hidden = !active;
@@ -1603,6 +1608,7 @@ function selectTab(name, animate = true) {
     tab.setAttribute("aria-selected", active ? "true" : "false");
     tab.tabIndex = active ? 0 : -1;
   }
+  try { localStorage.setItem("photogit.section", name); } catch { /* Session only. */ }
   if (!animate || !target) return;
   document.body.scrollTop = 0;
   globalThis.PhotoGitMotion?.enter(target);
