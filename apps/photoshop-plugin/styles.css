@@ -648,7 +648,7 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
   .nav-item.active b { box-shadow: 0 0 18px -4px var(--primary); }
   .workspace-content { flex: 1; min-width: 0; padding: 0; }
   .workspace-body { padding: 0 var(--space-6) var(--space-6); }
-  .repo-context { margin: 0 var(--space-6) 18px; }
+  .repo-context { margin: 0 var(--space-6) var(--space-4); }
   .tools-menu.from-header { top: 82px; right: var(--space-6); }
   /* First-run and loading cards are the only content on screen; centred, they
      read as the panel's focus rather than as something stuck in a corner. */
