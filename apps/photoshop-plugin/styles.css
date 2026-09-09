@@ -662,6 +662,8 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
 
 @media (min-width: 900px) {
   .changes-layout { display: flex; align-items: flex-start; }
+  /* The composer sits beside the list here, not below it. */
+  #jump-save span { display: none; }
   .changes-card { flex: 1; min-width: 0; margin-right: var(--space-4); }
   .capture-panel { flex: 0 0 320px; min-width: 0; margin: 0 0 var(--space-5); padding: var(--space-5); }
   .history-layout { display: flex; align-items: flex-start; }
