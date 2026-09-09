@@ -309,6 +309,8 @@ body.is-busy [aria-disabled="true"], body.is-busy input:disabled { cursor: progr
    it in stops the scan card from jumping every time a scan starts. */
 #cancel-scan { margin: -6px 0 18px; animation: photogit-fade-in var(--motion-control) var(--ease-liquid) backwards; }
 #save-version { min-height: 44px; font-weight: 600; box-shadow: 0 1px 0 rgba(255,255,255,.22) inset, 0 10px 24px -12px var(--primary); }
+/* A parked primary action keeps its fill but loses its glow. */
+.button-primary[aria-disabled="true"], #save-version[aria-disabled="true"] { box-shadow: none; }
 .button-quiet { color: var(--text); background: transparent; border-color: var(--border); }
 .button-quiet[role="button"]:not([aria-disabled="true"]):hover { border-color: var(--glass-rim); box-shadow: 0 0 22px -8px var(--glow), 0 1px 0 var(--shine) inset; }
 .button-small { min-height: 30px; padding: 5px 9px; font-size: var(--text-small); }
