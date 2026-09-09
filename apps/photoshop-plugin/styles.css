@@ -21,7 +21,7 @@
   --space: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-5: 20px; --space-6: 24px;
   --text-small: 12px; --text-body: 13px; --text-subhead: 15px; --text-title: 18px; --text-heading: 22px;
   --control: 32px; --control-tall: 40px;
-  --radius-chip: 9px; --radius: 13px; --radius-panel: 20px; --radius-overlay: 26px;
+  --radius-chip: 10px; --radius: 14px; --radius-panel: 24px; --radius-overlay: 30px; --radius-pill: 999px;
   --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --mono: "SFMono-Regular", Consolas, monospace;
   --tilt-x: 0deg; --tilt-y: 0deg; --pointer-x: 50%; --pointer-y: 50%;
@@ -70,7 +70,7 @@ img { max-width: 100%; }
 .pg-mark img { display: block; width: 30px; height: 30px; object-fit: contain; }
 .app-title { flex: 1; min-width: 0; }
 .app-title > span { display: none; color: var(--muted); font-size: var(--text-small); }
-.header-action, .sheet-close { display: flex; align-items: center; justify-content: center; flex-shrink: 0; width: var(--control); height: var(--control); border: 1px solid transparent; border-radius: var(--radius); background: transparent; color: var(--muted); }
+.header-action, .sheet-close { display: flex; align-items: center; justify-content: center; flex-shrink: 0; width: var(--control); height: var(--control); border: 1px solid transparent; border-radius: var(--radius-pill); background: transparent; color: var(--muted); }
 .header-action { margin-left: var(--space); }
 .command-trigger-label { display: none; }
 /* The sun and moon share one slot and hand over on a short fade and quarter

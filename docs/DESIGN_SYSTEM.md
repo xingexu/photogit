@@ -56,13 +56,13 @@ These concepts define composition, not new capabilities. Existing project pairin
 - `--text-body: 13px`, `--text-small: 12px`, `--text-title: 18px`. Body line-height is 1.5; heading weight 600. Compact section headings use 15–16px; count facts 17px. Only identifiers, syntax, keycaps and minor badges use 11px. Minimum-width navigation also uses 11px to retain every label.
 - `--mono: "SFMono-Regular", Consolas, monospace` for command syntax, commit IDs and technical paths.
 - Spacing tokens: `--space: 4px`, `--space-2: 8px`, `--space-3: 12px`, `--space-4: 16px`, `--space-5: 20px`, `--space-6: 24px`.
-- Radii: `--radius: 8px` controls, `--radius-panel: 12px` grouped tasks, `--radius-overlay: 16px` menus/sheets. Badges and compact chips use 4–6px.
+- Radii: `--radius-chip: 10px` small chips, `--radius: 14px` rows and tiles, `--radius-panel: 24px` cards, `--radius-overlay: 30px` menus and sheets, `--radius-pill: 999px` capsule buttons, fields, chips and pills.
 
 Accent indicates selection/action; green, amber and red communicate actual status. Preserve neutral artwork colors. Decorative separators are intentionally quieter than input boundaries. Contrast tests are source-token checks, not a certification of native widget rendering.
 
 ## Material and geometry
 
-Radii run 9 / 13 / 20 / 26 for chips, controls, cards and overlays. Control heights are 32 and 40. A single spacing scale of 4 / 8 / 12 / 16 / 20 / 24 supplies every gap; `verify:tokens` fails the build when a declared token is not referenced, so the block stays a description rather than a wish list. Padding, margins and gutters read the tokens. The values that stay literal are tied to a neighbour's geometry rather than to the scale: the 3px outdent that absorbs a chip's own margin, the 6px inset of a context cell, the pill's corner offset in the rail, and a control's minimum height. Inline icons sit 8px from their labels; badge-like glyphs 12px.
+Radii run 10 / 14 / 24 / 30 for chips, controls, cards and overlays; buttons, fields, chips, pills and the round header actions are capsules (`--radius-pill`). Control heights are 32 and 40. A single spacing scale of 4 / 8 / 12 / 16 / 20 / 24 supplies every gap; `verify:tokens` fails the build when a declared token is not referenced, so the block stays a description rather than a wish list. Padding, margins and gutters read the tokens. The values that stay literal are tied to a neighbour's geometry rather than to the scale: the 3px outdent that absorbs a chip's own margin, the 6px inset of a context cell, the pill's corner offset in the rail, and a control's minimum height. Inline icons sit 8px from their labels; badge-like glyphs 12px.
 
 Cards carry the glass material: a bright inset top edge, a hairline ring, an inner bloom and a deep soft drop over a translucent fill. The depth comes from the rim, gradient and shadow, so the hierarchy survives where the host cannot blur; the blur is applied only behind an `@supports` guard. Under `prefers-reduced-transparency` the glass token points at the opaque surface, the sheen is removed and the blur is turned off.
 
