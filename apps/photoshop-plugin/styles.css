@@ -65,12 +65,12 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .panel-root { width: 100%; min-width: 0; max-width: 1600px; min-height: 100%; margin: 0 auto; }
 .app-header { display: flex; align-items: center; min-height: 64px; padding: var(--space-3) var(--space-4); background: var(--surface); border-bottom: 1px solid var(--line); }
 .app-brand { display: flex; align-items: center; min-width: 0; flex: 1; }
-.pg-mark { display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; flex-shrink: 0; margin-right: 10px; }
+.pg-mark { display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; flex-shrink: 0; margin-right: var(--space-2); }
 .pg-mark img { display: block; width: 30px; height: 30px; object-fit: contain; }
 .app-title { flex: 1; min-width: 0; }
 .app-title > span { display: none; color: var(--muted); font-size: var(--text-small); }
 .header-action, .sheet-close { display: flex; align-items: center; justify-content: center; flex-shrink: 0; width: var(--control); height: var(--control); border: 1px solid transparent; border-radius: var(--radius); background: transparent; color: var(--muted); }
-.header-action { margin-left: 5px; }
+.header-action { margin-left: var(--space); }
 .command-trigger-label { display: none; }
 /* The sun and moon share one slot and hand over on a short fade and quarter
    turn, so the toggle reads as one glyph changing rather than two swapping. */
@@ -110,7 +110,7 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .repo-project > span { min-width: 0; }
 .project-switch { margin-left: 8px; }
 .text-link { display: inline-flex; align-items: center; color: var(--muted); font-size: var(--text-small); padding: 3px 4px; border-radius: var(--radius-chip); text-decoration: underline; text-underline-offset: 2px; }
-.repo-state { display: flex; align-items: center; flex-shrink: 0; margin-right: 12px; font-size: var(--text-small); color: var(--muted); }
+.repo-state { display: flex; align-items: center; flex-shrink: 0; margin-right: var(--space-3); font-size: var(--text-small); color: var(--muted); }
 .repo-state i, .watch-status i { width: 5px; height: 5px; border-radius: 50%; background: currentColor; margin-right: 6px; }
 .repo-state.ok { color: var(--success); }
 .repo-state.warning { color: var(--warning); }
@@ -118,7 +118,7 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
    reconnect reads as recovery rather than as a different control. */
 .repo-state, .rail-sync { transition: color var(--motion-nav) var(--ease-liquid); }
 .repo-meta { margin-top: var(--space-2); }
-.repo-meta svg { width: 16px; height: 16px; margin-right: 7px; }
+.repo-meta svg { width: 16px; height: 16px; margin-right: var(--space-2); }
 .repo-branch { border: 1px solid transparent; border-radius: var(--radius); font-size: var(--text-body); }
 .repo-branch strong { min-width: 0; }
 .branch-chevron { flex-shrink: 0; width: 12px; height: 12px; margin-left: var(--space-2); color: var(--muted); }
