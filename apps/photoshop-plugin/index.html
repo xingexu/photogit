@@ -149,9 +149,9 @@
               </div>
             </div>
             <p id="change-filter-count" class="filter-note" role="status" hidden></p>
-            <section id="change-filter-empty" class="empty-state" hidden><strong>No matching edits</strong><p>Try another layer name or change type.</p><div id="reset-change-filters" class="text-link" role="button" tabindex="0">Clear filters</div></section>
+            <section id="change-filter-empty" class="empty-state" role="status" hidden><strong>No matching edits</strong><p>Try another layer name or change type.</p><div id="reset-change-filters" class="text-link" role="button" tabindex="0">Clear filters</div></section>
             <div id="changes" class="list change-list"></div>
-            <section id="changes-empty" class="empty-state">
+            <section id="changes-empty" class="empty-state" role="status">
               <strong>No detected layer edits</strong>
               <p>Edit in Photoshop, then scan. Sampled appearance checks can miss tiny edits; saved versions preserve the exact PSD.</p>
             </section>
@@ -196,7 +196,7 @@
               <input id="history-search" type="search" maxlength="200" placeholder="Search messages, authors, or IDs" aria-label="Search version history" uxp-quiet="true">
             </div>
             <div id="history" class="list history-list"></div>
-            <section id="history-empty" class="empty-state" hidden><strong id="history-empty-title">No saved versions yet</strong><p id="history-empty-copy">Save your first version to start this document’s history.</p></section>
+            <section id="history-empty" class="empty-state" role="status" hidden><strong id="history-empty-title">No saved versions yet</strong><p id="history-empty-copy">Save your first version to start this document’s history.</p></section>
           </section>
           <section id="history-inspector" class="version-inspector" role="region" aria-label="Selected version details"><div class="inspector-empty"><h2>Version details</h2><p>Select a saved version to inspect its changes and available PSD copy.</p></div></section>
           </div>
@@ -236,7 +236,7 @@
             <p class="page-description">Compare branches before bringing their work together.</p>
             <div id="review-provider" class="provider-note">Reviewing local branches</div>
             <div class="review-layout"><div class="review-list-panel"><div id="reviews" class="review-list"></div>
-            <section id="reviews-empty" class="empty-state" hidden><strong>No branches to review</strong><p>Create a branch or fetch a shared branch to begin a review.</p></section></div><section id="review-inspector" class="review-inspector" role="region" aria-label="Branch comparison"><div class="inspector-empty"><h2>Compare before merging</h2><p>Choose Compare to inspect the source and destination, changed files, and merge safeguards.</p><p>PhotoGit uses ordinary Git. It does not blend PSD layers.</p></div></section></div>
+            <section id="reviews-empty" class="empty-state" role="status" hidden><strong>No branches to review</strong><p>Create a branch or fetch a shared branch to begin a review.</p></section></div><section id="review-inspector" class="review-inspector" role="region" aria-label="Branch comparison"><div class="inspector-empty"><h2>Compare before merging</h2><p>Choose Compare to inspect the source and destination, changed files, and merge safeguards.</p><p>PhotoGit uses ordinary Git. It does not blend PSD layers.</p></div></section></div>
           </section>
           <section id="conflict-panel" class="liquid-card content-card conflict-panel" hidden>
             <div class="section-heading"><h2>Conflicts</h2></div>
