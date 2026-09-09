@@ -1393,6 +1393,7 @@ function renderChanges(changes, { baselineMissing = false, changeCount = changes
   container.innerHTML = "";
   lastScanCount = changeCount;
   setCount("changes-count", changeCount);
+  restartAnimation(document.getElementById("change-summary"));
   document.getElementById("change-summary").textContent = baselineMissing
     ? "Ready for your first version"
     : changeCount
@@ -1851,11 +1852,7 @@ function busy(active) {
 function show(message, error) {
   const safeMessage = safeInlineText(message, 800) || (error ? "PhotoGit could not complete that action." : "Done.");
   const result = document.getElementById("result");
-  // Restart the fade so a message replacing another reads as a new event;
-  // the reflow is one element wide and only happens when a message lands.
-  result.style.animation = "none";
-  void result.offsetWidth;
-  result.style.animation = "";
+  restartAnimation(result);
   result.textContent = safeMessage;
   result.className = error ? "status-message error" : "status-message success";
   // A success message clears itself once read; an error stays until replaced.
@@ -1863,6 +1860,14 @@ function show(message, error) {
   resultTimer = setTimeout(() => {
     if (!error && !busyNow && result.textContent === safeMessage) result.textContent = "";
   }, error ? 5200 : 3200);
+}
+// Replays an element's CSS animation so a value replacing another reads as
+// a new event. The reflow is one element wide and only runs on a change.
+function restartAnimation(element) {
+  if (!element) return;
+  element.style.animation = "none";
+  void element.offsetWidth;
+  element.style.animation = "";
 }
 function log(message) {
   const activity = document.getElementById("activity");
