@@ -447,7 +447,7 @@ sp-menu, sp-menu-item { background: var(--overlay); color: var(--text); }
 .comparison-artwork-note { margin-top: 10px; }
 .task-card, .branch-create-card { min-width: 0; padding: var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--surface); }
 .task-card h3, .branch-create-card h3 { font-size: var(--text-subhead); }
-.current-branch { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; margin-top: 6px; }
+.current-branch { display: flex; justify-content: space-between; align-items: center; padding: var(--space-2) 0; margin-top: 6px; }
 .current-branch strong { min-width: 0; margin-right: 8px; }
 .branch-create-card { margin-top: var(--space-4); }
 .inline-form { display: flex; flex-wrap: wrap; margin-top: 8px; }
