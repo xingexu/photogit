@@ -692,8 +692,10 @@ async function simulateBusy(label, duration) {
 }
 
 function flashResult(message, error = false) {
-  byId("result").textContent = message;
-  byId("result").className = error ? "error" : "success";
+  const result = byId("result");
+  result.style.animation = "none"; void result.offsetWidth; result.style.animation = "";
+  result.textContent = message;
+  result.className = error ? "status-message error" : "status-message success";
 }
 
 function addActivity(message) {
