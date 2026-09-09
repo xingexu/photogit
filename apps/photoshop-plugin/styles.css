@@ -529,8 +529,8 @@ kbd { font-family: var(--mono); font-size: 11px; padding: 1px 4px; border: 1px s
    line beside it rather than wrapping the control underneath. */
 .tool-sheet > .section-heading { flex-wrap: nowrap; align-items: flex-start; }
 .tool-sheet > .section-heading h2 { flex: 1; min-width: 0; }
-.tools-menu, .tool-sheet { position: fixed; z-index: 30; left: 10px; right: 10px; top: 12px; max-height: calc(100% - 24px); overflow: auto; padding: 18px; border: 1px solid var(--rim); border-radius: var(--radius-overlay); background: var(--overlay); box-shadow: 0 12px 40px var(--shadow); }
-.tools-menu { top: auto; bottom: 12px; left: auto; width: 264px; max-width: calc(100% - 20px); padding: 8px; }
+.tools-menu, .tool-sheet { position: fixed; z-index: 30; left: 10px; right: 10px; top: 12px; max-height: calc(100% - 24px); overflow: auto; padding: var(--space-4); border: 1px solid var(--rim); border-radius: var(--radius-overlay); background: var(--overlay); box-shadow: 0 12px 40px var(--shadow); }
+.tools-menu { top: auto; bottom: 12px; left: auto; width: 264px; max-width: calc(100% - 20px); padding: var(--space-2); }
 /* Opened from the header, the menu hangs just below it. The header is 64px
    tall here and 78px from 720px; a fixed 56px sat the menu across the
    header's own controls. */
