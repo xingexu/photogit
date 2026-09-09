@@ -17,3 +17,4 @@ photogit-demo-remote.git/
 .uxp-generated-probe/
 artifacts/demo-frames-*/
 .uxprc
+.gstack/
