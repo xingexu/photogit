@@ -18,6 +18,21 @@ function fixture() {
 }
 
 describe("branch design directions", () => {
+  it("hands the finished cards to the reveal stagger when it is present, and renders without it", () => {
+    const stagger = vi.fn();
+    (globalThis as any).PhotoGitReveal = { stagger };
+    try {
+      const p = fixture(); p.render();
+      expect(stagger).toHaveBeenCalledOnce();
+      const rows = [...(stagger.mock.calls[0]![0] as NodeList)];
+      expect(rows).toHaveLength(3);
+      // Every card is complete and interactive before the stagger sees it.
+      expect(rows.every(row => (row as Element).querySelector("strong")!.textContent)).toBe(true);
+    } finally { delete (globalThis as any).PhotoGitReveal; }
+    const p = fixture(); p.render();
+    expect(p.container.querySelectorAll(".branch-row")).toHaveLength(3);
+  });
+
   it("pins the actual current branch first without mutating or embellishing source records", () => {
     const original = JSON.stringify(branches);
     const p = fixture(); p.render();
