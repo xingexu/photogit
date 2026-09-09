@@ -719,7 +719,7 @@ function addActivity(message) {
   const errorEvent = /error|failed|timed out|blocked|unavailable/i.test(message);
   const icon = document.createElement("span"); icon.className = "activity-icon"; icon.setAttribute("aria-hidden", "true");
   icon.textContent = errorEvent ? "!" : "·"; icon.classList.toggle("error", errorEvent);
-  const time = document.createElement("span"); time.className = "activity-time"; time.textContent = stamp;
+  const time = document.createElement("time"); time.className = "activity-time"; time.setAttribute("datetime", new Date().toISOString()); time.textContent = stamp;
   const copy = document.createElement("span"); copy.className = "activity-copy"; copy.textContent = message;
   summary.append(icon, time, copy); row.appendChild(summary); feed.prepend(row);
   globalThis.PhotoGitReveal?.stagger([row]);
