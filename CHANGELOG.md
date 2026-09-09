@@ -1,5 +1,20 @@
 # Changelog
 
+## Apple-style pass · aurora, capsules and glow
+
+Five commits that move the panel toward the platform's own glass, on
+request, and were reloaded and measured in Photoshop 27.10.
+
+- Three soft colour bubbles (blue, violet, teal at low alpha) sit fixed
+  behind the panel as an aurora, so the glass has colour to be glass
+  over. They are a real element behind the panel root, take no pointer
+  events, and go under reduced transparency and `prefers-contrast:
+  more`. Text still sits on the opaque card fills.
+- Radii step up to 10 / 14 / 24 / 30, the card rims are brighter and the
+  glass glow gains a wider coloured bloom.
+- Buttons, fields, the command trigger, chips, pills and the round header
+  actions are capsules, with a little more side room for their text.
+
 ## Polish pass · keyboard rows, announcements, and the spacing scale
 
 Two hundred commits, one change each, verified by the panel suites and
