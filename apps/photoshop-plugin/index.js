@@ -439,6 +439,8 @@ function renderReviews(reviews, conflicts) {
   container.innerHTML = "";
   empty.hidden = reviews.length > 0;
   for (const review of reviews) container.appendChild(createReviewCard(review));
+  const reveal = globalThis.PhotoGitReveal;
+  if (reveal && typeof reveal.stagger === "function") reveal.stagger(container.querySelectorAll(".review-card"));
   const conflictPanel = document.getElementById("conflict-panel");
   conflictPanel.hidden = conflicts.length === 0;
   const visibleConflicts = conflicts.slice(0, MAX_VISIBLE_CONFLICTS);
