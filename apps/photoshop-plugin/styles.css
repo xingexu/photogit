@@ -232,7 +232,7 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
    than a typical branch name. Stack them so a name has the full width. */
 @media (max-width: 360px) { .repo-branch, .repo-document { flex-basis: 100%; } }
 /* Changes: dense list first, complete-document composer second. */
-.scan-card { display: flex; align-items: flex-start; flex-wrap: wrap; margin-bottom: 18px; }
+.scan-card { display: flex; align-items: flex-start; flex-wrap: wrap; margin-bottom: var(--space-4); }
 .scan-copy { flex: 1 1 160px; min-width: 0; padding-right: 10px; }
 /* The headline is the scan's one-line verdict. A new verdict fades in over
    the old rather than swapping words in place. */
