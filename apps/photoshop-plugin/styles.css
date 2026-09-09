@@ -117,7 +117,7 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 /* Helper online, helper offline: the colour crosses rather than cuts, so a
    reconnect reads as recovery rather than as a different control. */
 .repo-state, .rail-sync { transition: color var(--motion-nav) var(--ease-liquid); }
-.repo-meta { margin-top: 10px; }
+.repo-meta { margin-top: var(--space-2); }
 .repo-meta svg { width: 16px; height: 16px; margin-right: 7px; }
 .repo-branch { border: 1px solid transparent; border-radius: var(--radius); font-size: var(--text-body); }
 .repo-branch strong { min-width: 0; }
