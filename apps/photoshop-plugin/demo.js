@@ -706,6 +706,7 @@ function flashResult(message, error = false) {
   result.style.animation = "none"; void result.offsetWidth; result.style.animation = "";
   result.textContent = message;
   result.className = error ? "status-message error" : "status-message success";
+  result.setAttribute("role", error ? "alert" : "status");
 }
 
 function addActivity(message) {
