@@ -378,7 +378,7 @@ sp-menu, sp-menu-item { background: var(--overlay); color: var(--text); }
 #history-inspector { display: none; }
 .inspector-empty { padding: 24px; border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--surface); }
 .review-inspector .inspector-empty, .version-inspector[data-state="empty"] { padding: 8px 0 0; border: 0; background: transparent; }
-.inspector-empty h2 { font-size: 16px; }
+.inspector-empty h2 { font-size: var(--text-subhead); }
 .inspector-empty p { color: var(--muted); margin-top: 10px; font-size: var(--text-small); }
 .version-inspector-header { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; margin-bottom: 20px; }
 .version-inspector-title { flex: 1 1 200px; min-width: 0; margin-right: 12px; }
