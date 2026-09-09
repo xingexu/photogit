@@ -479,7 +479,7 @@ function renderHistory() {
       row.classList.toggle("selected", selectedDemoVersion === version.shortId);
       const message = escapeHtml(version.message);
       const shortId = escapeHtml(version.shortId);
-      row.innerHTML = `<span class="history-marker" aria-hidden="true">${historyIcon()}</span><span class="row-copy"><strong title="${message}">${message}</strong><span>${escapeHtml(version.author)} · ${escapeHtml(version.date)}</span></span><span class="commit-id" title="Checkpoint ${shortId}">${shortId}</span>`;
+      row.innerHTML = `<span class="history-marker" aria-hidden="true">${historyIcon()}</span><span class="row-copy"><strong title="${message}">${message}</strong><span>${escapeHtml(version.author)} · ${escapeHtml(version.date)}</span></span><span class="commit-id" title="Version ${shortId}">${shortId}</span>`;
       row.setAttribute("role", "button"); row.tabIndex = 0;
       row.setAttribute("aria-pressed", String(selectedDemoVersion === version.shortId));
       row.setAttribute("aria-label", `Inspect version ${version.shortId}: ${version.message}`);
