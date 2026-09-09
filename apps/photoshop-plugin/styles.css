@@ -408,7 +408,7 @@ sp-menu, sp-menu-item { background: var(--overlay); color: var(--text); }
 .version-inspector-section { flex: 1 1 210px; min-width: 0; margin: 6px; padding: var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--surface); }
 .version-inspector-section h3 { margin-bottom: var(--space-3); font-size: var(--text-subhead); }
 .version-inspector-facts { margin: 0; }
-.version-inspector-facts dt { font-size: var(--text-small); color: var(--muted); margin-top: 10px; }
+.version-inspector-facts dt { font-size: var(--text-small); color: var(--muted); margin-top: var(--space-2); }
 .version-inspector-facts dd { margin: 2px 0 0; overflow-wrap: anywhere; }
 .version-inspector-changes, .version-inspector-files { padding-left: 16px; color: var(--muted); font-size: var(--text-small); overflow-wrap: anywhere; }
 .version-inspector-changes li, .version-inspector-files li { margin: 7px 0; }
