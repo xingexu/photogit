@@ -159,7 +159,10 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .page-description { color: var(--muted); font-size: var(--text-small); margin: -4px 0 18px; }
 .content-card { min-width: 0; margin-bottom: 20px; }
 .meta-chip { display: inline-block; font-size: var(--text-small); color: var(--muted); background: var(--elevated); padding: 2px 7px; border-radius: var(--radius-chip); }
-/* The message counter warns as the limit nears and states it when reached. */
+/* The message counter warns as the limit nears and states it when reached;
+   the tone eases in so the warning arrives without a flicker on the
+   keystroke that crosses the line. */
+#message-count { transition: color var(--motion-control) var(--ease-liquid), background-color var(--motion-control) var(--ease-liquid); }
 #message-count[data-limit="near"] { color: var(--warning); background: var(--warning-surface); }
 #message-count[data-limit="full"] { color: var(--error); background: var(--error-surface); }
 
