@@ -630,7 +630,7 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
 
   /* Reference: icons sit above their labels, counts ride as pills, and the
      selected destination lifts into its own glass tile. */
-  .section-nav { display: flex; flex-direction: column; flex-wrap: nowrap; flex: 0 0 auto; min-width: 0; padding: 12px 11px; border: 1px solid var(--glass-rim); border-radius: var(--radius-panel); border-bottom: 1px solid var(--glass-rim); background-color: var(--glass); background-image: linear-gradient(180deg, var(--glass-top), rgba(255,255,255,0) 58%); box-shadow: var(--glass-glow); }
+  .section-nav { display: flex; flex-direction: column; flex-wrap: nowrap; flex: 0 0 auto; min-width: 0; padding: var(--space-3); border: 1px solid var(--glass-rim); border-radius: var(--radius-panel); border-bottom: 1px solid var(--glass-rim); background-color: var(--glass); background-image: linear-gradient(180deg, var(--glass-top), rgba(255,255,255,0) 58%); box-shadow: var(--glass-glow); }
   /* Separate destinations with space rather than rules, so the selected tile
      never collides with a divider. */
   .nav-item { position: relative; flex: 0 0 auto; flex-direction: column; align-items: flex-start; justify-content: center; min-height: 76px; padding: 14px 14px 15px; margin: 3px 0; border: 1px solid transparent; border-radius: var(--radius); font-size: var(--text-body); }
