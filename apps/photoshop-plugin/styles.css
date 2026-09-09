@@ -655,7 +655,7 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
   .startup-card, .onboarding { margin: 32px auto; }
   .notice, .status-message, #result { margin-left: var(--space-6); margin-right: var(--space-6); }
   .changes-heading { display: flex; }
-  .rail-footer { display: block; margin-top: auto; padding: 16px; border-top: 1px solid var(--line); }
+  .rail-footer { display: block; margin-top: auto; padding: var(--space-4); border-top: 1px solid var(--line); }
 }
 
 @media (min-width: 900px) {
