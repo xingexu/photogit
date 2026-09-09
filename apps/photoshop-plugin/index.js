@@ -1878,7 +1878,8 @@ function restartAnimation(element) {
 }
 function log(message) {
   const activity = document.getElementById("activity");
-  const stamp = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  const now = new Date();
+  const stamp = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   if (activity.textContent === "Ready.") activity.textContent = "";
   const text = safeInlineText(message, 2_000);
   const scanEvent = /^(Captured \d+ Photoshop layer|\d+ semantic edits found|Ready to save the first version|\d+ project file change\(s\) detected)/.test(text);
@@ -1906,7 +1907,7 @@ function log(message) {
   const icon = document.createElement("span"); icon.className = "activity-icon"; icon.setAttribute("aria-hidden", "true");
   const errorEvent = /error|failed|timed out|blocked|unavailable/i.test(text);
   icon.textContent = errorEvent ? "!" : "·"; icon.classList.toggle("error", errorEvent);
-  const time = document.createElement("span"); time.className = "activity-time"; time.textContent = `[${stamp}] `;
+  const time = document.createElement("time"); time.className = "activity-time"; time.setAttribute("datetime", now.toISOString()); time.textContent = `[${stamp}] `;
   const copy = document.createElement("span"); copy.className = "activity-copy";
   copy.textContent = text.length > 160 ? text.slice(0, 160) + "…" : text;
   summary.appendChild(icon); summary.appendChild(time); summary.appendChild(copy);
