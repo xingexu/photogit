@@ -587,7 +587,7 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
 .startup-skeleton span:last-child { width: 72%; }
 .onboarding h2 { margin: var(--space-4) 0 var(--space-3); }
 .onboarding p { color: var(--muted); }
-.onboarding .button { margin-top: 20px; }
+.onboarding .button { margin-top: var(--space-5); }
 .onboarding #setup-toggle { margin-top: 10px; }
 /* The chevron turns to point down when the instructions are open, so the
    link reads as a disclosure rather than a jump. */
