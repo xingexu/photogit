@@ -91,6 +91,18 @@ function setup(document, { navigate, openCommands }) {
   }
   const search = document.getElementById("changes-search");
   search.addEventListener("input", () => refreshChanges(document));
+  // Escape in a search field that has text clears it and re-runs the
+  // filter, the way a native search field does. An empty field lets the
+  // key through, so it still closes whatever surface is open.
+  for (const field of document.querySelectorAll('input[type="search"]')) {
+    field.addEventListener("keydown", event => {
+      if (event.key !== "Escape" || !field.value) return;
+      event.preventDefault(); event.stopPropagation();
+      field.value = "";
+      const EventType = (field.ownerDocument.defaultView && field.ownerDocument.defaultView.Event) || globalThis.Event;
+      field.dispatchEvent(new EventType("input", { bubbles: true }));
+    });
+  }
   activate(document.getElementById("reset-change-filters"), () => {
     search.value = "";
     for (const chip of document.querySelectorAll("[data-change-filter]")) chip.setAttribute("aria-pressed", String(chip.dataset.changeFilter === "all"));

@@ -109,6 +109,13 @@ describe("Studio workspace interactions", () => {
     p.key(p.id("changes-tab"), "/");
     expect(p.openCommands).not.toHaveBeenCalled();
   });
+  it("clears a search field with Escape and leaves an empty one to close surfaces", async () => {
+    const p = await fixture();
+    p.search("title"); expect(p.visible()).toHaveLength(1);
+    expect(p.key(p.input, "Escape").defaultPrevented).toBe(true);
+    expect(p.input.value).toBe(""); expect(p.visible()).toHaveLength(5);
+    expect(p.key(p.input, "Escape").defaultPrevented).toBe(false);
+  });
   it("binds listeners once even when setup is repeated", async () => {
     const p = await fixture(); ui.setup(p.document, p.options);
     p.key(p.id("changes-tab"), "/"); expect(p.openCommands).toHaveBeenCalledOnce();
