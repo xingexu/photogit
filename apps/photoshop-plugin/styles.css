@@ -283,7 +283,7 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .document-facts div { display: flex; align-items: baseline; margin: 3px; padding: 4px 8px; border: 1px solid var(--line); border-radius: var(--radius-chip); background: var(--elevated); }
 .document-facts dt { color: var(--muted); font-size: 11px; margin-right: 6px; }
 .document-facts dd { margin: 0; font-size: var(--text-small); }
-.capture-actions { display: flex; margin-top: 12px; }
+.capture-actions { display: flex; margin-top: var(--space-3); }
 .capture-actions > .button { flex: 1; }
 .message-presets { display: flex; flex-wrap: wrap; margin: 8px -3px 0; }
 .preset { padding: 5px 8px; margin: 3px; border: 1px solid var(--line); border-radius: var(--radius-chip); color: var(--muted); font-size: var(--text-small); background: var(--elevated); }
