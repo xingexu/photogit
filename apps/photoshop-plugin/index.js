@@ -1076,6 +1076,9 @@ function renderDocumentFacts(meta) {
     row.append(term, detail); list.appendChild(row);
   }
   section.hidden = facts.length === 0;
+  // The facts arrive with the first scan; they step in like the tally tiles.
+  const reveal = globalThis.PhotoGitReveal;
+  if (reveal && typeof reveal.stagger === "function") reveal.stagger(list.children);
 }
 
 // The current branch tip is HEAD, so the inspector preview reuses the branch

@@ -530,6 +530,7 @@ function renderDemoDocumentPreview() {
     row.append(term, detail); list.appendChild(row);
   }
   section.hidden = false;
+  globalThis.PhotoGitReveal?.stagger(list.children);
   const figure = byId("document-preview-figure");
   const image = byId("document-preview-image");
   if (!figure || !image) return;
