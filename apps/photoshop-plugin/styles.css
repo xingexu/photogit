@@ -366,7 +366,7 @@ sp-menu, sp-menu-item { background: var(--overlay); color: var(--text); }
 /* History selection and structured inspector. No fabricated preview data. */
 .history-list-panel { min-width: 0; }
 .history-group { padding-top: 16px; }
-.history-group-heading { display: flex; justify-content: space-between; flex-wrap: wrap; margin-bottom: 6px; color: var(--muted); font-size: var(--text-small); }
+.history-group-heading { display: flex; justify-content: space-between; flex-wrap: wrap; margin-bottom: 6px; color: var(--muted); font-size: var(--text-small); font-weight: 400; }
 .history-group-heading strong { font-weight: 500; margin-right: 8px; }
 .history-group-entries { min-width: 0; }
 .history-row { padding: 12px 8px; border-radius: var(--radius); border-bottom-color: transparent; margin-bottom: 3px; flex-wrap: wrap; }
