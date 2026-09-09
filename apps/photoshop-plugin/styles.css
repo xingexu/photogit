@@ -573,6 +573,7 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
 .onboarding p { color: var(--muted); }
 .onboarding .button { margin-top: 20px; }
 .onboarding #setup-toggle { margin-top: 10px; }
+#setup-instructions { animation: photogit-reveal var(--motion-control) var(--ease-liquid) both; }
 .onboarding-symbol { color: var(--muted); }
 .onboarding-steps { margin-top: 20px; }
 .onboarding-steps p { font-size: var(--text-small); margin-top: 8px; }
