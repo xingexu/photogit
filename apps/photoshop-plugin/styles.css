@@ -245,6 +245,11 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .tally-tile { display: flex; flex-direction: column-reverse; flex: 1 1 90px; min-width: 0; margin: 0; padding: 14px 16px; border: 1px solid var(--glass-rim); border-radius: var(--radius); background: var(--elevated); box-shadow: 0 1px 0 var(--shine) inset; }
 .tally-tile dd { margin: 0; font-size: var(--text-heading); font-weight: 600; letter-spacing: -.5px; line-height: 1.1; }
 .tally-tile:first-child dd { color: var(--accent); }
+/* New and deleted layers take the colours the rows already give those
+   states, but only once the number is not zero: a red nought draws the
+   eye to nothing. */
+.tally-tile:nth-child(2) dd:not([data-value="0"]) { color: var(--success); }
+.tally-tile:nth-child(3) dd:not([data-value="0"]) { color: var(--error); }
 .tally-tile dt { margin-top: 5px; color: var(--muted); font-size: var(--text-small); }
 .watch-status.ready, .watch-status.changed { display: none; }
 .watch-status.error { color: var(--error); }
