@@ -145,6 +145,14 @@ describe("Studio workspace interactions", () => {
     const last = vi.spyOn(p.id("tools-toggle"), "focus");
     p.key(p.id("pull"), "End"); expect(last).toHaveBeenCalledOnce();
   });
+  it("moves from the search into the first visible selectable row", async () => {
+    const p = await fixture();
+    for (const row of p.rows) row.setAttribute("role", "button");
+    const first = vi.spyOn(p.rows[0]!, "focus"); const third = vi.spyOn(p.rows[2]!, "focus");
+    expect(p.key(p.input, "Enter").defaultPrevented).toBe(true); expect(first).toHaveBeenCalledOnce();
+    p.chip("structure").click(); p.key(p.input, "ArrowDown"); expect(third).toHaveBeenCalledOnce();
+    p.search("missing"); expect(p.key(p.input, "Enter").defaultPrevented).toBe(false);
+  });
   it("binds listeners once even when setup is repeated", async () => {
     const p = await fixture(); ui.setup(p.document, p.options);
     p.key(p.id("changes-tab"), "/"); expect(p.openCommands).toHaveBeenCalledOnce();
