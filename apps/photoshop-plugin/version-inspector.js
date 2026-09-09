@@ -36,7 +36,13 @@ function facts(document, parent, entries) {
   for (const [label, value] of entries) {
     const row = append(document, list, "div", "version-inspector-fact");
     append(document, row, "dt", "", label);
-    append(document, row, "dd", label === "Commit" ? "version-inspector-commit" : "", String(value));
+    const detail = append(document, row, "dd", label === "Commit" ? "version-inspector-commit" : "");
+    // A fact that is a moment keeps its exact timestamp on a time element
+    // behind the localised reading.
+    if (value && typeof value === "object" && typeof value.datetime === "string") {
+      const time = append(document, detail, "time", "", value.text);
+      time.setAttribute("datetime", value.datetime);
+    } else detail.textContent = String(value);
   }
   return list;
 }
@@ -159,7 +165,7 @@ function render(container, options = {}) {
 
   const information = append(document, grid, "div", "version-inspector-information");
   facts(document, section(document, information, "Version details"), [
-    ["Saved", formatDate(version.date)],
+    ["Saved", /^\d{4}-\d{2}-\d{2}T/.test(String(version.date)) ? { text: formatDate(version.date), datetime: version.date } : formatDate(version.date)],
     ["Author", text(version.author, "Not recorded")],
     ["Commit", id || text(version.shortId, "Not recorded")],
     ["PSD snapshot", snapshotAvailable ? "Available locally" : "Unavailable locally"]
