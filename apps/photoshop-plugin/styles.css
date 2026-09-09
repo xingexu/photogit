@@ -23,7 +23,7 @@
   --space: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-5: 20px; --space-6: 24px;
   --text-small: 12px; --text-body: 13px; --text-subhead: 15px; --text-title: 18px; --text-heading: 22px;
   --control: 32px; --control-tall: 40px;
-  --radius-chip: 10px; --radius: 14px; --radius-panel: 24px; --radius-overlay: 30px; --radius-pill: 999px;
+  --radius-chip: 10px; --radius: 14px; --radius-panel: 24px; --radius-overlay: 30px; --radius-pill: 20px;
   --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --mono: "SFMono-Regular", Consolas, monospace;
   --tilt-x: 0deg; --tilt-y: 0deg; --pointer-x: 50%; --pointer-y: 50%;
@@ -84,7 +84,7 @@ img { max-width: 100%; }
 .pg-mark img { display: block; width: 30px; height: 30px; object-fit: contain; }
 .app-title { flex: 1; min-width: 0; }
 .app-title > span { display: none; color: var(--muted); font-size: var(--text-small); }
-.header-action, .sheet-close { display: flex; align-items: center; justify-content: center; flex-shrink: 0; width: var(--control); height: var(--control); border: 1px solid transparent; border-radius: var(--radius-pill); background: transparent; color: var(--muted); }
+.header-action, .sheet-close { display: flex; align-items: center; justify-content: center; flex-shrink: 0; width: var(--control); height: var(--control); border: 1px solid transparent; border-radius: 16px; background: transparent; color: var(--muted); }
 .header-action { margin-left: var(--space); }
 .command-trigger-label { display: none; }
 /* The sun and moon share one slot and hand over on a short fade and quarter
@@ -148,7 +148,7 @@ body.is-busy [aria-disabled="true"], body.is-busy input:disabled { cursor: progr
 /* A destination name is one word. The global break-anywhere rule let "Changes"
    split into "Chang / es" once the row stopped wrapping at 640px. */
 .nav-item span { min-width: 0; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.nav-item b { margin-left: var(--space-2); min-width: 20px; padding: 2px var(--space-2); border-radius: var(--radius-pill); background: var(--primary); color: var(--primary-text); font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; text-align: center; transition: transform var(--motion-control) var(--ease-liquid), box-shadow var(--motion-control) var(--ease-liquid); }
+.nav-item b { margin-left: var(--space-2); min-width: 20px; padding: 2px var(--space-2); border-radius: 10px; background: var(--primary); color: var(--primary-text); font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; text-align: center; transition: transform var(--motion-control) var(--ease-liquid), box-shadow var(--motion-control) var(--ease-liquid); }
 /* The badge count is the one number in the navigation. Growing it very
    slightly on hover confirms the row is live without moving its neighbours. */
 .nav-item:hover b { transform: scale(1.07); }
@@ -175,7 +175,7 @@ body.is-busy [aria-disabled="true"], body.is-busy input:disabled { cursor: progr
 .view-heading h2, .section-heading h2 { margin-right: 8px; }
 .page-description { color: var(--muted); font-size: var(--text-small); margin: -4px 0 var(--space-4); }
 .content-card { min-width: 0; margin-bottom: var(--space-5); }
-.meta-chip { display: inline-block; font-size: var(--text-small); color: var(--muted); background: var(--elevated); padding: 2px var(--space-2); border-radius: var(--radius-pill); white-space: nowrap; }
+.meta-chip { display: inline-block; font-size: var(--text-small); color: var(--muted); background: var(--elevated); padding: 2px var(--space-2); border-radius: 11px; white-space: nowrap; }
 /* The message counter warns as the limit nears and states it when reached;
    the tone eases in so the warning arrives without a flicker on the
    keystroke that crosses the line. */
@@ -300,13 +300,13 @@ body.is-busy [aria-disabled="true"], body.is-busy input:disabled { cursor: progr
 .preview-figure img { display: block; width: 100%; max-height: 300px; object-fit: contain; border-radius: var(--radius); background: var(--input); }
 .preview-figure figcaption { margin-top: 7px; }
 .document-facts { display: flex; flex-wrap: wrap; margin: 0 -3px; }
-.document-facts div { display: flex; align-items: baseline; margin: 3px; padding: var(--space) var(--space-3); border: 1px solid var(--line); border-radius: var(--radius-pill); background: var(--elevated); }
+.document-facts div { display: flex; align-items: baseline; margin: 3px; padding: var(--space) var(--space-3); border: 1px solid var(--line); border-radius: 14px; background: var(--elevated); }
 .document-facts dt { color: var(--muted); font-size: 11px; margin-right: 6px; }
 .document-facts dd { margin: 0; font-size: var(--text-small); }
 .capture-actions { display: flex; margin-top: var(--space-3); }
 .capture-actions > .button { flex: 1; }
 .message-presets { display: flex; flex-wrap: wrap; margin: var(--space-2) -3px 0; }
-.preset { padding: var(--space) var(--space-3); margin: 3px; border: 1px solid var(--line); border-radius: var(--radius-pill); color: var(--muted); font-size: var(--text-small); background: var(--elevated); }
+.preset { padding: var(--space) var(--space-3); margin: 3px; border: 1px solid var(--line); border-radius: 14px; color: var(--muted); font-size: var(--text-small); background: var(--elevated); }
 /* Busy feedback. One CSS track serves both hosts: the browser preview has no
    <sp-progressbar>, and a host that cannot animate still shows the bar. */
 .progress-track { position: relative; width: 100%; height: 3px; margin-top: var(--space-2); overflow: hidden; border-radius: 2px; background: var(--line); }
@@ -315,7 +315,10 @@ body.is-busy [aria-disabled="true"], body.is-busy input:disabled { cursor: progr
   from { transform: translateX(-100%); }
   to { transform: translateX(250%); }
 }
-.button { display: flex; align-items: center; justify-content: center; min-height: 38px; padding: var(--space-2) var(--space-4); border: 1px solid transparent; border-radius: var(--radius-pill); font-size: var(--text-body); font-weight: 500; text-align: center; line-height: 1.4; }
+/* Capsules are rounded by exactly half their own height. The host draws a
+   radius larger than half the box as an arc of that radius rather than
+   clamping it, so a 999px pill came out as two great circles. */
+.button { display: flex; align-items: center; justify-content: center; min-height: 38px; padding: var(--space-2) var(--space-4); border: 1px solid transparent; border-radius: 19px; font-size: var(--text-body); font-weight: 500; text-align: center; line-height: 1.4; }
 .button svg { position: relative; width: 16px; height: 16px; margin-right: var(--space-2); }
 .button-primary { background: var(--primary); color: var(--primary-text); border-color: var(--primary); box-shadow: inset 0 1px 0 var(--shine), 0 2px 6px var(--shadow); }
 .button-primary[role="button"]:not([aria-disabled="true"]):hover { background: var(--primary-hover); color: var(--primary-text); border-color: var(--primary-hover); box-shadow: 0 1px 0 rgba(255,255,255,.24) inset, 0 0 28px -6px var(--primary), 0 10px 24px -12px var(--primary); }
@@ -323,12 +326,12 @@ body.is-busy [aria-disabled="true"], body.is-busy input:disabled { cursor: progr
 /* Cancel scan appears for the duration of a scan and goes with it; fading
    it in stops the scan card from jumping every time a scan starts. */
 #cancel-scan { margin: -6px 0 18px; animation: photogit-fade-in var(--motion-control) var(--ease-liquid) backwards; }
-#save-version { min-height: 44px; font-weight: 600; box-shadow: 0 1px 0 rgba(255,255,255,.22) inset, 0 10px 24px -12px var(--primary); }
+#save-version { min-height: 44px; border-radius: 22px; font-weight: 600; box-shadow: 0 1px 0 rgba(255,255,255,.22) inset, 0 10px 24px -12px var(--primary); }
 /* A parked primary action keeps its fill but loses its glow. */
 .button-primary[aria-disabled="true"], #save-version[aria-disabled="true"] { box-shadow: none; }
 .button-quiet { color: var(--text); background: transparent; border-color: var(--border); }
 .button-quiet[role="button"]:not([aria-disabled="true"]):hover { border-color: var(--glass-rim); box-shadow: 0 0 22px -8px var(--glow), 0 1px 0 var(--shine) inset; }
-.button-small { min-height: 30px; padding: var(--space) var(--space-2); font-size: var(--text-small); }
+.button-small { min-height: 30px; padding: var(--space) var(--space-2); border-radius: 15px; font-size: var(--text-small); }
 .button-wide { width: 100%; }
 .button-disabled { color: var(--disabled); border-color: var(--line); }
 .field-label { display: block; margin: var(--space-4) 0 var(--space-2); color: var(--muted); font-size: var(--text-small); }
@@ -349,7 +352,7 @@ body.is-busy [aria-disabled="true"], body.is-busy input:disabled { cursor: progr
   .field-shell:focus-within { box-shadow: 0 0 0 3px color-mix(in srgb, var(--focus) 22%, transparent); }
 }
 input, sp-dropdown, sp-menu, sp-menu-item, select { color: var(--text); font-family: var(--font-ui); font-size: var(--text-body); font-style: normal; }
-input { min-width: 0; width: 100%; height: 34px; padding: 7px var(--space-3); margin: 0; border: 0; border-radius: var(--radius-pill); background: transparent; appearance: none; }
+input { min-width: 0; width: 100%; height: 34px; padding: 7px var(--space-3); margin: 0; border: 0; border-radius: 17px; background: transparent; appearance: none; }
 input::placeholder { color: var(--muted); opacity: 1; font-family: var(--font-ui); font-size: var(--text-body); font-style: normal; }
 input:disabled { color: var(--disabled); }
 .search-field svg { width: 16px; height: 16px; margin-left: var(--space-3); color: var(--muted); }
@@ -358,7 +361,7 @@ input:disabled { color: var(--disabled); }
 sp-dropdown, select { width: 100%; min-height: var(--control-tall); margin: var(--space) 0; padding: var(--space) var(--space-2); background: var(--input); border: 1px solid var(--border); border-radius: var(--radius); }
 sp-menu, sp-menu-item { background: var(--overlay); color: var(--text); }
 .filter-bar { display: flex; flex-wrap: wrap; margin: var(--space-2) -3px; }
-.filter-chip { margin: 3px; padding: var(--space) var(--space-3); border: 1px solid transparent; border-radius: var(--radius-pill); color: var(--muted); font-size: var(--text-small); }
+.filter-chip { margin: 3px; padding: var(--space) var(--space-3); border: 1px solid transparent; border-radius: 14px; color: var(--muted); font-size: var(--text-small); }
 .filter-chip[aria-pressed="true"] { color: var(--text); background: var(--elevated); border-color: var(--line); }
 .chip-count { margin-left: 5px; font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; }
 .filter-note { margin: var(--space-2) 0; color: var(--muted); font-size: var(--text-small); animation: photogit-fade-in var(--motion-control) var(--ease-liquid) backwards; }
@@ -478,7 +481,7 @@ sp-menu, sp-menu-item { background: var(--overlay); color: var(--text); }
 .review-direction { color: var(--muted); font-size: var(--text-small); margin: 3px 0 var(--space-2); }
 .review-meta { display: flex; flex-wrap: wrap; align-items: center; color: var(--muted); font-size: var(--text-small); margin-top: var(--space-2); }
 .review-meta > span { margin-right: 6px; }
-.review-meta .ready, .review-meta .blocked { padding: 2px var(--space-2); border-radius: var(--radius-pill); }
+.review-meta .ready, .review-meta .blocked { padding: 2px var(--space-2); border-radius: 11px; }
 .review-meta .ready { color: var(--success); background: var(--success-surface); }
 .review-meta .blocked { color: var(--warning); background: var(--warning-surface); }
 .review-actions { display: flex; flex-wrap: wrap; margin: var(--space-3) -3px 0; }
@@ -502,7 +505,7 @@ sp-menu, sp-menu-item { background: var(--overlay); color: var(--text); }
 .comparison-status > h3 { margin-top: 14px; font-size: var(--text-subhead); }
 .comparison-status > h3:first-child { margin-top: 0; }
 .comparison-direction { display: flex; align-items: center; flex-wrap: wrap; padding: var(--space-3) 0; color: var(--text); }
-.comparison-direction strong { background: var(--elevated); padding: var(--space) var(--space-3); border-radius: var(--radius-pill); }
+.comparison-direction strong { background: var(--elevated); padding: var(--space) var(--space-3); border-radius: 14px; }
 .comparison-direction > span { margin: 0 var(--space-2); color: var(--muted); }
 .comparison-layout { display: flex; flex-wrap: wrap; min-width: 0; }
 .comparison-summary { flex: 1 1 240px; min-width: 0; padding-right: var(--space-5); }
@@ -527,7 +530,7 @@ sp-menu, sp-menu-item { background: var(--overlay); color: var(--text); }
 .activity-time { color: var(--muted); font-size: 11px; margin-right: 10px; white-space: nowrap; }
 .activity-copy { flex: 1 1 150px; min-width: 0; }
 .sync-panel { display: flex; padding: var(--space-3) 0; margin-top: var(--space-3); border-top: 1px solid var(--line); }
-.footer-action { display: flex; align-items: center; justify-content: center; flex: 1; min-height: 34px; padding: 6px; border-radius: var(--radius-pill); font-size: var(--text-small); color: var(--muted); }
+.footer-action { display: flex; align-items: center; justify-content: center; flex: 1; min-height: 34px; padding: 6px; border-radius: 17px; font-size: var(--text-small); color: var(--muted); }
 .footer-action svg { width: 16px; height: 16px; margin-right: var(--space-2); }
 .tools-toggle { flex: 0 0 30px; }
 .shortcut-note { margin: var(--space) 0 var(--space-2); text-align: center; color: var(--muted); font-size: var(--text-small); }
