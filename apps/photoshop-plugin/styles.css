@@ -529,7 +529,7 @@ kbd { font-family: var(--mono); font-size: 11px; padding: 1px 4px; border: 1px s
 .command-copy > span { margin-top: 3px; }
 .command-hint { margin: var(--space-2) 0; }
 .command-row:focus { outline-offset: -2px; background: var(--selected); }
-#command-error { color: var(--error); white-space: normal; margin: 8px 0; }
+#command-error { color: var(--error); white-space: normal; margin: var(--space-2) 0; }
 /* A command is copied, not read: it stays on one line and scrolls sideways
    in a narrow panel rather than breaking a path in the middle of a word. */
 .setup-command { padding: 12px; margin-top: 12px; background: var(--input); border: 1px solid var(--line); border-radius: var(--radius); font: 11px/1.7 var(--mono); white-space: pre; overflow-x: auto; overflow-wrap: normal; word-break: normal; }
