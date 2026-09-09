@@ -266,7 +266,7 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .changes-layout { min-width: 0; }
 .changes-card .section-heading h2 { font-size: var(--text-subhead); }
 .capture-panel { margin-top: var(--space-4); }
-.capture-title { display: flex; align-items: center; margin-bottom: 16px; }
+.capture-title { display: flex; align-items: center; margin-bottom: var(--space-4); }
 .capture-title h2 { font-size: var(--text-subhead); font-weight: 600; letter-spacing: -.2px; }
 .capture-title small { display: block; margin-top: 3px; color: var(--muted); font-size: var(--text-small); }
 .capture-title svg { box-sizing: content-box; flex-shrink: 0; width: 17px; height: 17px; padding: 10px; margin-right: 12px; border: 1px solid var(--glass-rim); border-radius: 50%; background: var(--elevated); color: var(--muted); }
