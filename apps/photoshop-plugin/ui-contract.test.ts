@@ -1229,6 +1229,15 @@ describe("PhotoGit production startup — mocked host and filesystem", () => {
     expect(p.evaluate("helperOnline")).toBe(false);
     expect([...p.timers.values()].some(timer => timer.delay === 150)).toBe(false);
   });
+  it("clears a stale helper-offline error once the helper answers", async () => {
+    const p = await panel(); p.connect();
+    p.evaluate('show("The PhotoGit helper is offline or did not answer in time.", true)');
+    expect(p.id("result").className).toContain("error");
+    p.evaluate('setHelper("Helper online", true)');
+    expect(p.id("result").textContent).toBe("");
+    p.evaluate('show("No version was written.", true); setHelper("Helper online", true)');
+    expect(p.id("result").textContent).toBe("No version was written.");
+  });
   it("ignores pairing data that arrives after its startup deadline", async () => {
     const p = await panel(); const waiting = deferred<string>();
     p.context.localStorage.getItem = () => "saved-folder";
