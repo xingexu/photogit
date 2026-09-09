@@ -309,7 +309,7 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .button-small { min-height: 30px; padding: 5px 9px; font-size: var(--text-small); }
 .button-wide { width: 100%; }
 .button-disabled { color: var(--disabled); border-color: var(--line); }
-.field-label { display: block; margin: 14px 0 7px; color: var(--muted); font-size: var(--text-small); }
+.field-label { display: block; margin: var(--space-4) 0 var(--space-2); color: var(--muted); font-size: var(--text-small); }
 .field-shell { display: flex; align-items: center; width: 100%; min-width: 0; min-height: var(--control-tall); border: 1px solid var(--glass-rim); border-radius: var(--radius); background: var(--input); transition: border-color var(--motion-control) var(--ease-liquid), box-shadow var(--motion-control) var(--ease-liquid); }
 .field-shell:focus-within { border-color: var(--focus); box-shadow: 0 0 0 1px var(--focus); }
 /* The shell draws the focus ring for the field it wraps; the input's own
