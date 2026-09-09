@@ -36,9 +36,9 @@ These concepts define composition, not new capabilities. Existing project pairin
 | `--pressed` | `#383e47` | `#dce3ed` |
 | `--selected` | `#293849` | `#e0eafb` |
 | `--focus` | `#9ac6ff` | `#245bb6` |
-| `--accent` | `#afd0ff` | `#245bb6` |
-| `--primary` / `--primary-text` | `#cdd7e4` / `#192330` | `#2d60b5` / `#ffffff` |
-| `--primary-hover` / `--primary-pressed` | `#e5eaf0` / `#bac9dc` | `#234e98` / `#1c4080` |
+| `--accent` | `#7ea9ff` | `#245bb6` |
+| `--primary` / `--primary-text` | `#2a62d2` / `#ffffff` | `#2d60b5` / `#ffffff` |
+| `--primary-hover` / `--primary-pressed` | `#2f6fed` / `#2456bd` | `#234e98` / `#1c4080` |
 | `--success` / `--success-surface` | `#a6d6ad` / `#26382d` | `#2b653b` / `#e8f2eb` |
 | `--warning` / `--warning-surface` | `#efce8a` / `#3d3220` | `#765006` / `#fbf1db` |
 | `--error` / `--error-surface` | `#ffb2ac` / `#432a29` | `#a12e29` / `#fceceb` |
@@ -46,18 +46,23 @@ These concepts define composition, not new capabilities. Existing project pairin
 | `--shine` | `rgba(255,255,255,.055)` | `rgba(255,255,255,.65)` |
 | `--shadow` | `rgba(0,0,0,.28)` | `rgba(27,35,48,.11)` |
 | `--backdrop` | `rgba(0,0,0,.5)` | `rgba(21,29,42,.24)` |
+| `--press-veil` | `rgba(0,0,0,.12)` | `rgba(0,0,0,.12)` |
+| `--glow` / `--focus-halo` | `rgba(150,190,255,.5)` / `rgba(154,198,255,.22)` | `rgba(45,96,181,.32)` / `rgba(36,91,182,.22)` |
+| `--glass` / `--glass-rim` / `--glass-top` | `rgba(50,55,63,.70)` / `rgba(255,255,255,.30)` / `rgba(255,255,255,.12)` | `rgba(255,255,255,.86)` / `rgba(90,120,180,.28)` / `rgba(255,255,255,1)` |
+| `--nested` | `#31353c` | `#ffffff` |
+| `--depth-sheen` | `rgba(255,255,255,.16)` | `rgba(255,255,255,.55)` |
 
 - UI family: `-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`. Inputs, placeholders and Spectrum controls request the same family and upright style. Photoshop may retain host-owned italic placeholders; native inspection confirmed this fallback without replacing the actual input with decorative text.
 - `--text-body: 13px`, `--text-small: 12px`, `--text-title: 18px`. Body line-height is 1.5; heading weight 600. Compact section headings use 15–16px; count facts 17px. Only identifiers, syntax, keycaps and minor badges use 11px. Minimum-width navigation also uses 11px to retain every label.
 - `--mono: "SFMono-Regular", Consolas, monospace` for command syntax, commit IDs and technical paths.
-- Spacing tokens: `--space: 4px`, `--space-2: 8px`, `--space-3: 12px`, `--space-4: 16px`, `--space-6: 24px`.
+- Spacing tokens: `--space: 4px`, `--space-2: 8px`, `--space-3: 12px`, `--space-4: 16px`, `--space-5: 20px`, `--space-6: 24px`.
 - Radii: `--radius: 8px` controls, `--radius-panel: 12px` grouped tasks, `--radius-overlay: 16px` menus/sheets. Badges and compact chips use 4–6px.
 
 Accent indicates selection/action; green, amber and red communicate actual status. Preserve neutral artwork colors. Decorative separators are intentionally quieter than input boundaries. Contrast tests are source-token checks, not a certification of native widget rendering.
 
 ## Material and geometry
 
-Radii run 9 / 13 / 20 / 26 for chips, controls, cards and overlays. Control heights are 32 and 40. A single spacing scale of 4 / 8 / 12 / 16 / 20 / 24 supplies every gap; `verify:tokens` fails the build when a declared token is not referenced, so the block stays a description rather than a wish list.
+Radii run 9 / 13 / 20 / 26 for chips, controls, cards and overlays. Control heights are 32 and 40. A single spacing scale of 4 / 8 / 12 / 16 / 20 / 24 supplies every gap; `verify:tokens` fails the build when a declared token is not referenced, so the block stays a description rather than a wish list. Padding, margins and gutters read the tokens. The values that stay literal are tied to a neighbour's geometry rather than to the scale: the 3px outdent that absorbs a chip's own margin, the 6px inset of a context cell, the pill's corner offset in the rail, and a control's minimum height. Inline icons sit 8px from their labels; badge-like glyphs 12px.
 
 Cards carry the glass material: a bright inset top edge, a hairline ring, an inner bloom and a deep soft drop over a translucent fill. The depth comes from the rim, gradient and shadow, so the hierarchy survives where the host cannot blur; the blur is applied only behind an `@supports` guard. Under `prefers-reduced-transparency` the glass token points at the opaque surface, the sheen is removed and the blur is turned off.
 
