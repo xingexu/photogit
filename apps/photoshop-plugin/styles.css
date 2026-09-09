@@ -240,6 +240,16 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .tally-tile dt { margin-top: 5px; color: var(--muted); font-size: var(--text-small); }
 .watch-status.ready, .watch-status.changed { display: none; }
 .watch-status.error { color: var(--error); }
+.watch-status.warning { color: var(--warning); }
+/* While the panel is reading layers the dot breathes, so "Reading layer 12
+   of 40…" is visibly in progress even between updates of the number. It
+   stops with the scan; reduced motion never starts it. */
+.watch-status { transition: color var(--motion-control) var(--ease-liquid); }
+.watch-status.scanning i, .watch-status.pending i { animation: photogit-breathe 1.2s var(--ease-liquid) infinite alternate; }
+@keyframes photogit-breathe {
+  from { opacity: .35; transform: scale(.8); }
+  to { opacity: 1; transform: scale(1.25); }
+}
 .changes-layout { min-width: 0; }
 .changes-card .section-heading h2 { font-size: var(--text-subhead); }
 .capture-panel { margin-top: 18px; }
