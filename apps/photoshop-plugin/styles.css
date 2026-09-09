@@ -509,7 +509,7 @@ sp-menu, sp-menu-item { background: var(--overlay); color: var(--text); }
 .shortcut-note { margin: 4px 0 8px; text-align: center; color: var(--muted); font-size: 11px; }
 kbd { font-family: var(--mono); font-size: 11px; padding: 1px 4px; border: 1px solid var(--line); border-radius: var(--radius-chip); }
 .docs-intro { margin-bottom: 14px; }
-.command-row { display: flex; align-items: flex-start; padding: 12px 8px; margin-top: 4px; border-bottom: 1px solid var(--line); border-radius: var(--radius-chip); min-width: 0; background: transparent; }
+.command-row { display: flex; align-items: flex-start; padding: var(--space-3) var(--space-2); margin-top: var(--space); border-bottom: 1px solid var(--line); border-radius: var(--radius-chip); min-width: 0; background: transparent; }
 .command-glyph { display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; margin-right: 10px; color: var(--muted); flex-shrink: 0; }
 .command-copy { flex: 1; min-width: 0; }
 .command-row strong, .command-row code, .command-copy > span { display: block; overflow-wrap: break-word; }
