@@ -567,6 +567,7 @@ function renderReviews() {
   setCount("reviews-count", demoReviews.length);
   byId("review-provider").textContent = `Simulated local reviews · merging into ${byId("branch-name").textContent}`;
   for (const review of demoReviews) container.appendChild(createDemoReviewCard(review));
+  globalThis.PhotoGitReveal?.stagger(container.querySelectorAll(".review-card"));
   byId("reviews-empty").hidden = demoReviews.length > 0;
 }
 
