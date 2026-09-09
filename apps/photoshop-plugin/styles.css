@@ -445,7 +445,7 @@ sp-menu, sp-menu-item { background: var(--overlay); color: var(--text); }
 .inline-form .field-shell { flex: 1 1 140px; margin-bottom: 8px; }
 .inline-form .button { margin: 0 0 8px 8px; }
 .fine-print, .provider-note, .docs-intro { color: var(--muted); font-size: var(--text-small); }
-.fine-print { margin-top: 12px; }
+.fine-print { margin-top: var(--space-3); }
 .review-list-panel { min-width: 0; }
 .review-card { padding: var(--space-3); margin-top: var(--space-2); border: 1px solid var(--line); border-radius: var(--radius); background: var(--nested); }
 .review-title { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; }
