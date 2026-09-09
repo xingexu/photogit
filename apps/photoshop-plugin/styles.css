@@ -344,7 +344,7 @@ input:disabled { color: var(--disabled); }
 sp-dropdown, select { width: 100%; min-height: var(--control-tall); margin: var(--space) 0; padding: var(--space) var(--space-2); background: var(--input); border: 1px solid var(--border); border-radius: var(--radius); }
 sp-menu, sp-menu-item { background: var(--overlay); color: var(--text); }
 .filter-bar { display: flex; flex-wrap: wrap; margin: var(--space-2) -3px; }
-.filter-chip { margin: 3px; padding: 4px 8px; border: 1px solid transparent; border-radius: var(--radius-chip); color: var(--muted); font-size: var(--text-small); }
+.filter-chip { margin: 3px; padding: var(--space) var(--space-2); border: 1px solid transparent; border-radius: var(--radius-chip); color: var(--muted); font-size: var(--text-small); }
 .filter-chip[aria-pressed="true"] { color: var(--text); background: var(--elevated); border-color: var(--line); }
 .chip-count { margin-left: 5px; font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; }
 .filter-note { margin: var(--space-2) 0; color: var(--muted); font-size: var(--text-small); animation: photogit-fade-in var(--motion-control) var(--ease-liquid) backwards; }
