@@ -57,7 +57,7 @@
         </section>
       </section>
 
-      <section id="connection-notice" class="notice" hidden>
+      <section id="connection-notice" class="notice" role="alert" hidden>
         <strong>Reconnect the helper</strong>
         <p id="connection-message">In the PhotoGit source folder, run: npm run helper -- --approve-root "/path/to/project". Then reconnect.</p>
         <div id="reconnect-helper" class="button button-quiet" role="button" tabindex="0">Reconnect</div>
@@ -65,7 +65,7 @@
       <p id="result" class="status-message" role="status" aria-live="polite"></p>
 
       <section id="workspace" class="workspace" hidden>
-        <section id="document-connection" class="notice" hidden>
+        <section id="document-connection" class="notice" role="status" hidden>
           <strong>Choose the project document</strong>
           <p id="document-connection-message"></p>
           <div id="connect-document" class="button button-quiet" role="button" tabindex="0">Connect active document</div>
