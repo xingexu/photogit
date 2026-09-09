@@ -274,7 +274,7 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .version-label { color: var(--text); font-weight: 600; }
 .capture-hint { color: var(--muted); font-size: var(--text-small); margin-top: var(--space-2); }
 /* Reference 01: preview and document facts close the inspector column. */
-.document-preview { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); }
+.document-preview { margin-top: var(--space-4); padding-top: var(--space-4); border-top: 1px solid var(--line); }
 .preview-title { font-size: var(--text-subhead); font-weight: 600; letter-spacing: -.2px; margin-bottom: 12px; }
 .preview-figure { margin: 0 0 14px; }
 .preview-figure img { display: block; width: 100%; max-height: 300px; object-fit: contain; border-radius: var(--radius); background: var(--input); }
