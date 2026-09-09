@@ -186,7 +186,7 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
   .tools-menu, .tool-sheet { backdrop-filter: blur(22px) saturate(150%); }
 }
 /* Every glass card gets the same internal room, so nothing sits on its border. */
-.view-panel > .liquid-card, .capture-panel, .scan-card.liquid-card, .content-card.liquid-card, .onboarding.liquid-card { padding: 18px var(--space-5); }
+.view-panel > .liquid-card, .capture-panel, .scan-card.liquid-card, .content-card.liquid-card, .onboarding.liquid-card { padding: var(--space-4) var(--space-5); }
 /* Depth · a surface marked data-depth leans a couple of degrees away from the
    pointer and lifts slightly toward it. The tilt tokens are written by depth.js
    and default to flat, so a host that never fires the events, or one that
