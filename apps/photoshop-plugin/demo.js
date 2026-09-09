@@ -712,6 +712,7 @@ function addActivity(message) {
   const stamp = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   const feed = byId("activity");
   if (feed.textContent === "Ready.") feed.textContent = "";
+  byId("clear-activity").setAttribute("aria-disabled", "false");
   const row = document.createElement("div"); row.className = "activity-row";
   const summary = document.createElement("div"); summary.className = "activity-summary";
   // Same marks as the production feed: a dot for an event, a bang for a failure.
@@ -728,6 +729,7 @@ function addActivity(message) {
 
 function clearActivity() {
   byId("activity").textContent = "Ready.";
+  byId("clear-activity").setAttribute("aria-disabled", "true");
   activityEntries = 0;
   setCount("activity-count", 0);
 }

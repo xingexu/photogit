@@ -1881,6 +1881,7 @@ function log(message) {
   const now = new Date();
   const stamp = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   if (activity.textContent === "Ready.") activity.textContent = "";
+  document.getElementById("clear-activity").setAttribute("aria-disabled", "false");
   const text = safeInlineText(message, 2_000);
   const scanEvent = /^(Captured \d+ Photoshop layer|\d+ semantic edits found|Ready to save the first version|\d+ project file change\(s\) detected)/.test(text);
   if (scanEvent) {
@@ -1932,6 +1933,7 @@ function log(message) {
 }
 function clearActivity() {
   document.getElementById("activity").textContent = "Ready.";
+  document.getElementById("clear-activity").setAttribute("aria-disabled", "true");
   activityEntryCount = 0;
   setCount("activity-count", 0);
 }
