@@ -34,6 +34,21 @@ async function fixture() {
 }
 
 describe("Studio workspace interactions", () => {
+  it("staggers the rows that survive a filter change and holds still when nothing changed", async () => {
+    const stagger = vi.fn();
+    (globalThis as any).PhotoGitReveal = { stagger };
+    try {
+      const p = await fixture();
+      stagger.mockClear();
+      p.chip("text").click();
+      expect(stagger).toHaveBeenCalledOnce();
+      expect([...stagger.mock.calls[0]![0]]).toEqual([p.rows[0]]);
+      stagger.mockClear();
+      p.search("title");
+      expect(stagger).not.toHaveBeenCalled();
+    } finally { delete (globalThis as any).PhotoGitReveal; }
+  });
+
   it("combines type and case-insensitive text filters without changing the source rows", async () => {
     const p = await fixture();
     p.chip("visual").click(); expect(p.visible()).toHaveLength(3);

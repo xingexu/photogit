@@ -11,12 +11,20 @@ function refreshChanges(document) {
   const query = String(search.value || "").trim().toLowerCase();
   const type = chips.find(chip => chip.getAttribute("aria-pressed") === "true")?.dataset.changeFilter || "all";
   let visible = 0;
+  const changed = [];
   for (const row of rows) {
     const domain = row.dataset.domain;
     const matchesType = type === "all" || (type === "visual" ? !["text", "structure"].includes(domain) : domain === type);
-    row.hidden = !matchesType || !row.textContent.toLowerCase().includes(query);
+    const hide = !matchesType || !row.textContent.toLowerCase().includes(query);
+    if (row.hidden !== hide) changed.push(row);
+    row.hidden = hide;
     if (!row.hidden) visible++;
   }
+  // When a filter changes which rows are shown, the rows now showing step in
+  // on the stagger; rows already showing hold still. Filtering never hides a
+  // row the stagger is decorating, so this is decoration over a settled list.
+  const reveal = globalThis.PhotoGitReveal;
+  if (changed.length && reveal && typeof reveal.stagger === "function") reveal.stagger(rows.filter(row => !row.hidden));
   document.getElementById("change-filters").hidden = rows.length === 0;
   document.getElementById("change-filter-empty").hidden = rows.length === 0 || visible > 0;
   const count = document.getElementById("change-filter-count");
