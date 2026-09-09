@@ -214,7 +214,7 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 
 /* Reference: project, branch and document are one card of labelled cells, each
    led by a circular badge. */
-.repo-context { display: flex; flex-wrap: wrap; align-items: stretch; padding: var(--space-3) 14px; border: 1px solid var(--glass-rim); border-radius: var(--radius-panel); background-color: var(--glass); background-image: linear-gradient(180deg, var(--glass-top), rgba(255,255,255,0) 58%); box-shadow: var(--glass-glow); }
+.repo-context { display: flex; flex-wrap: wrap; align-items: stretch; padding: var(--space-3); border: 1px solid var(--glass-rim); border-radius: var(--radius-panel); background-color: var(--glass); background-image: linear-gradient(180deg, var(--glass-top), rgba(255,255,255,0) 58%); box-shadow: var(--glass-glow); }
 .repo-topline, .repo-meta { display: contents; }
 .repo-project, .repo-branch, .repo-document { display: flex; align-items: flex-start; flex: 1 1 0; min-width: 0; margin: 4px 0; padding: 4px 6px; }
 .context-badge { display: flex; align-items: center; justify-content: center; flex-shrink: 0; width: 38px; height: 38px; margin-right: var(--space-3); border: 1px solid var(--glass-rim); border-radius: 50%; background: var(--elevated); color: var(--muted); }
