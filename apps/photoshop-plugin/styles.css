@@ -341,7 +341,7 @@ sp-menu, sp-menu-item { background: var(--overlay); color: var(--text); }
 .filter-note { margin: 8px 0; color: var(--muted); font-size: var(--text-small); animation: photogit-fade-in var(--motion-control) var(--ease-liquid) backwards; }
 /* Selection is a fill, a slide and an accent edge; the edge is carried by
    box-shadow, so it must transition with the other two or it snaps on. */
-.list-row { display: flex; align-items: flex-start; min-width: 0; padding: 14px 6px; border-bottom: 1px solid var(--line); border-radius: var(--radius); background: transparent; transition: background-color var(--motion-control) var(--ease-liquid), box-shadow var(--motion-control) var(--ease-liquid), transform var(--motion-nav) var(--ease-liquid); }
+.list-row { display: flex; align-items: flex-start; min-width: 0; padding: var(--space-3) var(--space-2); border-bottom: 1px solid var(--line); border-radius: var(--radius); background: transparent; transition: background-color var(--motion-control) var(--ease-liquid), box-shadow var(--motion-control) var(--ease-liquid), transform var(--motion-nav) var(--ease-liquid); }
 .list-row[role="button"]:hover { background: var(--hover); }
 .row-glyph, .history-marker { display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; flex-shrink: 0; margin-right: 12px; color: var(--muted); background: var(--elevated); border-radius: var(--radius-chip); }
 .row-glyph svg { width: 17px; height: 17px; }
