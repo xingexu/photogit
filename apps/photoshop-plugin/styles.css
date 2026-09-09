@@ -72,9 +72,13 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .header-action, .sheet-close { display: flex; align-items: center; justify-content: center; flex-shrink: 0; width: var(--control); height: var(--control); border: 1px solid transparent; border-radius: var(--radius); background: transparent; color: var(--muted); }
 .header-action { margin-left: 5px; }
 .command-trigger-label { display: none; }
-.theme-moon { display: none; }
-:root[data-theme="light"] .theme-sun { display: none; }
-:root[data-theme="light"] .theme-moon { display: block; }
+/* The sun and moon share one slot and hand over on a short fade and quarter
+   turn, so the toggle reads as one glyph changing rather than two swapping. */
+.appearance-toggle { position: relative; }
+.appearance-toggle svg { position: absolute; transition: opacity var(--motion-control) var(--ease-liquid), transform var(--motion-control) var(--ease-liquid); }
+.theme-moon { opacity: 0; transform: rotate(-90deg) scale(.7); }
+:root[data-theme="light"] .theme-sun { opacity: 0; transform: rotate(90deg) scale(.7); }
+:root[data-theme="light"] .theme-moon { opacity: 1; transform: none; }
 [role="button"], [role="tab"], [role="menuitem"] { position: relative; cursor: pointer; transition: background-color var(--motion-control) var(--ease-liquid), color var(--motion-control) var(--ease-liquid), border-color var(--motion-control) var(--ease-liquid), box-shadow var(--motion-control) var(--ease-liquid), transform var(--motion-nav) var(--ease-liquid); }
 /* The press compresses quickly and releases slowly on a spring-like curve, so
    it settles rather than snapping. Transform only: no layout is animated. */
