@@ -492,7 +492,7 @@ sp-menu, sp-menu-item { background: var(--overlay); color: var(--text); }
 .comparison-layout { display: flex; flex-wrap: wrap; min-width: 0; }
 .comparison-summary { flex: 1 1 240px; min-width: 0; padding-right: var(--space-5); }
 .comparison-status { flex: 1 1 180px; min-width: 0; padding: var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--surface); }
-.comparison-status p { margin-top: 10px; font-size: var(--text-small); color: var(--muted); }
+.comparison-status p { margin-top: var(--space-2); font-size: var(--text-small); color: var(--muted); }
 .comparison-status .button { margin-top: 16px; }
 .comparison-summary h3 { margin: 16px 0 8px; font-size: var(--text-subhead); }
 .comparison-summary p, .comparison-files { font-size: var(--text-small); color: var(--muted); white-space: pre-wrap; overflow-wrap: break-word; margin-bottom: 8px; }
