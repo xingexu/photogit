@@ -134,7 +134,7 @@ body.is-busy [aria-disabled="true"], body.is-busy input:disabled { cursor: progr
 /* A destination name is one word. The global break-anywhere rule let "Changes"
    split into "Chang / es" once the row stopped wrapping at 640px. */
 .nav-item span { min-width: 0; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.nav-item b { margin-left: var(--space-2); min-width: 20px; padding: 2px 7px; border-radius: 10px; background: var(--primary); color: var(--primary-text); font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; text-align: center; transition: transform var(--motion-control) var(--ease-liquid), box-shadow var(--motion-control) var(--ease-liquid); }
+.nav-item b { margin-left: var(--space-2); min-width: 20px; padding: 2px var(--space-2); border-radius: 10px; background: var(--primary); color: var(--primary-text); font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; text-align: center; transition: transform var(--motion-control) var(--ease-liquid), box-shadow var(--motion-control) var(--ease-liquid); }
 /* The badge count is the one number in the navigation. Growing it very
    slightly on hover confirms the row is live without moving its neighbours. */
 .nav-item:hover b { transform: scale(1.07); }
