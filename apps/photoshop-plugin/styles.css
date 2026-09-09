@@ -397,7 +397,7 @@ sp-menu, sp-menu-item { background: var(--overlay); color: var(--text); }
 .version-inspector-document-mark { display: inline-block; padding: 6px 8px; border: 1px solid var(--line); border-radius: var(--radius-chip); color: var(--muted); font-size: var(--text-small); }
 .version-inspector-files code, .version-inspector-commit { font-family: var(--mono); font-size: 11px; margin-left: 5px; }
 .version-inspector-section { flex: 1 1 210px; min-width: 0; margin: 6px; padding: var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--surface); }
-.version-inspector-section h3 { margin-bottom: 12px; font-size: var(--text-subhead); }
+.version-inspector-section h3 { margin-bottom: var(--space-3); font-size: var(--text-subhead); }
 .version-inspector-facts { margin: 0; }
 .version-inspector-facts dt { font-size: var(--text-small); color: var(--muted); margin-top: 10px; }
 .version-inspector-facts dd { margin: 2px 0 0; overflow-wrap: anywhere; }
