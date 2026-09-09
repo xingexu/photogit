@@ -660,7 +660,7 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
 
 @media (min-width: 900px) {
   .changes-layout { display: flex; align-items: flex-start; }
-  .changes-card { flex: 1; min-width: 0; margin-right: 18px; }
+  .changes-card { flex: 1; min-width: 0; margin-right: var(--space-4); }
   .capture-panel { flex: 0 0 320px; min-width: 0; margin: 0 0 20px; padding: 20px; }
   .history-layout { display: flex; align-items: flex-start; }
   .history-list-panel { flex: 0 0 250px; padding-right: 20px; }
