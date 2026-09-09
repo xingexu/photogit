@@ -494,7 +494,7 @@ function renderHistory(versions) {
       row.classList.toggle("selected", version.id === selectedVersionId);
       const message = escapeHtml(version.message);
       const shortId = escapeHtml(version.shortId);
-      row.innerHTML = `<span class="history-marker" aria-hidden="true">${historyIcon()}</span><span class="row-copy"><strong title="${message}">${message}</strong><span>${escapeHtml(version.author)} · <time datetime="${escapeHtml(version.date)}">${escapeHtml(versionInspector.formatDate(version.date, true))}</time></span></span><span class="commit-id" title="Version ${shortId}">${shortId}</span>`;
+      row.innerHTML = `<span class="history-marker" aria-hidden="true">${historyIcon()}</span><span class="row-copy"><strong title="${message}">${message}</strong><span>${escapeHtml(version.author)} · <time datetime="${escapeHtml(version.date)}" title="${escapeHtml(versionInspector.formatDate(version.date))}">${escapeHtml(versionInspector.formatDate(version.date, true))}</time></span></span><span class="commit-id" title="Version ${shortId}">${shortId}</span>`;
       row.setAttribute("role", "button");
       row.setAttribute("aria-pressed", String(version.id === selectedVersionId));
       row.setAttribute("aria-label", `Inspect version ${version.shortId}: ${version.message}`);
