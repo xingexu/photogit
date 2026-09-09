@@ -219,7 +219,7 @@ body.is-busy [aria-disabled="true"], body.is-busy input:disabled { cursor: progr
    led by a circular badge. */
 .repo-context { display: flex; flex-wrap: wrap; align-items: stretch; padding: var(--space-3); border: 1px solid var(--glass-rim); border-radius: var(--radius-panel); background-color: var(--glass); background-image: linear-gradient(180deg, var(--glass-top), rgba(255,255,255,0) 58%); box-shadow: var(--glass-glow); }
 .repo-topline, .repo-meta { display: contents; }
-.repo-project, .repo-branch, .repo-document { display: flex; align-items: flex-start; flex: 1 1 0; min-width: 0; margin: 4px 0; padding: 4px 6px; }
+.repo-project, .repo-branch, .repo-document { display: flex; align-items: flex-start; flex: 1 1 0; min-width: 0; margin: var(--space) 0; padding: var(--space) 6px; }
 .context-badge { display: flex; align-items: center; justify-content: center; flex-shrink: 0; width: 38px; height: 38px; margin-right: var(--space-3); border: 1px solid var(--glass-rim); border-radius: 50%; background: var(--elevated); color: var(--muted); }
 .context-badge svg { width: 17px; height: 17px; }
 .context-copy { display: block; flex: 0 1 auto; min-width: 0; }
