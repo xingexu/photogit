@@ -418,7 +418,7 @@ sp-menu, sp-menu-item { background: var(--overlay); color: var(--text); }
 .version-inspector-state { color: var(--muted); padding: 20px 0; }
 /* Branches and reviews separate choices from consequential operations. */
 .branch-layout, .review-layout { min-width: 0; }
-.branch-list { margin-bottom: 20px; }
+.branch-list { margin-bottom: var(--space-5); }
 .branch-list-panel { min-width: 0; }
 .branch-row { display: flex; align-items: center; flex-wrap: wrap; padding: var(--space-3); border: 1px solid var(--line); border-radius: var(--radius); margin-bottom: var(--space-2); background: var(--nested); }
 .branch-row.current { background: var(--selected); }
