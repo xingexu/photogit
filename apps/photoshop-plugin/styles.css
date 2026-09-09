@@ -491,7 +491,7 @@ sp-menu, sp-menu-item { background: var(--overlay); color: var(--text); }
 .conflict-list, .detail-content { white-space: pre-wrap; overflow-wrap: break-word; color: var(--muted); font-size: var(--text-small); }
 /* Session feed, documentation and utility surfaces. */
 .activity { white-space: pre-wrap; overflow-wrap: break-word; }
-.activity-row { padding: 14px 4px; border-bottom: 1px solid var(--line); color: var(--muted); font-size: var(--text-small); }
+.activity-row { padding: var(--space-3) var(--space); border-bottom: 1px solid var(--line); color: var(--muted); font-size: var(--text-small); }
 .activity-row:last-child { border-bottom: 0; }
 /* "Show details" unfolds the full text beneath the summary; it eases in
    rather than dropping the rows below it in one step. */
