@@ -703,7 +703,7 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
   .repo-state i { margin-right: 0; width: 7px; height: 7px; }
   .repo-state span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   /* Cards give content back the room their padding would otherwise take. */
-  .view-panel > .liquid-card, .capture-panel, .scan-card.liquid-card, .content-card.liquid-card { padding: 14px 13px; }
+  .view-panel > .liquid-card, .capture-panel, .scan-card.liquid-card, .content-card.liquid-card { padding: var(--space-3); }
   .workspace-content { padding: var(--space-4) var(--space-3) var(--space-2); }
   .nav-item svg { display: none; }
   .repo-state { margin-top: 6px; }
@@ -722,7 +722,7 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
   .nav-item { flex-basis: 45%; }
 }
 @media (max-width: 280px) {
-  .view-panel > .liquid-card, .capture-panel, .scan-card.liquid-card, .content-card.liquid-card { padding: 12px 10px; }
+  .view-panel > .liquid-card, .capture-panel, .scan-card.liquid-card, .content-card.liquid-card { padding: var(--space-3) var(--space-2); }
   .pg-mark, .pg-mark img { width: 24px; height: 24px; }
   .pg-mark { margin-right: 6px; }
   .app-title h1 { font-size: var(--text-body); }
