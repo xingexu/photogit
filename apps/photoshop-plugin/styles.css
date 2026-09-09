@@ -663,8 +663,8 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
   .changes-card { flex: 1; min-width: 0; margin-right: var(--space-4); }
   .capture-panel { flex: 0 0 320px; min-width: 0; margin: 0 0 var(--space-5); padding: var(--space-5); }
   .history-layout { display: flex; align-items: flex-start; }
-  .history-list-panel { flex: 0 0 250px; padding-right: 20px; }
-  #history-inspector { display: block; flex: 1; padding-left: 24px; border-left: 1px solid var(--line); min-height: 440px; }
+  .history-list-panel { flex: 0 0 250px; padding-right: var(--space-5); }
+  #history-inspector { display: block; flex: 1; padding-left: var(--space-6); border-left: 1px solid var(--line); min-height: 440px; }
   .branch-layout { display: flex; align-items: flex-start; }
   .branch-list-panel { flex: 1; padding-right: 24px; }
   /* A grid keeps every card one track wide, so a lone card on the last row does
