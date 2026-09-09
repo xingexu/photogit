@@ -378,7 +378,7 @@ sp-menu, sp-menu-item { background: var(--overlay); color: var(--text); }
 .commit-id { margin: 4px 0 0 24px; font: 11px var(--mono); color: var(--muted); }
 .version-inspector { min-width: 0; color: var(--text); }
 #history-inspector { display: none; }
-.inspector-empty { padding: 24px; border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--surface); }
+.inspector-empty { padding: var(--space-6); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--surface); }
 .review-inspector .inspector-empty, .version-inspector[data-state="empty"] { padding: 8px 0 0; border: 0; background: transparent; }
 .inspector-empty h2 { font-size: var(--text-subhead); }
 .inspector-empty p { color: var(--muted); margin-top: 10px; font-size: var(--text-small); }
