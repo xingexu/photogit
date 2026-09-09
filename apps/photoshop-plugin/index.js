@@ -1908,6 +1908,9 @@ function log(message) {
   }
   activity.insertBefore(row, activity.firstChild);
   while (activity.children.length > 50) activity.lastElementChild.remove();
+  // A new event eases up into the top of the feed; the rows below hold.
+  const reveal = globalThis.PhotoGitReveal;
+  if (reveal && typeof reveal.stagger === "function") reveal.stagger([row]);
   activityEntryCount += 1;
   setCount("activity-count", activityEntryCount);
 }

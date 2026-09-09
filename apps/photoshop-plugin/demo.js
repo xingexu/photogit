@@ -715,6 +715,7 @@ function addActivity(message) {
   const time = document.createElement("span"); time.className = "activity-time"; time.textContent = stamp;
   const copy = document.createElement("span"); copy.className = "activity-copy"; copy.textContent = message;
   summary.append(icon, time, copy); row.appendChild(summary); feed.prepend(row);
+  globalThis.PhotoGitReveal?.stagger([row]);
   activityEntries += 1;
   setCount("activity-count", activityEntries);
 }
