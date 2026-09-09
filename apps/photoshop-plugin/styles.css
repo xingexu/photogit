@@ -382,7 +382,7 @@ sp-menu, sp-menu-item { background: var(--overlay); color: var(--text); }
 .review-inspector .inspector-empty, .version-inspector[data-state="empty"] { padding: 8px 0 0; border: 0; background: transparent; }
 .inspector-empty h2 { font-size: var(--text-subhead); }
 .inspector-empty p { color: var(--muted); margin-top: 10px; font-size: var(--text-small); }
-.version-inspector-header { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; margin-bottom: 20px; }
+.version-inspector-header { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; margin-bottom: var(--space-5); }
 .version-inspector-title { flex: 1 1 200px; min-width: 0; margin-right: 12px; }
 .version-inspector-heading { margin-bottom: 8px; }
 .version-inspector-meta { color: var(--muted); font-size: var(--text-small); }
