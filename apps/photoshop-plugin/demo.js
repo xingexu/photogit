@@ -235,6 +235,7 @@ function toggleToolsMenu(event) {
     surfaceReturnFocus = event?.currentTarget || document.activeElement;
     menu.classList.toggle("from-header", event?.currentTarget?.id === "header-menu");
     openSurface(menu);
+    globalThis.PhotoGitReveal?.stagger(menu.querySelectorAll(".tool-item:not([hidden])"));
     setTimeout(() => menu.querySelector(".tool-item")?.focus(), 0);
   } else closeToolsMenu(false, true);
   byId("header-menu").setAttribute("aria-expanded", opening ? "true" : "false");

@@ -815,6 +815,10 @@ function toggleToolsMenu(event) {
     surfaceReturnFocus = event?.currentTarget || document.activeElement;
     menu.classList.toggle("from-header", event?.currentTarget?.id === "header-menu");
     openSurface(menu);
+    // The items step in behind the menu's own rise; the first one takes
+    // focus on the next tick regardless of where the stagger is.
+    const reveal = globalThis.PhotoGitReveal;
+    if (reveal && typeof reveal.stagger === "function") reveal.stagger(menu.querySelectorAll(".tool-item:not([hidden])"));
     document.body.classList.add("has-surface");
     setToolsExpanded(true);
     setTimeout(() => menu.querySelector(".tool-item")?.focus(), 0);
