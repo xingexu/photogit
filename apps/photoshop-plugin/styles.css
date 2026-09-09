@@ -688,7 +688,7 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
 }
 @media (min-width: 1200px) {
   .workspace-rail { flex-basis: 164px; min-width: 164px; }
-  .capture-panel { flex-basis: 372px; padding: 22px 24px; }
+  .capture-panel { flex-basis: 372px; padding: var(--space-5) var(--space-6); }
   .history-list-panel { flex-basis: 300px; }
   .review-list-panel { flex-basis: 330px; }
   .comparison-summary { flex-basis: 240px; padding-right: 20px; }
