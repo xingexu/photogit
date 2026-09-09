@@ -512,7 +512,9 @@ function renderDemoTally() {
                    "tally-added": changes.filter(c => c.category === "added").length,
                    "tally-removed": changes.filter(c => c.category === "removed").length };
   for (const [id, value] of Object.entries(counts)) { const el = byId(id); if (el) el.textContent = String(value); }
+  const arriving = tally.hidden && changes.length > 0;
   tally.hidden = changes.length === 0;
+  if (arriving) globalThis.PhotoGitReveal?.stagger(tally.querySelectorAll(".tally-tile"));
 }
 
 function renderDemoDocumentPreview() {

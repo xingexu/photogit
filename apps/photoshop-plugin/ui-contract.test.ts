@@ -808,6 +808,19 @@ describe("PhotoGit production panel behavior — host mocked", () => {
     expect(p.id("change-summary").textContent).toBe("Connect a document");
   });
 
+  it("staggers the tally tiles in only when the tally first appears", async () => {
+    const p = await panel();
+    p.connect();
+    const stagger = vi.fn();
+    p.evaluate("globalThis.PhotoGitReveal = { stagger }", { stagger });
+    await p.evaluate("renderChanges(changes)", { changes: [change(1)] });
+    expect(stagger.mock.calls.some(([rows]) => [...rows].every((row: Element) => row.classList.contains("tally-tile")))).toBe(true);
+    stagger.mockClear();
+    await p.evaluate("renderChanges(changes)", { changes: [change(1), change(2)] });
+    expect(stagger.mock.calls.some(([rows]) => [...rows].some((row: Element) => row.classList.contains("tally-tile")))).toBe(false);
+    expect(p.id("tally-changed").textContent).toBe("2");
+  });
+
   it("clears the tally and filter bar with the list when the document is not connected", async () => {
     const p = await panel();
     p.connect();

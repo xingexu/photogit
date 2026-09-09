@@ -1044,7 +1044,12 @@ function renderChangeTally(changes) {
   show("tally-changed", count("modified"));
   show("tally-added", count("added"));
   show("tally-removed", count("removed"));
+  const arriving = tally.hidden && list.length > 0;
   tally.hidden = list.length === 0;
+  // Tiles that have just appeared step in one after another, like fresh
+  // rows. Tiles that were already up only recount.
+  const reveal = globalThis.PhotoGitReveal;
+  if (arriving && reveal && typeof reveal.stagger === "function") reveal.stagger(tally.querySelectorAll(".tally-tile"));
 }
 
 function renderDocumentFacts(meta) {
