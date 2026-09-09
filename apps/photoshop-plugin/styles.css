@@ -536,7 +536,7 @@ kbd { font-family: var(--mono); font-size: 11px; padding: 1px 4px; border: 1px s
    tall here and 78px from 720px; a fixed 56px sat the menu across the
    header's own controls. */
 .tools-menu.from-header { top: 68px; bottom: auto; }
-.tool-item { display: flex; align-items: center; min-height: 36px; padding: 8px 10px; border-radius: var(--radius-chip); }
+.tool-item { display: flex; align-items: center; min-height: 36px; padding: var(--space-2) var(--space-3); border-radius: var(--radius-chip); }
 .tool-item svg { margin-right: 10px; color: var(--muted); }
 .tool-item:hover svg, .tool-item:focus svg { color: inherit; }
 .surface-backdrop { position: fixed; z-index: 20; top: 0; left: 0; width: 100%; height: 100%; background: var(--backdrop); }
