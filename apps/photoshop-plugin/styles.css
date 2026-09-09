@@ -589,6 +589,10 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
 .onboarding p { color: var(--muted); }
 .onboarding .button { margin-top: 20px; }
 .onboarding #setup-toggle { margin-top: 10px; }
+/* The chevron turns to point down when the instructions are open, so the
+   link reads as a disclosure rather than a jump. */
+.disclosure-chevron { width: 12px; height: 12px; margin-left: 4px; transition: transform var(--motion-control) var(--ease-liquid); }
+[aria-expanded="true"] > .disclosure-chevron { transform: rotate(90deg); }
 #setup-instructions { animation: photogit-reveal var(--motion-control) var(--ease-liquid) backwards; }
 .onboarding-symbol { color: var(--muted); }
 .onboarding-steps { margin: 20px 0 0; padding: 0; list-style: none; }
