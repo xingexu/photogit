@@ -133,6 +133,17 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
    label is dropped. */
 .nav-item.active svg { color: var(--accent); transform: scale(1.06); }
 .nav-item b[data-empty="true"] { display: none; }
+/* A pill that has just gone from nothing to a number pops in slightly over
+   size and settles, which is what draws the eye to a count that changed
+   from zero. Re-rendering an existing count does not replay it. The fill is
+   backwards, not both: a forwards fill would pin the final transform and
+   block the hover scale the pill already has. */
+.nav-item b { animation: photogit-pop var(--motion-control) var(--ease-liquid) backwards; }
+@keyframes photogit-pop {
+  from { opacity: .01; transform: scale(.6); }
+  60% { transform: scale(1.12); }
+  to { opacity: 1; transform: none; }
+}
 .nav-item.active { background: var(--selected); color: var(--accent); border-color: var(--line); }
 .workspace-content { padding: 18px 16px 8px; }
 .view-panel { width: 100%; min-width: 0; }
