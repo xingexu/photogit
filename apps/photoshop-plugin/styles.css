@@ -375,7 +375,7 @@ sp-menu, sp-menu-item { background: var(--overlay); color: var(--text); }
 .history-marker svg { width: 14px; height: 14px; }
 .history-row .row-copy { flex-basis: 120px; }
 .history-row.selected { border-color: var(--line); }
-.commit-id { margin: 4px 0 0 24px; font: 11px var(--mono); color: var(--muted); }
+.commit-id { margin: var(--space) 0 0 var(--space-6); font: 11px var(--mono); color: var(--muted); }
 .version-inspector { min-width: 0; color: var(--text); }
 #history-inspector { display: none; }
 .inspector-empty { padding: var(--space-6); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--surface); }
