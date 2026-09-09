@@ -461,7 +461,7 @@ sp-menu, sp-menu-item { background: var(--overlay); color: var(--text); }
 .review-title h3 { min-width: 0; margin-right: 8px; }
 .review-title > span { color: var(--muted); font-size: var(--text-small); }
 .review-direction { color: var(--muted); font-size: var(--text-small); margin: 3px 0 var(--space-2); }
-.review-meta { display: flex; flex-wrap: wrap; align-items: center; color: var(--muted); font-size: var(--text-small); margin-top: 8px; }
+.review-meta { display: flex; flex-wrap: wrap; align-items: center; color: var(--muted); font-size: var(--text-small); margin-top: var(--space-2); }
 .review-meta > span { margin-right: 6px; }
 .review-meta .ready, .review-meta .blocked { padding: 2px 6px; border-radius: var(--radius-chip); }
 .review-meta .ready { color: var(--success); background: var(--success-surface); }
