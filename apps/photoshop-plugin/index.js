@@ -1867,7 +1867,12 @@ function show(message, error) {
   // A success message clears itself once read; an error stays until replaced.
   clearTimeout(resultTimer);
   resultTimer = setTimeout(() => {
-    if (!error && !busyNow && result.textContent === safeMessage) result.textContent = "";
+    if (error || busyNow || result.textContent !== safeMessage) return;
+    // A success leaves on the closing fade, then clears; an error stays.
+    result.classList.add("is-leaving");
+    resultTimer = setTimeout(() => {
+      if (result.textContent === safeMessage) { result.textContent = ""; result.classList.remove("is-leaving"); }
+    }, 200);
   }, error ? 5200 : 3200);
 }
 // Replays an element's CSS animation so a value replacing another reads as
