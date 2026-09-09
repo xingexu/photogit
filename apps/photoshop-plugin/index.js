@@ -669,7 +669,7 @@ function connectDocument() {
 async function reconnectHelper() {
   if (busyNow) return show("Wait for the current operation before reconnecting.", false);
   if (!projectFolder) return chooseProject();
-  try { await loadPairing(); await refreshWorkspace(true); if (helperOnline) queueAutomaticScan("reconnected", 100); }
+  try { await loadPairing(); await refreshWorkspace(true); if (helperOnline) { show("Helper connected.", false); queueAutomaticScan("reconnected", 100); } }
   catch (error) { show(`${error.message} Run setup for this project, then Reconnect.`, true); }
 }
 
@@ -1841,6 +1841,12 @@ function createRequestId() { return `${Date.now().toString(36)}-${Math.random().
 function escapeHtml(value) { return String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char])); }
 function setHelper(label, ok) {
   helperOnline = ok;
+  // A "helper offline" error is out of date the moment the helper answers;
+  // it clears here rather than waiting for the next message to replace it.
+  if (ok) {
+    const result = document.getElementById("result");
+    if (result.classList.contains("error") && /helper/i.test(result.textContent)) { result.textContent = ""; result.className = "status-message"; }
+  }
   document.getElementById("connection-notice").hidden = ok || !projectFolder;
   const element = document.getElementById("helper-status");
   element.className = `repo-state ${ok ? "ok" : "warning"}`;
