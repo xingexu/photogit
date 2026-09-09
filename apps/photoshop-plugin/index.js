@@ -92,6 +92,7 @@ function bindPanelEvents() {
   bind("reviews-tab", "click", () => selectTab("reviews"));
   bind("activity-tab", "click", () => selectTab("activity"));
   bind("history-search", "input", filterHistory);
+  moveIntoList("history-search", "#history .history-row");
   bind("clear-activity", "click", clearActivity);
   bind("new-pull-request", "click", openPullRequest);
   bind("tools-toggle", "click", toggleToolsMenu);
@@ -189,6 +190,19 @@ function bind(id, event, handler) {
       invoke(keyEvent);
     });
   }
+}
+
+// Enter or Down from a search field moves into the first row it left
+// showing; the rows answer Enter themselves from there. With no rows the
+// keys do nothing, so Enter never falls through to a form action.
+function moveIntoList(id, selector) {
+  document.getElementById(id).addEventListener("keydown", (event) => {
+    if (!["Enter", "ArrowDown"].includes(event.key) || event.repeat || event.isComposing) return;
+    const first = document.querySelector(selector);
+    if (!first) return;
+    event.preventDefault();
+    first.focus();
+  });
 }
 
 function bindInputAction(id, handler) {
