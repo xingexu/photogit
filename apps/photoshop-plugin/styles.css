@@ -695,7 +695,7 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
   .comparison-status { flex: 0 0 220px; margin-top: 0; }
 }
 @media (max-width: 360px) {
-  .app-header, .repo-context { padding-left: 12px; padding-right: 12px; }
+  .app-header, .repo-context { padding-left: var(--space-3); padding-right: var(--space-3); }
   /* Four header actions and a status label do not fit beside the wordmark
      here. The status keeps its dot and colour; its label stays in the
      accessibility tree and in the connection notice, so nothing is lost. */
@@ -704,7 +704,7 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
   .repo-state span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   /* Cards give content back the room their padding would otherwise take. */
   .view-panel > .liquid-card, .capture-panel, .scan-card.liquid-card, .content-card.liquid-card { padding: 14px 13px; }
-  .workspace-content { padding: 16px 12px 8px; }
+  .workspace-content { padding: var(--space-4) var(--space-3) var(--space-2); }
   .nav-item svg { display: none; }
   .repo-state { margin-top: 6px; }
   .scan-button { margin-top: 10px; }
