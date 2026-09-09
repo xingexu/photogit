@@ -193,6 +193,10 @@ function render(container, options = {}) {
       append(document, item, "code", "", text(file?.path, "Unknown file"));
     });
   }
+  // The inspector is complete and its Open control live; the header, the
+  // preview and each section now step in on the shared stagger.
+  const reveal = globalThis.PhotoGitReveal;
+  if (reveal && typeof reveal.stagger === "function") reveal.stagger(container.querySelectorAll(".version-inspector-header, .version-inspector-visual, .version-inspector-section"));
   return container;
 }
 

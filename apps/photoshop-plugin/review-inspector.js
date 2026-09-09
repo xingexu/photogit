@@ -143,6 +143,8 @@ function render(container, { comparison, onMerge, previews } = {}) {
       event.preventDefault(); event.stopPropagation(); activate();
     });
   }
+  const reveal = globalThis.PhotoGitReveal;
+  if (reveal && typeof reveal.stagger === "function") reveal.stagger(container.querySelectorAll(".comparison-direction, .comparison-artwork, .comparison-summary, .comparison-status"));
   return container;
 }
 if (typeof module !== "undefined") module.exports = { render };
