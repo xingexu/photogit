@@ -680,7 +680,7 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
   .review-card:first-child { margin-top: 0; }
   .review-title > span { width: 100%; margin-top: 5px; }
   .comparison-summary { padding-right: 0; flex-basis: 100%; }
-  .comparison-status { flex-basis: 100%; margin-top: 16px; }
+  .comparison-status { flex-basis: 100%; margin-top: var(--space-4); }
   .view-heading h2, .view-panel > .liquid-card > .view-heading h2 { font-size: var(--text-heading); letter-spacing: -.5px; }
   #activity-view, #docs-view { max-width: 920px; }
   .sync-panel { max-width: 520px; }
