@@ -502,7 +502,7 @@ sp-menu, sp-menu-item { background: var(--overlay); color: var(--text); }
 .activity-icon.error { color: var(--error); }
 .activity-time { color: var(--muted); font-size: 11px; margin-right: 10px; white-space: nowrap; }
 .activity-copy { flex: 1 1 150px; min-width: 0; }
-.sync-panel { display: flex; padding: 12px 0; margin-top: 12px; border-top: 1px solid var(--line); }
+.sync-panel { display: flex; padding: var(--space-3) 0; margin-top: var(--space-3); border-top: 1px solid var(--line); }
 .footer-action { display: flex; align-items: center; justify-content: center; flex: 1; min-height: 34px; padding: 6px; border-radius: var(--radius-chip); font-size: var(--text-small); color: var(--muted); }
 .footer-action svg { width: 16px; height: 16px; margin-right: 6px; }
 .tools-toggle { flex: 0 0 30px; }
