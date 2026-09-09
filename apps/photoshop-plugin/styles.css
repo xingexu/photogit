@@ -314,7 +314,7 @@ body.is-busy [aria-disabled="true"], body.is-busy input:disabled { cursor: progr
 .button-primary[aria-disabled="true"], #save-version[aria-disabled="true"] { box-shadow: none; }
 .button-quiet { color: var(--text); background: transparent; border-color: var(--border); }
 .button-quiet[role="button"]:not([aria-disabled="true"]):hover { border-color: var(--glass-rim); box-shadow: 0 0 22px -8px var(--glow), 0 1px 0 var(--shine) inset; }
-.button-small { min-height: 30px; padding: 5px 9px; font-size: var(--text-small); }
+.button-small { min-height: 30px; padding: var(--space) var(--space-2); font-size: var(--text-small); }
 .button-wide { width: 100%; }
 .button-disabled { color: var(--disabled); border-color: var(--line); }
 .field-label { display: block; margin: var(--space-4) 0 var(--space-2); color: var(--muted); font-size: var(--text-small); }
