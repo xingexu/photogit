@@ -134,6 +134,17 @@ describe("Studio workspace interactions", () => {
     p.id("changes").innerHTML = ""; p.controls.refreshChanges();
     expect(p.chip("all").querySelector("b")!.hidden).toBe(true);
   });
+  it("moves through the message suggestions and footer actions with arrow keys", async () => {
+    const p = await fixture();
+    const presets = [...p.document.querySelectorAll<HTMLElement>("[data-message-preset]")];
+    const second = vi.spyOn(presets[1]!, "focus");
+    expect(p.key(presets[0]!, "ArrowRight").defaultPrevented).toBe(true);
+    expect(second).toHaveBeenCalledOnce();
+    const push = vi.spyOn(p.id("push"), "focus");
+    p.key(p.id("pull"), "ArrowRight"); expect(push).toHaveBeenCalledOnce();
+    const last = vi.spyOn(p.id("tools-toggle"), "focus");
+    p.key(p.id("pull"), "End"); expect(last).toHaveBeenCalledOnce();
+  });
   it("binds listeners once even when setup is repeated", async () => {
     const p = await fixture(); ui.setup(p.document, p.options);
     p.key(p.id("changes-tab"), "/"); expect(p.openCommands).toHaveBeenCalledOnce();
