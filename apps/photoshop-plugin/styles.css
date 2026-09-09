@@ -63,7 +63,7 @@ h3, strong, b { font-size: inherit; font-weight: 600; }
 p, strong, span, b, code, small, dd, dt, li, h1, h2, h3, label { min-width: 0; overflow-wrap: anywhere; word-break: break-word; }
 svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
 .panel-root { width: 100%; min-width: 0; max-width: 1600px; min-height: 100%; margin: 0 auto; }
-.app-header { display: flex; align-items: center; min-height: 64px; padding: 14px 16px; background: var(--surface); border-bottom: 1px solid var(--line); }
+.app-header { display: flex; align-items: center; min-height: 64px; padding: var(--space-3) var(--space-4); background: var(--surface); border-bottom: 1px solid var(--line); }
 .app-brand { display: flex; align-items: center; min-width: 0; flex: 1; }
 .pg-mark { display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; flex-shrink: 0; margin-right: 10px; }
 .pg-mark img { display: block; width: 30px; height: 30px; object-fit: contain; }
