@@ -272,6 +272,9 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .capture-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-2); }
 .version-label { color: var(--text); font-weight: 600; }
 .capture-hint { color: var(--muted); font-size: var(--text-small); margin-top: var(--space-2); }
+/* While an operation runs the composer's field and suggestions are
+   disabled; they dim so the busy track is not the only sign. */
+.capture-panel.is-busy .field-shell, .capture-panel.is-busy .message-presets { opacity: .6; }
 /* Reference 01: preview and document facts close the inspector column. */
 .document-preview { margin-top: var(--space-4); padding-top: var(--space-4); border-top: 1px solid var(--line); }
 .preview-title { font-size: var(--text-subhead); font-weight: 600; letter-spacing: -.2px; margin-bottom: var(--space-3); }
