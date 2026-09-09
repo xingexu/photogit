@@ -108,7 +108,6 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 /* Project context and responsive navigation. */
 .repo-project strong { font-size: var(--text-body); }
 .repo-project > span { min-width: 0; }
-.project-switch { margin-left: 8px; }
 .text-link { display: inline-flex; align-items: center; color: var(--muted); font-size: var(--text-small); padding: 3px 4px; border-radius: var(--radius-chip); text-decoration: underline; text-underline-offset: 2px; }
 .repo-state { display: flex; align-items: center; flex-shrink: 0; margin-right: var(--space-3); font-size: var(--text-small); color: var(--muted); }
 .repo-state i, .watch-status i { width: 5px; height: 5px; border-radius: 50%; background: currentColor; margin-right: 6px; }
