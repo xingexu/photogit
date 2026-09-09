@@ -10,11 +10,20 @@ function refreshChanges(document) {
   }
   const query = String(search.value || "").trim().toLowerCase();
   const type = chips.find(chip => chip.getAttribute("aria-pressed") === "true")?.dataset.changeFilter || "all";
+  const typeMatches = (domain, wanted) => wanted === "all" || (wanted === "visual" ? !["text", "structure"].includes(domain) : domain === wanted);
+  // Each chip counts the rows it would show, within the current search, so
+  // the row of chips reads as a breakdown before any of them is chosen.
+  for (const chip of chips) {
+    const count = chip.querySelector(".chip-count");
+    if (!count) continue;
+    count.textContent = String(rows.filter(row => typeMatches(row.dataset.domain, chip.dataset.changeFilter) && row.textContent.toLowerCase().includes(query)).length);
+    count.hidden = rows.length === 0;
+  }
   let visible = 0;
   const changed = [];
   for (const row of rows) {
     const domain = row.dataset.domain;
-    const matchesType = type === "all" || (type === "visual" ? !["text", "structure"].includes(domain) : domain === type);
+    const matchesType = typeMatches(domain, type);
     const hide = !matchesType || !row.textContent.toLowerCase().includes(query);
     if (row.hidden !== hide) changed.push(row);
     row.hidden = hide;
