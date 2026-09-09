@@ -735,7 +735,10 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
 
 /* The saved preview is the one piece of real artwork in the panel. Hovering it
    eases in a slight zoom inside a clipped frame, so the frame never moves. */
-.preview-figure { overflow: hidden; border-radius: var(--radius); }
+/* The saved preview lands in the background once its branch tip has loaded,
+   so it arrives some time after the card. Fading it in marks it as arrived
+   rather than as something that flashed into a blank frame. */
+.preview-figure { overflow: hidden; border-radius: var(--radius); animation: photogit-fade-in var(--motion-nav) var(--ease-liquid) both; }
 .preview-figure img { transition: transform var(--motion-nav) var(--ease-liquid); }
 .preview-figure:hover img { transform: scale(1.03); }
 
