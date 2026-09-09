@@ -96,6 +96,10 @@ function render(container, { branches = [], current, onSwitch, previews, demoPre
     }
     container.appendChild(row);
   }
+  // Decoration over a list that is already complete and interactive: the
+  // cards step in on the same capped stagger as the change and history rows.
+  const reveal = globalThis.PhotoGitReveal;
+  if (reveal && typeof reveal.stagger === "function") reveal.stagger(container.querySelectorAll(".branch-row"));
   return container;
 }
 if (typeof module !== "undefined") module.exports = { render };
