@@ -303,7 +303,10 @@ sp-menu, sp-menu-item { background: var(--overlay); color: var(--text); }
 .change-state { color: var(--warning); }
 .change-state.added { color: var(--success); }
 .change-state.removed { color: var(--error); }
-.empty-state { padding: 18px 0; color: var(--muted); }
+/* An empty state replaces a list that just emptied. Easing it up from a few
+   pixels below reads as "the list is now this" rather than a flash of new
+   text; a display change replays the animation each time it appears. */
+.empty-state { padding: 18px 0; color: var(--muted); animation: photogit-reveal var(--motion-nav) var(--ease-liquid) both; }
 .empty-state strong { color: var(--text); font-size: var(--text-body); font-weight: 500; }
 .empty-state p { color: var(--muted); font-size: var(--text-small); margin-top: 6px; }
 .empty-state .text-link { margin-top: 8px; }
