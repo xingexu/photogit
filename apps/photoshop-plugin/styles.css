@@ -608,7 +608,7 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
 #setup-instructions { animation: photogit-reveal var(--motion-control) var(--ease-liquid) backwards; }
 .onboarding-symbol { color: var(--muted); }
 .onboarding-steps { margin: var(--space-5) 0 0; padding: 0; list-style: none; }
-.onboarding-steps li { font-size: var(--text-small); margin-top: 8px; }
+.onboarding-steps li { font-size: var(--text-small); margin-top: var(--space-2); }
 .onboarding-steps b { color: var(--text); margin-right: 8px; font-family: var(--mono); }
 /* Logical pixel breakpoints: minimum 230×200, docked 400, wide workspace 900+. */
 @media (min-width: 640px) {
