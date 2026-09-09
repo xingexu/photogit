@@ -38,6 +38,12 @@ engine do.
   stamped like every other asset; a dead divider rule, a dead margin
   and an inert card class are gone; the design system's token table
   matches the stylesheet.
+- Native follow-up, measured in Photoshop 27.10 after loading the
+  panel through the UXP developer service: the sticky header rendered
+  out of flow and covered the context card, so the header scrolls with
+  the panel again (the browser demo keeps its own sticky header); a
+  helper-offline error now clears as soon as the helper answers, and
+  Reconnect says so.
 
 ## Motion pass · entrances and state changes
 
