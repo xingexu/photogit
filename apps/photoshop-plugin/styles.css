@@ -473,7 +473,7 @@ sp-menu, sp-menu-item { background: var(--overlay); color: var(--text); }
 .comparison-status .ready { color: var(--success); }
 .comparison-status .blocked { color: var(--warning); }
 .comparison-status.merge-blocked { border-color: var(--warning); background: var(--warning-surface); }
-.comparison-status > h3 { margin-top: 14px; }
+.comparison-status > h3 { margin-top: 14px; font-size: var(--text-subhead); }
 .comparison-status > h3:first-child { margin-top: 0; }
 .comparison-direction { display: flex; align-items: center; flex-wrap: wrap; padding: 14px 0; color: var(--text); }
 .comparison-direction strong { background: var(--elevated); padding: 5px 8px; border-radius: var(--radius-chip); }
@@ -483,7 +483,7 @@ sp-menu, sp-menu-item { background: var(--overlay); color: var(--text); }
 .comparison-status { flex: 1 1 180px; min-width: 0; padding: 16px; border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--surface); }
 .comparison-status p { margin-top: 10px; font-size: var(--text-small); color: var(--muted); }
 .comparison-status .button { margin-top: 16px; }
-.comparison-summary h3 { margin: 16px 0 8px; }
+.comparison-summary h3 { margin: 16px 0 8px; font-size: var(--text-subhead); }
 .comparison-summary p, .comparison-files { font-size: var(--text-small); color: var(--muted); white-space: pre-wrap; overflow-wrap: break-word; margin-bottom: 8px; }
 .conflict-panel { padding: 16px; border: 1px solid var(--warning); border-radius: var(--radius-panel); background: var(--warning-surface); animation: photogit-sheet-in var(--motion-nav) var(--ease-liquid) backwards; }
 .conflict-list, .detail-content { white-space: pre-wrap; overflow-wrap: break-word; color: var(--muted); font-size: var(--text-small); }
