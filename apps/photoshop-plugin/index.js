@@ -1837,6 +1837,11 @@ function busy(active) {
 function show(message, error) {
   const safeMessage = safeInlineText(message, 800) || (error ? "PhotoGit could not complete that action." : "Done.");
   const result = document.getElementById("result");
+  // Restart the fade so a message replacing another reads as a new event;
+  // the reflow is one element wide and only happens when a message lands.
+  result.style.animation = "none";
+  void result.offsetWidth;
+  result.style.animation = "";
   result.textContent = safeMessage;
   result.className = error ? "status-message error" : "status-message success";
   // A success message clears itself once read; an error stays until replaced.

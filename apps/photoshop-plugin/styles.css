@@ -496,6 +496,14 @@ kbd { font-family: var(--mono); font-size: 11px; padding: 1px 4px; border: 1px s
 .notice .button { margin-top: 8px; }
 .status-message, #result { font-size: var(--text-small); margin: 8px 16px; overflow-wrap: break-word; }
 #result:empty { display: none; }
+/* A status line is written, read, and cleared. It fades in over the press
+   duration — quick enough that an error is never late, slow enough that a
+   success does not blink — and a fresh message replays it. */
+#result:not(:empty) { animation: photogit-fade-in var(--motion-press) var(--ease-liquid) both; }
+@keyframes photogit-fade-in {
+  from { opacity: .01; }
+  to { opacity: 1; }
+}
 #result.success, #result.error { padding: 10px 12px; border-radius: var(--radius); border: 1px solid var(--line); }
 #result.success { color: var(--success); background: var(--success-surface); }
 #result.error { color: var(--error); background: var(--error-surface); border-color: var(--error); }
