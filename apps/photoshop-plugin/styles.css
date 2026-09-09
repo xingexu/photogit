@@ -435,7 +435,7 @@ sp-menu, sp-menu-item { background: var(--overlay); color: var(--text); }
 .comparison-status .button { margin-top: 16px; }
 .comparison-summary h3 { margin: 16px 0 8px; }
 .comparison-summary p, .comparison-files { font-size: var(--text-small); color: var(--muted); white-space: pre-wrap; overflow-wrap: break-word; margin-bottom: 8px; }
-.conflict-panel { padding: 16px; border: 1px solid var(--warning); border-radius: var(--radius-panel); background: var(--warning-surface); }
+.conflict-panel { padding: 16px; border: 1px solid var(--warning); border-radius: var(--radius-panel); background: var(--warning-surface); animation: photogit-sheet-in var(--motion-nav) var(--ease-liquid) both; }
 .conflict-list, .detail-content { white-space: pre-wrap; overflow-wrap: break-word; color: var(--muted); font-size: var(--text-small); }
 /* Session feed, documentation and utility surfaces. */
 .activity { white-space: pre-wrap; overflow-wrap: break-word; }
@@ -488,7 +488,10 @@ kbd { font-family: var(--mono); font-size: 11px; padding: 1px 4px; border: 1px s
 #detail-content .version-inspector-header, #detail-content .version-inspector-grid, #detail-content .comparison-layout { white-space: normal; }
 #detail-content.version-inspector, #detail-content.review-inspector { color: var(--text); }
 #create-tag { margin-top: 16px; }
-.notice { margin: 12px 16px; padding: 14px; border: 1px solid var(--warning); border-radius: var(--radius); background: var(--warning-surface); color: var(--warning); }
+/* A notice interrupts: the helper dropped, the document is not the project's.
+   Arriving on the sheet's short rise marks it as new rather than as a
+   region that was always there and just changed colour. */
+.notice { margin: 12px 16px; padding: 14px; border: 1px solid var(--warning); border-radius: var(--radius); background: var(--warning-surface); color: var(--warning); animation: photogit-sheet-in var(--motion-nav) var(--ease-liquid) both; }
 .notice p { color: var(--text); font-size: var(--text-small); margin: 6px 0 10px; }
 .notice .button { margin-top: 8px; }
 .status-message, #result { font-size: var(--text-small); margin: 8px 16px; overflow-wrap: break-word; }
