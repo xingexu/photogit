@@ -1,5 +1,44 @@
 # Changelog
 
+## Polish pass · keyboard rows, announcements, and the spacing scale
+
+Two hundred commits, one change each, verified by the panel suites and
+the CI verifiers after every one and by the full suite and package
+checks along the way. Nothing here changes what the helper or the
+engine do.
+
+- Keyboard: the filter chips, message suggestions and footer actions
+  are toolbars the arrow keys move through; Escape clears a search that
+  has text; Enter or Down moves from a search into its first result; a
+  refusal for a missing message or name puts the cursor in the field;
+  the panel reopens on the section it was closed on.
+- Announcements: helper status, watch status, empty states and notices
+  are live regions, errors are alerts, a tab's count is part of its
+  name, the wordmark and rail mirror are no longer read twice, and every
+  time shown is a `time` element with the recorded timestamp.
+- Names and labels: controls are named by the words they show (Scan
+  now, the branch picker, the tabs), both tools buttons say they open a
+  menu, the command trigger declares its shortcuts, the message field
+  is described by its counter, the first-run steps are a list, and each
+  history group and review card is a heading.
+- Visible states: filter chips count the edits behind them, the new and
+  deleted tallies take their rows' colours, Clear is disabled while the
+  feed is empty, the composer dims while an operation runs, disabled
+  primary actions lose their glow, a success message fades out, counts
+  hold steady in tabular figures, and the setup disclosure turns a
+  chevron.
+- Preferences: forced colours keep selection, chips, the busy track and
+  disabled controls visible; `prefers-contrast: more` raises separators
+  and rims; reduced motion also holds the hover displacements.
+- Spacing and type: every padding, margin and gutter now reads the
+  spacing scale (with `--space-5` added to the documented tokens),
+  inline icons sit 8px from their labels, card headings share the
+  subhead size, and the palette's field wears the search fields' shell.
+- Housekeeping: motion.js, appearance.js and the demo's commands.js are
+  stamped like every other asset; a dead divider rule, a dead margin
+  and an inert card class are gone; the design system's token table
+  matches the stylesheet.
+
 ## Motion pass · entrances and state changes
 
 Twenty-nine commits, each one place the panel snapped where a transition
