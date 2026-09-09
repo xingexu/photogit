@@ -116,6 +116,14 @@ function setup(document, { navigate, openCommands }) {
     });
   }
   arrowRow(document.querySelector(".filter-bar"));
+  // Enter or Down from the search moves into the first row it left showing
+  // that can be selected; a row that only reports has nothing to focus.
+  document.getElementById("changes-search").addEventListener("keydown", event => {
+    if (!["Enter", "ArrowDown"].includes(event.key) || event.repeat || event.isComposing) return;
+    const first = [...document.querySelectorAll("#changes .change-row")].find(row => !row.hidden && row.getAttribute("role") === "button");
+    if (!first) return;
+    event.preventDefault(); first.focus();
+  });
   arrowRow(document.querySelector(".message-presets"));
   arrowRow(document.querySelector(".sync-panel"));
   const search = document.getElementById("changes-search");
