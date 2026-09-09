@@ -889,4 +889,10 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
   .nav-item.active, .list-row.selected, .branch-row.current, .filter-chip[aria-pressed="true"] { outline: 2px solid; outline-offset: -2px; }
   /* Chips and pills are told apart from their text by a fill alone. */
   .nav-item b, .meta-chip, .preset, .filter-chip, .review-meta .ready, .review-meta .blocked, .document-facts div, .comparison-direction strong { border: 1px solid; }
+  /* The busy track and the status dots are pure colour; give them the
+     system's highlight and text colours rather than nothing. */
+  .progress-track { border: 1px solid; }
+  .progress-track span { background: Highlight; }
+  .repo-state i, .watch-status i, .rail-sync svg { background: CanvasText; }
+  [aria-disabled="true"] { color: GrayText; opacity: 1; }
 }
