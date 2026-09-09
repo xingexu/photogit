@@ -385,6 +385,7 @@ sp-menu, sp-menu-item { background: var(--overlay); color: var(--text); }
 .history-row .row-copy { flex-basis: 120px; }
 .history-row.selected { border-color: var(--line); }
 .commit-id { margin: var(--space) 0 0 var(--space-6); font: 11px var(--mono); color: var(--muted); }
+.history-row.selected .commit-id { color: var(--text); }
 .version-inspector { min-width: 0; color: var(--text); }
 #history-inspector { display: none; }
 .inspector-empty { padding: var(--space-6); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--surface); }
