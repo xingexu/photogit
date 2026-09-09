@@ -517,6 +517,7 @@ kbd { font-family: var(--mono); font-size: 11px; padding: 1px 4px; border: 1px s
 /* A command is copied, not read: it stays on one line and scrolls sideways
    in a narrow panel rather than breaking a path in the middle of a word. */
 .setup-command { padding: 12px; margin-top: 12px; background: var(--input); border: 1px solid var(--line); border-radius: var(--radius); font: 11px/1.7 var(--mono); white-space: pre; overflow-x: auto; overflow-wrap: normal; word-break: normal; }
+.setup-command:focus { outline: 2px solid var(--focus); outline-offset: 2px; }
 /* Both sheets close from the same corner glyph, so a dialog's heading row
    always reads title left, close right. The heading keeps the title on one
    line beside it rather than wrapping the control underneath. */
