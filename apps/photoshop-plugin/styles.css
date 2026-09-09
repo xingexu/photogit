@@ -481,7 +481,9 @@ sp-menu, sp-menu-item { background: var(--overlay); color: var(--text); }
 .activity { white-space: pre-wrap; overflow-wrap: break-word; }
 .activity-row { padding: 14px 4px; border-bottom: 1px solid var(--line); color: var(--muted); font-size: var(--text-small); }
 .activity-row:last-child { border-bottom: 0; }
-.activity-row p { margin-top: 6px; }
+/* "Show details" unfolds the full text beneath the summary; it eases in
+   rather than dropping the rows below it in one step. */
+.activity-row p { margin-top: 6px; animation: photogit-reveal var(--motion-control) var(--ease-liquid) both; }
 .activity-row:not(.activity-scan) > div:first-child { color: var(--text); }
 .activity-summary { display: flex; align-items: flex-start; flex-wrap: wrap; }
 .activity-icon { width: 16px; flex-shrink: 0; color: var(--muted); font-weight: 600; }
