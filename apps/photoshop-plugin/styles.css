@@ -626,7 +626,7 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
   .command-trigger-label { display: block; font-size: var(--text-body); }
   .workspace-body { display: flex; align-items: stretch; }
   /* Reference 01: project, branch and document context belong to the rail, not a full-width strip. */
-  .workspace-rail { display: flex; flex-direction: column; flex: 0 0 148px; min-width: 148px; margin-right: 18px; }
+  .workspace-rail { display: flex; flex-direction: column; flex: 0 0 148px; min-width: 148px; margin-right: var(--space-4); }
 
   /* Reference: icons sit above their labels, counts ride as pills, and the
      selected destination lifts into its own glass tile. */
