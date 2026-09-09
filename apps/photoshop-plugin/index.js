@@ -1913,7 +1913,12 @@ function clearActivity() {
 function setCount(id, value) {
   const count = Number.isFinite(Number(value)) ? Math.max(0, Number(value)) : 0;
   const element = document.getElementById(id);
-  element.textContent = String(count);
+  // The pill settles onto its number the way the tally tiles do; the
+  // counter carries the real value in data-value from the first frame and
+  // is skipped under reduced motion. Without the module, plain text.
+  const counter = globalThis.PhotoGitCounter;
+  if (counter && typeof counter.set === "function") counter.set(element, count);
+  else element.textContent = String(count);
   element.dataset.empty = count === 0 ? "true" : "false";
 }
 function setSyncStatus(label) {

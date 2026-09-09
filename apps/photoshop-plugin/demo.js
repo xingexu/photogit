@@ -726,7 +726,8 @@ function clearActivity() {
 function setCount(id, value) {
   const count = Number.isFinite(Number(value)) ? Math.max(0, Number(value)) : 0;
   const element = byId(id);
-  element.textContent = String(count);
+  if (globalThis.PhotoGitCounter?.set) globalThis.PhotoGitCounter.set(element, count);
+  else element.textContent = String(count);
   element.dataset.empty = count === 0 ? "true" : "false";
 }
 
