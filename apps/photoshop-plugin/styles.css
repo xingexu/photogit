@@ -616,7 +616,7 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
      the top edge, and the remaining header becomes the content top bar. */
   /* The sidebar column runs unbroken from the logo down, so the header carries
      no rule across the brand; the content area supplies its own top edge. */
-  .app-header { padding: 18px 24px 6px; min-height: 78px; border-bottom: 0; background: var(--bg); }
+  .app-header { padding: var(--space-4) var(--space-6) var(--space-2); min-height: 78px; border-bottom: 0; background: var(--bg); }
   .app-brand { flex: 1 1 auto; min-width: 0; }
 
   .app-title > span { display: block; }
