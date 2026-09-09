@@ -281,6 +281,10 @@ body.is-busy [aria-disabled="true"], body.is-busy input:disabled { cursor: progr
   to { opacity: 1; transform: scale(1.25); }
 }
 .changes-layout { min-width: 0; }
+/* The change list scrolls inside its card, so the search and filters stay
+   in reach above it and the composer beside it never sinks below a long
+   scan. The 3px of right padding leaves room for the row's hover slide. */
+.change-list { max-height: 480px; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; padding-right: 3px; }
 .changes-card .section-heading h2 { font-size: var(--text-subhead); }
 .capture-panel { margin-top: var(--space-4); }
 .capture-title { display: flex; align-items: center; margin-bottom: var(--space-4); }
@@ -693,6 +697,7 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
   /* The composer sits beside the list here, not below it. */
   #jump-save span { display: none; }
   .changes-card { flex: 1; min-width: 0; margin-right: var(--space-4); }
+  .change-list { max-height: 640px; }
   .capture-panel { flex: 0 0 320px; min-width: 0; margin: 0 0 var(--space-5); padding: var(--space-5); }
   .history-layout { display: flex; align-items: flex-start; }
   .history-list-panel { flex: 0 0 250px; padding-right: var(--space-5); }

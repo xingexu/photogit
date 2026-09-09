@@ -14,6 +14,9 @@ request, and were reloaded and measured in Photoshop 27.10.
   glass glow gains a wider coloured bloom.
 - Buttons, fields, the command trigger, chips, pills and the round header
   actions are capsules, with a little more side room for their text.
+- The changed-layer list scrolls inside its card, 480px tall and 640px
+  from 900px, so the search, the filters and the composer beside it stay
+  in reach however many edits a scan finds.
 
 ## Polish pass · keyboard rows, announcements, and the spacing scale
 
