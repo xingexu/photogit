@@ -336,6 +336,7 @@ body.is-busy [aria-disabled="true"], body.is-busy input:disabled { cursor: progr
 input, sp-dropdown, sp-menu, sp-menu-item, select { color: var(--text); font-family: var(--font-ui); font-size: var(--text-body); font-style: normal; }
 input { min-width: 0; width: 100%; height: 34px; padding: 7px 10px; margin: 0; border: 0; border-radius: var(--radius); background: transparent; appearance: none; }
 input::placeholder { color: var(--muted); opacity: 1; font-family: var(--font-ui); font-size: var(--text-body); font-style: normal; }
+input:disabled { color: var(--disabled); }
 .search-field svg { width: 16px; height: 16px; margin-left: 10px; color: var(--muted); }
 .search-glyph { display: flex; }
 .search-field { border-color: var(--line); }
