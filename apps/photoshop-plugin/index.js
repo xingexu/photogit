@@ -657,7 +657,7 @@ async function saveVersion() {
   const message = document.getElementById("message").value.trim();
   if (!ensureReady()) return;
   if (!app.documents.length) return show("Open a Photoshop document first.", true);
-  if (!message) return show("Describe what changed before saving this version.", true);
+  if (!message) { document.getElementById("message").focus(); return show("Describe what changed before saving this version.", true); }
   if (!documentAllowed()) { renderDocumentBinding(); return show("Connect the correct document before saving a version.", true); }
   const doc = app.activeDocument;
   const folder = projectFolder;
