@@ -126,6 +126,14 @@ describe("Studio workspace interactions", () => {
     expect(p.chip("all").getAttribute("aria-pressed")).toBe("true");
     expect(p.visible()).toHaveLength(5);
   });
+  it("counts the rows behind each filter chip within the current search", async () => {
+    const p = await fixture();
+    const counts = () => ["all", "visual", "text", "structure"].map(type => p.chip(type).querySelector("b")!.textContent);
+    expect(counts()).toEqual(["5", "3", "1", "1"]);
+    p.search("title"); expect(counts()).toEqual(["1", "0", "1", "0"]);
+    p.id("changes").innerHTML = ""; p.controls.refreshChanges();
+    expect(p.chip("all").querySelector("b")!.hidden).toBe(true);
+  });
   it("binds listeners once even when setup is repeated", async () => {
     const p = await fixture(); ui.setup(p.document, p.options);
     p.key(p.id("changes-tab"), "/"); expect(p.openCommands).toHaveBeenCalledOnce();

@@ -337,6 +337,7 @@ sp-menu, sp-menu-item { background: var(--overlay); color: var(--text); }
 .filter-bar { display: flex; flex-wrap: wrap; margin: 8px -3px; }
 .filter-chip { margin: 3px; padding: 4px 8px; border: 1px solid transparent; border-radius: var(--radius-chip); color: var(--muted); font-size: var(--text-small); }
 .filter-chip[aria-pressed="true"] { color: var(--text); background: var(--elevated); border-color: var(--line); }
+.chip-count { margin-left: 5px; font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; }
 .filter-note { margin: 8px 0; color: var(--muted); font-size: var(--text-small); animation: photogit-fade-in var(--motion-control) var(--ease-liquid) backwards; }
 /* Selection is a fill, a slide and an accent edge; the edge is carried by
    box-shadow, so it must transition with the other two or it snaps on. */
