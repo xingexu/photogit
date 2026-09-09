@@ -487,7 +487,7 @@ sp-menu, sp-menu-item { background: var(--overlay); color: var(--text); }
 .comparison-status > h3 { margin-top: 14px; font-size: var(--text-subhead); }
 .comparison-status > h3:first-child { margin-top: 0; }
 .comparison-direction { display: flex; align-items: center; flex-wrap: wrap; padding: var(--space-3) 0; color: var(--text); }
-.comparison-direction strong { background: var(--elevated); padding: 5px 8px; border-radius: var(--radius-chip); }
+.comparison-direction strong { background: var(--elevated); padding: var(--space) var(--space-2); border-radius: var(--radius-chip); }
 .comparison-direction > span { margin: 0 var(--space-2); color: var(--muted); }
 .comparison-layout { display: flex; flex-wrap: wrap; min-width: 0; }
 .comparison-summary { flex: 1 1 240px; min-width: 0; padding-right: var(--space-5); }
