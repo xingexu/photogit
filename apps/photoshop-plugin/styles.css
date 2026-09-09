@@ -494,7 +494,7 @@ sp-menu, sp-menu-item { background: var(--overlay); color: var(--text); }
 .comparison-status { flex: 1 1 180px; min-width: 0; padding: var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--surface); }
 .comparison-status p { margin-top: var(--space-2); font-size: var(--text-small); color: var(--muted); }
 .comparison-status .button { margin-top: var(--space-4); }
-.comparison-summary h3 { margin: 16px 0 8px; font-size: var(--text-subhead); }
+.comparison-summary h3 { margin: var(--space-4) 0 var(--space-2); font-size: var(--text-subhead); }
 .comparison-summary p, .comparison-files { font-size: var(--text-small); color: var(--muted); white-space: pre-wrap; overflow-wrap: break-word; margin-bottom: 8px; }
 .conflict-panel { padding: var(--space-4); border: 1px solid var(--warning); border-radius: var(--radius-panel); background: var(--warning-surface); animation: photogit-sheet-in var(--motion-nav) var(--ease-liquid) backwards; }
 .conflict-list, .detail-content { white-space: pre-wrap; overflow-wrap: break-word; color: var(--muted); font-size: var(--text-small); }
