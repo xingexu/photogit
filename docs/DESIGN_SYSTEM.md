@@ -159,3 +159,35 @@ UXP hosts do not all composite `perspective()`.
 The tilt is capped at 2.4 degrees. A card that leans further reads as a toy
 beside Photoshop's own chrome, and a steep lean shears the text it carries.
 
+## Entrances and state changes
+
+Beyond depth, the panel moves in exactly two situations: something arrives,
+or a value changes. Both use the same four motions and nothing else.
+
+| Motion | Keyframes | Used for |
+| --- | --- | --- |
+| reveal | rise 6px, fade in | rows, cards, tally tiles, document facts, inspector sections, activity rows, empty states, unfolded details; staggered through `reveal.js` where there are several |
+| fade-in | fade only | status line, scan verdict, saved preview, filter count, Cancel scan, the workspace and first-run card after startup |
+| sheet-in | rise 10px, fade in | tool sheets, the tools menu, notices |
+| pop / rule-in | scale in and settle | a count pill going from zero; the active section's rule |
+
+Rules that hold for all of them:
+
+- **Backwards fill only.** An entrance's end frame is the element's resting
+  state, so the animation is released the moment it finishes. A forwards
+  fill would keep the element on its own compositing layer, and its text
+  would rasterise a shade differently from the text beside it. Only the
+  closing fade, whose end frame is *not* the resting state, keeps a fill.
+- **Replay is explicit.** A value that replaces another (the status line, the
+  scan verdict) is replayed by `restartAnimation()`, a one-element reflow that
+  runs only when a value lands. Nothing polls.
+- **The list is complete first.** Every stagger is applied after the DOM it
+  decorates is rendered and interactive; the contract tests assert the
+  callback sees finished rows.
+- **Continuous motion is bounded.** The only looping animations — the busy
+  track, the breathing watch-status dot, the startup skeleton — run while a
+  state is genuinely in progress and stop with it.
+- **Reduced motion cuts.** Every animation is removed by the reduced-motion
+  block; nothing starts from `opacity: 0` in its own rule, so a host that
+  strips animations still shows every element at full opacity.
+

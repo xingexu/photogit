@@ -1,5 +1,31 @@
 # Changelog
 
+## Motion pass · entrances and state changes
+
+Twenty-nine commits, each one place the panel snapped where a transition
+carries meaning. Four motions only (reveal, fade-in, sheet-in, pop), all
+released once finished, all removed under reduced motion; see "Entrances
+and state changes" in `docs/DESIGN_SYSTEM.md`.
+
+- Arrivals: empty states, notices, the status line, the tally tiles,
+  document facts, branch and review cards, inspector sections, activity
+  rows, tools-menu items, the saved preview, Cancel scan, the filter
+  count, and the workspace or first-run card after startup.
+- State changes: the selected row's accent edge eases with its fill; a
+  count pill pops when it first leaves zero and settles onto its number
+  through `counter.js`; the active section's rule draws out; the theme
+  toggle cross-fades sun and moon; the helper status, watch status and
+  message counter ease between colours; the scan verdict fades in over
+  the old one; a suggestion landing in the message field flashes it.
+- In-progress states: the watch-status dot breathes while layers are
+  read (and the warning state now has a colour); the startup skeleton
+  pulses.
+- Filtering steps the surviving rows back in; unfolding activity details
+  or setup instructions eases open.
+- Every entrance fills backwards so the element is released once it
+  lands; the previous forwards fill left revealed rows on their own
+  compositing layer with visibly different text weight.
+
 ## UI pass · every panel surface audited at 230–1600px in both themes
 
 Fifty small commits, one defect each, verified against rendered
