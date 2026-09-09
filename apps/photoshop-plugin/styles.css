@@ -751,6 +751,12 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
   [role="button"]:active, [role="tab"]:active, [role="menuitem"]:active,
   .nav-item:hover svg, .nav-item:hover b { transform: none !important; }
 }
+@media (prefers-contrast: more) {
+  /* Separators and rims are deliberately quieter than the interactive
+     boundary. When the host asks for more contrast, bring them up to it. */
+  :root { --line: #5c6169; --glass-rim: rgba(255,255,255,.55); --shine: rgba(255,255,255,.1); }
+  :root[data-theme="light"] { --line: #98a1ac; --glass-rim: rgba(60,80,120,.5); }
+}
 @media (prefers-reduced-transparency: reduce) {
   /* Take the glass back to an opaque tonal surface: no translucent fill, no
      blur behind it, and no sheen gradient over it. */
