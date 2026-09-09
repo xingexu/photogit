@@ -674,9 +674,9 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
   .branch-list-cards .branch-row.has-preview { padding-top: 0; }
   .branch-list-cards .branch-row-preview { margin-top: 0; }
   .branch-create-card { flex: 0 0 260px; margin-top: 0; }
-  .review-layout { display: flex; align-items: flex-start; margin-top: 16px; }
-  .review-list-panel { flex: 0 0 290px; padding-right: 20px; }
-  #review-inspector { display: block; flex: 1; padding-left: 24px; border-left: 1px solid var(--line); min-height: 400px; }
+  .review-layout { display: flex; align-items: flex-start; margin-top: var(--space-4); }
+  .review-list-panel { flex: 0 0 290px; padding-right: var(--space-5); }
+  #review-inspector { display: block; flex: 1; padding-left: var(--space-6); border-left: 1px solid var(--line); min-height: 400px; }
   .review-card:first-child { margin-top: 0; }
   .review-title > span { width: 100%; margin-top: 5px; }
   .comparison-summary { padding-right: 0; flex-basis: 100%; }
