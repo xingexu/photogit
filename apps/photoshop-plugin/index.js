@@ -1862,6 +1862,8 @@ function show(message, error) {
   restartAnimation(result);
   result.textContent = safeMessage;
   result.className = error ? "status-message error" : "status-message success";
+  // An error interrupts; a success waits its turn.
+  result.setAttribute("role", error ? "alert" : "status");
   // A success message clears itself once read; an error stays until replaced.
   clearTimeout(resultTimer);
   resultTimer = setTimeout(() => {
