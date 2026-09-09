@@ -181,7 +181,11 @@ function openCommandPalette(initial = "") {
   hint.textContent = "Enter to run. Arrow keys to browse. Escape to close.";
   const error = document.createElement("p"); error.id = "command-error"; error.setAttribute("role", "status");
   const results = document.createElement("div"); results.id = "command-results";
-  content.appendChild(field); content.appendChild(hint); content.appendChild(error); content.appendChild(results);
+  const shell = document.createElement("div"); shell.className = "field-shell search-field";
+  const glyph = document.createElement("span"); glyph.className = "search-glyph"; glyph.setAttribute("aria-hidden", "true");
+  glyph.innerHTML = '<svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 4.5 4.5"/></svg>';
+  shell.appendChild(glyph); shell.appendChild(field);
+  content.appendChild(shell); content.appendChild(hint); content.appendChild(error); content.appendChild(results);
   const render = () => {
     error.textContent = ""; results.innerHTML = "";
     const parsed = commandDirectory.parse(field.value);
