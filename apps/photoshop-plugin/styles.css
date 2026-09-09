@@ -161,7 +161,7 @@ body.is-busy [aria-disabled="true"], body.is-busy input:disabled { cursor: progr
 .view-heading h2, .section-heading h2 { margin-right: 8px; }
 .page-description { color: var(--muted); font-size: var(--text-small); margin: -4px 0 var(--space-4); }
 .content-card { min-width: 0; margin-bottom: var(--space-5); }
-.meta-chip { display: inline-block; font-size: var(--text-small); color: var(--muted); background: var(--elevated); padding: 2px 7px; border-radius: var(--radius-chip); white-space: nowrap; }
+.meta-chip { display: inline-block; font-size: var(--text-small); color: var(--muted); background: var(--elevated); padding: 2px var(--space-2); border-radius: var(--radius-chip); white-space: nowrap; }
 /* The message counter warns as the limit nears and states it when reached;
    the tone eases in so the warning arrives without a flicker on the
    keystroke that crosses the line. */
