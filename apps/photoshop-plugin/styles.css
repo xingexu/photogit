@@ -750,6 +750,13 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
 .nav-item.active::before {
   content: ""; position: absolute; left: 50%; bottom: 3px; width: 18px; height: 2px; margin-left: -9px;
   border-radius: 2px; background: var(--accent); pointer-events: none;
+  /* The rule draws out from its centre when a section becomes active, so the
+     eye is led to the new selection rather than finding it already there. */
+  animation: photogit-rule-in var(--motion-control) var(--ease-liquid) both;
+}
+@keyframes photogit-rule-in {
+  from { transform: scaleX(.1); opacity: .01; }
+  to { transform: none; opacity: 1; }
 }
 
 /* A change row slides a few pixels toward the pointer. The list has a fixed
