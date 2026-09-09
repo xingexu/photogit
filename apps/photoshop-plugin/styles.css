@@ -457,7 +457,7 @@ sp-menu, sp-menu-item { background: var(--overlay); color: var(--text); }
 .review-meta .ready, .review-meta .blocked { padding: 2px 6px; border-radius: var(--radius-chip); }
 .review-meta .ready { color: var(--success); background: var(--success-surface); }
 .review-meta .blocked { color: var(--warning); background: var(--warning-surface); }
-.review-actions { display: flex; flex-wrap: wrap; margin: 12px -3px 0; }
+.review-actions { display: flex; flex-wrap: wrap; margin: var(--space-3) -3px 0; }
 .review-actions > .button { flex: 1 1 90px; margin: 3px; }
 .review-actions > .merge-action[aria-disabled="true"] { flex-basis: 100%; justify-content: flex-start; padding-left: 3px; background: transparent; opacity: 1; border: 0; color: var(--warning); font-weight: 400; }
 .review-inspector { min-width: 0; color: var(--text); }
