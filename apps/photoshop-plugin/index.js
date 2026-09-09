@@ -740,7 +740,7 @@ async function createBranch() {
   if (!ensureReady()) return;
   const input = document.getElementById("new-branch-name");
   const name = input.value.trim();
-  if (!name) return show("Enter a branch name, such as hero-option-b.", true);
+  if (!name) { input.focus(); return show("Enter a branch name, such as hero-option-b.", true); }
   return run("Creating branch…", async () => {
     await callHelper("createBranch", { branch: name });
     input.value = "";
@@ -917,7 +917,7 @@ function closeSurface(element, immediate = false) {
 async function createTag() {
   const input = document.getElementById("tag-name");
   const tag = input.value.trim();
-  if (!tag) return show("Enter a tag such as v1.0.0.", true);
+  if (!tag) { input.focus(); return show("Enter a tag such as v1.0.0.", true); }
   return run(`Creating ${tag}…`, async () => {
     await callHelper("createTag", { tag });
     input.value = "";
