@@ -60,7 +60,7 @@ h1, h2, h3, p { margin: 0; }
 h1 { font-size: var(--text-title); line-height: 1.3; letter-spacing: -.4px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 h2 { font-size: var(--text-title); line-height: 1.3; letter-spacing: -.3px; font-weight: 600; }
 h3, strong, b { font-size: inherit; font-weight: 600; }
-p, strong, span, b, code, small, dd, dt, h1, h2, h3, label { min-width: 0; overflow-wrap: anywhere; word-break: break-word; }
+p, strong, span, b, code, small, dd, dt, li, h1, h2, h3, label { min-width: 0; overflow-wrap: anywhere; word-break: break-word; }
 svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
 .panel-root { width: 100%; min-width: 0; max-width: 1600px; min-height: 100%; margin: 0 auto; }
 .app-header { display: flex; align-items: center; min-height: 64px; padding: 14px 16px; background: var(--surface); border-bottom: 1px solid var(--line); }
@@ -585,8 +585,8 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
 .onboarding #setup-toggle { margin-top: 10px; }
 #setup-instructions { animation: photogit-reveal var(--motion-control) var(--ease-liquid) backwards; }
 .onboarding-symbol { color: var(--muted); }
-.onboarding-steps { margin-top: 20px; }
-.onboarding-steps p { font-size: var(--text-small); margin-top: 8px; }
+.onboarding-steps { margin: 20px 0 0; padding: 0; list-style: none; }
+.onboarding-steps li { font-size: var(--text-small); margin-top: 8px; }
 .onboarding-steps b { color: var(--text); margin-right: 8px; font-family: var(--mono); }
 /* Logical pixel breakpoints: minimum 230×200, docked 400, wide workspace 900+. */
 @media (min-width: 640px) {
