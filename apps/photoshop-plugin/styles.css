@@ -882,3 +882,9 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
 .tool-sheet.is-closing, .tools-menu.is-closing { animation: photogit-surface-out var(--motion-press) var(--ease-liquid) both; pointer-events: none; }
 .surface-backdrop { opacity: 0; transition: opacity var(--motion-press) var(--ease-liquid); }
 .surface-backdrop.is-open { opacity: 1; }
+
+/* Forced colours · the host replaces every colour with the system palette,
+   which removes the fills that carry selection. An outline survives. */
+@media (forced-colors: active) {
+  .nav-item.active, .list-row.selected, .branch-row.current, .filter-chip[aria-pressed="true"] { outline: 2px solid; outline-offset: -2px; }
+}
