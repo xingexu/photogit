@@ -104,6 +104,9 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
   [role="button"]:focus:not(:focus-visible), [role="tab"]:focus:not(:focus-visible), [role="menuitem"]:focus:not(:focus-visible) { outline: none; }
 }
 [aria-disabled="true"] { opacity: .55; cursor: default; }
+/* Controls disabled by a running operation show the wait cursor, so the
+   pointer says why rather than only that. */
+body.is-busy [aria-disabled="true"], body.is-busy input:disabled { cursor: progress; }
 ::selection { background: var(--selected); color: var(--text); }
 /* Project context and responsive navigation. */
 .repo-project strong { font-size: var(--text-body); }
