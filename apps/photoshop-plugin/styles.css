@@ -253,7 +253,7 @@ body.is-busy [aria-disabled="true"], body.is-busy input:disabled { cursor: progr
    eye to nothing. */
 .tally-tile:nth-child(2) dd:not([data-value="0"]) { color: var(--success); }
 .tally-tile:nth-child(3) dd:not([data-value="0"]) { color: var(--error); }
-.tally-tile dt { margin-top: 5px; color: var(--muted); font-size: var(--text-small); }
+.tally-tile dt { margin-top: var(--space); color: var(--muted); font-size: var(--text-small); }
 .watch-status.ready, .watch-status.changed { display: none; }
 .watch-status.error { color: var(--error); }
 .watch-status.warning { color: var(--warning); }
