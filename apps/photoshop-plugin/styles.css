@@ -756,6 +756,9 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
   .progress-track span { animation: none !important; width: 100%; transform: none !important; opacity: .6; }
   [role="button"]:active, [role="tab"]:active, [role="menuitem"]:active,
   .nav-item:hover svg, .nav-item:hover b { transform: none !important; }
+  /* Hover displacements are movement too: the row's slide, the preview's
+     zoom and the primary button's lift all stay put. */
+  .list-row[role="button"]:hover, .list-row.selected, .preview-figure:hover img, .button-primary[role="button"]:hover { transform: none !important; }
 }
 @media (prefers-contrast: more) {
   /* Separators and rims are deliberately quieter than the interactive
