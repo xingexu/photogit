@@ -77,6 +77,7 @@ function bindPanelEvents() {
   bind("global-search", "click", () => openCommandPalette());
   bind("docs-tab", "click", () => selectTab("docs"));
   bind("docs-search", "input", renderCommandDocs);
+  moveIntoList("docs-search", "#command-directory .command-row");
   renderCommandDocs();
   bind("header-menu", "click", toggleToolsMenu);
   bind("rescan", "click", () => scanChanges({ automatic: false }));
