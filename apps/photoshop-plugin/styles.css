@@ -556,7 +556,15 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
 .startup-card, .onboarding { margin: 24px 16px; padding: 24px; border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--surface); max-width: 560px; }
 .startup-card p { margin-top: 8px; color: var(--muted); }
 .startup-skeleton { margin-top: 22px; }
-.startup-skeleton span { display: block; height: 6px; margin-top: 12px; background: var(--elevated); border-radius: var(--radius-chip); }
+/* The skeleton bars pulse in turn while the saved project is read, so a
+   slow helper looks like waiting rather than like a frozen panel. */
+.startup-skeleton span { display: block; height: 6px; margin-top: 12px; background: var(--elevated); border-radius: var(--radius-chip); animation: photogit-skeleton 1.4s var(--ease-liquid) infinite alternate; }
+.startup-skeleton span:nth-child(2) { animation-delay: .2s; }
+.startup-skeleton span:nth-child(3) { animation-delay: .4s; }
+@keyframes photogit-skeleton {
+  from { opacity: .45; }
+  to { opacity: 1; }
+}
 .startup-skeleton span:first-child { width: 42%; }
 .startup-skeleton span:last-child { width: 72%; }
 .onboarding h2 { margin: 18px 0 12px; }
