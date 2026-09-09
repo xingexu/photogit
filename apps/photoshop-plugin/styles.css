@@ -239,7 +239,7 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .scan-copy h2 { font-size: var(--text-subhead); font-weight: 600; letter-spacing: -.2px; animation: photogit-fade-in var(--motion-control) var(--ease-liquid) backwards; }
 .scan-detail { color: var(--muted); font-size: var(--text-small); margin-top: 4px; white-space: pre-line; }
 .watch-status { display: flex; align-items: center; color: var(--muted); font-size: var(--text-small); margin-top: 4px; }
-.change-tally { display: flex; flex-wrap: wrap; width: 100%; gap: 10px; margin: var(--space-4) 0 2px; }
+.change-tally { display: flex; flex-wrap: wrap; width: 100%; gap: var(--space-3); margin: var(--space-4) 0 2px; }
 /* Each tile is a term and its value in source order — the label names the
    number — while the layout shows the number first, as a readout does. */
 .tally-tile { display: flex; flex-direction: column-reverse; flex: 1 1 90px; min-width: 0; margin: 0; padding: 14px 16px; border: 1px solid var(--glass-rim); border-radius: var(--radius); background: var(--elevated); box-shadow: 0 1px 0 var(--shine) inset; }
