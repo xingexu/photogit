@@ -511,6 +511,7 @@ kbd { font-family: var(--mono); font-size: 11px; padding: 1px 4px; border: 1px s
 .docs-intro { margin-bottom: var(--space-3); }
 .command-row { display: flex; align-items: flex-start; padding: var(--space-3) var(--space-2); margin-top: var(--space); border-bottom: 1px solid var(--line); border-radius: var(--radius-chip); min-width: 0; background: transparent; }
 .command-glyph { display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; margin-right: 10px; color: var(--muted); flex-shrink: 0; }
+.command-row:hover .command-glyph, .command-row:focus .command-glyph { color: inherit; }
 .command-copy { flex: 1; min-width: 0; }
 .command-row strong, .command-row code, .command-copy > span { display: block; overflow-wrap: break-word; }
 .command-row strong { color: var(--text); font-size: var(--text-body); font-weight: 500; }
