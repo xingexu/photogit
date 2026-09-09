@@ -470,7 +470,7 @@ function renderHistory() {
   for (const group of groupHistory(matching)) {
     const section = document.createElement("section");
     section.className = "history-group";
-    section.innerHTML = `<div class="history-group-heading"><strong>${escapeHtml(group.label)}</strong><span>Committed by ${escapeHtml(group.author)}</span></div><div class="history-group-entries"></div>`;
+    section.innerHTML = `<h3 class="history-group-heading"><strong>${escapeHtml(group.label)}</strong><span>By ${escapeHtml(group.author)}</span></h3><div class="history-group-entries"></div>`;
     const entries = section.querySelector(".history-group-entries");
     group.entries.forEach((version) => {
       const row = document.createElement("div");
