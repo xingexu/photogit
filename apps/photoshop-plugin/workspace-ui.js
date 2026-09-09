@@ -69,6 +69,10 @@ function setup(document, { navigate, openCommands }) {
       const fits = next.length <= MESSAGE_LIMIT;
       if (fits) message.value = next;
       updateMessageCount(document, fits ? "" : "No room for this suggestion"); message.focus();
+      // The words moved from the chip to the field; a brief highlight on the
+      // field shows where they went. Restarted per click; a class only.
+      const shell = message.closest(".field-shell");
+      if (fits && shell) { shell.classList.remove("is-updated"); void shell.offsetWidth; shell.classList.add("is-updated"); }
     });
   }
   for (const chip of document.querySelectorAll("[data-change-filter]")) {

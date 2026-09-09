@@ -116,6 +116,7 @@ describe("Version-message presentation controls", () => {
     const focus = vi.spyOn(message, "focus");
     preset.click();
     expect(message.value).toBe(preset.dataset.messagePreset);
+    expect(message.closest(".field-shell")!.classList.contains("is-updated")).toBe(true);
     message.value = "Existing draft";
     p.key(preset, "Enter");
     expect(message.value).toBe(`Existing draft · ${preset.dataset.messagePreset}`);

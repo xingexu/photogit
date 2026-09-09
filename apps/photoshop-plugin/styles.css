@@ -306,6 +306,13 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
    outline inside it drew a second, smaller ring — visibly so in the search
    fields, where the magnifier pushes the input in from the shell's edge. */
 .field-shell input:focus { outline: none; }
+/* A field that has just received a suggestion flashes its selection tone
+   once and settles back, so the eye follows the words from chip to field. */
+.field-shell.is-updated { animation: photogit-field-updated var(--motion-nav) var(--ease-liquid); }
+@keyframes photogit-field-updated {
+  from { background-color: var(--selected); }
+  to { background-color: var(--input); }
+}
 @supports (box-shadow: 0 0 0 1px color-mix(in srgb, red 20%, transparent)) {
   .field-shell:focus-within { box-shadow: 0 0 0 3px color-mix(in srgb, var(--focus) 22%, transparent); }
 }
