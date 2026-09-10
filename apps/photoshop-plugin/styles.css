@@ -855,6 +855,7 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
    the rim warms and the surface rises. No cursor change, no press state. */
 .tally-tile { transition: border-color var(--motion-control) var(--ease-liquid), box-shadow var(--motion-control) var(--ease-liquid), background-color var(--motion-control) var(--ease-liquid); }
 .tally-tile:hover { border-color: var(--border); box-shadow: 0 1px 0 var(--shine) inset, 0 0 22px -8px var(--glow); }
+.tally-tile:hover dd { transform: translateY(-1px); }
 
 /* The context badges are the panel's only circular forms; letting the branch
    badge take the accent on hover ties that cell to the pointer. Only the
