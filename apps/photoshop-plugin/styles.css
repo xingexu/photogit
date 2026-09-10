@@ -913,8 +913,8 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
 
 /* Branch rows are cards in a grid. Lifting one on hover separates it from the
    grid without changing any cell's size. */
-.branch-row { transition: border-color var(--motion-control) var(--ease-liquid), background-color var(--motion-control) var(--ease-liquid), box-shadow var(--motion-control) var(--ease-liquid); }
-.branch-row:hover { border-color: var(--glass-rim); background: var(--hover); box-shadow: 0 0 28px -12px var(--glow); }
+.branch-row { transition: border-color var(--motion-control) var(--ease-liquid), background-color var(--motion-control) var(--ease-liquid), box-shadow var(--motion-control) var(--ease-liquid), transform var(--motion-nav) var(--ease-liquid); }
+.branch-row:hover { border-color: var(--glass-rim); background: var(--hover); box-shadow: 0 0 28px -12px var(--glow); transform: translateY(-2px); }
 
 /* Focus is a keyboard state and must outrank every pointer decoration, so it
    carries a glow in addition to the outline the panel already draws. */
