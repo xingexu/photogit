@@ -265,7 +265,10 @@ body.is-busy [aria-disabled="true"], body.is-busy input:disabled { cursor: progr
 /* Each tile is a term and its value in source order — the label names the
    number — while the layout shows the number first, as a readout does. */
 .tally-tile { display: flex; flex-direction: column-reverse; flex: 1 1 90px; min-width: 0; margin: 0; padding: var(--space-3) var(--space-4); border: 1px solid var(--glass-rim); border-radius: var(--radius); background: var(--elevated); box-shadow: 0 1px 0 var(--shine) inset; }
-.tally-tile dd { margin: 0; font-size: var(--text-heading); font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: -.5px; line-height: 1.1; }
+.tally-tile dd { margin: 0; font-size: var(--text-heading); font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: -.5px; line-height: 1.1; transition: transform var(--motion-control) var(--ease-liquid); }
+/* A number that is still settling sits a touch larger, and drops back
+   the moment it lands, so a changing total is visibly in motion. */
+.tally-tile dd.is-counting, .nav-item b.is-counting { transform: scale(1.08); }
 .tally-tile:first-child dd { color: var(--accent); }
 /* New and deleted layers take the colours the rows already give those
    states, but only once the number is not zero: a red nought draws the
