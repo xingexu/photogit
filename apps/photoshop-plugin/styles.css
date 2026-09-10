@@ -557,7 +557,7 @@ sp-menu, sp-menu-item { background: var(--overlay); color: var(--text); }
 .activity-row:not(.activity-scan) > div:first-child { color: var(--text); }
 .activity-summary { display: flex; align-items: flex-start; flex-wrap: wrap; }
 .activity-icon { width: 16px; flex-shrink: 0; color: var(--muted); font-weight: 600; }
-.activity-icon.error { color: var(--error); }
+.activity-icon.error { color: var(--error); animation: photogit-pop var(--motion-nav) var(--ease-liquid) backwards; }
 .activity-time { color: var(--muted); font-size: 11px; margin-right: 10px; white-space: nowrap; }
 .activity-copy { flex: 1 1 150px; min-width: 0; }
 .sync-panel { display: flex; padding: var(--space-3) 0; margin-top: var(--space-3); border-top: 1px solid var(--line); }
