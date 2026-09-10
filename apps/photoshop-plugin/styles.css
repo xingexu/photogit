@@ -977,6 +977,14 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
 .review-card { transition: transform var(--motion-nav) var(--ease-liquid), box-shadow var(--motion-control) var(--ease-liquid); }
 .review-card:hover { transform: translateY(-2px); box-shadow: 0 0 28px -12px var(--glow); }
 
+/* Inspector skeleton · three bars pulse in turn while a version or a
+   comparison loads; the loaded content replaces them. */
+.inspector-skeleton { margin-top: var(--space-5); }
+.inspector-skeleton span { display: block; height: 6px; margin-top: var(--space-3); background: var(--elevated); border-radius: var(--radius-chip); animation: photogit-skeleton 1.4s var(--ease-liquid) infinite alternate; }
+.inspector-skeleton span:nth-child(1) { width: 46%; }
+.inspector-skeleton span:nth-child(2) { width: 78%; animation-delay: .2s; }
+.inspector-skeleton span:nth-child(3) { width: 62%; animation-delay: .4s; }
+
 /* Forced colours · the host replaces every colour with the system palette,
    which removes the fills that carry selection. An outline survives. */
 @media (forced-colors: active) {

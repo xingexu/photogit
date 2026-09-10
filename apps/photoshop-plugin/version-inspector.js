@@ -112,6 +112,13 @@ function render(container, options = {}) {
     append(document, container, "h3", "version-inspector-heading", titles[state] || titles.empty);
     const message = append(document, container, "p", "version-inspector-meta", messages[state] || messages.empty);
     message.setAttribute("role", state === "error" ? "alert" : "status");
+    // While a version loads, three pulsing bars stand where its sections
+    // will be, so a slow helper looks like waiting rather than like nothing.
+    if (state === "loading") {
+      const skeleton = append(document, container, "div", "inspector-skeleton");
+      skeleton.setAttribute("aria-hidden", "true");
+      for (let bar = 0; bar < 3; bar += 1) append(document, skeleton, "span", "");
+    }
     return container;
   }
 
