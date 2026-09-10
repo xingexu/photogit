@@ -132,6 +132,8 @@ body.is-busy [aria-disabled="true"], body.is-busy input:disabled { cursor: progr
 .repo-state { display: flex; align-items: center; flex-shrink: 0; margin-right: var(--space-3); font-size: var(--text-small); color: var(--muted); }
 .repo-state i, .watch-status i { width: 5px; height: 5px; border-radius: 50%; background: currentColor; margin-right: 6px; }
 .repo-state.ok { color: var(--success); }
+/* The dot pops once when the helper comes online. */
+.repo-state.ok i { animation: photogit-pop var(--motion-nav) var(--ease-liquid) backwards; }
 .repo-state.warning { color: var(--warning); }
 /* Helper online, helper offline: the colour crosses rather than cuts, so a
    reconnect reads as recovery rather than as a different control. */
