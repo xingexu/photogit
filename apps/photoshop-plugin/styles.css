@@ -1016,6 +1016,10 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
 .header-action:not(.appearance-toggle) svg { transition: transform var(--motion-control) var(--ease-liquid); }
 .header-action:not(.appearance-toggle):hover svg { transform: scale(1.1); }
 
+/* The helper dot breathes while a reconnect is in flight, and stops
+   with the answer. */
+.repo-state.is-reconnecting i { animation: photogit-breathe 1.2s var(--ease-liquid) infinite alternate; }
+
 /* Forced colours · the host replaces every colour with the system palette,
    which removes the fills that carry selection. An outline survives. */
 @media (forced-colors: active) {
