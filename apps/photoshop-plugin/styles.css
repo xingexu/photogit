@@ -598,7 +598,7 @@ kbd { font-family: var(--mono); font-size: 11px; padding: 1px var(--space); bord
 /* A status line is written, read, and cleared. It fades in over the press
    duration — quick enough that an error is never late, slow enough that a
    success does not blink — and a fresh message replays it. */
-#result:not(:empty) { animation: photogit-fade-in var(--motion-press) var(--ease-liquid) backwards; }
+#result:not(:empty) { animation: photogit-sheet-in var(--motion-control) var(--ease-liquid) backwards; }
 #result.is-leaving { animation: photogit-surface-out var(--motion-press) var(--ease-liquid) both; }
 /* Entrances fill backwards, not both: their end frame is the element's own
    resting state, and a forwards fill would keep the finished animation
