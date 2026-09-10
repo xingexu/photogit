@@ -966,7 +966,7 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
 }
 @keyframes photogit-surface-out {
   from { opacity: 1; }
-  to { opacity: .01; }
+  to { opacity: .01; transform: scale(.985); }
 }
 .tool-sheet:not([hidden]), .tools-menu:not([hidden]) { animation: photogit-sheet-in var(--motion-nav) var(--ease-liquid) backwards; }
 .tool-sheet.is-closing, .tools-menu.is-closing { animation: photogit-surface-out var(--motion-press) var(--ease-liquid) both; pointer-events: none; }
