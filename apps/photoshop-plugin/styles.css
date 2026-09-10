@@ -334,7 +334,7 @@ body.is-busy [aria-disabled="true"], body.is-busy input:disabled { cursor: progr
 /* Busy feedback. One CSS track serves both hosts: the browser preview has no
    <sp-progressbar>, and a host that cannot animate still shows the bar. */
 .progress-track { position: relative; width: 100%; height: 3px; margin-top: var(--space-2); overflow: hidden; border-radius: 2px; background: var(--line); }
-.progress-track span { position: absolute; top: 0; bottom: 0; left: 0; width: 40%; border-radius: inherit; background: var(--accent); animation: photogit-progress 1.4s var(--ease-liquid) infinite; }
+.progress-track span { position: absolute; top: 0; bottom: 0; left: 0; width: 40%; border-radius: inherit; background: var(--accent); box-shadow: 0 0 10px var(--accent); animation: photogit-progress 1.4s var(--ease-liquid) infinite; }
 @keyframes photogit-progress {
   from { transform: translateX(-100%); }
   to { transform: translateX(250%); }
