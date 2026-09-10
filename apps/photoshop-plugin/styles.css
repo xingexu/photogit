@@ -598,7 +598,8 @@ kbd { font-family: var(--mono); font-size: 11px; padding: 1px var(--space); bord
    header's own controls. */
 .tools-menu.from-header { top: 68px; bottom: auto; }
 .tool-item { display: flex; align-items: center; min-height: 36px; padding: var(--space-2) var(--space-3); border-radius: var(--radius-chip); }
-.tool-item svg { margin-right: var(--space-2); color: var(--muted); }
+.tool-item svg { margin-right: var(--space-2); color: var(--muted); transition: transform var(--motion-control) var(--ease-liquid), color var(--motion-control) var(--ease-liquid); }
+.tool-item:hover svg { transform: translateX(2px); }
 .tool-item:hover svg, .tool-item:focus svg { color: inherit; }
 .surface-backdrop { position: fixed; z-index: 20; top: 0; left: 0; width: 100%; height: 100%; background: var(--backdrop); }
 .detail-content { margin: var(--space-4) 0; }
