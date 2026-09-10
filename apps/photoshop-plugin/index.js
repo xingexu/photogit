@@ -719,6 +719,9 @@ async function saveVersion() {
     log(`Saved ${result.shortId}: ${message}`);
     show(`Saved version ${result.shortId}.`, false);
     await Promise.all([loadStatus(), loadBranches(), loadHistory(), loadReviews()]);
+    // The version just saved heads History; it glows once as the section
+    // opens so the eye lands on it.
+    document.querySelector("#history .history-row")?.classList.add("is-new");
     selectTab("history");
   });
 }

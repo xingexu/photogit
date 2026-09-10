@@ -991,6 +991,13 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
 @keyframes photogit-shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
 .capture-panel.is-busy #save-version { background-image: linear-gradient(110deg, rgba(255,255,255,0) 30%, rgba(255,255,255,.18) 50%, rgba(255,255,255,0) 70%); background-size: 200% 100%; animation: photogit-shimmer 1.4s linear infinite; }
 
+/* The version just saved glows once when History opens on it. */
+@keyframes photogit-glow-once {
+  from { background-color: var(--selected); box-shadow: 0 0 26px -10px var(--glow); }
+  to { background-color: transparent; box-shadow: none; }
+}
+.history-row.is-new { animation: photogit-glow-once 900ms var(--ease-liquid) backwards; }
+
 /* Forced colours · the host replaces every colour with the system palette,
    which removes the fills that carry selection. An outline survives. */
 @media (forced-colors: active) {
