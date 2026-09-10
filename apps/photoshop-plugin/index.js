@@ -1544,6 +1544,9 @@ function openCommandPalette(initial = "") {
       } else void executeCommand(command.id);
     }));
     if (!matches.length) results.appendChild(noMatches(document, "Nothing will be run."));
+    // The rows step in on the shared stagger once they are all rendered.
+    const reveal = globalThis.PhotoGitReveal;
+    if (reveal && typeof reveal.stagger === "function") reveal.stagger(results.querySelectorAll(".command-row"));
   };
   field.addEventListener("input", render);
   field.addEventListener("keydown", event => {
