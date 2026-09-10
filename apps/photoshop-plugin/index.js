@@ -1437,6 +1437,7 @@ function renderChanges(changes, { baselineMissing = false, changeCount = changes
     : changeCount
       ? `${changeCount} unsaved ${changeCount === 1 ? "edit" : "edits"}`
       : warnings.length ? "No layer changes · Review scan limits" : "No detected changes";
+  restartAnimation(document.getElementById("last-scan"));
   document.getElementById("last-scan").textContent = `Scanned ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} · Updates automatically${warnings.length ? `\n${warnings.join("\n")}` : ""}`;
   empty.hidden = changes.length > 0;
   renderChangeTally(changes);
