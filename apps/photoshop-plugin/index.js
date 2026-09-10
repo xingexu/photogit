@@ -1128,6 +1128,9 @@ function compareBranch(branch) {
       inspector.setAttribute("aria-busy", "true");
       inspector.querySelector("h3").textContent = "Comparing branches…";
       inspector.querySelector("p").textContent = "Checking incoming changes and merge safeguards.";
+      const skeleton = document.createElement("div"); skeleton.className = "inspector-skeleton"; skeleton.setAttribute("aria-hidden", "true");
+      for (let bar = 0; bar < 3; bar += 1) skeleton.appendChild(document.createElement("span"));
+      inspector.appendChild(skeleton);
     }
     try {
       const result = await callHelper("compareBranches", { branch });
