@@ -271,7 +271,7 @@ body.is-busy [aria-disabled="true"], body.is-busy input:disabled { cursor: progr
 /* The headline is the scan's one-line verdict. A new verdict fades in over
    the old rather than swapping words in place. */
 .scan-copy h2 { font-size: var(--text-subhead); font-weight: 600; letter-spacing: -.2px; animation: photogit-fade-in var(--motion-control) var(--ease-liquid) backwards; }
-.scan-detail { color: var(--muted); font-size: var(--text-small); margin-top: var(--space); white-space: pre-line; }
+.scan-detail { color: var(--muted); font-size: var(--text-small); margin-top: var(--space); white-space: pre-line; animation: photogit-fade-in var(--motion-control) var(--ease-liquid) backwards; }
 .watch-status { display: flex; align-items: center; color: var(--muted); font-size: var(--text-small); margin-top: var(--space); }
 .change-tally { display: flex; flex-wrap: wrap; width: 100%; gap: var(--space-3); margin: var(--space-4) 0 2px; }
 /* Each tile is a term and its value in source order — the label names the
