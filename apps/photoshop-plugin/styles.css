@@ -886,7 +886,11 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
    row holds the same offset and keeps a solid accent edge, so the selection
    survives when a different row is under the pointer. */
 .list-row[role="button"]:hover { transform: translateX(3px); }
-.list-row.selected { background: var(--selected); transform: translateX(3px); box-shadow: inset 3px 0 0 var(--accent), 0 0 26px -12px var(--glow); }
+.list-row.selected { background: var(--selected); transform: translateX(3px); box-shadow: inset 3px 0 0 var(--accent), 0 0 26px -12px var(--glow); animation: photogit-select var(--motion-nav) var(--ease-liquid) backwards; }
+@keyframes photogit-select {
+  from { background-color: var(--hover); }
+  to { background-color: var(--selected); }
+}
 
 /* Branch rows are cards in a grid. Lifting one on hover separates it from the
    grid without changing any cell's size. */
