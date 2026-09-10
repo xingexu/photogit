@@ -1042,6 +1042,10 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
    circular controls take. */
 .appearance-toggle:hover { box-shadow: 0 0 18px -6px var(--glow); }
 
+/* A sheet's action arrives a beat after its content, so the question is
+   read before the answer is offered. */
+#detail-action:not([hidden]) { animation: photogit-reveal var(--motion-nav) var(--ease-liquid) 120ms backwards; }
+
 /* Forced colours · the host replaces every colour with the system palette,
    which removes the fills that carry selection. An outline survives. */
 @media (forced-colors: active) {
