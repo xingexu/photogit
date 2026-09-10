@@ -1724,6 +1724,8 @@ function setWatchStatus(label, state = "ready") {
   const status = document.getElementById("watch-status");
   if (!status) return;
   status.className = `watch-status ${state}`;
+  // The Scan now icon turns while layers are being read; the state ends it.
+  document.body.classList.toggle("is-scanning", state === "scanning");
   const text = status.querySelector("span");
   if (text) text.textContent = safeInlineText(label, 100) || "Watching Photoshop";
 }

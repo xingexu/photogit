@@ -949,6 +949,11 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
 .surface-backdrop { opacity: 0; transition: opacity var(--motion-press) var(--ease-liquid); }
 .surface-backdrop.is-open { opacity: 1; }
 
+/* Scan now turns its arrow while a scan is reading layers. Bounded by the
+   scanning state; reduced motion removes it. */
+@keyframes photogit-spin { to { transform: rotate(360deg); } }
+.is-scanning #rescan svg { animation: photogit-spin 1s linear infinite; }
+
 /* Forced colours · the host replaces every colour with the system palette,
    which removes the fills that carry selection. An outline survives. */
 @media (forced-colors: active) {
