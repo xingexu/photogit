@@ -1046,6 +1046,9 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
    read before the answer is offered. */
 #detail-action:not([hidden]) { animation: photogit-reveal var(--motion-nav) var(--ease-liquid) 120ms backwards; }
 
+/* An empty state's explanation follows its title in by a beat. */
+.empty-state p { animation: photogit-reveal var(--motion-nav) var(--ease-liquid) 80ms backwards; }
+
 /* Forced colours · the host replaces every colour with the system palette,
    which removes the fills that carry selection. An outline survives. */
 @media (forced-colors: active) {
