@@ -1023,6 +1023,12 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
 /* The footer action whose operation is running turns its icon. */
 .footer-action.is-working svg { animation: photogit-spin 1s linear infinite; }
 
+/* A card with a field in focus glows a little stronger, so the place
+   being typed into is lit as well as the field. */
+.capture-panel, .branch-create-card { transition: box-shadow var(--motion-nav) var(--ease-liquid); }
+.capture-panel:focus-within { box-shadow: var(--glass-glow), 0 0 44px -10px var(--glow); }
+.branch-create-card:focus-within { box-shadow: 0 0 28px -10px var(--glow); }
+
 /* Forced colours · the host replaces every colour with the system palette,
    which removes the fills that carry selection. An outline survives. */
 @media (forced-colors: active) {
