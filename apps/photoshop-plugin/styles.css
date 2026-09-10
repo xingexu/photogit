@@ -825,6 +825,7 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
   /* Hover displacements are movement too: the row's slide, the preview's
      zoom and the primary button's lift all stay put. */
   .list-row[role="button"]:hover, .list-row.selected, .preview-figure:hover img, .button-primary[role="button"]:hover { transform: none !important; }
+  .branch-row:hover, .review-card:hover, .sheet-close:hover svg, .repo-branch:hover .branch-chevron, #jump-save:hover span, .preset[role="button"]:hover, .tally-tile dd.is-counting, .nav-item b.is-counting { transform: none !important; }
 }
 @media (prefers-contrast: more) {
   /* Separators and rims are deliberately quieter than the interactive
