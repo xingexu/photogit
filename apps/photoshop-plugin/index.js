@@ -347,7 +347,7 @@ async function refreshWorkspace(announceErrors = false, readTimeoutMs = HELPER_T
   const generation = ++workspaceGeneration;
   const current = () => generation === workspaceGeneration;
   syncDocumentLabel();
-  document.getElementById("project-status").textContent = projectFolder ? safeInlineText(projectFolder.name, 1_024) || "Unnamed project" : "No project selected";
+  setTextWithFlash(document.getElementById("project-status"), projectFolder ? safeInlineText(projectFolder.name, 1_024) || "Unnamed project" : "No project selected");
   const ready = Boolean(projectFolder && helperToken);
   document.getElementById("onboarding").hidden = ready;
   document.getElementById("workspace").hidden = !ready;
