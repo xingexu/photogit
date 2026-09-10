@@ -379,7 +379,8 @@ input, sp-dropdown, sp-menu, sp-menu-item, select { color: var(--text); font-fam
 input { min-width: 0; width: 100%; height: 34px; padding: 7px var(--space-3); margin: 0; border: 0; border-radius: 17px; background: transparent; appearance: none; }
 input::placeholder { color: var(--muted); opacity: 1; font-family: var(--font-ui); font-size: var(--text-body); font-style: normal; }
 input:disabled { color: var(--disabled); }
-.search-field svg { width: 16px; height: 16px; margin-left: var(--space-3); color: var(--muted); }
+.search-field svg { width: 16px; height: 16px; margin-left: var(--space-3); color: var(--muted); transition: color var(--motion-control) var(--ease-liquid); }
+.search-field:focus-within svg { color: var(--accent); }
 .search-glyph { display: flex; }
 .search-field { border-color: var(--line); }
 sp-dropdown, select { width: 100%; min-height: var(--control-tall); margin: var(--space) 0; padding: var(--space) var(--space-2); background: var(--input); border: 1px solid var(--border); border-radius: var(--radius); }
