@@ -1510,6 +1510,8 @@ function renderCommandDocs() {
   const matches = commandDirectory.search(document.getElementById("docs-search").value || "");
   for (const command of matches) list.appendChild(commandRow(command, () => openCommandPalette(command.id + " ")));
   if (!matches.length) list.appendChild(noMatches(document, "Try save, branch, or history."));
+  const reveal = globalThis.PhotoGitReveal;
+  if (reveal && typeof reveal.stagger === "function") reveal.stagger(list.querySelectorAll(".command-row"));
 }
 
 function openCommandPalette(initial = "") {
