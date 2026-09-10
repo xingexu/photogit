@@ -41,17 +41,19 @@
   --error: #a12e29; --error-surface: #fceceb; --backdrop: rgba(21,29,42,.24);
   --rim: #c5cbd3; --shine: rgba(255,255,255,.65); --shadow: rgba(27,35,48,.11); --press-veil: rgba(0,0,0,.12);
   --glow: rgba(45,96,181,.32); --focus-halo: rgba(36,91,182,.22);
-  --glass: rgba(255,255,255,.86); --glass-rim: rgba(90,120,180,.34); --glass-top: rgba(255,255,255,1); --nested: #ffffff;
-  --depth-sheen: rgba(255,255,255,.55);
-  --bubble-1: rgba(90,140,255,.30); --bubble-2: rgba(170,130,255,.24); --bubble-3: rgba(80,200,190,.22);
+  /* Light glass: a translucent white over the aurora, a white inner edge
+     and a bluish hairline, so the colour behind a card shows through it. */
+  --glass: rgba(255,255,255,.56); --glass-rim: rgba(90,120,180,.34); --glass-top: rgba(255,255,255,.95); --nested: #ffffff;
+  --depth-sheen: rgba(255,255,255,.7);
+  --bubble-1: rgba(90,140,255,.55); --bubble-2: rgba(175,130,255,.48); --bubble-3: rgba(70,200,185,.42);
   --glass-glow:
     0 1px 0 rgba(255,255,255,1) inset,
-    0 0 0 1px rgba(255,255,255,.9),
-    0 0 60px -8px rgba(140,175,235,.28) inset,
-    0 0 24px -2px rgba(120,160,225,.26),
+    0 0 0 1px rgba(255,255,255,.75),
+    0 0 60px -8px rgba(255,255,255,.7) inset,
+    0 0 24px -2px rgba(120,160,225,.22),
     0 0 56px -12px rgba(120,160,225,.20),
     0 0 44px -12px rgba(120,160,225,.30),
-    0 24px 50px -26px rgba(27,35,48,.45);
+    0 24px 50px -26px rgba(27,35,48,.35);
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; width: 100%; height: 100%; }

@@ -48,9 +48,10 @@ These concepts define composition, not new capabilities. Existing project pairin
 | `--backdrop` | `rgba(0,0,0,.5)` | `rgba(21,29,42,.24)` |
 | `--press-veil` | `rgba(0,0,0,.12)` | `rgba(0,0,0,.12)` |
 | `--glow` / `--focus-halo` | `rgba(150,190,255,.5)` / `rgba(154,198,255,.22)` | `rgba(45,96,181,.32)` / `rgba(36,91,182,.22)` |
-| `--glass` / `--glass-rim` / `--glass-top` | `rgba(50,55,63,.70)` / `rgba(255,255,255,.30)` / `rgba(255,255,255,.12)` | `rgba(255,255,255,.86)` / `rgba(90,120,180,.28)` / `rgba(255,255,255,1)` |
+| `--glass` / `--glass-rim` / `--glass-top` | `rgba(50,55,63,.70)` / `rgba(255,255,255,.30)` / `rgba(255,255,255,.12)` | `rgba(255,255,255,.56)` / `rgba(90,120,180,.34)` / `rgba(255,255,255,.95)` |
 | `--nested` | `#31353c` | `#ffffff` |
-| `--depth-sheen` | `rgba(255,255,255,.16)` | `rgba(255,255,255,.55)` |
+| `--depth-sheen` | `rgba(255,255,255,.16)` | `rgba(255,255,255,.7)` |
+| `--bubble-1` / `--bubble-2` / `--bubble-3` | `rgba(84,132,255,.36)` / `rgba(156,112,255,.30)` / `rgba(72,202,190,.24)` | `rgba(90,140,255,.55)` / `rgba(175,130,255,.48)` / `rgba(70,200,185,.42)` |
 
 - UI family: `-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`. Inputs, placeholders and Spectrum controls request the same family and upright style. Photoshop may retain host-owned italic placeholders; native inspection confirmed this fallback without replacing the actual input with decorative text.
 - `--text-body: 13px`, `--text-small: 12px`, `--text-title: 18px`. Body line-height is 1.5; heading weight 600. Compact section headings use 15–16px; count facts 17px. Only identifiers, syntax, keycaps and minor badges use 11px. Minimum-width navigation also uses 11px to retain every label.
