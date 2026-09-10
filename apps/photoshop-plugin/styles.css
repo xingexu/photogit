@@ -157,7 +157,7 @@ body.is-busy [aria-disabled="true"], body.is-busy input:disabled { cursor: progr
 /* The active section icon takes the accent alongside its label, so the tab
    reads as selected from the glyph alone at the narrowest widths where the
    label is dropped. */
-.nav-item.active svg { color: var(--accent); transform: scale(1.06); }
+.nav-item.active svg { color: var(--accent); transform: scale(1.06); animation: photogit-pop var(--motion-control) var(--ease-liquid) backwards; }
 .nav-item b[data-empty="true"] { display: none; }
 /* A pill that has just gone from nothing to a number pops in slightly over
    size and settles, which is what draws the eye to a count that changed
