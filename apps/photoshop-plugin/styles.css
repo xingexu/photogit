@@ -1038,6 +1038,10 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
    something to say beyond the count. */
 #message-count[aria-live="polite"] { animation: photogit-pop-soft var(--motion-control) var(--ease-liquid) backwards; }
 
+/* The theme toggle carries a halo on hover, matching the glow the other
+   circular controls take. */
+.appearance-toggle:hover { box-shadow: 0 0 18px -6px var(--glow); }
+
 /* Forced colours · the host replaces every colour with the system palette,
    which removes the fills that carry selection. An outline survives. */
 @media (forced-colors: active) {
