@@ -1011,6 +1011,11 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
    keystroke that nears the limit is felt at the counter. */
 #message-count[data-limit="near"], #message-count[data-limit="full"] { animation: photogit-pop-soft var(--motion-control) var(--ease-liquid) backwards; }
 
+/* The command and tools actions in the header grow their icon a touch on
+   hover. The theme toggle keeps its own sun-to-moon transform. */
+.header-action:not(.appearance-toggle) svg { transition: transform var(--motion-control) var(--ease-liquid); }
+.header-action:not(.appearance-toggle):hover svg { transform: scale(1.1); }
+
 /* Forced colours · the host replaces every colour with the system palette,
    which removes the fills that carry selection. An outline survives. */
 @media (forced-colors: active) {
