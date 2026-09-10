@@ -173,6 +173,9 @@ body.is-busy [aria-disabled="true"], body.is-busy input:disabled { cursor: progr
 .nav-item.active { background: var(--selected); color: var(--accent); border-color: var(--line); }
 .workspace-content { padding: var(--space-4) var(--space-4) var(--space-2); }
 .view-panel { width: 100%; min-width: 0; }
+/* A selected section rises into place. The display change replays it, so
+   every switch lands the same way; reduced motion removes it. */
+.view-panel:not([hidden]) { animation: photogit-reveal var(--motion-nav) var(--ease-liquid) backwards; }
 .view-heading, .section-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; margin-bottom: var(--space-3); }
 .view-heading h2, .section-heading h2 { margin-right: 8px; }
 .page-description { color: var(--muted); font-size: var(--text-small); margin: -4px 0 var(--space-4); }
