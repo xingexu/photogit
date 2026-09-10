@@ -384,7 +384,7 @@ async function refreshAndScan() {
 async function loadStatus(existingResult) {
   const result = existingResult || await callHelper("status");
   projectStatus = result;
-  document.getElementById("branch-name").textContent = result.branch;
+  setTextWithFlash(document.getElementById("branch-name"), result.branch);
   document.getElementById("branch-name-detail").textContent = result.branch;
   setSyncStatus(result.changeCount ? "Project files changed" : "Project files clean");
   renderDocumentBinding();
@@ -406,7 +406,7 @@ async function loadBranches(existingResult) {
     if (branch.current) { item.selected = true; picker.selectedIndex = index; }
     menu.appendChild(item);
   });
-  document.getElementById("branch-name").textContent = result.current;
+  setTextWithFlash(document.getElementById("branch-name"), result.current);
   document.getElementById("branch-name-detail").textContent = result.current;
   setCount("branches-count", result.branches.length);
   const onSwitch = branch => {
@@ -1906,6 +1906,13 @@ function show(message, error) {
 }
 // Replays an element's CSS animation so a value replacing another reads as
 // a new event. The reflow is one element wide and only runs on a change.
+// Sets a label's text and, when the words actually change, replays its
+// entrance so the new value is seen to arrive.
+function setTextWithFlash(element, text) {
+  if (!element) return;
+  if (element.textContent !== text) restartAnimation(element);
+  element.textContent = text;
+}
 function restartAnimation(element) {
   if (!element) return;
   element.style.animation = "none";
