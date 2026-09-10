@@ -1034,6 +1034,10 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
 .tools-toggle svg, #header-menu svg { transition: transform var(--motion-control) var(--ease-liquid); }
 .tools-toggle[aria-expanded="true"] svg, #header-menu[aria-expanded="true"] svg { transform: rotate(90deg); }
 
+/* The counter pops when it carries a note, which is the one time it has
+   something to say beyond the count. */
+#message-count[aria-live="polite"] { animation: photogit-pop-soft var(--motion-control) var(--ease-liquid) backwards; }
+
 /* Forced colours · the host replaces every colour with the system palette,
    which removes the fills that carry selection. An outline survives. */
 @media (forced-colors: active) {
