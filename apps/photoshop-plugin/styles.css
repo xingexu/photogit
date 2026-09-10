@@ -143,6 +143,9 @@ body.is-busy [aria-disabled="true"], body.is-busy input:disabled { cursor: progr
 .repo-branch { border: 1px solid transparent; border-radius: var(--radius); font-size: var(--text-body); }
 .repo-branch strong { min-width: 0; }
 .branch-chevron { flex-shrink: 0; width: 12px; height: 12px; margin-left: var(--space-2); color: var(--muted); }
+/* The branch and document names fade in when they change, so a switch or
+   a new document is seen to land in the context card. */
+#branch-name, #document-name { animation: photogit-fade-in var(--motion-nav) var(--ease-liquid) backwards; }
 .repo-document { color: var(--text); font-size: var(--text-body); }
 .repo-document span { min-width: 0; overflow-wrap: break-word; }
 .workspace-body, .workspace-content { min-width: 0; }
