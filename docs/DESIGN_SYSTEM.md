@@ -182,7 +182,11 @@ or a value changes. Both use the same four motions and nothing else.
 | reveal | rise 6px, fade in | rows, cards, tally tiles, document facts, inspector sections, activity rows, empty states, unfolded details; staggered through `reveal.js` where there are several |
 | fade-in | fade only | status line, scan verdict, saved preview, filter count, Cancel scan, the workspace and first-run card after startup |
 | sheet-in | rise 10px, fade in | tool sheets, the tools menu, notices |
-| pop / rule-in | scale in and settle | a count pill going from zero; the active section's rule |
+| pop / rule-in | scale in and settle | a count pill going from zero; the active section's rule; the icon of the section that becomes active; the helper dot coming online; a failure mark in the activity feed |
+| pop-soft | scale settle, no fade | a filter chip taking the pressed state; the message counter crossing into its warning tones or carrying a note |
+| select / glow-once | tone settle | a row taking the selection; the version just saved when History opens |
+| spin | continuous turn | Scan now's arrow while a scan reads layers; a footer action's icon while its operation runs |
+| shimmer / skeleton / breathe | bounded loops | Save version while an operation runs; three bars while a version or comparison loads; the helper dot while a reconnect is in flight |
 
 Rules that hold for all of them:
 
@@ -198,8 +202,14 @@ Rules that hold for all of them:
   decorates is rendered and interactive; the contract tests assert the
   callback sees finished rows.
 - **Continuous motion is bounded.** The only looping animations — the busy
-  track, the breathing watch-status dot, the startup skeleton — run while a
-  state is genuinely in progress and stop with it.
+  track, the breathing watch-status and reconnecting helper dots, the
+  startup and inspector skeletons, the Save sheen, the turning Scan now
+  arrow and footer icons — run while a state is genuinely in progress and
+  stop with it.
+- **Hover answers with a small move.** Cards lift two pixels, icons and
+  chips one, chevrons and arrows move two pixels the way they point, the
+  sheet's close glyph and the open tools toggles turn a quarter. Every one
+  is a transform the reduced-motion block holds still.
 - **Reduced motion cuts.** Every animation is removed by the reduced-motion
   block; nothing starts from `opacity: 0` in its own rule, so a host that
   strips animations still shows every element at full opacity.
