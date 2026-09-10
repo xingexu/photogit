@@ -563,7 +563,8 @@ sp-menu, sp-menu-item { background: var(--overlay); color: var(--text); }
 .activity-copy { flex: 1 1 150px; min-width: 0; }
 .sync-panel { display: flex; padding: var(--space-3) 0; margin-top: var(--space-3); border-top: 1px solid var(--line); }
 .footer-action { display: flex; align-items: center; justify-content: center; flex: 1; min-height: 34px; padding: 6px; border-radius: 17px; font-size: var(--text-small); color: var(--muted); }
-.footer-action svg { width: 16px; height: 16px; margin-right: var(--space-2); }
+.footer-action svg { width: 16px; height: 16px; margin-right: var(--space-2); transition: transform var(--motion-control) var(--ease-liquid); }
+.footer-action:hover svg { transform: translateY(-1px); }
 .tools-toggle { flex: 0 0 30px; }
 /* The note sits below both columns, not inside the content column, so the
    rail ends level with the footer bar instead of a line lower. */
