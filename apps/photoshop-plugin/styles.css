@@ -848,6 +848,8 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
    that does nothing. */
 .context-badge { transition: color var(--motion-control) var(--ease-liquid), border-color var(--motion-control) var(--ease-liquid), background-color var(--motion-control) var(--ease-liquid); }
 .repo-branch:hover .context-badge { color: var(--accent); border-color: var(--focus); background: var(--selected); }
+.branch-chevron { transition: transform var(--motion-control) var(--ease-liquid), color var(--motion-control) var(--ease-liquid); }
+.repo-branch:hover .branch-chevron { transform: translateX(2px); color: var(--accent); }
 
 /* Message presets read as chips; on hover they fill rather than just brighten,
    which is the difference between a label and something you can pick. */
