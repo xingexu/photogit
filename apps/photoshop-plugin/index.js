@@ -669,8 +669,12 @@ function connectDocument() {
 async function reconnectHelper() {
   if (busyNow) return show("Wait for the current operation before reconnecting.", false);
   if (!projectFolder) return chooseProject();
+  // The header dot breathes while the reconnect is in flight.
+  const status = document.getElementById("helper-status");
+  status.classList.add("is-reconnecting");
   try { await loadPairing(); await refreshWorkspace(true); if (helperOnline) { show("Helper connected.", false); queueAutomaticScan("reconnected", 100); } }
   catch (error) { show(`${error.message} Run setup for this project, then Reconnect.`, true); }
+  finally { status.classList.remove("is-reconnecting"); }
 }
 
 async function saveVersion() {
