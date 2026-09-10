@@ -1,5 +1,38 @@
 # Changelog
 
+## Motion pass II · feedback at the control
+
+Fifty commits, one motion each, all bounded, all released once
+finished, all held still under reduced motion; see the motion table in
+`docs/DESIGN_SYSTEM.md`.
+
+- Arrivals: a selected section rises into place, a status message
+  rises like a notice, sheets grow slightly as they arrive and shrink
+  as they leave, a sheet's action and an empty state's explanation
+  follow their content by a beat, palette results and directory rows
+  step in, history group headings fade with their rows, the aurora
+  fades up on open, and the branch, document and project names fade in
+  when they change.
+- State changes: the active section's icon pops, a filter chip pops as
+  it is pressed, a number lifts while it settles, a row settles into
+  its selection tone, the version just saved glows once, the helper dot
+  pops when the helper comes online, a failure mark pops in the feed,
+  and the message counter pops as it nears the limit or refuses a
+  suggestion.
+- In progress: Scan now turns its arrow during a scan, the footer
+  action whose operation is running turns its icon, the helper dot
+  breathes during a reconnect, a sheen crosses Save version while a
+  save runs, three bars pulse while a version or comparison loads, and
+  the busy track's bar glows.
+- Hover: branch and review cards lift, tally numbers, suggestion chips,
+  command glyphs and footer icons lift a pixel, the branch chevron and
+  jump arrow move the way they point, the close glyph and the open
+  tools toggles turn a quarter, header icons grow, the magnifier lights
+  with its field, the theme toggle takes a halo, and a card glows while
+  a field in it has focus.
+- The jump link flashes the field it lands in, and every new movement
+  is listed in the reduced-motion block.
+
 ## Apple-style pass · aurora, capsules and glow
 
 Five commits that move the panel toward the platform's own glass, on
