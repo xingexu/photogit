@@ -133,6 +133,9 @@ body.is-busy [aria-disabled="true"], body.is-busy input:disabled { cursor: progr
 .repo-project strong { font-size: var(--text-body); }
 .repo-project > span { min-width: 0; }
 .text-link { display: inline-flex; align-items: center; color: var(--muted); font-size: var(--text-small); padding: 3px 4px; border-radius: var(--radius-chip); text-decoration: underline; text-underline-offset: 2px; }
+/* The jump link's arrow moves the way it points on hover. */
+#jump-save span { display: inline-block; margin-left: 3px; transition: transform var(--motion-control) var(--ease-liquid); }
+#jump-save:hover span { transform: translateY(2px); }
 .repo-state { display: flex; align-items: center; flex-shrink: 0; margin-right: var(--space-3); font-size: var(--text-small); color: var(--muted); }
 .repo-state i, .watch-status i { width: 5px; height: 5px; border-radius: 50%; background: currentColor; margin-right: 6px; }
 .repo-state.ok { color: var(--success); }
