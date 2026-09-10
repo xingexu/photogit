@@ -1029,6 +1029,11 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
 .capture-panel:focus-within { box-shadow: var(--glass-glow), 0 0 44px -10px var(--glow); }
 .branch-create-card:focus-within { box-shadow: 0 0 28px -10px var(--glow); }
 
+/* Both tools toggles turn their dots a quarter while their menu is open,
+   and turn back as it closes. */
+.tools-toggle svg, #header-menu svg { transition: transform var(--motion-control) var(--ease-liquid); }
+.tools-toggle[aria-expanded="true"] svg, #header-menu[aria-expanded="true"] svg { transform: rotate(90deg); }
+
 /* Forced colours · the host replaces every colour with the system palette,
    which removes the fills that carry selection. An outline survives. */
 @media (forced-colors: active) {
