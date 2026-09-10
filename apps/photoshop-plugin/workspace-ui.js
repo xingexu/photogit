@@ -92,6 +92,9 @@ function setup(document, { navigate, openCommands }) {
   message.addEventListener("input", () => updateMessageCount(document));
   activate(document.getElementById("jump-save"), () => {
     message.focus(); message.scrollIntoView?.({ block: "center" });
+    // The field flashes once so the eye finds it after the scroll.
+    const shell = message.closest(".field-shell");
+    if (shell) { shell.classList.remove("is-updated"); void shell.offsetWidth; shell.classList.add("is-updated"); }
   });
   for (const preset of document.querySelectorAll("[data-message-preset]")) {
     activate(preset, () => {
