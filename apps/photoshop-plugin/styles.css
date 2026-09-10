@@ -985,6 +985,12 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
 .inspector-skeleton span:nth-child(2) { width: 78%; animation-delay: .2s; }
 .inspector-skeleton span:nth-child(3) { width: 62%; animation-delay: .4s; }
 
+/* While an operation runs, a sheen crosses the parked Save button so the
+   busy track below it is not the only sign of work. Bounded by the busy
+   state; reduced motion removes it. */
+@keyframes photogit-shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+.capture-panel.is-busy #save-version { background-image: linear-gradient(110deg, rgba(255,255,255,0) 30%, rgba(255,255,255,.18) 50%, rgba(255,255,255,0) 70%); background-size: 200% 100%; animation: photogit-shimmer 1.4s linear infinite; }
+
 /* Forced colours · the host replaces every colour with the system palette,
    which removes the fills that carry selection. An outline survives. */
 @media (forced-colors: active) {
