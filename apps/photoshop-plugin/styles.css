@@ -973,6 +973,10 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
 @keyframes photogit-spin { to { transform: rotate(360deg); } }
 .is-scanning #rescan svg { animation: photogit-spin 1s linear infinite; }
 
+/* Review cards lift on hover like the branch cards beside them. */
+.review-card { transition: transform var(--motion-nav) var(--ease-liquid), box-shadow var(--motion-control) var(--ease-liquid); }
+.review-card:hover { transform: translateY(-2px); box-shadow: 0 0 28px -12px var(--glow); }
+
 /* Forced colours · the host replaces every colour with the system palette,
    which removes the fills that carry selection. An outline survives. */
 @media (forced-colors: active) {
