@@ -1739,7 +1739,7 @@ function syncDocumentLabel() {
   const label = document.getElementById("document-name");
   if (!label) return;
   const doc = app.documents.length ? app.activeDocument : null;
-  label.textContent = doc ? safeInlineText(doc.name, 1_024) || "Untitled document" : "None open";
+  setTextWithFlash(label, doc ? safeInlineText(doc.name, 1_024) || "Untitled document" : "None open");
   label.setAttribute("title", doc ? safeInlineText(doc.name, 1_024) : "No Photoshop document open");
   const nextDocumentId = doc ? String(doc.id) : null;
   if (!documentObservationReady) {
