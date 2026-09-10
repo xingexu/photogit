@@ -999,6 +999,10 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
 }
 .history-row.is-new { animation: photogit-glow-once 900ms var(--ease-liquid) backwards; }
 
+/* The aurora fades up over the first second, so the panel opens onto
+   colour arriving rather than colour already there. */
+.panel-aurora { animation: photogit-fade-in 1.2s var(--ease-liquid) backwards; }
+
 /* Forced colours · the host replaces every colour with the system palette,
    which removes the fills that carry selection. An outline survives. */
 @media (forced-colors: active) {
