@@ -1020,6 +1020,9 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
    with the answer. */
 .repo-state.is-reconnecting i { animation: photogit-breathe 1.2s var(--ease-liquid) infinite alternate; }
 
+/* The footer action whose operation is running turns its icon. */
+.footer-action.is-working svg { animation: photogit-spin 1s linear infinite; }
+
 /* Forced colours · the host replaces every colour with the system palette,
    which removes the fills that carry selection. An outline survives. */
 @media (forced-colors: active) {

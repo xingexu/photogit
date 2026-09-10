@@ -193,6 +193,14 @@ function bind(id, event, handler) {
   }
 }
 
+// Marks a footer action as working for the life of its operation, so its
+// icon turns while the helper answers and stops with the result.
+async function working(id, operation) {
+  const control = document.getElementById(id);
+  control.classList.add("is-working");
+  try { return await operation(); } finally { control.classList.remove("is-working"); }
+}
+
 // Enter or Down from a search field moves into the first row it left
 // showing; the rows answer Enter themselves from there. With no rows the
 // keys do nothing, so Enter never falls through to a form action.
@@ -732,35 +740,35 @@ async function saveVersion() {
 
 async function pull() {
   if (!ensureReady()) return;
-  return run("Getting shared changes…", async () => {
+  return working("pull", () => run("Getting shared changes…", async () => {
     const result = await callHelper("pull");
     if (!await openAfterGit(`Pulled ${result.branch}`)) return;
     log(`Pulled ${result.branch} and opened its saved PSD version.`);
     await refreshWorkspace();
     setSyncStatus("Pulled shared changes");
     show(`Pulled ${result.branch} successfully.`, false);
-  });
+  }));
 }
 
 async function push() {
   if (!ensureReady()) return;
-  return run("Sharing versions…", async () => {
+  return working("push", () => run("Sharing versions…", async () => {
     const result = await callHelper("push");
     log(`Shared branch ${result.branch}.`);
     setSyncStatus("Pushed saved versions");
     await loadReviews();
     show("Changes shared successfully.", false);
-  });
+  }));
 }
 
 async function showProjectStatus() {
   if (!ensureReady()) return;
-  return run("Checking project…", async () => {
+  return working("show-status", () => run("Checking project…", async () => {
     const result = await callHelper("status");
     log(`${result.branch}: ${result.changeCount ? `${result.changeCount} project file change(s)` : "clean"}.`);
     setSyncStatus(result.changeCount ? "Project files changed" : "Project files clean");
     show(result.changeCount ? "Project files have unsaved changes." : "Project is clean.", result.changeCount > 0);
-  });
+  }));
 }
 
 async function createBranch() {
