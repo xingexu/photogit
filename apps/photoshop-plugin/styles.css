@@ -88,6 +88,10 @@ img { max-width: 100%; }
 .app-title > span { display: none; color: var(--muted); font-size: var(--text-small); }
 .header-action, .sheet-close { display: flex; align-items: center; justify-content: center; flex-shrink: 0; width: var(--control); height: var(--control); border: 1px solid transparent; border-radius: 16px; background: transparent; color: var(--muted); }
 .header-action { margin-left: var(--space); }
+/* The close glyph turns a quarter on hover, which is the platform's cue
+   that a control dismisses. */
+.sheet-close svg { transition: transform var(--motion-control) var(--ease-liquid); }
+.sheet-close:hover svg { transform: rotate(90deg); }
 .command-trigger-label { display: none; }
 /* The sun and moon share one slot and hand over on a short fade and quarter
    turn, so the toggle reads as one glyph changing rather than two swapping. */
