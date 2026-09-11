@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>photogit</title>
+  <meta name="description" content="PhotoGit — version control for Photoshop. Click through for setup instructions on GitHub.">
+  <meta name="theme-color" content="#3fa9f5">
+  <link rel="preload" as="image" href="artwork/japanties.png">
+  <style>
+    :root {
+      --ink: #0a0a0a;
+      --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; }
+    body {
+      background: #3fa9f5;
+      color: var(--ink);
+      font-family: var(--font-ui);
+      -webkit-font-smoothing: antialiased;
+      overflow: hidden;
+    }
+
+    /* The whole page is one link: a landing page whose job is to send a
+       visitor on to the project's setup instructions. */
+    .page-link {
+      position: fixed;
+      inset: 0;
+      display: block;
+      text-decoration: none;
+      color: inherit;
+      cursor: pointer;
+    }
+    .page-link:focus-visible { outline: 3px solid var(--ink); outline-offset: -3px; }
+
+    /* Pixel art, rendered pixelated rather than smoothed, filling the frame.
+       object-position keeps the open sky (empty in the source artwork)
+       under the wordmark at every aspect ratio, so the letters never sit
+       over a roof or the pagoda. */
+    .hero {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: 50% 30%;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+
+    /* Lowercase, black, plain system sans-serif — the same understated
+       wordmark treatment as xinge.ca, not the pixel typeface the artwork
+       is drawn in. */
+    .mark {
+      position: absolute;
+      top: 17%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      width: 90%;
+    }
+    .wordmark {
+      display: block;
+      margin: 0;
+      font-size: clamp(40px, 9vw, 88px);
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      line-height: 1;
+      color: var(--ink);
+    }
+    .hint {
+      display: block;
+      margin-top: 10px;
+      font-size: clamp(12px, 1.6vw, 15px);
+      font-weight: 500;
+      color: var(--ink);
+      opacity: 0.72;
+    }
+    .page-link:hover .hint, .page-link:focus-visible .hint { text-decoration: underline; opacity: 0.9; }
+
+    @media (max-height: 380px) {
+      .mark { top: 14%; }
+      .hint { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <a class="page-link" href="https://github.com/xingexu/photogit#quick-start" aria-label="photogit — go to setup instructions on GitHub">
+    <img class="hero"
+         src="artwork/japanties.png"
+         width="1586" height="992"
+         alt="Pixel-art Japanese mountain village in cherry-blossom season: wooden houses with dark tiled roofs and pink blossoming trees line a stone path leading through a red torii gate to a five-storey pagoda, forested hills and a snow-capped peak behind, under an open blue sky."
+         decoding="async" fetchpriority="high">
+    <p class="mark">
+      <span class="wordmark">photogit</span>
+      <span class="hint">setup instructions on GitHub →</span>
+    </p>
+  </a>
+</body>
+</html>
