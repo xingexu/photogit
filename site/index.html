@@ -169,6 +169,12 @@
       .cta { display: none; }
     }
 
+    @media (max-width: 480px) {
+      .cloud-c, .petal-d, .petal-e, .glare { display: none; }
+      .cloud { opacity: 0.6; }
+      .card-glow { width: 70vw; height: 40vw; }
+    }
+
     @media (prefers-reduced-motion: reduce) {
       .glass-card, .glass-card::before, .cta {
         animation: none !important;
