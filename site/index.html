@@ -264,6 +264,17 @@
       0%, 100% { opacity: 0.2; transform: scale(0.7); }
       50% { opacity: 1; transform: scale(1.15); }
     }
+    .glare {
+      position: absolute;
+      top: -10%; right: -8%;
+      width: 40vmax; height: 40vmax;
+      background: radial-gradient(circle, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0) 60%);
+      animation: photogit-glare-pulse 7s ease-in-out infinite;
+    }
+    @keyframes photogit-glare-pulse {
+      0%, 100% { opacity: 0.5; }
+      50% { opacity: 0.85; }
+    }
   </style>
 </head>
 <body>
@@ -283,6 +294,7 @@
       <span class="petal petal-c"></span>
       <span class="petal petal-d"></span>
       <span class="petal petal-e"></span>
+      <span class="glare"></span>
       <!-- fx-end -->
     </div>
     <div class="card-glow" aria-hidden="true"></div>
