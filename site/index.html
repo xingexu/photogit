@@ -198,6 +198,14 @@
     .petal-c { left: 65%; animation-duration: 9.5s; animation-delay: -6s; }
     .petal-d { left: 82%; width: 7px; height: 10px; opacity: 0.6; animation-duration: 16s; animation-delay: -9s; }
     .petal-e { left: 6%; width: 9px; height: 13px; opacity: 0.75; animation-duration: 12.5s; animation-delay: -1s; }
+    /* A soft vignette settles the eye on the centred card rather than
+       the frame edges. */
+    .vignette {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at center, transparent 45%, rgba(3, 10, 24, 0.35) 100%);
+      pointer-events: none;
+    }
   </style>
 </head>
 <body>
@@ -207,6 +215,7 @@
          width="1586" height="992"
          alt="Pixel-art Japanese mountain village in cherry-blossom season: wooden houses with dark tiled roofs and pink blossoming trees line a stone path leading through a red torii gate to a five-storey pagoda, forested hills and a snow-capped peak behind, under an open blue sky."
          decoding="async" fetchpriority="high">
+    <div class="vignette" aria-hidden="true"></div>
     <div class="fx" aria-hidden="true">
       <span class="cloud cloud-a"></span>
       <span class="cloud cloud-b"></span>
