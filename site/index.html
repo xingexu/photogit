@@ -176,11 +176,16 @@
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .glass-card, .glass-card::before, .cta {
+      .glass-card, .glass-card::before, .glass-card::after, .card-glow,
+      .cta, .cta::after, .wordmark, .shimmer,
+      .cloud, .petal, .glare, .scanlines, .sparkle, .fx {
         animation: none !important;
-        transform: translate(-50%, -50%) !important;
-        background-position: 0 0 !important;
+        transition: none !important;
       }
+      .glass-card { transform: translate(-50%, -50%) !important; }
+      .glass-card::before, .shimmer, .scanlines { background-position: 0 0 !important; }
+      .fx { transform: none !important; }
+      .sparkle { opacity: 0.8 !important; transform: none !important; }
     }
     /* Sky effects: clouds and petals drifting behind the card, purely
        decorative, never blocking the click target. */
