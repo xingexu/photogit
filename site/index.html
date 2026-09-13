@@ -512,7 +512,6 @@
         cancelAnimationFrame(frame);
         frame = 0; swarm = [];
         if (paint) paint.clearRect(0, 0, viewWidth, viewHeight);
-        whoosh.pause();
       }
       window.addEventListener('pagehide', stopEffects);
       document.addEventListener('visibilitychange', function () {
