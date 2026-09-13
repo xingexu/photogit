@@ -527,7 +527,6 @@
         var now = performance.now();
         if (now - lastBurst < 700) return;
         lastBurst = now;
-        natureSound();
         if (reducedMotion.matches || !paint) return;
         cancelAnimationFrame(frame);
         var particleCount = window.innerWidth < 600 ? 600 : 1100;
