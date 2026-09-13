@@ -312,6 +312,13 @@
       from { background-position: 0 0; }
       to { background-position: 0 8px; }
     }
+    /* Explicit stacking, so a future addition to any one layer cannot
+       accidentally end up drawn over the card or its click target. */
+    .hero { z-index: 0; }
+    .vignette { z-index: 1; }
+    .fx { z-index: 2; }
+    .card-glow { z-index: 2; }
+    .glass-card { z-index: 3; }
   </style>
 </head>
 <body>
