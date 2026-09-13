@@ -177,6 +177,23 @@
     }
     .cloud-b { top: 22%; left: -160px; width: 150px; height: 68px; opacity: 0.55; animation: photogit-drift 64s linear infinite; animation-delay: -20s; }
     .cloud-c { top: 6%; left: -300px; width: 260px; height: 120px; opacity: 0.7; animation: photogit-drift 80s linear infinite; animation-delay: -50s; }
+    /* Petals echo the cherry blossoms already in the artwork. */
+    .petal {
+      position: absolute;
+      top: -5%;
+      width: 10px;
+      height: 14px;
+      background: linear-gradient(135deg, #ffd3e2, #f6a9c6);
+      border-radius: 70% 0 70% 0;
+      opacity: 0.85;
+      animation: photogit-fall linear infinite;
+    }
+    @keyframes photogit-fall {
+      0%   { transform: translate(0, -10vh) rotate(0deg); }
+      50%  { transform: translate(30px, 55vh) rotate(160deg); }
+      100% { transform: translate(-10px, 120vh) rotate(320deg); }
+    }
+    .petal-a { left: 18%; animation-duration: 11s; }
   </style>
 </head>
 <body>
@@ -190,6 +207,7 @@
       <span class="cloud cloud-a"></span>
       <span class="cloud cloud-b"></span>
       <span class="cloud cloud-c"></span>
+      <span class="petal petal-a"></span>
       <!-- fx-end -->
     </div>
     <div class="glass-card">
