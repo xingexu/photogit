@@ -488,29 +488,6 @@
         if (elapsed < swarmDuration) frame = requestAnimationFrame(drawSwarm);
         else { swarm = []; frame = 0; if (paint) paint.clearRect(0, 0, viewWidth, viewHeight); }
       }
-      // Native PCM playback starts directly in the click/tap/keyboard gesture.
-      // Reuse one player so repeated interactions cannot stack loud sound effects.
-      var whoosh = document.createElement('audio');
-      whoosh.src = 'audio/leaf-whoosh.wav';
-      whoosh.preload = navigator.connection && navigator.connection.saveData ? 'none' : 'auto';
-      whoosh.setAttribute('playsinline', '');
-      document.body.appendChild(whoosh);
-      var soundToggle = document.querySelector('.sound-toggle');
-      soundToggle.hidden = false;
-      var soundMuted = false;
-      try { soundMuted = localStorage.getItem('photogit-sound-muted') === 'true'; } catch (error) {}
-      syncSoundToggle();
-      function syncSoundToggle() {
-        whoosh.muted = soundMuted;
-        soundToggle.setAttribute('aria-pressed', String(soundMuted));
-        soundToggle.textContent = soundMuted ? 'Enable sound' : 'Mute sound';
-      }
-      soundToggle.addEventListener('click', function () {
-        soundMuted = !soundMuted;
-        if (soundMuted) whoosh.pause();
-        syncSoundToggle();
-        try { localStorage.setItem('photogit-sound-muted', String(soundMuted)); } catch (error) {}
-      });
       function releaseLeaves() {
         var now = performance.now();
         if (now - lastBurst < 700) return;
