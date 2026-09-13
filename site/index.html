@@ -4,20 +4,26 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>photogit</title>
-  <meta name="description" content="PhotoGit — version control for Photoshop. Click through for setup instructions on GitHub.">
+  <meta name="description" content="PhotoGit — version control for Photoshop. Try it on GitHub.">
   <meta name="theme-color" content="#3fa9f5">
   <link rel="preload" as="image" href="artwork/japanties.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&display=swap">
   <style>
     :root {
-      --ink: #0a0a0a;
-      --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --font-pixel: "Silkscreen", "Courier New", ui-monospace, monospace;
+      --glass-top: rgba(255, 255, 255, 0.22);
+      --glass-fill: rgba(10, 16, 30, 0.40);
+      --glass-rim: rgba(255, 255, 255, 0.38);
+      --glow: rgba(255, 255, 255, 0.4);
     }
     * { box-sizing: border-box; }
     html, body { margin: 0; height: 100%; }
     body {
       background: #3fa9f5;
-      color: var(--ink);
-      font-family: var(--font-ui);
+      color: #fff;
+      font-family: var(--font-pixel);
       -webkit-font-smoothing: antialiased;
       overflow: hidden;
     }
@@ -32,12 +38,9 @@
       color: inherit;
       cursor: pointer;
     }
-    .page-link:focus-visible { outline: 3px solid var(--ink); outline-offset: -3px; }
+    .page-link:focus-visible .glass-card { outline: 3px solid #fff; outline-offset: 4px; }
 
-    /* Pixel art, rendered pixelated rather than smoothed, filling the frame.
-       object-position keeps the open sky (empty in the source artwork)
-       under the wordmark at every aspect ratio, so the letters never sit
-       over a roof or the pagoda. */
+    /* Pixel art, rendered pixelated rather than smoothed, filling the frame. */
     .hero {
       position: absolute;
       inset: 0;
@@ -51,53 +54,127 @@
       -webkit-user-drag: none;
     }
 
-    /* Lowercase, black, plain system sans-serif — the same understated
-       wordmark treatment as xinge.ca, not the pixel typeface the artwork
-       is drawn in. */
-    .mark {
+    /* Liquid glass · a dark, translucent card floats dead-centre over the
+       artwork — a bright inset top edge, a hairline rim and a soft glow,
+       the same recipe the PhotoGit panel itself uses for its cards. Blur is
+       layered on only where the host supports it; without it, the fill
+       alone still reads as a distinct panel over the photo. */
+    .glass-card {
       position: absolute;
-      top: 17%;
+      top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      text-align: center;
-      width: 90%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      padding: clamp(28px, 5vw, 48px) clamp(32px, 7vw, 72px);
+      border-radius: 28px;
+      border: 1px solid var(--glass-rim);
+      background:
+        linear-gradient(180deg, var(--glass-top), rgba(255, 255, 255, 0) 55%),
+        var(--glass-fill);
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.35) inset,
+        0 0 0 1px rgba(255, 255, 255, 0.08),
+        0 0 70px -10px var(--glow),
+        0 28px 60px -24px rgba(3, 8, 20, 0.6);
+      overflow: hidden;
+      animation: photogit-float 6s ease-in-out infinite;
     }
+    @supports (backdrop-filter: blur(2px)) or (-webkit-backdrop-filter: blur(2px)) {
+      .glass-card { backdrop-filter: blur(20px) saturate(160%); -webkit-backdrop-filter: blur(20px) saturate(160%); }
+    }
+    @supports not ((backdrop-filter: blur(2px)) or (-webkit-backdrop-filter: blur(2px))) {
+      .glass-card { --glass-fill: rgba(8, 13, 26, 0.72); }
+    }
+    /* A soft band of light drifts across the glass, the liquid part of
+       "liquid glass". Purely decorative: it sits behind the text and
+       never affects layout or the click target. */
+    .glass-card::before {
+      content: "";
+      position: absolute;
+      inset: -40% -20%;
+      background: linear-gradient(115deg, transparent 30%, rgba(255, 255, 255, 0.4) 48%, transparent 66%);
+      background-size: 220% 220%;
+      animation: photogit-sheen 8s linear infinite;
+      pointer-events: none;
+    }
+
+    /* Pixel-art wordmark: the same blocky pixel typeface the scene itself
+       is drawn in, in white with a soft misty glow rather than the flat
+       black of a plain wordmark. */
     .wordmark {
+      position: relative;
       display: block;
       margin: 0;
-      font-size: clamp(40px, 9vw, 88px);
-      font-weight: 600;
-      letter-spacing: -0.01em;
+      font-family: var(--font-pixel);
+      font-weight: 700;
+      font-size: clamp(32px, 7vw, 64px);
+      letter-spacing: 0.04em;
       line-height: 1;
-      color: var(--ink);
+      color: #fff;
+      text-shadow: 0 0 10px rgba(255, 255, 255, 0.75), 0 0 26px rgba(255, 255, 255, 0.4), 0 0 48px rgba(255, 255, 255, 0.22);
     }
-    .hint {
-      display: block;
-      margin-top: 10px;
-      font-size: clamp(12px, 1.6vw, 15px);
-      font-weight: 500;
-      color: var(--ink);
-      opacity: 0.72;
-    }
-    .page-link:hover .hint, .page-link:focus-visible .hint { text-decoration: underline; opacity: 0.9; }
 
-    @media (max-height: 380px) {
-      .mark { top: 14%; }
-      .hint { display: none; }
+    /* The call to action reads as a small chip inside the same glass, so
+       it is legible as the one thing to do here. */
+    .cta {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      padding: 8px 22px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      background: rgba(255, 255, 255, 0.14);
+      font-family: var(--font-pixel);
+      font-weight: 400;
+      font-size: clamp(13px, 2vw, 18px);
+      letter-spacing: 0.03em;
+      color: #fff;
+      text-shadow: 0 0 8px rgba(255, 255, 255, 0.7), 0 0 20px rgba(255, 255, 255, 0.35);
+      animation: photogit-pulse 3.2s ease-in-out infinite;
+    }
+    .page-link:hover .cta, .page-link:focus-visible .cta { background: rgba(255, 255, 255, 0.24); }
+
+    @keyframes photogit-float {
+      0%, 100% { transform: translate(-50%, -50%) translateY(0); }
+      50% { transform: translate(-50%, -50%) translateY(-10px); }
+    }
+    @keyframes photogit-sheen {
+      from { background-position: 200% 0%; }
+      to { background-position: -100% 0%; }
+    }
+    @keyframes photogit-pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.3); }
+      50% { box-shadow: 0 0 22px 4px rgba(255, 255, 255, 0.28); }
+    }
+
+    @media (max-height: 420px) {
+      .glass-card { padding: 18px 28px; gap: 8px; }
+      .cta { display: none; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .glass-card, .glass-card::before, .cta {
+        animation: none !important;
+        transform: translate(-50%, -50%) !important;
+        background-position: 0 0 !important;
+      }
     }
   </style>
 </head>
 <body>
-  <a class="page-link" href="https://github.com/xingexu/photogit#quick-start" aria-label="photogit — go to setup instructions on GitHub">
+  <a class="page-link" href="https://github.com/xingexu/photogit#quick-start" aria-label="photogit — try it on GitHub">
     <img class="hero"
          src="artwork/japanties.png"
          width="1586" height="992"
          alt="Pixel-art Japanese mountain village in cherry-blossom season: wooden houses with dark tiled roofs and pink blossoming trees line a stone path leading through a red torii gate to a five-storey pagoda, forested hills and a snow-capped peak behind, under an open blue sky."
          decoding="async" fetchpriority="high">
-    <p class="mark">
+    <div class="glass-card">
       <span class="wordmark">photogit</span>
-      <span class="hint">setup instructions on GitHub →</span>
-    </p>
+      <span class="cta">try it!</span>
+    </div>
   </a>
 </body>
 </html>
