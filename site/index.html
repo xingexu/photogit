@@ -107,6 +107,7 @@
     .wordmark {
       position: relative;
       display: block;
+      overflow: hidden;
       margin: 0;
       font-family: var(--font-pixel);
       font-weight: 700;
@@ -208,6 +209,24 @@
       background: radial-gradient(ellipse at center, transparent 45%, rgba(3, 10, 24, 0.35) 100%);
       pointer-events: none;
     }
+    /* A light band sweeps over the wordmark's own box (not clipped to
+       the glyphs themselves — background-clip: text combined with an
+       animated gradient rendered solid black in testing, a real engine
+       quirk, not just a style choice) and screens onto the letters
+       beneath, which reads just as well as a moving highlight. */
+    .shimmer {
+      position: absolute;
+      inset: -20% -30%;
+      background: linear-gradient(100deg, transparent 40%, rgba(255, 255, 255, 0.8) 50%, transparent 60%);
+      background-size: 250% 100%;
+      mix-blend-mode: screen;
+      animation: photogit-shimmer 3.6s ease-in-out infinite;
+      pointer-events: none;
+    }
+    @keyframes photogit-shimmer {
+      0% { background-position: 200% 0; }
+      60%, 100% { background-position: -60% 0; }
+    }
   </style>
 </head>
 <body>
@@ -230,7 +249,7 @@
       <!-- fx-end -->
     </div>
     <div class="glass-card">
-      <span class="wordmark">photogit</span>
+      <span class="wordmark">photogit<i class="shimmer" aria-hidden="true"></i></span>
       <span class="cta">try it!</span>
     </div>
   </a>
