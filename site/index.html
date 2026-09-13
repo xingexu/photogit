@@ -232,6 +232,24 @@
       from { opacity: 0; filter: blur(6px); }
       to { opacity: 1; filter: blur(0); }
     }
+    /* An ambient glow behind the card, as a sibling rather than a
+       pseudo-element, so it can bleed past the card's own clipped edge. */
+    .card-glow {
+      position: absolute;
+      top: 50%; left: 50%;
+      width: min(560px, 80vw);
+      height: min(280px, 50vw);
+      transform: translate(-50%, -50%);
+      background: radial-gradient(circle, var(--glow), rgba(255, 255, 255, 0) 70%);
+      filter: blur(30px);
+      opacity: 0.35;
+      pointer-events: none;
+      animation: photogit-glow-pulse 5s ease-in-out infinite;
+    }
+    @keyframes photogit-glow-pulse {
+      0%, 100% { opacity: 0.25; }
+      50% { opacity: 0.5; }
+    }
   </style>
 </head>
 <body>
@@ -253,6 +271,7 @@
       <span class="petal petal-e"></span>
       <!-- fx-end -->
     </div>
+    <div class="card-glow" aria-hidden="true"></div>
     <div class="glass-card">
       <span class="wordmark">photogit<i class="shimmer" aria-hidden="true"></i></span>
       <span class="cta">try it!</span>
