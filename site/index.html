@@ -178,7 +178,11 @@
     }
     /* Sky effects: clouds and petals drifting behind the card, purely
        decorative, never blocking the click target. */
-    .fx { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+    .fx {
+      position: absolute; inset: 0; overflow: hidden; pointer-events: none;
+      transform: translate(calc(var(--par-x, 0) * 1px), calc(var(--par-y, 0) * 1px));
+      transition: transform 0.35s ease-out;
+    }
     .cloud {
       position: absolute;
       background: rgba(255, 255, 255, 0.85);
@@ -328,5 +332,18 @@
       <span class="cta">try it!</span>
     </div>
   </a>
+  <script>
+    (function () {
+      if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      var fx = document.querySelector('.fx');
+      if (!fx) return;
+      window.addEventListener('pointermove', function (event) {
+        var x = (event.clientX / window.innerWidth - 0.5) * 2;
+        var y = (event.clientY / window.innerHeight - 0.5) * 2;
+        fx.style.setProperty('--par-x', String(-x * 14));
+        fx.style.setProperty('--par-y', String(-y * 10));
+      }, { passive: true });
+    })();
+  </script>
 </body>
 </html>
