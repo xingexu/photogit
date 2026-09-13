@@ -80,7 +80,7 @@
         0 0 70px -10px var(--glow),
         0 28px 60px -24px rgba(3, 8, 20, 0.6);
       overflow: hidden;
-      animation: photogit-float 6s ease-in-out infinite;
+      animation: photogit-enter 0.8s ease-out both, photogit-float 6s ease-in-out infinite;
     }
     @supports (backdrop-filter: blur(2px)) or (-webkit-backdrop-filter: blur(2px)) {
       .glass-card { backdrop-filter: blur(20px) saturate(160%); -webkit-backdrop-filter: blur(20px) saturate(160%); }
@@ -226,6 +226,10 @@
     @keyframes photogit-shimmer {
       0% { background-position: 200% 0; }
       60%, 100% { background-position: -60% 0; }
+    }
+    @keyframes photogit-enter {
+      from { opacity: 0; filter: blur(6px); }
+      to { opacity: 1; filter: blur(0); }
     }
   </style>
 </head>
