@@ -162,6 +162,19 @@
         background-position: 0 0 !important;
       }
     }
+    /* Sky effects: clouds and petals drifting behind the card, purely
+       decorative, never blocking the click target. */
+    .fx { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+    .cloud {
+      position: absolute;
+      background: rgba(255, 255, 255, 0.85);
+      clip-path: polygon(10% 60%, 10% 40%, 20% 40%, 20% 20%, 40% 20%, 40% 10%, 60% 10%, 60% 20%, 80% 20%, 80% 40%, 90% 40%, 90% 60%, 80% 60%, 80% 70%, 20% 70%, 20% 60%);
+    }
+    .cloud-a { top: 10%; left: -240px; width: 220px; height: 100px; opacity: 0.85; animation: photogit-drift 48s linear infinite; }
+    @keyframes photogit-drift {
+      from { transform: translateX(0); }
+      to { transform: translateX(calc(100vw + 460px)); }
+    }
   </style>
 </head>
 <body>
@@ -171,6 +184,10 @@
          width="1586" height="992"
          alt="Pixel-art Japanese mountain village in cherry-blossom season: wooden houses with dark tiled roofs and pink blossoming trees line a stone path leading through a red torii gate to a five-storey pagoda, forested hills and a snow-capped peak behind, under an open blue sky."
          decoding="async" fetchpriority="high">
+    <div class="fx" aria-hidden="true">
+      <span class="cloud cloud-a"></span>
+      <!-- fx-end -->
+    </div>
     <div class="glass-card">
       <span class="wordmark">photogit</span>
       <span class="cta">try it!</span>
