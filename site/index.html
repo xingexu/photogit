@@ -285,6 +285,18 @@
       0%, 100% { opacity: 0.5; }
       50% { opacity: 0.85; }
     }
+    .scanlines {
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(to bottom, rgba(255, 255, 255, 0.06) 0 2px, transparent 2px 4px);
+      mix-blend-mode: overlay;
+      opacity: 0.4;
+      animation: photogit-scan 5s linear infinite;
+    }
+    @keyframes photogit-scan {
+      from { background-position: 0 0; }
+      to { background-position: 0 8px; }
+    }
   </style>
 </head>
 <body>
@@ -305,6 +317,7 @@
       <span class="petal petal-d"></span>
       <span class="petal petal-e"></span>
       <span class="glare"></span>
+      <span class="scanlines"></span>
       <!-- fx-end -->
     </div>
     <div class="card-glow" aria-hidden="true"></div>
