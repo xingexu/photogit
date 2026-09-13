@@ -511,18 +511,6 @@
         syncSoundToggle();
         try { localStorage.setItem('photogit-sound-muted', String(soundMuted)); } catch (error) {}
       });
-      function natureSound() {
-        if (soundMuted) return;
-        try {
-          document.querySelector('.sound-status').textContent = '';
-          whoosh.pause();
-          whoosh.currentTime = 0;
-          var playback = whoosh.play();
-          if (playback && typeof playback.catch === 'function') {
-            playback.catch(function () { document.querySelector('.sound-status').textContent = 'Sound is unavailable. The leaf effect still works.'; });
-          }
-        } catch (error) { /* Audio is optional when device playback is unavailable. */ }
-      }
       function releaseLeaves() {
         var now = performance.now();
         if (now - lastBurst < 700) return;
