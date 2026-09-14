@@ -65,17 +65,25 @@
     .petal {
       position: absolute;
       top: -5%;
-      width: var(--size);
-      height: calc(var(--size) * 1.4);
-      background: #ffd6e8;
-      clip-path: polygon(50% 0, 75% 0, 75% 12%, 88% 12%, 88% 25%, 100% 25%, 100% 50%, 88% 50%, 88% 63%, 75% 63%, 75% 75%, 50% 75%, 50% 88%, 25% 88%, 25% 100%, 0 100%, 0 75%, 13% 75%, 13% 63%, 25% 63%, 25% 38%, 38% 38%, 38% 13%, 50% 13%);
+      width: max(12px, var(--size));
+      height: max(12px, var(--size));
+      background-image: url('artwork/petals/petal-1.png');
+      background-size: contain;
+      background-position: center;
+      background-repeat: no-repeat;
       image-rendering: pixelated;
       opacity: var(--alpha);
       animation: photogit-fall var(--duration) var(--delay) linear infinite;
-      box-shadow: 1px 2px 0px rgba(255, 199, 225, 0.35);
     }
-    .petal:nth-of-type(4n) { background: #ffe8f1; }
-    .petal:nth-of-type(7n) { background: #f68fbb; }
+    .petal:nth-of-type(10n + 2) { background-image: url('artwork/petals/petal-2.png'); }
+    .petal:nth-of-type(10n + 3) { background-image: url('artwork/petals/petal-3.png'); }
+    .petal:nth-of-type(10n + 4) { background-image: url('artwork/petals/petal-4.png'); }
+    .petal:nth-of-type(10n + 5) { background-image: url('artwork/petals/petal-5.png'); }
+    .petal:nth-of-type(10n + 6) { background-image: url('artwork/petals/petal-6.png'); }
+    .petal:nth-of-type(10n + 7) { background-image: url('artwork/petals/petal-7.png'); }
+    .petal:nth-of-type(10n + 8) { background-image: url('artwork/petals/petal-8.png'); }
+    .petal:nth-of-type(10n + 9) { background-image: url('artwork/petals/petal-9.png'); }
+    .petal:nth-of-type(10n) { background-image: url('artwork/petals/petal-10.png'); }
     @keyframes photogit-fall {
       0% { transform: translate(0, -10vh) rotate(-18deg); }
       25% { transform: translate(var(--sway-half), 25vh) rotate(12deg); }
