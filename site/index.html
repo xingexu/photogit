@@ -50,6 +50,23 @@
       transform: translate(calc(var(--par-x, 0) * 1px), calc(var(--par-y, 0) * 1px));
       transition: transform 0.35s ease-out;
     }
+    .sky-cloud {
+      position: absolute;
+      left: -560px;
+      width: var(--cloud-width);
+      height: var(--cloud-height);
+      opacity: var(--cloud-opacity);
+      background: linear-gradient(180deg, #ffffffd9, #e3f6ff7d);
+      clip-path: polygon(0 72%, 9% 72%, 9% 60%, 17% 60%, 17% 46%, 29% 46%, 29% 32%, 40% 32%, 40% 21%, 55% 21%, 55% 32%, 67% 32%, 67% 44%, 79% 44%, 79% 56%, 91% 56%, 91% 68%, 100% 68%, 100% 82%, 76% 82%, 76% 90%, 20% 90%, 20% 82%, 0 82%);
+      image-rendering: pixelated;
+      animation: sky-drift var(--cloud-speed) linear infinite;
+      animation-delay: var(--cloud-delay);
+    }
+    .sky-cloud--wisp {
+      background: #f3fbffb0;
+      clip-path: polygon(0 65%, 12% 65%, 12% 50%, 28% 50%, 28% 37%, 50% 37%, 50% 48%, 68% 48%, 68% 60%, 87% 60%, 87% 70%, 100% 70%, 100% 83%, 0 83%);
+    }
+    @keyframes sky-drift { to { transform: translateX(calc(100vw + 1120px)); } }
     /* Petals echo the cherry blossoms already in the artwork. */
     .petal {
       position: absolute;
@@ -168,7 +185,7 @@
     .icon-bar svg { display: block; width: 23px; height: 23px; fill: currentColor; }
     .icon-bar a:first-child svg { width: 25px; height: 25px; }
     .icon-bar a:nth-child(2) svg { width: 20px; height: 20px; }
-    .icon-bar a:nth-child(2) { background: #e8f6ff96; color: #123a5c; border-color: #82c0e9; }
+    .icon-bar a:nth-child(2) { background: #b6c9d8; color: #123451; border-color: #82c0e9; }
     .icon-bar a:hover { transform: translateY(-3px); border-color: #ffd8ec; }
     .icon-bar a:focus-visible { outline: 3px solid #ffcbdf; outline-offset: 3px; }
     @media (max-width: 560px) {
@@ -187,6 +204,10 @@
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { animation: none !important; transition: none !important; }
       .fx { transform: none; }
+      .sky-cloud:nth-child(1) { left: 8%; }
+      .sky-cloud:nth-child(2) { left: 62%; }
+      .sky-cloud:nth-child(3) { left: 38%; }
+      .sky-cloud:nth-child(4) { left: 74%; }
       .petal { top: calc(var(--size) * 5); }
     }
   </style>
@@ -200,6 +221,10 @@
          decoding="async" fetchpriority="high">
     <div class="vignette" aria-hidden="true"></div>
     <div class="fx" aria-hidden="true">
+      <span class="sky-cloud" style="top:5%;--cloud-width:510px;--cloud-height:100px;--cloud-opacity:.38;--cloud-speed:82s;--cloud-delay:-29s"></span>
+      <span class="sky-cloud sky-cloud--wisp" style="top:15%;--cloud-width:390px;--cloud-height:34px;--cloud-opacity:.44;--cloud-speed:69s;--cloud-delay:-49s"></span>
+      <span class="sky-cloud" style="top:24%;--cloud-width:420px;--cloud-height:72px;--cloud-opacity:.27;--cloud-speed:97s;--cloud-delay:-66s"></span>
+      <span class="sky-cloud sky-cloud--wisp" style="top:9%;--cloud-width:310px;--cloud-height:28px;--cloud-opacity:.35;--cloud-speed:76s;--cloud-delay:-8s"></span>
       <span class="petal" style="left:0%;--size:6px;--duration:10s;--delay:-0s;--sway:30px;--alpha:0.45"></span>
       <span class="petal" style="left:37%;--size:7px;--duration:11s;--delay:-7s;--sway:48px;--alpha:0.55"></span>
       <span class="petal" style="left:74%;--size:8px;--duration:12s;--delay:-14s;--sway:66px;--alpha:0.65"></span>
