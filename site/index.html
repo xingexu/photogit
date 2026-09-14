@@ -9,11 +9,12 @@
   <link rel="preload" as="image" href="artwork/japanties.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Silkscreen:wght@400;700&display=swap">
   <style>
     :root {
     /* design-epoch: '536' */
       --font-pixel: "Silkscreen", "Courier New", ui-monospace, monospace;
+      --font-logo: "Press Start 2P", "Courier New", ui-monospace, monospace;
       --glass-top: rgba(255, 255, 255, 0.22);
       --glass-fill: rgba(10, 16, 30, 0.40);
       --glass-rim: rgba(255, 255, 255, 0.38);
@@ -43,29 +44,12 @@
       -webkit-user-drag: none;
     }
 
-    /* Sky effects: clouds and petals drifting behind the card, purely
-       decorative, never blocking the click target. */
+    /* Decorative petals stay behind the title and links. */
     .fx {
       position: absolute; inset: 0; overflow: hidden; pointer-events: none;
       transform: translate(calc(var(--par-x, 0) * 1px), calc(var(--par-y, 0) * 1px));
       transition: transform 0.35s ease-out;
     }
-    .cloud {
-      position: absolute;
-      background: #fffaf5;
-      clip-path: polygon(0 64%, 8% 64%, 8% 48%, 18% 48%, 18% 35%, 29% 35%, 29% 22%, 43% 22%, 43% 12%, 58% 12%, 58% 24%, 70% 24%, 70% 37%, 82% 37%, 82% 50%, 92% 50%, 92% 64%, 100% 64%, 100% 78%, 85% 78%, 85% 87%, 17% 87%, 17% 78%, 0 78%);
-      filter: drop-shadow(0 8px 0 #b6dff2);
-    }
-    .cloud::after { content: ""; position: absolute; inset: 53% 20% 10%; background: #e4f6fc; clip-path: polygon(0 0, 100% 0, 100% 35%, 85% 35%, 85% 65%, 15% 65%, 15% 35%, 0 35%); }
-    .cloud-a { top: 8%; left: -300px; width: 240px; height: 96px; opacity: 0.9; animation: photogit-drift 52s linear infinite; }
-    @keyframes photogit-drift {
-      from { transform: translateX(0); }
-      to { transform: translateX(calc(100vw + 460px)); }
-    }
-    .cloud-b { top: 18%; left: -180px; width: 172px; height: 72px; opacity: 0.75; animation: photogit-drift 64s linear infinite; animation-delay: -20s; }
-    .cloud-c { top: 2%; left: -330px; width: 270px; height: 112px; opacity: 0.8; animation: photogit-drift 80s linear infinite; animation-delay: -50s; }
-    .cloud-d { top: 14%; left: -210px; width: 160px; height: 56px; opacity: 0.7; animation: photogit-drift 72s linear infinite reverse; animation-delay: -8s; }
-    .cloud-e { top: 27%; left: -240px; width: 205px; height: 78px; opacity: 0.7; animation: photogit-drift 68s linear infinite; animation-delay: -39s; }
     /* Petals echo the cherry blossoms already in the artwork. */
     .petal {
       position: absolute;
@@ -136,70 +120,71 @@
     .landing { position: relative; min-height: 100svh; display: grid; place-items: center; isolation: isolate; overflow: hidden; }
     .content { position: relative; z-index: 3; padding: 80px 20px; text-align: center; }
     .title {
-      margin: 0 0 36px; font-size: clamp(62px, 12vw, 150px); line-height: 1.15;
-      letter-spacing: -0.08em; font-weight: 700; color: #fff;
-      text-shadow: 4px 0 #fff, -4px 0 #fff, 0 4px #fff, 0 -4px #fff, 8px 8px #b5eaff, -8px 8px #b5eaff, 0 14px #77c9ef, 0 22px 0 #27618e, 0 30px 0 #163d64, 0 38px 20px #12436dcc;
-      animation: arrive 900ms ease-out both, title-float 7s 900ms ease-in-out infinite;
+      margin: 0 0 46px; font-family: var(--font-logo); font-size: clamp(29px, 6.4vw, 100px); line-height: 1.4;
+      letter-spacing: .02em; font-weight: 400; color: #fff; text-transform: uppercase;
+      text-shadow: 0 3px 0 #fff4d7, 3px 3px 0 #f6d18d, -3px 3px 0 #f6d18d, 0 7px 0 #b98847, 0 11px 0 #765739, 0 0 18px #ffe8a4, 0 0 40px #ffdb83, 0 15px 36px #183955;
+      animation: logo-fade-in 1.4s ease-out both;
     }
     .actions { display: flex; align-items: stretch; justify-content: center; animation: arrive 900ms 180ms ease-out both; }
     .try-container {
-      display: flex; align-items: center; width: min(460px, calc(100vw - 48px));
+      display: flex; align-items: center; width: min(300px, calc(100vw - 48px));
       border: 3px solid #f5fbff; border-radius: 999px;
       background: linear-gradient(145deg, #d7f5ff, #8cceef 65%, #6bb7e2);
       box-shadow: inset 0 5px 0 #ffffff8c, inset 0 -8px 0 #4397ca55, 0 12px 0 #286b97, 0 22px 30px #0c385b77;
     }
-    .actions a { position: relative; display: flex; align-items: center; justify-content: center; width: 100%; min-height: 102px; padding: 20px 64px; border-radius: 999px; color: #fff; text-decoration: none; font-family: Arial, Helvetica, sans-serif; font-size: clamp(25px, 3vw, 34px); font-weight: 700; text-shadow: 0 3px 0 #498caf; transition: background 180ms, transform 180ms; }
+    .actions a { position: relative; display: flex; align-items: center; justify-content: center; width: 100%; min-height: 68px; padding: 14px 42px; border-radius: 999px; color: #fff; text-decoration: none; font-family: Arial, Helvetica, sans-serif; font-size: 22px; font-weight: 700; text-shadow: 0 3px 0 #498caf; transition: background 180ms, transform 180ms; }
     .actions a:hover { background: #ffffff30; transform: translateY(-3px); }
     .actions a:focus-visible { outline: 3px solid #ffcbdf; outline-offset: 3px; }
-    .actions a span { position: absolute; right: 36px; font-size: 38px; line-height: 1; transition: transform 180ms; }
+    .actions a span { position: absolute; right: 22px; font-size: 26px; line-height: 1; transition: transform 180ms; }
     .actions a:hover span { transform: translate(3px, -2px); }
     @keyframes arrive { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
-    @keyframes title-float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-9px); } }
+    @keyframes logo-fade-in { from { opacity: 0; transform: translateY(14px); filter: brightness(.6); } to { opacity: 1; transform: translateY(0); filter: brightness(1); } }
     .site-footer {
       position: absolute;
       inset: auto 0 0;
       z-index: 4;
-      min-height: 76px;
+      min-height: 72px;
       padding: 8px max(24px, calc((100vw - 1560px) / 2)) max(8px, env(safe-area-inset-bottom));
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 24px;
-      border-top: 3px solid #75452e;
-      background: #2b1b28;
-      box-shadow: inset 0 12px 0 #422633;
+      border-top: 3px solid #eeb6d2;
+      background: #203b59ee;
+      box-shadow: inset 0 5px 0 #ffffff21;
     }
-    .footer-credit { color: #f7d78c; font-size: 15px; font-weight: 700; letter-spacing: .04em; white-space: nowrap; }
-    .icon-bar { display: flex; align-items: center; gap: 14px; }
+    .footer-credit { color: #fff0f7; font-size: 14px; font-weight: 700; letter-spacing: .04em; white-space: nowrap; }
+    .icon-bar { display: flex; align-items: center; gap: 10px; }
     .icon-bar a {
-      width: 52px;
-      height: 52px;
+      width: 46px;
+      height: 46px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      border: 4px solid #c58b4d;
-      border-radius: 0;
-      background: #14151a;
+      border: 2px solid #b6dff5;
+      border-radius: 8px;
+      background: #1b314c;
       color: #fff;
       text-decoration: none;
-      box-shadow: inset 0 0 0 3px #38292b;
+      box-shadow: inset 0 2px 0 #ffffff30, 0 3px 0 #10283f;
       transition: transform 180ms, border-color 180ms;
     }
-    .icon-bar svg { width: 31px; height: 31px; fill: currentColor; }
-    .icon-bar a:hover { transform: translateY(-3px); border-color: #f0ba73; }
+    .icon-bar svg { display: block; width: 26px; height: 26px; fill: currentColor; }
+    .icon-bar a:first-child svg { transform: translate(1px, 1px); }
+    .icon-bar a:hover { transform: translateY(-3px); border-color: #ffd8ec; }
     .icon-bar a:focus-visible { outline: 3px solid #ffcbdf; outline-offset: 3px; }
     @media (max-width: 560px) {
       .actions { flex-direction: column; align-items: center; gap: 14px; }
       .title { margin-bottom: 28px; }
-      .try-container { width: min(380px, calc(100vw - 48px)); justify-content: center; }
-      .actions a { min-height: 78px; }
-      .actions a span { right: 24px; }
+      .try-container { width: min(280px, calc(100vw - 48px)); justify-content: center; }
+      .actions a { min-height: 62px; font-size: 20px; }
+      .actions a span { right: 20px; }
       .petal:nth-of-type(n+22) { display: none; }
       .site-footer { padding-inline: 16px; gap: 12px; }
       .footer-credit { font-size: 10px; }
       .icon-bar { gap: 7px; }
-      .icon-bar a { width: 38px; height: 38px; border-width: 3px; }
-      .icon-bar svg { width: 24px; height: 24px; }
+      .icon-bar a { width: 36px; height: 36px; }
+      .icon-bar svg { width: 22px; height: 22px; }
     }
     @media (max-height: 420px) { .content { padding: 20px; } .title { margin-bottom: 18px; font-size: 40px; } .actions { flex-direction: row; } }
     @media (prefers-reduced-motion: reduce) {
@@ -218,10 +203,6 @@
          decoding="async" fetchpriority="high">
     <div class="vignette" aria-hidden="true"></div>
     <div class="fx" aria-hidden="true">
-      <span class="cloud cloud-a"></span>
-      <span class="cloud cloud-b"></span>
-      <span class="cloud cloud-c"></span>
-      <span class="cloud cloud-e"></span>
       <span class="blossom" style="top:12%;left:8%"></span>
       <span class="blossom" style="top:23%;left:88%;animation-delay:-2s"></span>
       <span class="blossom" style="top:37%;left:13%;animation-delay:-3s"></span>
@@ -298,7 +279,6 @@
       <span class="petal" style="left:6%;--size:17px;--duration:20s;--delay:-9s;--sway:88px;--alpha:0.74"></span>
       <span class="petal" style="left:83%;--size:16px;--duration:21s;--delay:-6s;--sway:74px;--alpha:0.8"></span>
       <span class="petal" style="left:27%;--size:13px;--duration:22s;--delay:-12s;--sway:54px;--alpha:0.86"></span>
-      <span class="cloud cloud-d"></span>
       <span class="glare"></span>
       <span class="scanlines"></span>
       <!-- fx-end -->
