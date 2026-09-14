@@ -115,21 +115,23 @@
       white-space: nowrap;
       transition: filter 220ms ease;
     }
-    .title:hover { filter: drop-shadow(0 0 20px #dbf8ff) drop-shadow(0 0 38px #65c8ff); }
+    .title { cursor: pointer; }
+    .title:hover, .title:focus-visible { filter: drop-shadow(0 0 20px #dbf8ff) drop-shadow(0 0 38px #65c8ff); }
+    .title:focus-visible { outline: 3px solid #fff; outline-offset: 10px; }
     .title-letter { display: inline-block; opacity: 0; animation: letter-type 1ms steps(1, end) both; animation-delay: calc(var(--n) * 130ms); }
     .actions { display: flex; align-items: stretch; justify-content: center; animation: arrive 650ms 1s ease-out both; }
     .try-container {
-      display: flex; align-items: center; width: min(300px, calc(100vw - 48px));
+      display: flex; align-items: center; width: min(324px, calc(100vw - 48px));
       border: 2px solid #ffffffd9; border-radius: 999px;
       background: linear-gradient(145deg, #ffffff65, #c1eaff6b 65%, #78c5f180);
       backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
       box-shadow: inset 0 3px 0 #ffffffa0, inset 0 -4px 0 #71bce966, 0 8px 0 #286b9770, 0 17px 26px #0c385b55;
     }
-    .actions a { position: relative; display: flex; align-items: center; justify-content: center; width: 100%; min-height: 68px; padding: 14px 42px; border-radius: 999px; color: #fff; text-decoration: none; font-family: Arial, Helvetica, sans-serif; font-size: 22px; font-weight: 700; text-shadow: 0 3px 0 #498caf; transition: background 180ms, transform 180ms; }
+    .actions a { position: relative; display: flex; align-items: center; justify-content: center; width: 100%; min-height: 72px; padding: 13px 42px 15px; border-radius: 999px; color: #fff; text-decoration: none; font-family: Arial, Helvetica, sans-serif; font-size: 23px; font-weight: 700; text-shadow: 0 3px 0 #498caf; transition: background 180ms, transform 180ms; }
     .actions a:hover { background: #ffffff38; transform: translateY(-3px); }
     .actions a:focus-visible { outline: 3px solid #ffcbdf; outline-offset: 3px; }
-    .actions a span { position: absolute; right: 22px; font-size: 26px; line-height: 1; transition: transform 180ms; }
-    .actions a:hover span { transform: translate(3px, -2px); }
+    .actions a .try-arrow { position: absolute; right: 22px; top: calc(50% - 14px); font-size: 26px; line-height: 1; transition: transform 180ms; }
+    .actions a:hover .try-arrow { transform: translate(3px, -2px); }
     @keyframes arrive { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes letter-type { to { opacity: 1; } }
     .site-footer {
@@ -168,9 +170,9 @@
     @media (max-width: 560px) {
       .actions { flex-direction: column; align-items: center; gap: 14px; }
       .title { margin-bottom: 10px; }
-      .try-container { width: min(280px, calc(100vw - 48px)); justify-content: center; }
-      .actions a { min-height: 62px; font-size: 20px; }
-      .actions a span { right: 20px; }
+      .try-container { width: min(300px, calc(100vw - 48px)); justify-content: center; }
+      .actions a { min-height: 66px; font-size: 21px; }
+      .actions a .try-arrow { right: 20px; }
       .site-footer { padding-inline: 16px; gap: 12px; }
       .footer-credit { font-size: 10px; }
       .icon-bar { gap: 7px; }
@@ -297,10 +299,10 @@
       <!-- fx-end -->
     </div>
     <section class="content" aria-label="PhotoGit">
-      <h1 class="title" aria-label="PhotoGit"><span class="title-letter" style="--n:0" aria-hidden="true">P</span><span class="title-letter" style="--n:1" aria-hidden="true">H</span><span class="title-letter" style="--n:2" aria-hidden="true">O</span><span class="title-letter" style="--n:3" aria-hidden="true">T</span><span class="title-letter" style="--n:4" aria-hidden="true">O</span><span class="title-letter" style="--n:5" aria-hidden="true">G</span><span class="title-letter" style="--n:6" aria-hidden="true">I</span><span class="title-letter" style="--n:7" aria-hidden="true">T</span></h1>
+      <h1 class="title" aria-label="PhotoGit" aria-description="Click or press Enter to replay the typing with sound" tabindex="0"><span class="title-letter" style="--n:0" aria-hidden="true">P</span><span class="title-letter" style="--n:1" aria-hidden="true">H</span><span class="title-letter" style="--n:2" aria-hidden="true">O</span><span class="title-letter" style="--n:3" aria-hidden="true">T</span><span class="title-letter" style="--n:4" aria-hidden="true">O</span><span class="title-letter" style="--n:5" aria-hidden="true">G</span><span class="title-letter" style="--n:6" aria-hidden="true">I</span><span class="title-letter" style="--n:7" aria-hidden="true">T</span></h1>
       <div class="actions">
         <div class="try-container">
-          <a class="try-link" href="https://github.com/xingexu/photogit#quick-start">Try it now <span aria-hidden="true">→</span></a>
+          <a class="try-link" href="https://github.com/xingexu/photogit#quick-start">Try it now <span class="try-arrow" aria-hidden="true">→</span></a>
         </div>
       </div>
     </section>
@@ -318,9 +320,53 @@
       var reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
       var finePointer = matchMedia('(hover: hover) and (pointer: fine)');
       var fx = document.querySelector('.fx');
+      var title = document.querySelector('.title');
+      var letters = Array.from(title.querySelectorAll('.title-letter'));
+      var audioContext;
+      var typingTimers = [];
       var frame = 0;
       var pointerX = 0;
       var pointerY = 0;
+
+      function typeSound(index) {
+        if (!audioContext || audioContext.state !== 'running') return;
+        var now = audioContext.currentTime;
+        var oscillator = audioContext.createOscillator();
+        var volume = audioContext.createGain();
+        oscillator.type = 'square';
+        oscillator.frequency.setValueAtTime(520 + (index % 3) * 80, now);
+        volume.gain.setValueAtTime(0.018, now);
+        volume.gain.exponentialRampToValueAtTime(0.0001, now + 0.045);
+        oscillator.connect(volume);
+        volume.connect(audioContext.destination);
+        oscillator.start(now);
+        oscillator.stop(now + 0.05);
+      }
+      function replayTyping() {
+        if (reducedMotion.matches) return;
+        typingTimers.forEach(clearTimeout);
+        typingTimers = [];
+        var AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (AudioContextClass) {
+          try {
+            audioContext = audioContext || new AudioContextClass();
+            audioContext.resume();
+          } catch (error) { /* Typing still works when audio is unavailable. */ }
+        }
+        letters.forEach(function (letter) { letter.style.animation = 'none'; });
+        void title.offsetWidth;
+        letters.forEach(function (letter, index) {
+          letter.style.removeProperty('animation');
+          typingTimers.push(setTimeout(function () { typeSound(index); }, index * 130));
+        });
+      }
+      title.addEventListener('click', replayTyping);
+      title.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          replayTyping();
+        }
+      });
 
       function resetParallax() {
         cancelAnimationFrame(frame);
