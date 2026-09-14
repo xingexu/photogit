@@ -84,11 +84,8 @@
     .petal:nth-of-type(10n + 9) { background-image: url('artwork/petals/petal-9.png'); }
     .petal:nth-of-type(10n) { background-image: url('artwork/petals/petal-10.png'); }
     @keyframes photogit-fall {
-      0% { transform: translate(0, -10vh) rotate(var(--tilt-start)); }
-      22% { transform: translate(var(--sway-half), 17vh) rotate(var(--tilt-quarter)); }
-      47% { transform: translate(var(--sway-opposite), 46vh) rotate(var(--tilt-middle)); }
-      73% { transform: translate(var(--sway), 79vh) rotate(var(--tilt-three-quarter)); }
-      100% { transform: translate(var(--sway-end), 120vh) rotate(var(--tilt-end)); }
+      0% { transform: translate(0, -10vh) rotate(var(--tilt-start, -8deg)); }
+      100% { transform: translate(var(--drift, 120px), 120vh) rotate(var(--tilt-end, 8deg)); }
     }
     /* A soft vignette settles the eye on the centred card rather than
        the frame edges. */
@@ -137,8 +134,8 @@
     }
     .title:hover, .title:focus-visible { filter: drop-shadow(0 0 20px #dbf8ff) drop-shadow(0 0 38px #65c8ff); }
     .title:focus-visible { outline: 3px solid #fff; outline-offset: 10px; }
-    .title-letter { display: inline-block; opacity: 0; animation: letter-type 1ms steps(1, end) both; animation-delay: calc(350ms + var(--n) * 240ms); }
-    .actions { display: flex; align-items: stretch; justify-content: center; animation: arrive 650ms 2.5s ease-out both; }
+    .title-letter { display: inline-block; opacity: 0; animation: letter-type 1ms steps(1, end) both; animation-delay: calc(250ms + var(--n) * 190ms); }
+    .actions { display: flex; align-items: stretch; justify-content: center; animation: arrive 650ms 2.1s ease-out both; }
     .try-container {
       display: flex; align-items: center; width: min(clamp(280px, 18vw, 360px), calc(100vw - 48px));
       border: 2px solid #ffffffd9; border-radius: 999px;
@@ -364,18 +361,12 @@
         var duration = 16 + Math.random() * 18;
         petal.style.setProperty('--duration', duration.toFixed(2) + 's');
         petal.style.setProperty('--delay', (-phases[index] * duration).toFixed(2) + 's');
-        var drift = 25 + Math.random() * 110;
+        var drift = 80 + Math.random() * 160;
         drift *= Math.random() < 0.5 ? -1 : 1;
-        petal.style.setProperty('--sway', Math.round(drift) + 'px');
-        petal.style.setProperty('--sway-half', Math.round(drift * (0.25 + Math.random() * 0.35)) + 'px');
-        petal.style.setProperty('--sway-opposite', Math.round(drift * (-0.2 - Math.random() * 0.45)) + 'px');
-        petal.style.setProperty('--sway-end', Math.round(drift * (0.25 + Math.random() * 0.65)) + 'px');
-        var tilt = Math.round(Math.random() * 52 - 26);
+        petal.style.setProperty('--drift', Math.round(drift) + 'px');
+        var tilt = Math.round(Math.random() * 36 - 18);
         petal.style.setProperty('--tilt-start', tilt + 'deg');
-        petal.style.setProperty('--tilt-quarter', (tilt + Math.round(Math.random() * 34 - 17)) + 'deg');
-        petal.style.setProperty('--tilt-middle', (tilt + Math.round(Math.random() * 44 - 22)) + 'deg');
-        petal.style.setProperty('--tilt-three-quarter', (tilt + Math.round(Math.random() * 42 - 21)) + 'deg');
-        petal.style.setProperty('--tilt-end', (tilt + Math.round(Math.random() * 56 - 28)) + 'deg');
+        petal.style.setProperty('--tilt-end', (tilt + Math.round(Math.random() * 24 - 12)) + 'deg');
         petal.style.left = (((index + Math.random()) / petals.length) * 100).toFixed(2) + '%';
       });
 
@@ -408,7 +399,7 @@
         void title.offsetWidth;
         letters.forEach(function (letter, index) {
           letter.style.removeProperty('animation');
-          typingTimers.push(setTimeout(function () { typeSound(index); }, 350 + index * 240));
+          typingTimers.push(setTimeout(function () { typeSound(index); }, 250 + index * 190));
         });
       }
       title.addEventListener('click', replayTyping);
