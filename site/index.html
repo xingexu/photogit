@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>photogit</title>
+  <title>PhotoGit — Version control for Photoshop</title>
   <meta name="description" content="PhotoGit — version control for Photoshop. Try it on GitHub.">
   <meta name="theme-color" content="#3fa9f5">
   <link rel="preload" as="image" href="artwork/japanties.png">
@@ -25,20 +25,8 @@
       color: #fff;
       font-family: var(--font-pixel);
       -webkit-font-smoothing: antialiased;
-      overflow: hidden;
+      overflow-x: hidden;
     }
-
-    /* The whole page is one link: a landing page whose job is to send a
-       visitor on to the project's setup instructions. */
-    .page-link {
-      position: fixed;
-      inset: 0;
-      display: block;
-      text-decoration: none;
-      color: inherit;
-      cursor: pointer;
-    }
-    .page-link:focus-visible .glass-card { outline: 3px solid #fff; outline-offset: 4px; }
 
     /* Pixel art, rendered pixelated rather than smoothed, filling the frame. */
     .hero {
@@ -54,139 +42,6 @@
       -webkit-user-drag: none;
     }
 
-    /* Liquid glass · a dark, translucent card floats dead-centre over the
-       artwork — a bright inset top edge, a hairline rim and a soft glow,
-       the same recipe the PhotoGit panel itself uses for its cards. Blur is
-       layered on only where the host supports it; without it, the fill
-       alone still reads as a distinct panel over the photo. */
-    .glass-card {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 14px;
-      padding: clamp(28px, 5vw, 48px) clamp(32px, 7vw, 72px);
-      border-radius: 28px;
-      border: 1px solid var(--glass-rim);
-      background:
-        linear-gradient(180deg, var(--glass-top), rgba(255, 255, 255, 0) 55%),
-        var(--glass-fill);
-      box-shadow:
-        0 1px 0 rgba(255, 255, 255, 0.35) inset,
-        0 0 0 1px rgba(255, 255, 255, 0.08),
-        0 0 70px -10px var(--glow),
-        0 28px 60px -24px rgba(3, 8, 20, 0.6);
-      overflow: hidden;
-      animation: photogit-enter 0.8s ease-out both, photogit-float 6s ease-in-out infinite;
-    }
-    @supports (backdrop-filter: blur(2px)) or (-webkit-backdrop-filter: blur(2px)) {
-      .glass-card { backdrop-filter: blur(20px) saturate(160%); -webkit-backdrop-filter: blur(20px) saturate(160%); }
-    }
-    @supports not ((backdrop-filter: blur(2px)) or (-webkit-backdrop-filter: blur(2px))) {
-      .glass-card { --glass-fill: rgba(8, 13, 26, 0.72); }
-    }
-    /* A soft band of light drifts across the glass, the liquid part of
-       "liquid glass". Purely decorative: it sits behind the text and
-       never affects layout or the click target. */
-    .glass-card::before {
-      content: "";
-      position: absolute;
-      inset: -40% -20%;
-      background: linear-gradient(115deg, transparent 30%, rgba(255, 255, 255, 0.4) 48%, transparent 66%);
-      background-size: 220% 220%;
-      animation: photogit-sheen 8s linear infinite;
-      pointer-events: none;
-    }
-
-    /* Pixel-art wordmark: the same blocky pixel typeface the scene itself
-       is drawn in, in white with a soft misty glow rather than the flat
-       black of a plain wordmark. */
-    .wordmark {
-      position: relative;
-      display: block;
-      overflow: hidden;
-      margin: 0;
-      font-family: var(--font-pixel);
-      font-weight: 700;
-      font-size: clamp(32px, 7vw, 64px);
-      letter-spacing: 0.04em;
-      line-height: 1;
-      color: #fff;
-      text-shadow:
-        -2px -2px 0 #0b1220, 2px -2px 0 #0b1220, -2px 2px 0 #0b1220, 2px 2px 0 #0b1220,
-        0 0 10px rgba(255, 255, 255, 0.75), 0 0 26px rgba(255, 255, 255, 0.4), 0 0 48px rgba(255, 255, 255, 0.22);
-      animation: photogit-enter 0.6s ease-out 0.15s both;
-    }
-
-    /* The call to action reads as a small chip inside the same glass, so
-       it is legible as the one thing to do here. */
-    .cta {
-      position: relative;
-      display: inline-flex;
-      align-items: center;
-      padding: 8px 22px;
-      border-radius: 999px;
-      border: 1px solid rgba(255, 255, 255, 0.5);
-      background: rgba(255, 255, 255, 0.14);
-      font-family: var(--font-pixel);
-      font-weight: 400;
-      font-size: clamp(13px, 2vw, 18px);
-      letter-spacing: 0.03em;
-      color: #fff;
-      text-shadow: 0 0 8px rgba(255, 255, 255, 0.7), 0 0 20px rgba(255, 255, 255, 0.35);
-      animation: photogit-enter 0.6s ease-out 0.4s both, photogit-pulse 3.2s ease-in-out 0.8s infinite;
-    }
-    .page-link:hover .cta, .page-link:focus-visible .cta { background: rgba(255, 255, 255, 0.24); }
-    .cta::after {
-      content: "";
-      display: inline-block;
-      width: 12px; height: 10px;
-      margin-left: 10px;
-      background: #fff;
-      clip-path: polygon(0 15%, 55% 15%, 55% 0, 100% 50%, 55% 100%, 55% 85%, 0 85%);
-      transition: transform 0.2s ease;
-    }
-    .page-link:hover .cta::after, .page-link:focus-visible .cta::after { transform: translateX(4px); }
-
-    @keyframes photogit-float {
-      0%, 100% { transform: translate(-50%, -50%) translateY(0); }
-      50% { transform: translate(-50%, -50%) translateY(-10px); }
-    }
-    @keyframes photogit-sheen {
-      from { background-position: 200% 0%; }
-      to { background-position: -100% 0%; }
-    }
-    @keyframes photogit-pulse {
-      0%, 100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.3); }
-      50% { box-shadow: 0 0 22px 4px rgba(255, 255, 255, 0.28); }
-    }
-
-    @media (max-height: 420px) {
-      .glass-card { padding: 18px 28px; gap: 8px; }
-      .cta { display: none; }
-    }
-
-    @media (max-width: 480px) {
-      .cloud-c, .petal-d, .petal-e, .glare { display: none; }
-      .cloud { opacity: 0.6; }
-      .card-glow { width: 70vw; height: 40vw; }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .glass-card, .glass-card::before, .glass-card::after, .card-glow,
-      .cta, .cta::after, .wordmark, .shimmer,
-      .cloud, .petal, .glare, .scanlines, .sparkle, .fx {
-        animation: none !important;
-        transition: none !important;
-      }
-      .glass-card { transform: translate(-50%, -50%) !important; }
-      .glass-card::before, .shimmer, .scanlines { background-position: 0 0 !important; }
-      .fx { transform: none !important; }
-      .sparkle { opacity: 0.8 !important; transform: none !important; }
-    }
     /* Sky effects: clouds and petals drifting behind the card, purely
        decorative, never blocking the click target. */
     .fx {
@@ -210,23 +65,18 @@
     .petal {
       position: absolute;
       top: -5%;
-      width: 10px;
-      height: 14px;
+      width: var(--size);
+      height: calc(var(--size) * 1.4);
       background: linear-gradient(135deg, #ffd3e2, #f6a9c6);
       border-radius: 70% 0 70% 0;
-      opacity: 0.85;
-      animation: photogit-fall linear infinite;
+      opacity: var(--alpha);
+      animation: photogit-fall var(--duration) var(--delay) linear infinite;
     }
     @keyframes photogit-fall {
       0%   { transform: translate(0, -10vh) rotate(0deg); }
-      50%  { transform: translate(30px, 55vh) rotate(160deg); }
-      100% { transform: translate(-10px, 120vh) rotate(320deg); }
+      50%  { transform: translate(var(--sway), 55vh) rotate(160deg) rotateY(150deg); }
+      100% { transform: translate(-20px, 120vh) rotate(340deg) rotateY(300deg); }
     }
-    .petal-a { left: 18%; animation-duration: 11s; }
-    .petal-b { left: 42%; width: 8px; height: 11px; opacity: 0.7; animation-duration: 14s; animation-delay: -3s; }
-    .petal-c { left: 65%; animation-duration: 9.5s; animation-delay: -6s; }
-    .petal-d { left: 82%; width: 7px; height: 10px; opacity: 0.6; animation-duration: 16s; animation-delay: -9s; }
-    .petal-e { left: 6%; width: 9px; height: 13px; opacity: 0.75; animation-duration: 12.5s; animation-delay: -1s; }
     /* A soft vignette settles the eye on the centred card rather than
        the frame edges. */
     .vignette {
@@ -234,60 +84,6 @@
       inset: 0;
       background: radial-gradient(ellipse at center, transparent 35%, rgba(3, 10, 24, 0.5) 100%);
       pointer-events: none;
-    }
-    /* A light band sweeps over the wordmark's own box (not clipped to
-       the glyphs themselves — background-clip: text combined with an
-       animated gradient rendered solid black in testing, a real engine
-       quirk, not just a style choice) and screens onto the letters
-       beneath, which reads just as well as a moving highlight. */
-    .shimmer {
-      position: absolute;
-      inset: -20% -30%;
-      background: linear-gradient(100deg, transparent 40%, rgba(255, 255, 255, 0.8) 50%, transparent 60%);
-      background-size: 250% 100%;
-      mix-blend-mode: screen;
-      animation: photogit-shimmer 3.6s ease-in-out infinite;
-      pointer-events: none;
-    }
-    @keyframes photogit-shimmer {
-      0% { background-position: 200% 0; }
-      60%, 100% { background-position: -60% 0; }
-    }
-    @keyframes photogit-enter {
-      from { opacity: 0; filter: blur(6px); }
-      to { opacity: 1; filter: blur(0); }
-    }
-    /* An ambient glow behind the card, as a sibling rather than a
-       pseudo-element, so it can bleed past the card's own clipped edge. */
-    .card-glow {
-      position: absolute;
-      top: 50%; left: 50%;
-      width: min(560px, 80vw);
-      height: min(280px, 50vw);
-      transform: translate(-50%, -50%);
-      background: radial-gradient(circle, var(--glow), rgba(255, 255, 255, 0) 70%);
-      filter: blur(30px);
-      opacity: 0.55;
-      pointer-events: none;
-      animation: photogit-glow-pulse 5s ease-in-out infinite;
-    }
-    @keyframes photogit-glow-pulse {
-      0%, 100% { opacity: 0.4; }
-      50% { opacity: 0.75; }
-    }
-    .sparkle {
-      position: absolute;
-      width: 4px; height: 4px;
-      background: #fff;
-      box-shadow: 0 0 6px 2px rgba(255, 255, 255, 0.9);
-      border-radius: 1px;
-      animation: photogit-twinkle 2.4s ease-in-out infinite;
-    }
-    .sparkle-a { top: -4px; left: 6%; animation-delay: -0.6s; }
-    .sparkle-b { top: 55%; right: 4%; animation-delay: -1.5s; }
-    @keyframes photogit-twinkle {
-      0%, 100% { opacity: 0.2; transform: scale(0.7); }
-      50% { opacity: 1; transform: scale(1.15); }
     }
     .glare {
       position: absolute;
@@ -317,12 +113,60 @@
     .hero { z-index: 0; }
     .vignette { z-index: 1; }
     .fx { z-index: 2; }
-    .card-glow { z-index: 2; }
-    .glass-card { z-index: 3; }
+    .landing { position: relative; min-height: 100svh; display: grid; place-items: center; isolation: isolate; overflow: hidden; }
+    .content { position: relative; z-index: 3; padding: 80px 20px; text-align: center; }
+    .title {
+      margin: 0 0 38px; font-size: clamp(40px, 9vw, 100px); line-height: 1.15;
+      letter-spacing: -0.065em; font-weight: 700;
+      text-shadow: 0 3px 0 #243345, 0 6px 22px #10283c80;
+      animation: arrive 900ms ease-out both, title-float 7s 900ms ease-in-out infinite;
+    }
+    .actions { display: flex; flex-wrap: wrap; align-items: stretch; justify-content: center; gap: 18px; animation: arrive 900ms 180ms ease-out both; }
+    .social-container, .try-container {
+      display: flex; align-items: center; padding: 8px;
+      border: 1px solid #ffffff80; border-radius: 20px;
+      background: linear-gradient(150deg, #ffffff30, #ffffff08), #102438b8;
+      box-shadow: inset 0 1px 0 #ffffff40, 0 12px 30px #091b3638;
+      backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+    }
+    .actions a { display: flex; align-items: center; justify-content: center; gap: 12px; min-height: 48px; padding: 12px 16px; border-radius: 12px; color: white; text-decoration: none; font-size: 14px; transition: background 180ms, transform 180ms; }
+    .social-container a + a { border-left: 1px solid #ffffff30; border-top-left-radius: 0; border-bottom-left-radius: 0; }
+    .actions a:hover { background: #ffffff20; transform: translateY(-2px); }
+    .actions a:focus-visible { outline: 3px solid #ffcbdf; outline-offset: 3px; }
+    .actions a span { transition: transform 180ms; }
+    .actions a:hover span { transform: translate(3px, -2px); }
+    .try-container { background: linear-gradient(145deg, #ffe0ed, #f4b6d0); border-color: #fff0f6; }
+    .try-container a { color: #432039; }
+    @keyframes arrive { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes title-float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-9px); } }
+    .motion-toggle {
+      position: absolute; right: max(20px, env(safe-area-inset-right));
+      bottom: max(20px, env(safe-area-inset-bottom)); z-index: 4;
+      min-height: 44px; padding: 10px 14px; border: 1px solid #ffffff80;
+      border-radius: 12px; background: #102438e6; color: #fff;
+      font: 14px var(--font-pixel); cursor: pointer;
+    }
+    .motion-toggle[hidden] { display: none; }
+    .motion-toggle:focus-visible { outline: 3px solid #ffcbdf; outline-offset: 3px; }
+    .motion-paused *, .motion-paused *::before, .motion-paused *::after { animation-play-state: paused !important; }
+    .motion-paused .fx { transform: none; transition: none; }
+    @media (max-width: 560px) {
+      .actions { flex-direction: column; align-items: center; gap: 14px; }
+      .title { margin-bottom: 28px; }
+      .try-container { min-width: 180px; justify-content: center; }
+      .petal:nth-of-type(n+28) { display: none; }
+    }
+    @media (max-height: 420px) { .content { padding: 20px; } .title { margin-bottom: 18px; font-size: 40px; } .actions { flex-direction: row; } }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; }
+      .fx { transform: none; }
+      .petal { top: calc(var(--size) * 5); }
+      .motion-toggle { display: none; }
+    }
   </style>
 </head>
 <body>
-  <a class="page-link" href="https://github.com/xingexu/photogit#quick-start" aria-label="photogit — try it on GitHub">
+  <main class="landing">
     <img class="hero"
          src="artwork/japanties.png"
          width="1586" height="992"
@@ -333,34 +177,118 @@
       <span class="cloud cloud-a"></span>
       <span class="cloud cloud-b"></span>
       <span class="cloud cloud-c"></span>
-      <span class="petal petal-a"></span>
-      <span class="petal petal-b"></span>
-      <span class="petal petal-c"></span>
-      <span class="petal petal-d"></span>
-      <span class="petal petal-e"></span>
+      <span class="petal" style="left:0%;--size:6px;--duration:10s;--delay:-0s;--sway:30px;--alpha:0.45"></span>
+      <span class="petal" style="left:37%;--size:7px;--duration:11s;--delay:-7s;--sway:48px;--alpha:0.55"></span>
+      <span class="petal" style="left:74%;--size:8px;--duration:12s;--delay:-14s;--sway:66px;--alpha:0.65"></span>
+      <span class="petal" style="left:11%;--size:9px;--duration:13s;--delay:-21s;--sway:84px;--alpha:0.75"></span>
+      <span class="petal" style="left:48%;--size:10px;--duration:14s;--delay:-5s;--sway:102px;--alpha:0.85"></span>
+      <span class="petal" style="left:85%;--size:11px;--duration:15s;--delay:-12s;--sway:30px;--alpha:0.45"></span>
+      <span class="petal" style="left:22%;--size:12px;--duration:16s;--delay:-19s;--sway:48px;--alpha:0.55"></span>
+      <span class="petal" style="left:59%;--size:13px;--duration:17s;--delay:-3s;--sway:66px;--alpha:0.65"></span>
+      <span class="petal" style="left:96%;--size:6px;--duration:18s;--delay:-10s;--sway:84px;--alpha:0.75"></span>
+      <span class="petal" style="left:33%;--size:7px;--duration:19s;--delay:-17s;--sway:102px;--alpha:0.85"></span>
+      <span class="petal" style="left:70%;--size:8px;--duration:20s;--delay:-1s;--sway:30px;--alpha:0.45"></span>
+      <span class="petal" style="left:7%;--size:9px;--duration:21s;--delay:-8s;--sway:48px;--alpha:0.55"></span>
+      <span class="petal" style="left:44%;--size:10px;--duration:22s;--delay:-15s;--sway:66px;--alpha:0.65"></span>
+      <span class="petal" style="left:81%;--size:11px;--duration:10s;--delay:-22s;--sway:84px;--alpha:0.75"></span>
+      <span class="petal" style="left:18%;--size:12px;--duration:11s;--delay:-6s;--sway:102px;--alpha:0.85"></span>
+      <span class="petal" style="left:55%;--size:13px;--duration:12s;--delay:-13s;--sway:30px;--alpha:0.45"></span>
+      <span class="petal" style="left:92%;--size:6px;--duration:13s;--delay:-20s;--sway:48px;--alpha:0.55"></span>
+      <span class="petal" style="left:29%;--size:7px;--duration:14s;--delay:-4s;--sway:66px;--alpha:0.65"></span>
+      <span class="petal" style="left:66%;--size:8px;--duration:15s;--delay:-11s;--sway:84px;--alpha:0.75"></span>
+      <span class="petal" style="left:3%;--size:9px;--duration:16s;--delay:-18s;--sway:102px;--alpha:0.85"></span>
+      <span class="petal" style="left:40%;--size:10px;--duration:17s;--delay:-2s;--sway:30px;--alpha:0.45"></span>
+      <span class="petal" style="left:77%;--size:11px;--duration:18s;--delay:-9s;--sway:48px;--alpha:0.55"></span>
+      <span class="petal" style="left:14%;--size:12px;--duration:19s;--delay:-16s;--sway:66px;--alpha:0.65"></span>
+      <span class="petal" style="left:51%;--size:13px;--duration:20s;--delay:-0s;--sway:84px;--alpha:0.75"></span>
+      <span class="petal" style="left:88%;--size:6px;--duration:21s;--delay:-7s;--sway:102px;--alpha:0.85"></span>
+      <span class="petal" style="left:25%;--size:7px;--duration:22s;--delay:-14s;--sway:30px;--alpha:0.45"></span>
+      <span class="petal" style="left:62%;--size:8px;--duration:10s;--delay:-21s;--sway:48px;--alpha:0.55"></span>
+      <span class="petal" style="left:99%;--size:9px;--duration:11s;--delay:-5s;--sway:66px;--alpha:0.65"></span>
+      <span class="petal" style="left:36%;--size:10px;--duration:12s;--delay:-12s;--sway:84px;--alpha:0.75"></span>
+      <span class="petal" style="left:73%;--size:11px;--duration:13s;--delay:-19s;--sway:102px;--alpha:0.85"></span>
+      <span class="petal" style="left:10%;--size:12px;--duration:14s;--delay:-3s;--sway:30px;--alpha:0.45"></span>
+      <span class="petal" style="left:47%;--size:13px;--duration:15s;--delay:-10s;--sway:48px;--alpha:0.55"></span>
+      <span class="petal" style="left:84%;--size:6px;--duration:16s;--delay:-17s;--sway:66px;--alpha:0.65"></span>
+      <span class="petal" style="left:21%;--size:7px;--duration:17s;--delay:-1s;--sway:84px;--alpha:0.75"></span>
+      <span class="petal" style="left:58%;--size:8px;--duration:18s;--delay:-8s;--sway:102px;--alpha:0.85"></span>
+      <span class="petal" style="left:95%;--size:9px;--duration:19s;--delay:-15s;--sway:30px;--alpha:0.45"></span>
+      <span class="petal" style="left:32%;--size:10px;--duration:20s;--delay:-22s;--sway:48px;--alpha:0.55"></span>
+      <span class="petal" style="left:69%;--size:11px;--duration:21s;--delay:-6s;--sway:66px;--alpha:0.65"></span>
+      <span class="petal" style="left:6%;--size:12px;--duration:22s;--delay:-13s;--sway:84px;--alpha:0.75"></span>
+      <span class="petal" style="left:43%;--size:13px;--duration:10s;--delay:-20s;--sway:102px;--alpha:0.85"></span>
+      <span class="petal" style="left:80%;--size:6px;--duration:11s;--delay:-4s;--sway:30px;--alpha:0.45"></span>
+      <span class="petal" style="left:17%;--size:7px;--duration:12s;--delay:-11s;--sway:48px;--alpha:0.55"></span>
+      <span class="petal" style="left:54%;--size:8px;--duration:13s;--delay:-18s;--sway:66px;--alpha:0.65"></span>
+      <span class="petal" style="left:91%;--size:9px;--duration:14s;--delay:-2s;--sway:84px;--alpha:0.75"></span>
+      <span class="petal" style="left:28%;--size:10px;--duration:15s;--delay:-9s;--sway:102px;--alpha:0.85"></span>
+      <span class="petal" style="left:65%;--size:11px;--duration:16s;--delay:-16s;--sway:30px;--alpha:0.45"></span>
+      <span class="petal" style="left:2%;--size:12px;--duration:17s;--delay:-0s;--sway:48px;--alpha:0.55"></span>
+      <span class="petal" style="left:39%;--size:13px;--duration:18s;--delay:-7s;--sway:66px;--alpha:0.65"></span>
       <span class="glare"></span>
       <span class="scanlines"></span>
       <!-- fx-end -->
     </div>
-    <div class="card-glow" aria-hidden="true"></div>
-    <div class="glass-card">
-      <span class="wordmark">photogit<i class="shimmer" aria-hidden="true"></i></span>
-      <span class="sparkle sparkle-a" aria-hidden="true"></span>
-      <span class="sparkle sparkle-b" aria-hidden="true"></span>
-      <span class="cta">try it!</span>
-    </div>
-  </a>
+    <section class="content" aria-label="PhotoGit">
+      <h1 class="title">photogit</h1>
+      <div class="actions">
+        <nav class="social-container" aria-label="Connect with PhotoGit">
+          <a href="https://github.com/xingexu/photogit" target="_blank" rel="noopener noreferrer">GitHub <span aria-hidden="true">↗</span></a>
+          <a href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fgithub.com%2Fxingexu%2Fphotogit" target="_blank" rel="noopener noreferrer" aria-label="Share PhotoGit on LinkedIn">LinkedIn <span aria-hidden="true">↗</span></a>
+        </nav>
+        <div class="try-container">
+          <a class="try-link" href="https://github.com/xingexu/photogit#quick-start">Try now <span aria-hidden="true">→</span></a>
+        </div>
+      </div>
+    </section>
+    <button class="motion-toggle" type="button" aria-pressed="false" hidden>Pause animation</button>
+  </main>
   <script>
     (function () {
-      if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      var reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+      var finePointer = matchMedia('(hover: hover) and (pointer: fine)');
       var fx = document.querySelector('.fx');
-      if (!fx) return;
+      var toggle = document.querySelector('.motion-toggle');
+      var paused = false;
+      var frame = 0;
+      var pointerX = 0;
+      var pointerY = 0;
+
+      function resetParallax() {
+        cancelAnimationFrame(frame);
+        frame = 0;
+        fx.style.removeProperty('--par-x');
+        fx.style.removeProperty('--par-y');
+      }
+      function syncMotion() {
+        var stopped = paused || reducedMotion.matches || document.hidden;
+        document.documentElement.classList.toggle('motion-paused', stopped);
+        toggle.hidden = reducedMotion.matches;
+        toggle.setAttribute('aria-pressed', String(paused));
+        toggle.textContent = paused ? 'Resume animation' : 'Pause animation';
+        if (stopped || !finePointer.matches) resetParallax();
+      }
+      toggle.addEventListener('click', function () {
+        paused = !paused;
+        syncMotion();
+      });
+      reducedMotion.addEventListener('change', syncMotion);
+      finePointer.addEventListener('change', syncMotion);
+      document.addEventListener('visibilitychange', syncMotion);
+      document.documentElement.addEventListener('pointerleave', resetParallax);
+      window.addEventListener('blur', resetParallax);
       window.addEventListener('pointermove', function (event) {
-        var x = (event.clientX / window.innerWidth - 0.5) * 2;
-        var y = (event.clientY / window.innerHeight - 0.5) * 2;
-        fx.style.setProperty('--par-x', String(-x * 14));
-        fx.style.setProperty('--par-y', String(-y * 10));
+        if (paused || reducedMotion.matches || document.hidden || !finePointer.matches) return;
+        pointerX = (event.clientX / window.innerWidth - 0.5) * -28;
+        pointerY = (event.clientY / window.innerHeight - 0.5) * -20;
+        if (frame) return;
+        frame = requestAnimationFrame(function () {
+          fx.style.setProperty('--par-x', String(pointerX));
+          fx.style.setProperty('--par-y', String(pointerY));
+          frame = 0;
+        });
       }, { passive: true });
+      syncMotion();
     })();
   </script>
 </body>
