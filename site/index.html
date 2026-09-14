@@ -130,12 +130,14 @@
       letter-spacing: .02em; font-weight: 400; color: #fff; text-transform: uppercase;
       text-shadow: 0 3px 0 #fff, 4px 4px 0 #bdefff, -4px 4px 0 #bdefff, 0 8px 0 #5fc7ff, 0 12px 0 #2d74af, 8px 8px 0 #7bd7ff, -8px 8px 0 #7bd7ff, 0 0 28px #d9f7ff, 0 0 64px #7bd7ff, 0 0 90px #349fff;
       white-space: nowrap;
-      transition: filter 220ms ease;
+      transition: text-shadow 220ms ease;
     }
-    .title:hover, .title:focus-visible { filter: drop-shadow(0 0 20px #dbf8ff) drop-shadow(0 0 38px #65c8ff); }
+    .title:hover, .title:focus-visible { text-shadow: 0 3px 0 #fff, 4px 4px 0 #bdefff, -4px 4px 0 #bdefff, 0 8px 0 #5fc7ff, 0 12px 0 #2d74af, 8px 8px 0 #7bd7ff, -8px 8px 0 #7bd7ff, 0 0 20px #dbf8ff, 0 0 38px #65c8ff, 0 0 90px #349fff; }
     .title:focus-visible { outline: 3px solid #fff; outline-offset: 10px; }
-    .title-letter { display: inline-block; opacity: 0; animation: letter-type 1ms steps(1, end) both; animation-delay: calc(250ms + var(--n) * 190ms); }
-    .actions { display: flex; align-items: stretch; justify-content: center; animation: arrive 650ms 2.1s ease-out both; }
+    /* Reveal once on load; the visible base state prevents letters disappearing later. */
+    .title-letter { display: inline-block; opacity: 1; animation: letter-reveal 1ms calc(150ms + var(--n) * 150ms) steps(1, end) backwards; }
+    .title-letter.is-typing { animation: letter-type 190ms ease-out; }
+    .actions { display: flex; align-items: stretch; justify-content: center; animation: arrive 550ms 651ms ease-out both; }
     .try-container {
       display: flex; align-items: center; width: min(clamp(280px, 18vw, 360px), calc(100vw - 48px));
       border: 2px solid #ffffffd9; border-radius: 999px;
@@ -149,7 +151,8 @@
     .actions a .try-arrow { position: absolute; right: 22px; top: calc(50% - 14px); font-size: 26px; line-height: 1; transition: transform 180ms; }
     .actions a:hover .try-arrow { transform: translate(3px, -2px); }
     @keyframes arrive { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-    @keyframes letter-type { to { opacity: 1; } }
+    @keyframes letter-reveal { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes letter-type { 50% { transform: translateY(-3px); } }
     .site-footer {
       position: relative;
       z-index: 4;
@@ -325,7 +328,7 @@
       <!-- fx-end -->
     </div>
     <section class="content" aria-label="PhotoGit">
-      <h1 class="title" aria-label="PhotoGit" aria-description="Click or press Enter to replay the typing with sound" tabindex="0"><span class="title-letter" style="--n:0" aria-hidden="true">P</span><span class="title-letter" style="--n:1" aria-hidden="true">H</span><span class="title-letter" style="--n:2" aria-hidden="true">O</span><span class="title-letter" style="--n:3" aria-hidden="true">T</span><span class="title-letter" style="--n:4" aria-hidden="true">O</span><span class="title-letter" style="--n:5" aria-hidden="true">G</span><span class="title-letter" style="--n:6" aria-hidden="true">I</span><span class="title-letter" style="--n:7" aria-hidden="true">T</span></h1>
+      <h1 class="title" aria-label="PhotoGit" aria-description="Click or press Enter to play the letter animation with sound" tabindex="0"><span class="title-letter" style="--n:0" aria-hidden="true">P</span><span class="title-letter" style="--n:1" aria-hidden="true">H</span><span class="title-letter" style="--n:2" aria-hidden="true">O</span><span class="title-letter" style="--n:3" aria-hidden="true">T</span><span class="title-letter" style="--n:4" aria-hidden="true">O</span><span class="title-letter" style="--n:5" aria-hidden="true">G</span><span class="title-letter" style="--n:6" aria-hidden="true">I</span><span class="title-letter" style="--n:7" aria-hidden="true">T</span></h1>
       <div class="actions">
         <div class="try-container">
           <a class="try-link" href="https://github.com/xingexu/photogit#quick-start">Try it now <span class="try-arrow" aria-hidden="true">→</span></a>
@@ -395,11 +398,17 @@
             audioContext.resume();
           } catch (error) { /* Typing still works when audio is unavailable. */ }
         }
-        letters.forEach(function (letter) { letter.style.animation = 'none'; });
+        letters.forEach(function (letter) {
+          letter.style.animation = 'none';
+          letter.classList.remove('is-typing');
+        });
         void title.offsetWidth;
         letters.forEach(function (letter, index) {
-          letter.style.removeProperty('animation');
-          typingTimers.push(setTimeout(function () { typeSound(index); }, 250 + index * 190));
+          typingTimers.push(setTimeout(function () {
+            letter.style.removeProperty('animation');
+            letter.classList.add('is-typing');
+            typeSound(index);
+          }, index * 150));
         });
       }
       title.addEventListener('click', replayTyping);
