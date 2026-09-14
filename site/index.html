@@ -109,7 +109,7 @@
     .landing { position: relative; min-height: 100svh; display: grid; place-items: center; isolation: isolate; overflow: hidden; }
     .content { position: relative; z-index: 3; padding: 80px 20px; text-align: center; }
     .title {
-      margin: 0 0 20px; font-family: var(--font-logo); font-size: clamp(30px, calc(7vw - 35px), 88px); line-height: 1.25;
+      margin: 0 0 20px; font-family: var(--font-logo); font-size: clamp(30px, 5.2vw, 108px); line-height: 1.25;
       letter-spacing: .02em; font-weight: 400; color: #fff; text-transform: uppercase;
       text-shadow: 0 3px 0 #fff, 4px 4px 0 #bdefff, -4px 4px 0 #bdefff, 0 8px 0 #5fc7ff, 0 12px 0 #2d74af, 8px 8px 0 #7bd7ff, -8px 8px 0 #7bd7ff, 0 0 28px #d9f7ff, 0 0 64px #7bd7ff, 0 0 90px #349fff;
       white-space: nowrap;
@@ -121,13 +121,13 @@
     .title-letter { display: inline-block; opacity: 0; animation: letter-type 1ms steps(1, end) both; animation-delay: calc(var(--n) * 130ms); }
     .actions { display: flex; align-items: stretch; justify-content: center; animation: arrive 650ms 1s ease-out both; }
     .try-container {
-      display: flex; align-items: center; width: min(300px, calc(100vw - 48px));
+      display: flex; align-items: center; width: min(clamp(280px, 18vw, 360px), calc(100vw - 48px));
       border: 2px solid #ffffffd9; border-radius: 999px;
       background: linear-gradient(145deg, #ffffff65, #c1eaff6b 65%, #78c5f180);
       backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
       box-shadow: inset 0 3px 0 #ffffffa0, inset 0 -4px 0 #71bce966, 0 8px 0 #286b9770, 0 17px 26px #0c385b55;
     }
-    .actions a { position: relative; display: flex; align-items: center; justify-content: center; width: 100%; min-height: 64px; padding: 11px 40px 13px; border-radius: 999px; color: #fff; text-decoration: none; font-family: Arial, Helvetica, sans-serif; font-size: 21px; font-weight: 700; text-shadow: 0 3px 0 #498caf; transition: background 180ms, transform 180ms; }
+    .actions a { position: relative; display: flex; align-items: center; justify-content: center; width: 100%; min-height: clamp(60px, 3.5vw, 72px); padding: 11px 40px 13px; border-radius: 999px; color: #fff; text-decoration: none; font-family: Arial, Helvetica, sans-serif; font-size: clamp(19px, 1.1vw, 24px); font-weight: 700; text-shadow: 0 3px 0 #498caf; transition: background 180ms, transform 180ms; }
     .actions a:hover { background: #ffffff38; transform: translateY(-3px); }
     .actions a:focus-visible { outline: 3px solid #ffcbdf; outline-offset: 3px; }
     .actions a .try-arrow { position: absolute; right: 22px; top: calc(50% - 14px); font-size: 26px; line-height: 1; transition: transform 180ms; }
@@ -166,6 +166,7 @@
     .icon-bar svg { display: block; width: 23px; height: 23px; fill: currentColor; }
     .icon-bar a:first-child svg { width: 25px; height: 25px; }
     .icon-bar a:nth-child(2) svg { width: 20px; height: 20px; }
+    .icon-bar a:nth-child(2) { background: #fff; color: #203b59; }
     .icon-bar a:hover { transform: translateY(-3px); border-color: #ffd8ec; }
     .icon-bar a:focus-visible { outline: 3px solid #ffcbdf; outline-offset: 3px; }
     @media (max-width: 560px) {
@@ -328,6 +329,22 @@
       var frame = 0;
       var pointerX = 0;
       var pointerY = 0;
+
+      var petals = Array.from(document.querySelectorAll('.petal'));
+      var phases = petals.map(function (_, index) { return (index + Math.random()) / petals.length; });
+      for (var i = phases.length - 1; i > 0; i--) {
+        var swapIndex = Math.floor(Math.random() * (i + 1));
+        var phase = phases[i];
+        phases[i] = phases[swapIndex];
+        phases[swapIndex] = phase;
+      }
+      petals.forEach(function (petal, index) {
+        var duration = 12 + Math.random() * 16;
+        petal.style.setProperty('--duration', duration.toFixed(2) + 's');
+        petal.style.setProperty('--delay', (-phases[index] * duration).toFixed(2) + 's');
+        petal.style.setProperty('--sway', Math.round((Math.random() - 0.5) * 170) + 'px');
+        petal.style.left = (((index + Math.random()) / petals.length) * 100).toFixed(2) + '%';
+      });
 
       function typeSound(index) {
         if (!audioContext || audioContext.state !== 'running') return;
