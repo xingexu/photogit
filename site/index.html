@@ -52,21 +52,15 @@
     }
     .sky-cloud {
       position: absolute;
-      left: -560px;
-      width: var(--cloud-width);
-      height: var(--cloud-height);
+      left: -720px;
+      width: min(var(--cloud-width), 72vw);
+      height: auto;
       opacity: var(--cloud-opacity);
-      background: linear-gradient(180deg, #ffffffd9, #e3f6ff7d);
-      clip-path: polygon(0 72%, 9% 72%, 9% 60%, 17% 60%, 17% 46%, 29% 46%, 29% 32%, 40% 32%, 40% 21%, 55% 21%, 55% 32%, 67% 32%, 67% 44%, 79% 44%, 79% 56%, 91% 56%, 91% 68%, 100% 68%, 100% 82%, 76% 82%, 76% 90%, 20% 90%, 20% 82%, 0 82%);
       image-rendering: pixelated;
       animation: sky-drift var(--cloud-speed) linear infinite;
       animation-delay: var(--cloud-delay);
     }
-    .sky-cloud--wisp {
-      background: #f3fbffb0;
-      clip-path: polygon(0 65%, 12% 65%, 12% 50%, 28% 50%, 28% 37%, 50% 37%, 50% 48%, 68% 48%, 68% 60%, 87% 60%, 87% 70%, 100% 70%, 100% 83%, 0 83%);
-    }
-    @keyframes sky-drift { to { transform: translateX(calc(100vw + 1120px)); } }
+    @keyframes sky-drift { to { transform: translateX(calc(100vw + 1440px)); } }
     /* Petals echo the cherry blossoms already in the artwork. */
     .petal {
       position: absolute;
@@ -221,10 +215,10 @@
          decoding="async" fetchpriority="high">
     <div class="vignette" aria-hidden="true"></div>
     <div class="fx" aria-hidden="true">
-      <span class="sky-cloud" style="top:5%;--cloud-width:510px;--cloud-height:100px;--cloud-opacity:.38;--cloud-speed:82s;--cloud-delay:-29s"></span>
-      <span class="sky-cloud sky-cloud--wisp" style="top:15%;--cloud-width:390px;--cloud-height:34px;--cloud-opacity:.44;--cloud-speed:69s;--cloud-delay:-49s"></span>
-      <span class="sky-cloud" style="top:24%;--cloud-width:420px;--cloud-height:72px;--cloud-opacity:.27;--cloud-speed:97s;--cloud-delay:-66s"></span>
-      <span class="sky-cloud sky-cloud--wisp" style="top:9%;--cloud-width:310px;--cloud-height:28px;--cloud-opacity:.35;--cloud-speed:76s;--cloud-delay:-8s"></span>
+      <img class="sky-cloud" src="artwork/broad-cloud.png" alt="" width="1452" height="540" style="top:4%;--cloud-width:570px;--cloud-opacity:.68;--cloud-speed:82s;--cloud-delay:-29s">
+      <img class="sky-cloud" src="artwork/wispy-cloud.png" alt="" width="1884" height="348" style="top:17%;--cloud-width:680px;--cloud-opacity:.57;--cloud-speed:69s;--cloud-delay:-49s">
+      <img class="sky-cloud" src="artwork/broad-cloud.png" alt="" width="1452" height="540" style="top:22%;--cloud-width:440px;--cloud-opacity:.42;--cloud-speed:97s;--cloud-delay:-66s">
+      <img class="sky-cloud" src="artwork/wispy-cloud.png" alt="" width="1884" height="348" style="top:8%;--cloud-width:520px;--cloud-opacity:.48;--cloud-speed:76s;--cloud-delay:-8s">
       <span class="petal" style="left:0%;--size:6px;--duration:10s;--delay:-0s;--sway:30px;--alpha:0.45"></span>
       <span class="petal" style="left:37%;--size:7px;--duration:11s;--delay:-7s;--sway:48px;--alpha:0.55"></span>
       <span class="petal" style="left:74%;--size:8px;--duration:12s;--delay:-14s;--sway:66px;--alpha:0.65"></span>
