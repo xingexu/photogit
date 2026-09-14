@@ -29,9 +29,7 @@
       -webkit-font-smoothing: antialiased;
       overflow-x: hidden;
     }
-    @media (hover: hover) and (pointer: fine) {
-      .landing, .landing * { cursor: none !important; }
-    }
+    html, body, body * { cursor: none !important; }
 
     /* Pixel art, rendered pixelated rather than smoothed, filling the frame. */
     .hero {
@@ -139,7 +137,6 @@
       white-space: nowrap;
       transition: filter 220ms ease;
     }
-    .title { cursor: pointer; }
     .title:hover, .title:focus-visible { filter: drop-shadow(0 0 20px #dbf8ff) drop-shadow(0 0 38px #65c8ff); }
     .title:focus-visible { outline: 3px solid #fff; outline-offset: 10px; }
     .title-letter { display: inline-block; opacity: 0; animation: letter-type 1ms steps(1, end) both; animation-delay: calc(var(--n) * 130ms); }
