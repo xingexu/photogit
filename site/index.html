@@ -52,35 +52,46 @@
     }
     .cloud {
       position: absolute;
-      background: rgba(255, 255, 255, 0.85);
-      clip-path: polygon(0% 68%, 9% 68%, 9% 48%, 17% 48%, 17% 36%, 27% 36%, 27% 24%, 37% 24%, 37% 14%, 52% 14%, 52% 24%, 66% 24%, 66% 34%, 74% 34%, 74% 44%, 83% 44%, 83% 54%, 92% 54%, 92% 68%, 100% 68%, 100% 78%, 0% 78%);
-      image-rendering: pixelated;
-      border-radius: 0;
-      box-shadow: 14px -16px 0 rgba(255, 255, 255, 0.82), 28px -10px 0 rgba(255, 255, 255, 0.6), 52px 4px 0 rgba(255, 255, 255, 0.42), 82px -2px 0 rgba(255, 255, 255, 0.58);
-      filter: saturate(110%);
+      background: #fffaf5;
+      clip-path: polygon(0 64%, 8% 64%, 8% 48%, 18% 48%, 18% 35%, 29% 35%, 29% 22%, 43% 22%, 43% 12%, 58% 12%, 58% 24%, 70% 24%, 70% 37%, 82% 37%, 82% 50%, 92% 50%, 92% 64%, 100% 64%, 100% 78%, 85% 78%, 85% 87%, 17% 87%, 17% 78%, 0 78%);
+      filter: drop-shadow(0 8px 0 #b6dff2);
     }
+    .cloud::after { content: ""; position: absolute; inset: 53% 20% 10%; background: #e4f6fc; clip-path: polygon(0 0, 100% 0, 100% 35%, 85% 35%, 85% 65%, 15% 65%, 15% 35%, 0 35%); }
     .cloud-a { top: 8%; left: -300px; width: 240px; height: 96px; opacity: 0.9; animation: photogit-drift 52s linear infinite; }
     @keyframes photogit-drift {
       from { transform: translateX(0); }
       to { transform: translateX(calc(100vw + 460px)); }
     }
-    .cloud-b { top: 18%; left: -180px; width: 172px; height: 72px; opacity: 0.6; animation: photogit-drift 64s linear infinite; animation-delay: -20s; }
-    .cloud-c { top: 2%; left: -330px; width: 270px; height: 112px; opacity: 0.75; animation: photogit-drift 80s linear infinite; animation-delay: -50s; }
-    .cloud-d { top: 14%; left: -210px; width: 160px; height: 56px; opacity: 0.5; animation: photogit-drift 72s linear infinite reverse; animation-delay: -8s; }
+    .cloud-b { top: 18%; left: -180px; width: 172px; height: 72px; opacity: 0.75; animation: photogit-drift 64s linear infinite; animation-delay: -20s; }
+    .cloud-c { top: 2%; left: -330px; width: 270px; height: 112px; opacity: 0.8; animation: photogit-drift 80s linear infinite; animation-delay: -50s; }
+    .cloud-d { top: 14%; left: -210px; width: 160px; height: 56px; opacity: 0.7; animation: photogit-drift 72s linear infinite reverse; animation-delay: -8s; }
+    .cloud-e { top: 27%; left: -240px; width: 205px; height: 78px; opacity: 0.7; animation: photogit-drift 68s linear infinite; animation-delay: -39s; }
     /* Petals echo the cherry blossoms already in the artwork. */
     .petal {
       position: absolute;
       top: -5%;
       width: var(--size);
       height: calc(var(--size) * 1.5);
-      background: linear-gradient(135deg, #ffd3e2, #f6a9c6);
-      border-radius: 70% 10% 70% 10%;
+      background: linear-gradient(135deg, #fff0f6 10%, #f8a9cb 80%);
       clip-path: polygon(50% 0%, 85% 25%, 100% 50%, 85% 75%, 50% 100%, 15% 75%, 0% 50%, 15% 25%);
       image-rendering: pixelated;
       opacity: var(--alpha);
       animation: photogit-fall var(--duration) var(--delay) linear infinite;
       box-shadow: 1px 2px 0px rgba(255, 199, 225, 0.35);
     }
+    .petal:nth-of-type(4n) { background: #ffe8f1; }
+    .petal:nth-of-type(7n) { background: #f68fbb; }
+    .blossom {
+      position: absolute;
+      width: 28px; height: 28px;
+      background: #fff0f6;
+      clip-path: polygon(40% 0, 60% 0, 70% 28%, 92% 18%, 100% 38%, 76% 53%, 90% 76%, 72% 90%, 54% 70%, 34% 100%, 16% 86%, 29% 59%, 0 49%, 7% 28%, 34% 34%);
+      filter: drop-shadow(2px 3px 0 #d96a9b);
+      opacity: .9;
+      animation: blossom-bob 5s ease-in-out infinite alternate;
+    }
+    .blossom::after { content: ""; position: absolute; left: 42%; top: 42%; width: 16%; height: 16%; background: #f3ae49; }
+    @keyframes blossom-bob { to { transform: translateY(-8px) rotate(12deg); } }
     @keyframes photogit-fall {
       0%   { transform: translate(0, -10vh) rotate(0deg); }
       50%  { transform: translate(var(--sway), 55vh) rotate(160deg) rotateY(150deg); }
@@ -125,29 +136,23 @@
     .landing { position: relative; min-height: 100svh; display: grid; place-items: center; isolation: isolate; overflow: hidden; }
     .content { position: relative; z-index: 3; padding: 80px 20px; text-align: center; }
     .title {
-      margin: 0 0 36px; font-size: clamp(56px, 11vw, 132px); line-height: 1.15;
-      letter-spacing: -0.08em; font-weight: 700;
-      text-shadow: 0 4px 0 #1a2d4b, 0 10px 28px #10283c80, 0 -2px 0 #f6e5ff;
+      margin: 0 0 36px; font-size: clamp(62px, 12vw, 150px); line-height: 1.15;
+      letter-spacing: -0.08em; font-weight: 700; color: #fff;
+      text-shadow: 4px 0 #fff, -4px 0 #fff, 0 4px #fff, 0 -4px #fff, 8px 8px #b5eaff, -8px 8px #b5eaff, 0 14px #77c9ef, 0 22px 0 #27618e, 0 30px 0 #163d64, 0 38px 20px #12436dcc;
       animation: arrive 900ms ease-out both, title-float 7s 900ms ease-in-out infinite;
-      background: linear-gradient(180deg, #fff, #ecf8ff);
-      -webkit-background-clip: text;
-      color: transparent;
     }
     .actions { display: flex; align-items: stretch; justify-content: center; animation: arrive 900ms 180ms ease-out both; }
     .try-container {
-      display: flex; align-items: center; padding: 8px;
-      border: 1px solid #ffffff80; border-radius: 20px;
-      background: linear-gradient(150deg, #ffffff30, #ffffff08), #102438b8;
-      box-shadow: inset 0 1px 0 #ffffff40, 0 12px 30px #091b3638;
-      backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+      display: flex; align-items: center; width: min(460px, calc(100vw - 48px));
+      border: 3px solid #f5fbff; border-radius: 999px;
+      background: linear-gradient(145deg, #d7f5ff, #8cceef 65%, #6bb7e2);
+      box-shadow: inset 0 5px 0 #ffffff8c, inset 0 -8px 0 #4397ca55, 0 12px 0 #286b97, 0 22px 30px #0c385b77;
     }
-    .actions a { display: flex; align-items: center; justify-content: center; gap: 12px; min-height: 48px; padding: 12px 16px; border-radius: 12px; color: white; text-decoration: none; font-size: 14px; transition: background 180ms, transform 180ms; }
-    .actions a:hover { background: #ffffff20; transform: translateY(-2px); }
+    .actions a { position: relative; display: flex; align-items: center; justify-content: center; width: 100%; min-height: 102px; padding: 20px 64px; border-radius: 999px; color: #fff; text-decoration: none; font-family: Arial, Helvetica, sans-serif; font-size: clamp(25px, 3vw, 34px); font-weight: 700; text-shadow: 0 3px 0 #498caf; transition: background 180ms, transform 180ms; }
+    .actions a:hover { background: #ffffff30; transform: translateY(-3px); }
     .actions a:focus-visible { outline: 3px solid #ffcbdf; outline-offset: 3px; }
-    .actions a span { transition: transform 180ms; }
+    .actions a span { position: absolute; right: 36px; font-size: 38px; line-height: 1; transition: transform 180ms; }
     .actions a:hover span { transform: translate(3px, -2px); }
-    .try-container { background: linear-gradient(145deg, #ffe0ed, #f4b6d0); border-color: #fff0f6; }
-    .try-container a { color: #432039; }
     @keyframes arrive { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes title-float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-9px); } }
     .site-footer {
@@ -186,7 +191,9 @@
     @media (max-width: 560px) {
       .actions { flex-direction: column; align-items: center; gap: 14px; }
       .title { margin-bottom: 28px; }
-      .try-container { min-width: 180px; justify-content: center; }
+      .try-container { width: min(380px, calc(100vw - 48px)); justify-content: center; }
+      .actions a { min-height: 78px; }
+      .actions a span { right: 24px; }
       .petal:nth-of-type(n+22) { display: none; }
       .site-footer { padding-inline: 16px; gap: 12px; }
       .footer-credit { font-size: 10px; }
@@ -214,6 +221,13 @@
       <span class="cloud cloud-a"></span>
       <span class="cloud cloud-b"></span>
       <span class="cloud cloud-c"></span>
+      <span class="cloud cloud-e"></span>
+      <span class="blossom" style="top:12%;left:8%"></span>
+      <span class="blossom" style="top:23%;left:88%;animation-delay:-2s"></span>
+      <span class="blossom" style="top:37%;left:13%;animation-delay:-3s"></span>
+      <span class="blossom" style="top:48%;left:91%;animation-delay:-1s"></span>
+      <span class="blossom" style="top:62%;left:6%;animation-delay:-4s"></span>
+      <span class="blossom" style="top:72%;left:84%;animation-delay:-2.5s"></span>
       <span class="petal" style="left:0%;--size:6px;--duration:10s;--delay:-0s;--sway:30px;--alpha:0.45"></span>
       <span class="petal" style="left:37%;--size:7px;--duration:11s;--delay:-7s;--sway:48px;--alpha:0.55"></span>
       <span class="petal" style="left:74%;--size:8px;--duration:12s;--delay:-14s;--sway:66px;--alpha:0.65"></span>
@@ -262,6 +276,19 @@
       <span class="petal" style="left:65%;--size:11px;--duration:16s;--delay:-16s;--sway:30px;--alpha:0.45"></span>
       <span class="petal" style="left:2%;--size:12px;--duration:17s;--delay:-0s;--sway:48px;--alpha:0.55"></span>
       <span class="petal" style="left:39%;--size:13px;--duration:18s;--delay:-7s;--sway:66px;--alpha:0.65"></span>
+      <span class="petal" style="left:5%;--size:12px;--duration:14s;--delay:-10s;--sway:72px;--alpha:0.9"></span>
+      <span class="petal" style="left:12%;--size:9px;--duration:17s;--delay:-5s;--sway:48px;--alpha:0.85"></span>
+      <span class="petal" style="left:19%;--size:14px;--duration:20s;--delay:-16s;--sway:65px;--alpha:0.8"></span>
+      <span class="petal" style="left:26%;--size:8px;--duration:12s;--delay:-8s;--sway:54px;--alpha:0.95"></span>
+      <span class="petal" style="left:33%;--size:11px;--duration:18s;--delay:-13s;--sway:68px;--alpha:0.9"></span>
+      <span class="petal" style="left:41%;--size:10px;--duration:16s;--delay:-3s;--sway:50px;--alpha:0.82"></span>
+      <span class="petal" style="left:49%;--size:15px;--duration:21s;--delay:-18s;--sway:74px;--alpha:0.78"></span>
+      <span class="petal" style="left:57%;--size:8px;--duration:13s;--delay:-9s;--sway:45px;--alpha:0.95"></span>
+      <span class="petal" style="left:64%;--size:12px;--duration:19s;--delay:-15s;--sway:62px;--alpha:0.86"></span>
+      <span class="petal" style="left:71%;--size:10px;--duration:15s;--delay:-4s;--sway:55px;--alpha:0.92"></span>
+      <span class="petal" style="left:78%;--size:13px;--duration:20s;--delay:-11s;--sway:70px;--alpha:0.84"></span>
+      <span class="petal" style="left:86%;--size:9px;--duration:14s;--delay:-7s;--sway:49px;--alpha:0.94"></span>
+      <span class="petal" style="left:93%;--size:14px;--duration:22s;--delay:-19s;--sway:77px;--alpha:0.8"></span>
       <span class="petal" style="left:84%;--size:17px;--duration:17s;--delay:-14s;--sway:72px;--alpha:0.88"></span>
       <span class="petal" style="left:34%;--size:15px;--duration:16s;--delay:-2s;--sway:66px;--alpha:0.86"></span>
       <span class="petal" style="left:9%;--size:12px;--duration:12s;--delay:-7s;--sway:50px;--alpha:0.91"></span>
@@ -280,7 +307,7 @@
       <h1 class="title">photogit</h1>
       <div class="actions">
         <div class="try-container">
-          <a class="try-link" href="https://github.com/xingexu/photogit#quick-start">Try now <span aria-hidden="true">→</span></a>
+          <a class="try-link" href="https://github.com/xingexu/photogit#quick-start">Try it now <span aria-hidden="true">→</span></a>
         </div>
       </div>
     </section>
