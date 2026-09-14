@@ -56,8 +56,8 @@
       top: -5%;
       width: calc(var(--size) * 1.45);
       height: calc(var(--size) * 2);
-      background: linear-gradient(135deg, #fff0f6 10%, #f8a9cb 80%);
-      clip-path: polygon(50% 0%, 85% 25%, 100% 50%, 85% 75%, 50% 100%, 15% 75%, 0% 50%, 15% 25%);
+      background: #ffd6e8;
+      clip-path: polygon(40% 0, 60% 0, 60% 12%, 75% 12%, 75% 25%, 88% 25%, 88% 38%, 100% 38%, 100% 63%, 88% 63%, 88% 75%, 75% 75%, 75% 88%, 60% 88%, 60% 100%, 40% 100%, 40% 88%, 25% 88%, 25% 75%, 12% 75%, 12% 63%, 0 63%, 0 38%, 12% 38%, 12% 25%, 25% 25%, 25% 12%, 40% 12%);
       image-rendering: pixelated;
       opacity: var(--alpha);
       animation: photogit-fall var(--duration) var(--delay) linear infinite;
@@ -66,9 +66,9 @@
     .petal:nth-of-type(4n) { background: #ffe8f1; }
     .petal:nth-of-type(7n) { background: #f68fbb; }
     @keyframes photogit-fall {
-      0%   { transform: translate(0, -10vh) rotate(0deg); }
-      50%  { transform: translate(var(--sway), 55vh) rotate(160deg) rotateY(150deg); }
-      100% { transform: translate(-20px, 120vh) rotate(340deg) rotateY(300deg); }
+      0%   { transform: translate(0, -10vh) rotate(-15deg); }
+      50%  { transform: translate(var(--sway), 55vh) rotate(25deg); }
+      100% { transform: translate(-20px, 120vh) rotate(70deg); }
     }
     /* A soft vignette settles the eye on the centred card rather than
        the frame edges. */
@@ -109,12 +109,15 @@
     .landing { position: relative; min-height: 100svh; display: grid; place-items: center; isolation: isolate; overflow: hidden; }
     .content { position: relative; z-index: 3; padding: 80px 20px; text-align: center; }
     .title {
-      margin: 0 0 46px; font-family: var(--font-logo); font-size: clamp(30px, 7.2vw, 116px); line-height: 1.4;
+      margin: 0 0 12px; font-family: var(--font-logo); font-size: clamp(30px, 7.2vw, 116px); line-height: 1.25;
       letter-spacing: .02em; font-weight: 400; color: #fff; text-transform: uppercase;
       text-shadow: 0 3px 0 #fff, 4px 4px 0 #bdefff, -4px 4px 0 #bdefff, 0 8px 0 #5fc7ff, 0 12px 0 #2d74af, 8px 8px 0 #7bd7ff, -8px 8px 0 #7bd7ff, 0 0 28px #d9f7ff, 0 0 64px #7bd7ff, 0 0 90px #349fff;
-      animation: logo-fade-in 1.3s steps(9, end) both;
+      white-space: nowrap;
+      transition: filter 220ms ease;
     }
-    .actions { display: flex; align-items: stretch; justify-content: center; animation: arrive 650ms 650ms ease-out both; }
+    .title:hover { filter: drop-shadow(0 0 20px #dbf8ff) drop-shadow(0 0 38px #65c8ff); }
+    .title-letter { display: inline-block; opacity: 0; animation: letter-type 1ms steps(1, end) both; animation-delay: calc(var(--n) * 130ms); }
+    .actions { display: flex; align-items: stretch; justify-content: center; animation: arrive 650ms 1s ease-out both; }
     .try-container {
       display: flex; align-items: center; width: min(300px, calc(100vw - 48px));
       border: 2px solid #ffffffd9; border-radius: 999px;
@@ -128,11 +131,7 @@
     .actions a span { position: absolute; right: 22px; font-size: 26px; line-height: 1; transition: transform 180ms; }
     .actions a:hover span { transform: translate(3px, -2px); }
     @keyframes arrive { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-    @keyframes logo-fade-in {
-      0% { opacity: 0; clip-path: inset(0 100% 0 0); filter: brightness(.7); }
-      75% { opacity: 1; clip-path: inset(0 0 0 0); filter: brightness(1.3); }
-      100% { opacity: 1; clip-path: inset(0 0 0 0); filter: brightness(1); }
-    }
+    @keyframes letter-type { to { opacity: 1; } }
     .site-footer {
       position: relative;
       z-index: 4;
@@ -168,7 +167,7 @@
     .icon-bar a:focus-visible { outline: 3px solid #ffcbdf; outline-offset: 3px; }
     @media (max-width: 560px) {
       .actions { flex-direction: column; align-items: center; gap: 14px; }
-      .title { margin-bottom: 28px; }
+      .title { margin-bottom: 10px; }
       .try-container { width: min(280px, calc(100vw - 48px)); justify-content: center; }
       .actions a { min-height: 62px; font-size: 20px; }
       .actions a span { right: 20px; }
@@ -298,7 +297,7 @@
       <!-- fx-end -->
     </div>
     <section class="content" aria-label="PhotoGit">
-      <h1 class="title">photogit</h1>
+      <h1 class="title" aria-label="PhotoGit"><span class="title-letter" style="--n:0" aria-hidden="true">P</span><span class="title-letter" style="--n:1" aria-hidden="true">H</span><span class="title-letter" style="--n:2" aria-hidden="true">O</span><span class="title-letter" style="--n:3" aria-hidden="true">T</span><span class="title-letter" style="--n:4" aria-hidden="true">O</span><span class="title-letter" style="--n:5" aria-hidden="true">G</span><span class="title-letter" style="--n:6" aria-hidden="true">I</span><span class="title-letter" style="--n:7" aria-hidden="true">T</span></h1>
       <div class="actions">
         <div class="try-container">
           <a class="try-link" href="https://github.com/xingexu/photogit#quick-start">Try it now <span aria-hidden="true">→</span></a>
