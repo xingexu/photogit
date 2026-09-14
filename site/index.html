@@ -52,25 +52,33 @@
     .cloud {
       position: absolute;
       background: rgba(255, 255, 255, 0.85);
-      clip-path: polygon(10% 60%, 10% 40%, 20% 40%, 20% 20%, 40% 20%, 40% 10%, 60% 10%, 60% 20%, 80% 20%, 80% 40%, 90% 40%, 90% 60%, 80% 60%, 80% 70%, 20% 70%, 20% 60%);
+      clip-path: polygon(0% 68%, 9% 68%, 9% 48%, 17% 48%, 17% 36%, 27% 36%, 27% 24%, 37% 24%, 37% 14%, 52% 14%, 52% 24%, 66% 24%, 66% 34%, 74% 34%, 74% 44%, 83% 44%, 83% 54%, 92% 54%, 92% 68%, 100% 68%, 100% 78%, 0% 78%);
+      image-rendering: pixelated;
+      border-radius: 0;
+      box-shadow: 14px -16px 0 rgba(255, 255, 255, 0.82), 28px -10px 0 rgba(255, 255, 255, 0.6), 52px 4px 0 rgba(255, 255, 255, 0.42), 82px -2px 0 rgba(255, 255, 255, 0.58);
+      filter: saturate(110%);
     }
-    .cloud-a { top: 10%; left: -240px; width: 220px; height: 100px; opacity: 0.85; animation: photogit-drift 48s linear infinite; }
+    .cloud-a { top: 8%; left: -300px; width: 240px; height: 96px; opacity: 0.9; animation: photogit-drift 52s linear infinite; }
     @keyframes photogit-drift {
       from { transform: translateX(0); }
       to { transform: translateX(calc(100vw + 460px)); }
     }
-    .cloud-b { top: 22%; left: -160px; width: 150px; height: 68px; opacity: 0.55; animation: photogit-drift 64s linear infinite; animation-delay: -20s; }
-    .cloud-c { top: 6%; left: -300px; width: 260px; height: 120px; opacity: 0.7; animation: photogit-drift 80s linear infinite; animation-delay: -50s; }
+    .cloud-b { top: 18%; left: -180px; width: 172px; height: 72px; opacity: 0.6; animation: photogit-drift 64s linear infinite; animation-delay: -20s; }
+    .cloud-c { top: 2%; left: -330px; width: 270px; height: 112px; opacity: 0.75; animation: photogit-drift 80s linear infinite; animation-delay: -50s; }
+    .cloud-d { top: 14%; left: -210px; width: 160px; height: 56px; opacity: 0.5; animation: photogit-drift 72s linear infinite reverse; animation-delay: -8s; }
     /* Petals echo the cherry blossoms already in the artwork. */
     .petal {
       position: absolute;
       top: -5%;
       width: var(--size);
-      height: calc(var(--size) * 1.4);
+      height: calc(var(--size) * 1.5);
       background: linear-gradient(135deg, #ffd3e2, #f6a9c6);
-      border-radius: 70% 0 70% 0;
+      border-radius: 70% 10% 70% 10%;
+      clip-path: polygon(50% 0%, 85% 25%, 100% 50%, 85% 75%, 50% 100%, 15% 75%, 0% 50%, 15% 25%);
+      image-rendering: pixelated;
       opacity: var(--alpha);
       animation: photogit-fall var(--duration) var(--delay) linear infinite;
+      box-shadow: 1px 2px 0px rgba(255, 199, 225, 0.35);
     }
     @keyframes photogit-fall {
       0%   { transform: translate(0, -10vh) rotate(0deg); }
@@ -116,10 +124,13 @@
     .landing { position: relative; min-height: 100svh; display: grid; place-items: center; isolation: isolate; overflow: hidden; }
     .content { position: relative; z-index: 3; padding: 80px 20px; text-align: center; }
     .title {
-      margin: 0 0 38px; font-size: clamp(40px, 9vw, 100px); line-height: 1.15;
-      letter-spacing: -0.065em; font-weight: 700;
-      text-shadow: 0 3px 0 #243345, 0 6px 22px #10283c80;
+      margin: 0 0 36px; font-size: clamp(56px, 11vw, 132px); line-height: 1.15;
+      letter-spacing: -0.08em; font-weight: 700;
+      text-shadow: 0 4px 0 #1a2d4b, 0 10px 28px #10283c80, 0 -2px 0 #f6e5ff;
       animation: arrive 900ms ease-out both, title-float 7s 900ms ease-in-out infinite;
+      background: linear-gradient(180deg, #fff, #ecf8ff);
+      -webkit-background-clip: text;
+      color: transparent;
     }
     .actions { display: flex; flex-wrap: wrap; align-items: stretch; justify-content: center; gap: 18px; animation: arrive 900ms 180ms ease-out both; }
     .social-container, .try-container {
@@ -137,6 +148,36 @@
     .actions a:hover span { transform: translate(3px, -2px); }
     .try-container { background: linear-gradient(145deg, #ffe0ed, #f4b6d0); border-color: #fff0f6; }
     .try-container a { color: #432039; }
+    .social-stack {
+      position: absolute;
+      left: max(20px, env(safe-area-inset-left));
+      bottom: max(20px, env(safe-area-inset-bottom));
+      z-index: 4;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-width: 190px;
+    }
+    .social-stack a {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      border: 1px solid #ffffff80;
+      border-radius: 12px;
+      background: #102438d9;
+      text-decoration: none;
+      color: #fff;
+      font-size: 13px;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      transition: transform 160ms, background 160ms;
+      text-transform: lowercase;
+    }
+    .social-stack a:hover { transform: translateX(4px); background: #ffffff1c; }
+    .social-stack a:focus-visible { outline: 3px solid #ffcbdf; outline-offset: 3px; }
+    .social-stack a::after { content: "↗"; font-size: 11px; opacity: 0.9; }
     @keyframes arrive { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes title-float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-9px); } }
     .motion-toggle {
@@ -154,7 +195,9 @@
       .actions { flex-direction: column; align-items: center; gap: 14px; }
       .title { margin-bottom: 28px; }
       .try-container { min-width: 180px; justify-content: center; }
-      .petal:nth-of-type(n+28) { display: none; }
+      .petal:nth-of-type(n+22) { display: none; }
+      .social-stack { left: 12px; bottom: 12px; min-width: 0; width: calc(100% - 24px); }
+      .social-stack a { justify-content: center; font-size: 12px; }
     }
     @media (max-height: 420px) { .content { padding: 20px; } .title { margin-bottom: 18px; font-size: 40px; } .actions { flex-direction: row; } }
     @media (prefers-reduced-motion: reduce) {
@@ -225,6 +268,16 @@
       <span class="petal" style="left:65%;--size:11px;--duration:16s;--delay:-16s;--sway:30px;--alpha:0.45"></span>
       <span class="petal" style="left:2%;--size:12px;--duration:17s;--delay:-0s;--sway:48px;--alpha:0.55"></span>
       <span class="petal" style="left:39%;--size:13px;--duration:18s;--delay:-7s;--sway:66px;--alpha:0.65"></span>
+      <span class="petal" style="left:84%;--size:17px;--duration:17s;--delay:-14s;--sway:72px;--alpha:0.88"></span>
+      <span class="petal" style="left:34%;--size:15px;--duration:16s;--delay:-2s;--sway:66px;--alpha:0.86"></span>
+      <span class="petal" style="left:9%;--size:12px;--duration:12s;--delay:-7s;--sway:50px;--alpha:0.91"></span>
+      <span class="petal" style="left:58%;--size:9px;--duration:11s;--delay:-12s;--sway:44px;--alpha:0.89"></span>
+      <span class="petal" style="left:79%;--size:10px;--duration:13s;--delay:-15s;--sway:60px;--alpha:0.87"></span>
+      <span class="petal" style="left:44%;--size:11px;--duration:15s;--delay:-3s;--sway:46px;--alpha:0.93"></span>
+      <span class="petal" style="left:6%;--size:17px;--duration:20s;--delay:-9s;--sway:88px;--alpha:0.74"></span>
+      <span class="petal" style="left:83%;--size:16px;--duration:21s;--delay:-6s;--sway:74px;--alpha:0.8"></span>
+      <span class="petal" style="left:27%;--size:13px;--duration:22s;--delay:-12s;--sway:54px;--alpha:0.86"></span>
+      <span class="cloud cloud-d"></span>
       <span class="glare"></span>
       <span class="scanlines"></span>
       <!-- fx-end -->
@@ -232,15 +285,19 @@
     <section class="content" aria-label="PhotoGit">
       <h1 class="title">photogit</h1>
       <div class="actions">
-        <nav class="social-container" aria-label="Connect with PhotoGit">
-          <a href="https://github.com/xingexu/photogit" target="_blank" rel="noopener noreferrer">GitHub <span aria-hidden="true">↗</span></a>
-          <a href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fgithub.com%2Fxingexu%2Fphotogit" target="_blank" rel="noopener noreferrer" aria-label="Share PhotoGit on LinkedIn">LinkedIn <span aria-hidden="true">↗</span></a>
+        <nav class="social-container" aria-label="Try PhotoGit">
+          <a href="https://github.com/xingexu/photogit" target="_blank" rel="noopener noreferrer" aria-label="Try PhotoGit repo">GitHub <span aria-hidden="true">↗</span></a>
         </nav>
         <div class="try-container">
           <a class="try-link" href="https://github.com/xingexu/photogit#quick-start">Try now <span aria-hidden="true">→</span></a>
         </div>
       </div>
     </section>
+    <div class="social-stack" aria-label="Connect with PhotoGit">
+      <a href="https://github.com/xingexu/photogit" target="_blank" rel="noopener noreferrer">GitHub</a>
+      <a href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fgithub.com%2Fxingexu%2Fphotogit" target="_blank" rel="noopener noreferrer" aria-label="Share PhotoGit on LinkedIn">LinkedIn</a>
+      <a href="mailto:hello@photogit.app">Email</a>
+    </div>
     <button class="motion-toggle" type="button" aria-pressed="false" hidden>Pause animation</button>
   </main>
   <script>
