@@ -54,8 +54,8 @@
     .petal {
       position: absolute;
       top: -5%;
-      width: calc(var(--size) * 1.1);
-      height: calc(var(--size) * 1.55);
+      width: var(--size);
+      height: calc(var(--size) * 1.4);
       background: #ffd6e8;
       clip-path: polygon(40% 0, 60% 0, 60% 12%, 75% 12%, 75% 25%, 88% 25%, 88% 38%, 100% 38%, 100% 63%, 88% 63%, 88% 75%, 75% 75%, 75% 88%, 60% 88%, 60% 100%, 40% 100%, 40% 88%, 25% 88%, 25% 75%, 12% 75%, 12% 63%, 0 63%, 0 38%, 12% 38%, 12% 25%, 25% 25%, 25% 12%, 40% 12%);
       image-rendering: pixelated;
@@ -109,7 +109,7 @@
     .landing { position: relative; min-height: 100svh; display: grid; place-items: center; isolation: isolate; overflow: hidden; }
     .content { position: relative; z-index: 3; padding: 80px 20px; text-align: center; }
     .title {
-      margin: 0 0 12px; font-family: var(--font-logo); font-size: clamp(30px, calc(10vw - 64px), 116px); line-height: 1.25;
+      margin: 0 0 20px; font-family: var(--font-logo); font-size: clamp(30px, calc(7vw - 35px), 88px); line-height: 1.25;
       letter-spacing: .02em; font-weight: 400; color: #fff; text-transform: uppercase;
       text-shadow: 0 3px 0 #fff, 4px 4px 0 #bdefff, -4px 4px 0 #bdefff, 0 8px 0 #5fc7ff, 0 12px 0 #2d74af, 8px 8px 0 #7bd7ff, -8px 8px 0 #7bd7ff, 0 0 28px #d9f7ff, 0 0 64px #7bd7ff, 0 0 90px #349fff;
       white-space: nowrap;
@@ -119,15 +119,15 @@
     .title:hover, .title:focus-visible { filter: drop-shadow(0 0 20px #dbf8ff) drop-shadow(0 0 38px #65c8ff); }
     .title:focus-visible { outline: 3px solid #fff; outline-offset: 10px; }
     .title-letter { display: inline-block; opacity: 0; animation: letter-type 1ms steps(1, end) both; animation-delay: calc(var(--n) * 130ms); }
-    .actions { display: flex; align-items: stretch; justify-content: center; margin-top: -18px; animation: arrive 650ms 1s ease-out both; }
+    .actions { display: flex; align-items: stretch; justify-content: center; animation: arrive 650ms 1s ease-out both; }
     .try-container {
-      display: flex; align-items: center; width: min(324px, calc(100vw - 48px));
+      display: flex; align-items: center; width: min(300px, calc(100vw - 48px));
       border: 2px solid #ffffffd9; border-radius: 999px;
       background: linear-gradient(145deg, #ffffff65, #c1eaff6b 65%, #78c5f180);
       backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
       box-shadow: inset 0 3px 0 #ffffffa0, inset 0 -4px 0 #71bce966, 0 8px 0 #286b9770, 0 17px 26px #0c385b55;
     }
-    .actions a { position: relative; display: flex; align-items: center; justify-content: center; width: 100%; min-height: 72px; padding: 13px 42px 15px; border-radius: 999px; color: #fff; text-decoration: none; font-family: Arial, Helvetica, sans-serif; font-size: 23px; font-weight: 700; text-shadow: 0 3px 0 #498caf; transition: background 180ms, transform 180ms; }
+    .actions a { position: relative; display: flex; align-items: center; justify-content: center; width: 100%; min-height: 64px; padding: 11px 40px 13px; border-radius: 999px; color: #fff; text-decoration: none; font-family: Arial, Helvetica, sans-serif; font-size: 21px; font-weight: 700; text-shadow: 0 3px 0 #498caf; transition: background 180ms, transform 180ms; }
     .actions a:hover { background: #ffffff38; transform: translateY(-3px); }
     .actions a:focus-visible { outline: 3px solid #ffcbdf; outline-offset: 3px; }
     .actions a .try-arrow { position: absolute; right: 22px; top: calc(50% - 14px); font-size: 26px; line-height: 1; transition: transform 180ms; }
@@ -137,7 +137,7 @@
     .site-footer {
       position: relative;
       z-index: 4;
-      min-height: 72px;
+      min-height: 64px;
       padding: 8px max(24px, calc((100vw - 1560px) / 2)) max(8px, env(safe-area-inset-bottom));
       display: flex;
       align-items: center;
@@ -147,11 +147,11 @@
       background: #203b59dc;
       box-shadow: inset 0 5px 0 #ffffff21;
     }
-    .footer-credit { color: #fff0f7; font-size: 14px; font-weight: 700; letter-spacing: .04em; white-space: nowrap; }
-    .icon-bar { display: flex; align-items: center; gap: 10px; }
+    .footer-credit { color: #fff0f7; font-size: 12px; font-weight: 700; letter-spacing: .04em; white-space: nowrap; }
+    .icon-bar { display: flex; align-items: center; gap: 8px; }
     .icon-bar a {
-      width: 46px;
-      height: 46px;
+      width: 42px;
+      height: 42px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -163,21 +163,22 @@
       box-shadow: inset 0 2px 0 #ffffff30, 0 3px 0 #10283f;
       transition: transform 180ms, border-color 180ms;
     }
-    .icon-bar svg { display: block; width: 26px; height: 26px; fill: currentColor; }
-    .icon-bar a:first-child svg { width: 27px; height: 27px; }
+    .icon-bar svg { display: block; width: 23px; height: 23px; fill: currentColor; }
+    .icon-bar a:first-child svg { width: 25px; height: 25px; }
+    .icon-bar a:nth-child(2) svg { width: 20px; height: 20px; }
     .icon-bar a:hover { transform: translateY(-3px); border-color: #ffd8ec; }
     .icon-bar a:focus-visible { outline: 3px solid #ffcbdf; outline-offset: 3px; }
     @media (max-width: 560px) {
       .actions { flex-direction: column; align-items: center; gap: 14px; }
-      .title { margin-bottom: 10px; }
-      .try-container { width: min(300px, calc(100vw - 48px)); justify-content: center; }
-      .actions a { min-height: 66px; font-size: 21px; }
+      .title { margin-bottom: 14px; }
+      .try-container { width: min(280px, calc(100vw - 48px)); justify-content: center; }
+      .actions a { min-height: 60px; font-size: 19px; }
       .actions a .try-arrow { right: 20px; }
       .site-footer { padding-inline: 16px; gap: 12px; }
       .footer-credit { font-size: 10px; }
       .icon-bar { gap: 7px; }
-      .icon-bar a { width: 36px; height: 36px; }
-      .icon-bar svg { width: 22px; height: 22px; }
+      .icon-bar a { width: 34px; height: 34px; }
+      .icon-bar svg { width: 20px; height: 20px; }
     }
     @media (max-height: 420px) { .content { padding: 20px; } .title { margin-bottom: 18px; font-size: 40px; } .actions { flex-direction: row; } }
     @media (prefers-reduced-motion: reduce) {
@@ -311,7 +312,7 @@
       <span class="footer-credit">© 2026 XINGE XU</span>
       <nav class="icon-bar" aria-label="Connect with PhotoGit">
         <a href="https://github.com/xingexu/photogit" target="_blank" rel="noopener noreferrer" aria-label="PhotoGit on GitHub"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .3A12 12 0 0 0 8.21 23.69c.6.11.82-.26.82-.58v-2.04c-3.34.73-4.04-1.61-4.04-1.61-.55-1.39-1.33-1.76-1.33-1.76-1.09-.74.08-.73.08-.73 1.2.09 1.84 1.24 1.84 1.24 1.07 1.83 2.81 1.3 3.49.99.11-.77.42-1.3.76-1.6-2.66-.31-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.13-.3-.54-1.52.12-3.18 0 0 1.01-.32 3.3 1.23A11.5 11.5 0 0 1 12 6.2c1.02 0 2.04.14 3 .4 2.29-1.55 3.3-1.23 3.3-1.23.65 1.66.24 2.88.12 3.18.77.84 1.23 1.91 1.23 3.22 0 4.61-2.81 5.62-5.48 5.92.43.37.82 1.1.82 2.22v3.2c0 .32.22.7.83.58A12 12 0 0 0 12 .3Z"/></svg></a>
-        <a href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fgithub.com%2Fxingexu%2Fphotogit" target="_blank" rel="noopener noreferrer" aria-label="Share PhotoGit on LinkedIn"><svg viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="2" fill="#0a66c2"/><path fill="#fff" d="M4.2 9h3.1v10.2H4.2V9Zm1.55-4.3a1.8 1.8 0 1 1 0 3.6 1.8 1.8 0 0 1 0-3.6ZM9.2 9h3v1.4h.04c.42-.8 1.45-1.64 3-1.64 3.2 0 3.8 2.1 3.8 4.83v5.61h-3.12v-4.97c0-1.19-.02-2.71-1.65-2.71-1.66 0-1.92 1.29-1.92 2.62v5.06H9.2V9Z"/></svg></a>
+        <a href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fgithub.com%2Fxingexu%2Fphotogit" target="_blank" rel="noopener noreferrer" aria-label="Share PhotoGit on LinkedIn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.2 9h3.1v10.2H4.2V9Zm1.55-4.3a1.8 1.8 0 1 1 0 3.6 1.8 1.8 0 0 1 0-3.6ZM9.2 9h3v1.4h.04c.42-.8 1.45-1.64 3-1.64 3.2 0 3.8 2.1 3.8 4.83v5.61h-3.12v-4.97c0-1.19-.02-2.71-1.65-2.71-1.66 0-1.92 1.29-1.92 2.62v5.06H9.2V9Z"/></svg></a>
         <a href="mailto:hello@photogit.app" aria-label="Email PhotoGit"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 4h20v16H2V4Zm2 2v1.2l8 6.1 8-6.1V6H4Zm16 12V9.7l-8 6.1-8-6.1V18h16Z"/></svg></a>
       </nav>
     </footer>
