@@ -29,6 +29,9 @@
       -webkit-font-smoothing: antialiased;
       overflow-x: hidden;
     }
+    @media (hover: hover) and (pointer: fine) {
+      .landing, .landing * { cursor: none !important; }
+    }
 
     /* Pixel art, rendered pixelated rather than smoothed, filling the frame. */
     .hero {
@@ -85,11 +88,11 @@
     .petal:nth-of-type(10n + 9) { background-image: url('artwork/petals/petal-9.png'); }
     .petal:nth-of-type(10n) { background-image: url('artwork/petals/petal-10.png'); }
     @keyframes photogit-fall {
-      0% { transform: translate(0, -10vh) rotate(-18deg); }
-      25% { transform: translate(var(--sway-half), 25vh) rotate(12deg); }
-      50% { transform: translate(var(--sway-opposite), 55vh) rotate(-12deg); }
-      75% { transform: translate(var(--sway), 85vh) rotate(28deg); }
-      100% { transform: translate(var(--sway-end), 120vh) rotate(45deg); }
+      0% { transform: translate(0, -10vh) rotate(var(--tilt-start)); }
+      22% { transform: translate(var(--sway-half), 17vh) rotate(var(--tilt-quarter)); }
+      47% { transform: translate(var(--sway-opposite), 46vh) rotate(var(--tilt-middle)); }
+      73% { transform: translate(var(--sway), 79vh) rotate(var(--tilt-three-quarter)); }
+      100% { transform: translate(var(--sway-end), 120vh) rotate(var(--tilt-end)); }
     }
     /* A soft vignette settles the eye on the centred card rather than
        the frame edges. */
@@ -368,15 +371,21 @@
         phases[swapIndex] = phase;
       }
       petals.forEach(function (petal, index) {
-        var duration = 12 + Math.random() * 16;
+        var duration = 16 + Math.random() * 18;
         petal.style.setProperty('--duration', duration.toFixed(2) + 's');
         petal.style.setProperty('--delay', (-phases[index] * duration).toFixed(2) + 's');
-        var drift = 35 + Math.random() * 100;
+        var drift = 25 + Math.random() * 110;
         drift *= Math.random() < 0.5 ? -1 : 1;
         petal.style.setProperty('--sway', Math.round(drift) + 'px');
-        petal.style.setProperty('--sway-half', Math.round(drift * 0.45) + 'px');
-        petal.style.setProperty('--sway-opposite', Math.round(drift * -0.35) + 'px');
-        petal.style.setProperty('--sway-end', Math.round(drift * 0.6) + 'px');
+        petal.style.setProperty('--sway-half', Math.round(drift * (0.25 + Math.random() * 0.35)) + 'px');
+        petal.style.setProperty('--sway-opposite', Math.round(drift * (-0.2 - Math.random() * 0.45)) + 'px');
+        petal.style.setProperty('--sway-end', Math.round(drift * (0.25 + Math.random() * 0.65)) + 'px');
+        var tilt = Math.round(Math.random() * 52 - 26);
+        petal.style.setProperty('--tilt-start', tilt + 'deg');
+        petal.style.setProperty('--tilt-quarter', (tilt + Math.round(Math.random() * 34 - 17)) + 'deg');
+        petal.style.setProperty('--tilt-middle', (tilt + Math.round(Math.random() * 44 - 22)) + 'deg');
+        petal.style.setProperty('--tilt-three-quarter', (tilt + Math.round(Math.random() * 42 - 21)) + 'deg');
+        petal.style.setProperty('--tilt-end', (tilt + Math.round(Math.random() * 56 - 28)) + 'deg');
         petal.style.left = (((index + Math.random()) / petals.length) * 100).toFixed(2) + '%';
       });
 
