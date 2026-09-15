@@ -474,6 +474,8 @@
       document.body.appendChild(whoosh);
       var soundToggle = document.querySelector('.sound-toggle');
       var soundMuted = false;
+      try { soundMuted = localStorage.getItem('photogit-sound-muted') === 'true'; } catch (error) {}
+      syncSoundToggle();
       function syncSoundToggle() {
         whoosh.muted = soundMuted;
         soundToggle.setAttribute('aria-pressed', String(soundMuted));
@@ -483,6 +485,7 @@
         soundMuted = !soundMuted;
         if (soundMuted) whoosh.pause();
         syncSoundToggle();
+        try { localStorage.setItem('photogit-sound-muted', String(soundMuted)); } catch (error) {}
       });
       function natureSound() {
         if (soundMuted) return;
