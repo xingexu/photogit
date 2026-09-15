@@ -133,7 +133,7 @@
     .vignette { z-index: 1; }
     .fx { z-index: 2; }
     .landing { position: relative; min-height: 100svh; display: grid; place-items: center; isolation: isolate; overflow: hidden; }
-    .content { position: relative; z-index: 3; padding: 80px 20px; text-align: center; }
+    .content { position: relative; z-index: 3; padding: 80px max(20px, env(safe-area-inset-right)) 80px max(20px, env(safe-area-inset-left)); text-align: center; }
     .title-heading { margin: 0; font: inherit; }
     .title {
       display: inline-block; padding: 0; border: 0; background: transparent;
