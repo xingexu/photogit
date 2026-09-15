@@ -49,6 +49,7 @@
     .fx {
       position: absolute; inset: 0; overflow: hidden; pointer-events: none;
     }
+    .page-hidden .fx *, .page-hidden .glare { animation-play-state: paused !important; }
     .sky-cloud {
       position: absolute;
       left: -720px;
@@ -524,6 +525,10 @@
         paint.clearRect(0, 0, viewWidth, viewHeight);
         whoosh.pause();
       }
+      document.addEventListener('visibilitychange', function () {
+        document.documentElement.classList.toggle('page-hidden', document.hidden);
+        if (document.hidden) stopEffects();
+      });
       document.addEventListener('keydown', function (event) {
         if (event.key === 'Escape') stopEffects();
       });
