@@ -64,7 +64,7 @@
     @keyframes sky-drift { to { transform: translateX(calc(100vw + 1440px)); } }
     .bird { position: absolute; left: -100px; top: var(--altitude); width: var(--bird-size); opacity: .8; animation: bird-flight var(--flight) var(--phase) linear infinite; }
     .bird svg { width: 100%; overflow: visible; shape-rendering: crispEdges; }
-    .bird .wing { transform-origin: 12px 8px; animation: bird-flap 800ms steps(2, end) infinite alternate; }
+    .bird .wing { transform-origin: 12px 8px; animation: bird-flap 800ms steps(2, end) infinite alternate; animation-delay: var(--phase); }
     @keyframes bird-flight { to { transform: translateX(calc(100vw + 200px)); } }
     @keyframes bird-flap { to { transform: scaleY(-.65); } }
     .leaf-swarm { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; }
