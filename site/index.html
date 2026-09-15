@@ -437,7 +437,7 @@
         if (!paint) return;
         viewWidth = window.innerWidth;
         viewHeight = window.innerHeight;
-        var scale = Math.min(window.devicePixelRatio || 1, 2);
+        var scale = Math.min(window.devicePixelRatio || 1, 2, Math.sqrt(8000000 / Math.max(1, viewWidth * viewHeight)));
         var width = Math.round(viewWidth * scale);
         var height = Math.round(viewHeight * scale);
         if (canvas.width === width && canvas.height === height) return;
