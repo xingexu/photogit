@@ -437,8 +437,11 @@
         viewWidth = window.innerWidth;
         viewHeight = window.innerHeight;
         var scale = Math.min(window.devicePixelRatio || 1, 2);
-        canvas.width = Math.round(viewWidth * scale);
-        canvas.height = Math.round(viewHeight * scale);
+        var width = Math.round(viewWidth * scale);
+        var height = Math.round(viewHeight * scale);
+        if (canvas.width === width && canvas.height === height) return;
+        canvas.width = width;
+        canvas.height = height;
         paint.setTransform(scale, 0, 0, scale, 0, 0);
         paint.imageSmoothingEnabled = false;
       }
