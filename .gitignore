@@ -18,3 +18,4 @@ photogit-demo-remote.git/
 artifacts/demo-frames-*/
 .uxprc
 .gstack/
+.vercel/
