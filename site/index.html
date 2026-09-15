@@ -463,13 +463,15 @@
           var x = leaf.reverse ? viewWidth + 50 - progress * (viewWidth + 100) : -50 + progress * (viewWidth + 100);
           var y = leaf.y * viewHeight + Math.sin(age * 3 + leaf.phase) * leaf.wave + age * 18;
           if (x < -leaf.size || x > viewWidth + leaf.size || y < -leaf.size || y > viewHeight + leaf.size) return;
-          paint.save();
-          paint.translate(x, y);
-          paint.rotate(leaf.phase + age * leaf.spin);
           // Dissolve gradually over the final two-thirds of each leaf's flight.
           var fade = Math.max(0, Math.min(1, (progress - .35) / .65));
           var opacity = 1 - fade * fade * (3 - 2 * fade);
-          paint.globalAlpha = Math.min(1, age * 6) * opacity * .85;
+          var alpha = Math.min(1, age * 6) * opacity * .85;
+          if (alpha < .005) return;
+          paint.save();
+          paint.translate(x, y);
+          paint.rotate(leaf.phase + age * leaf.spin);
+          paint.globalAlpha = alpha;
           var sprite = sprites[leaf.sprite];
           if (sprite.complete && sprite.naturalWidth) {
             paint.drawImage(sprite, -leaf.size / 2, -leaf.size / 2, leaf.size, leaf.size);
