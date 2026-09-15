@@ -132,7 +132,9 @@
     .fx { z-index: 2; }
     .landing { position: relative; min-height: 100svh; display: grid; place-items: center; isolation: isolate; overflow: hidden; }
     .content { position: relative; z-index: 3; padding: 80px 20px; text-align: center; }
+    .title-heading { margin: 0; font: inherit; }
     .title {
+      display: inline-block; padding: 0; border: 0; background: transparent;
       margin: 0 0 20px; font-family: var(--font-logo); font-size: clamp(30px, 5.2vw, 108px); line-height: 1.25;
       letter-spacing: .02em; font-weight: 400; color: #fff; text-transform: uppercase;
       text-shadow: 0 3px 0 #fff, 4px 4px 0 #bdefff, -4px 4px 0 #bdefff, 0 8px 0 #5fc7ff, 0 12px 0 #2d74af, 8px 8px 0 #7bd7ff, -8px 8px 0 #7bd7ff, 0 0 28px #d9f7ff, 0 0 64px #7bd7ff, 0 0 90px #349fff;
@@ -332,7 +334,7 @@
       <!-- fx-end -->
     </div>
     <section class="content" aria-label="PhotoGit">
-      <h1 class="title" aria-label="PhotoGit" aria-description="Click or press Enter for a pink leaf swarm and birdsong" tabindex="0"><span class="title-letter" style="--n:0" aria-hidden="true">P</span><span class="title-letter" style="--n:1" aria-hidden="true">H</span><span class="title-letter" style="--n:2" aria-hidden="true">O</span><span class="title-letter" style="--n:3" aria-hidden="true">T</span><span class="title-letter" style="--n:4" aria-hidden="true">O</span><span class="title-letter" style="--n:5" aria-hidden="true">G</span><span class="title-letter" style="--n:6" aria-hidden="true">I</span><span class="title-letter" style="--n:7" aria-hidden="true">T</span></h1>
+      <h1 class="title-heading"><button type="button" class="title" aria-label="PhotoGit" aria-description="Click or press Enter for a pink leaf swarm and birdsong" tabindex="0"><span class="title-letter" style="--n:0" aria-hidden="true">P</span><span class="title-letter" style="--n:1" aria-hidden="true">H</span><span class="title-letter" style="--n:2" aria-hidden="true">O</span><span class="title-letter" style="--n:3" aria-hidden="true">T</span><span class="title-letter" style="--n:4" aria-hidden="true">O</span><span class="title-letter" style="--n:5" aria-hidden="true">G</span><span class="title-letter" style="--n:6" aria-hidden="true">I</span><span class="title-letter" style="--n:7" aria-hidden="true">T</span></button></h1>
       <div class="actions">
         <div class="try-container">
           <a class="try-link" href="https://github.com/xingexu/photogit#quick-start">Try it now <span class="try-arrow" aria-hidden="true">→</span></a>
@@ -496,12 +498,7 @@
         if (event.matches) { cancelAnimationFrame(frame); swarm = []; paint.clearRect(0, 0, viewWidth, viewHeight); }
       });
       title.addEventListener('click', releaseLeaves);
-      title.addEventListener('keydown', function (event) {
-        if (event.key === 'Enter' || event.key === ' ') {
-          event.preventDefault();
-          releaseLeaves();
-        }
-      });
+
 
     })();
   </script>
