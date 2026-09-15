@@ -25,6 +25,8 @@ for index in range(round(rate * duration)):
             value += 0.045 * math.sin(math.pi * age / 0.22) ** 2 * math.sin(chirp_phase)
     value *= min(1, (duration - t) / 0.25)
     samples.append(round(max(-1, min(1, value)) * 32767))
+assert samples and max(abs(sample) for sample in samples) < 32767, 'Audio must not clip'
+assert any(samples), 'Audio must not be silent'
 output = Path(__file__).resolve().parents[1] / 'site/audio/leaf-whoosh.wav'
 output.parent.mkdir(parents=True, exist_ok=True)
 with wave.open(str(output), 'wb') as audio:
