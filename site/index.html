@@ -492,7 +492,7 @@
       // Reuse one player so repeated interactions cannot stack loud sound effects.
       var whoosh = document.createElement('audio');
       whoosh.src = 'audio/leaf-whoosh.wav';
-      whoosh.preload = 'auto';
+      whoosh.preload = navigator.connection && navigator.connection.saveData ? 'none' : 'auto';
       whoosh.setAttribute('playsinline', '');
       document.body.appendChild(whoosh);
       var soundToggle = document.querySelector('.sound-toggle');
