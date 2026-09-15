@@ -498,6 +498,9 @@
         if (event.matches) { cancelAnimationFrame(frame); swarm = []; paint.clearRect(0, 0, viewWidth, viewHeight); }
       });
       title.addEventListener('click', releaseLeaves);
+      title.addEventListener('keydown', function (event) {
+        if (event.repeat && (event.key === 'Enter' || event.key === ' ')) event.preventDefault();
+      });
 
 
     })();
