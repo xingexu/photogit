@@ -462,6 +462,7 @@
           var progress = age / leaf.life;
           var x = leaf.reverse ? viewWidth + 50 - progress * (viewWidth + 100) : -50 + progress * (viewWidth + 100);
           var y = leaf.y * viewHeight + Math.sin(age * 3 + leaf.phase) * leaf.wave + age * 18;
+          if (x < -leaf.size || x > viewWidth + leaf.size || y < -leaf.size || y > viewHeight + leaf.size) return;
           paint.save();
           paint.translate(x, y);
           paint.rotate(leaf.phase + age * leaf.spin);
