@@ -470,7 +470,12 @@
           var opacity = 1 - fade * fade * (3 - 2 * fade);
           paint.globalAlpha = Math.min(1, age * 6) * opacity * .85;
           var sprite = sprites[leaf.sprite];
-          if (sprite.complete && sprite.naturalWidth) paint.drawImage(sprite, -leaf.size / 2, -leaf.size / 2, leaf.size, leaf.size);
+          if (sprite.complete && sprite.naturalWidth) {
+            paint.drawImage(sprite, -leaf.size / 2, -leaf.size / 2, leaf.size, leaf.size);
+          } else {
+            paint.fillStyle = "#f8b4d2";
+            paint.fillRect(-leaf.size / 4, -leaf.size / 4, leaf.size / 2, leaf.size / 2);
+          }
           paint.restore();
         });
         if (elapsed < 6.5) frame = requestAnimationFrame(drawSwarm);
