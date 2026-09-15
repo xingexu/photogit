@@ -525,6 +525,7 @@
         paint.clearRect(0, 0, viewWidth, viewHeight);
         whoosh.pause();
       }
+      window.addEventListener('pagehide', stopEffects);
       document.addEventListener('visibilitychange', function () {
         document.documentElement.classList.toggle('page-hidden', document.hidden);
         if (document.hidden) stopEffects();
