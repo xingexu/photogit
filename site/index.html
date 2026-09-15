@@ -353,7 +353,7 @@
       var reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
       var title = document.querySelector('.title');
       var letters = Array.from(title.querySelectorAll('.title-letter'));
-      var audioContext;
+
 
       var revealTimers = [];
       var fullTitle = title.textContent;
@@ -449,7 +449,10 @@
           paint.save();
           paint.translate(x, y);
           paint.rotate(leaf.phase + age * leaf.spin);
-          paint.globalAlpha = Math.min(1, age * 5, (leaf.life - age) * 3) * .95;
+          // Dissolve gradually over the final two-thirds of each leaf's flight.
+          var fade = Math.max(0, Math.min(1, (progress - .35) / .65));
+          var opacity = 1 - fade * fade * (3 - 2 * fade);
+          paint.globalAlpha = Math.min(1, age * 6) * opacity * .85;
           var sprite = sprites[leaf.sprite];
           if (sprite.complete && sprite.naturalWidth) paint.drawImage(sprite, -leaf.size / 2, -leaf.size / 2, leaf.size, leaf.size);
           paint.restore();
@@ -457,45 +460,22 @@
         if (elapsed < 6.5) frame = requestAnimationFrame(drawSwarm);
         else { swarm = []; frame = 0; paint.clearRect(0, 0, viewWidth, viewHeight); }
       }
+      // Native PCM playback starts directly in the click/tap/keyboard gesture.
+      // Reuse one player so repeated interactions cannot stack loud sound effects.
+      var whoosh = document.createElement('audio');
+      whoosh.src = 'audio/leaf-whoosh.wav';
+      whoosh.preload = 'auto';
+      whoosh.setAttribute('playsinline', '');
+      document.body.appendChild(whoosh);
       function natureSound() {
-        var AudioContextClass = window.AudioContext || window.webkitAudioContext;
-        if (!AudioContextClass) return;
         try {
-          audioContext = audioContext || new AudioContextClass();
-          audioContext.resume().then(function () {
-            var now = audioContext.currentTime;
-            // A filtered, softly enveloped breeze, followed by three bird chirps.
-            var buffer = audioContext.createBuffer(1, audioContext.sampleRate * 2, audioContext.sampleRate);
-            var data = buffer.getChannelData(0);
-            for (var i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
-            var wind = audioContext.createBufferSource();
-            wind.buffer = buffer;
-            var filter = audioContext.createBiquadFilter();
-            filter.type = 'lowpass'; filter.frequency.value = 1100;
-            var gain = audioContext.createGain();
-            gain.gain.setValueAtTime(0, now);
-            gain.gain.linearRampToValueAtTime(.075, now + .3);
-            gain.gain.exponentialRampToValueAtTime(.0001, now + 2);
-            wind.connect(filter); filter.connect(gain); gain.connect(audioContext.destination);
-            wind.start(now); wind.stop(now + 2);
-            wind.onended = function () { wind.disconnect(); filter.disconnect(); gain.disconnect(); };
-            [0.25, 0.65, 1.15].forEach(function (offset, index) {
-              var voice = audioContext.createOscillator();
-              var volume = audioContext.createGain();
-              var start = now + offset;
-              voice.type = 'sine';
-              voice.frequency.setValueAtTime(1700 + index * 220, start);
-              voice.frequency.exponentialRampToValueAtTime(3000, start + .09);
-              voice.frequency.exponentialRampToValueAtTime(1900, start + .22);
-              volume.gain.setValueAtTime(.0001, start);
-              volume.gain.exponentialRampToValueAtTime(.025, start + .025);
-              volume.gain.exponentialRampToValueAtTime(.0001, start + .24);
-              voice.connect(volume); volume.connect(audioContext.destination);
-              voice.start(start); voice.stop(start + .25);
-              voice.onended = function () { voice.disconnect(); volume.disconnect(); };
-            });
-          }).catch(function () { /* The visual effect also works without audio. */ });
-        } catch (error) { /* Audio is optional. */ }
+          whoosh.pause();
+          whoosh.currentTime = 0;
+          var playback = whoosh.play();
+          if (playback && typeof playback.catch === 'function') {
+            playback.catch(function () { /* Muted or blocked audio never stops the visual effect. */ });
+          }
+        } catch (error) { /* Audio is optional when device playback is unavailable. */ }
       }
       function releaseLeaves() {
         var now = performance.now();
@@ -504,10 +484,10 @@
         natureSound();
         if (reducedMotion.matches) return;
         cancelAnimationFrame(frame);
-        swarm = Array.from({ length: window.innerWidth < 600 ? 220 : 420 }, function (_, index) {
+        swarm = Array.from({ length: window.innerWidth < 600 ? 600 : 1100 }, function (_, index) {
           return { reverse: index % 2 === 0, y: Math.random() * 1.15 - .15, delay: Math.random() * .7,
             life: 3 + Math.random() * 2.5, phase: Math.random() * Math.PI * 2, wave: 25 + Math.random() * 100,
-            spin: (Math.random() - .5) * 5, size: 18 + Math.random() * 30, sprite: index % 10 };
+            spin: (Math.random() - .5) * 5, size: 6 + Math.random() * 8, sprite: index % 10 };
         });
         swarmStart = now;
         frame = requestAnimationFrame(drawSwarm);
