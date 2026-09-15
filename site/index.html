@@ -209,7 +209,7 @@
       .icon-bar a { width: 34px; height: 34px; }
       .icon-bar svg { width: 20px; height: 20px; }
     }
-    @media (max-height: 420px) { .content { padding: 20px; } .title { margin-bottom: 18px; font-size: 40px; } .actions { flex-direction: row; } }
+    @media (max-height: 420px) { .content { padding: 20px; } .title { margin-bottom: 18px; font-size: clamp(24px, 5.2vw, 40px); } .actions { flex-direction: row; } }
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { animation: none !important; transition: none !important; }
       .title-letter { opacity: 1; }
