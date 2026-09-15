@@ -64,7 +64,7 @@
     @keyframes sky-drift { to { transform: translateX(calc(100vw + 1440px)); } }
     .bird { position: absolute; left: -100px; top: var(--altitude); width: var(--bird-size); opacity: .8; animation: bird-flight var(--flight) var(--phase) linear infinite; }
     .bird svg { width: 100%; overflow: visible; shape-rendering: crispEdges; }
-    .bird .wing { transform-origin: 12px 8px; animation: bird-flap 800ms steps(2, end) infinite alternate; animation-delay: var(--phase); }
+    .bird .wing { transform-origin: 12px 8px; animation: bird-flap var(--wing-speed, 800ms) steps(2, end) infinite alternate; animation-delay: var(--phase); }
     @keyframes bird-flight { to { transform: translateX(calc(100vw + 200px)); } }
     @keyframes bird-flap { to { transform: scaleY(-.65); } }
     .leaf-swarm { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; }
@@ -415,7 +415,7 @@
         var bird = document.createElement('div');
         bird.className = 'bird';
         bird.setAttribute('aria-hidden', 'true');
-        bird.style.cssText = '--altitude:' + (9 + birdIndex % 4 * 6) + '%;--bird-size:' + (32 + birdIndex % 3 * 9) + 'px;--flight:' + (38 + birdIndex * 4) + 's;--phase:-' + (birdIndex * 7 + 5) + 's;--rest:' + (10 + birdIndex * 12) + '%';
+        bird.style.cssText = '--altitude:' + (9 + birdIndex % 4 * 6) + '%;--bird-size:' + (32 + birdIndex % 3 * 9) + 'px;--wing-speed:' + (650 + birdIndex * 65) + 'ms;--flight:' + (38 + birdIndex * 4) + 's;--phase:-' + (birdIndex * 7 + 5) + 's;--rest:' + (10 + birdIndex * 12) + '%';
         bird.innerHTML = '<svg viewBox="0 0 24 16"><path fill="#d1efff" d="M10 8h6v3h-6z"/><path class="wing" fill="#fffdf4" d="M2 2h4v2h3v2h3v3h-3V7H6V5H2z M12 9V6h3V4h3V2h4v3h-4v2h-3v2z"/><path fill="white" d="M10 8h5v2h-5z"/></svg>';
         sky.appendChild(bird);
       }
