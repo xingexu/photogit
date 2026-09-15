@@ -434,6 +434,7 @@
       var lastBurst = -Infinity;
       var viewWidth, viewHeight;
       function sizeCanvas() {
+        if (!paint) return;
         viewWidth = window.innerWidth;
         viewHeight = window.innerHeight;
         var scale = Math.min(window.devicePixelRatio || 1, 2);
@@ -452,8 +453,9 @@
         resizeFrame = requestAnimationFrame(function () { resizeFrame = 0; sizeCanvas(); });
       });
       function drawSwarm(now) {
+        if (!paint) return;
         var elapsed = (now - swarmStart) / 1000;
-        paint.clearRect(0, 0, viewWidth, viewHeight);
+        if (paint) paint.clearRect(0, 0, viewWidth, viewHeight);
         swarm.forEach(function (leaf) {
           var age = elapsed - leaf.delay;
           if (age < 0 || age > leaf.life) return;
@@ -472,7 +474,7 @@
           paint.restore();
         });
         if (elapsed < 6.5) frame = requestAnimationFrame(drawSwarm);
-        else { swarm = []; frame = 0; paint.clearRect(0, 0, viewWidth, viewHeight); }
+        else { swarm = []; frame = 0; if (paint) paint.clearRect(0, 0, viewWidth, viewHeight); }
       }
       // Native PCM playback starts directly in the click/tap/keyboard gesture.
       // Reuse one player so repeated interactions cannot stack loud sound effects.
@@ -513,7 +515,7 @@
         if (now - lastBurst < 700) return;
         lastBurst = now;
         natureSound();
-        if (reducedMotion.matches) return;
+        if (reducedMotion.matches || !paint) return;
         cancelAnimationFrame(frame);
         swarm = Array.from({ length: window.innerWidth < 600 ? 600 : 1100 }, function (_, index) {
           return { reverse: index % 2 === 0, y: Math.random() * 1.15 - .15, delay: Math.random() * .7,
@@ -524,12 +526,12 @@
         frame = requestAnimationFrame(drawSwarm);
       }
       reducedMotion.addEventListener('change', function (event) {
-        if (event.matches) { cancelAnimationFrame(frame); swarm = []; paint.clearRect(0, 0, viewWidth, viewHeight); }
+        if (event.matches) { cancelAnimationFrame(frame); swarm = []; if (paint) paint.clearRect(0, 0, viewWidth, viewHeight); }
       });
       function stopEffects() {
         cancelAnimationFrame(frame);
         frame = 0; swarm = [];
-        paint.clearRect(0, 0, viewWidth, viewHeight);
+        if (paint) paint.clearRect(0, 0, viewWidth, viewHeight);
         whoosh.pause();
       }
       window.addEventListener('pagehide', stopEffects);
