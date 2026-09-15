@@ -446,7 +446,11 @@
         paint.imageSmoothingEnabled = false;
       }
       sizeCanvas();
-      window.addEventListener('resize', sizeCanvas);
+      var resizeFrame = 0;
+      window.addEventListener('resize', function () {
+        if (resizeFrame) return;
+        resizeFrame = requestAnimationFrame(function () { resizeFrame = 0; sizeCanvas(); });
+      });
       function drawSwarm(now) {
         var elapsed = (now - swarmStart) / 1000;
         paint.clearRect(0, 0, viewWidth, viewHeight);
