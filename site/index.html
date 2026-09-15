@@ -60,6 +60,13 @@
       animation-delay: var(--cloud-delay);
     }
     @keyframes sky-drift { to { transform: translateX(calc(100vw + 1440px)); } }
+    .bird { position: absolute; left: -100px; top: var(--altitude); width: var(--bird-size); opacity: .8; animation: bird-flight var(--flight) var(--phase) linear infinite; }
+    .bird svg { width: 100%; overflow: visible; shape-rendering: crispEdges; }
+    .bird .wing { transform-origin: 12px 8px; animation: bird-flap 800ms steps(2, end) infinite alternate; }
+    @keyframes bird-flight { to { transform: translateX(calc(100vw + 200px)); } }
+    @keyframes bird-flap { to { transform: scaleY(-.65); } }
+    .leaf-swarm { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; }
+    @media (prefers-reduced-motion: reduce) { .bird { left: var(--rest); } }
     /* Petals echo the cherry blossoms already in the artwork. */
     .petal {
       position: absolute;
@@ -325,7 +332,7 @@
       <!-- fx-end -->
     </div>
     <section class="content" aria-label="PhotoGit">
-      <h1 class="title" aria-label="PhotoGit" aria-description="Click or press Enter to play the typing sound" tabindex="0"><span class="title-letter" style="--n:0" aria-hidden="true">P</span><span class="title-letter" style="--n:1" aria-hidden="true">H</span><span class="title-letter" style="--n:2" aria-hidden="true">O</span><span class="title-letter" style="--n:3" aria-hidden="true">T</span><span class="title-letter" style="--n:4" aria-hidden="true">O</span><span class="title-letter" style="--n:5" aria-hidden="true">G</span><span class="title-letter" style="--n:6" aria-hidden="true">I</span><span class="title-letter" style="--n:7" aria-hidden="true">T</span></h1>
+      <h1 class="title" aria-label="PhotoGit" aria-description="Click or press Enter for a pink leaf swarm and birdsong" tabindex="0"><span class="title-letter" style="--n:0" aria-hidden="true">P</span><span class="title-letter" style="--n:1" aria-hidden="true">H</span><span class="title-letter" style="--n:2" aria-hidden="true">O</span><span class="title-letter" style="--n:3" aria-hidden="true">T</span><span class="title-letter" style="--n:4" aria-hidden="true">O</span><span class="title-letter" style="--n:5" aria-hidden="true">G</span><span class="title-letter" style="--n:6" aria-hidden="true">I</span><span class="title-letter" style="--n:7" aria-hidden="true">T</span></h1>
       <div class="actions">
         <div class="try-container">
           <a class="try-link" href="https://github.com/xingexu/photogit#quick-start">Try it now <span class="try-arrow" aria-hidden="true">→</span></a>
@@ -347,7 +354,7 @@
       var title = document.querySelector('.title');
       var letters = Array.from(title.querySelectorAll('.title-letter'));
       var audioContext;
-      var typingTimers = [];
+
       var revealTimers = [];
       var fullTitle = title.textContent;
 
@@ -393,40 +400,126 @@
         petal.style.left = (((index + Math.random()) / petals.length) * 100).toFixed(2) + '%';
       });
 
-      function typeSound(index) {
-        if (!audioContext || audioContext.state !== 'running') return;
-        var now = audioContext.currentTime;
-        var oscillator = audioContext.createOscillator();
-        var volume = audioContext.createGain();
-        oscillator.type = 'square';
-        oscillator.frequency.setValueAtTime(520 + (index % 3) * 80, now);
-        volume.gain.setValueAtTime(0.018, now);
-        volume.gain.exponentialRampToValueAtTime(0.0001, now + 0.045);
-        oscillator.connect(volume);
-        volume.connect(audioContext.destination);
-        oscillator.start(now);
-        oscillator.stop(now + 0.05);
+      // Small white pixel birds drift through the open sky behind the title.
+      var sky = document.querySelector('.fx');
+      for (var birdIndex = 0; birdIndex < 7; birdIndex++) {
+        var bird = document.createElement('div');
+        bird.className = 'bird';
+        bird.setAttribute('aria-hidden', 'true');
+        bird.style.cssText = '--altitude:' + (9 + birdIndex % 4 * 6) + '%;--bird-size:' + (32 + birdIndex % 3 * 9) + 'px;--flight:' + (38 + birdIndex * 4) + 's;--phase:-' + (birdIndex * 7 + 5) + 's;--rest:' + (10 + birdIndex * 12) + '%';
+        bird.innerHTML = '<svg viewBox="0 0 24 16"><path fill="#d1efff" d="M10 8h6v3h-6z"/><path class="wing" fill="#fffdf4" d="M2 2h4v2h3v2h3v3h-3V7H6V5H2z M12 9V6h3V4h3V2h4v3h-4v2h-3v2z"/><path fill="white" d="M10 8h5v2h-5z"/></svg>';
+        sky.appendChild(bird);
       }
-      function replayTyping() {
-        if (reducedMotion.matches) return;
-        typingTimers.forEach(clearTimeout);
-        typingTimers = [];
-        var AudioContextClass = window.AudioContext || window.webkitAudioContext;
-        if (AudioContextClass) {
-          try {
-            audioContext = audioContext || new AudioContextClass();
-            audioContext.resume();
-          } catch (error) { /* Typing still works when audio is unavailable. */ }
-        }
-        letters.forEach(function (_, index) {
-          typingTimers.push(setTimeout(function () { typeSound(index); }, index * 150));
+
+      var canvas = document.createElement('canvas');
+      canvas.className = 'leaf-swarm';
+      canvas.setAttribute('aria-hidden', 'true');
+      document.body.appendChild(canvas);
+      var paint = canvas.getContext('2d');
+      var sprites = Array.from({ length: 10 }, function (_, index) {
+        var sprite = new Image();
+        sprite.src = 'artwork/petals/petal-' + (index + 1) + '.png';
+        return sprite;
+      });
+      var swarm = [];
+      var frame = 0;
+      var swarmStart = 0;
+      var lastBurst = -Infinity;
+      var viewWidth, viewHeight;
+      function sizeCanvas() {
+        viewWidth = window.innerWidth;
+        viewHeight = window.innerHeight;
+        var scale = Math.min(window.devicePixelRatio || 1, 2);
+        canvas.width = Math.round(viewWidth * scale);
+        canvas.height = Math.round(viewHeight * scale);
+        paint.setTransform(scale, 0, 0, scale, 0, 0);
+        paint.imageSmoothingEnabled = false;
+      }
+      sizeCanvas();
+      window.addEventListener('resize', sizeCanvas);
+      function drawSwarm(now) {
+        var elapsed = (now - swarmStart) / 1000;
+        paint.clearRect(0, 0, viewWidth, viewHeight);
+        swarm.forEach(function (leaf) {
+          var age = elapsed - leaf.delay;
+          if (age < 0 || age > leaf.life) return;
+          var progress = age / leaf.life;
+          var x = leaf.reverse ? viewWidth + 50 - progress * (viewWidth + 100) : -50 + progress * (viewWidth + 100);
+          var y = leaf.y * viewHeight + Math.sin(age * 3 + leaf.phase) * leaf.wave + age * 18;
+          paint.save();
+          paint.translate(x, y);
+          paint.rotate(leaf.phase + age * leaf.spin);
+          paint.globalAlpha = Math.min(1, age * 5, (leaf.life - age) * 3) * .95;
+          var sprite = sprites[leaf.sprite];
+          if (sprite.complete && sprite.naturalWidth) paint.drawImage(sprite, -leaf.size / 2, -leaf.size / 2, leaf.size, leaf.size);
+          paint.restore();
         });
+        if (elapsed < 6.5) frame = requestAnimationFrame(drawSwarm);
+        else { swarm = []; frame = 0; paint.clearRect(0, 0, viewWidth, viewHeight); }
       }
-      title.addEventListener('click', replayTyping);
+      function natureSound() {
+        var AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextClass) return;
+        try {
+          audioContext = audioContext || new AudioContextClass();
+          audioContext.resume().then(function () {
+            var now = audioContext.currentTime;
+            // A filtered, softly enveloped breeze, followed by three bird chirps.
+            var buffer = audioContext.createBuffer(1, audioContext.sampleRate * 2, audioContext.sampleRate);
+            var data = buffer.getChannelData(0);
+            for (var i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+            var wind = audioContext.createBufferSource();
+            wind.buffer = buffer;
+            var filter = audioContext.createBiquadFilter();
+            filter.type = 'lowpass'; filter.frequency.value = 1100;
+            var gain = audioContext.createGain();
+            gain.gain.setValueAtTime(0, now);
+            gain.gain.linearRampToValueAtTime(.075, now + .3);
+            gain.gain.exponentialRampToValueAtTime(.0001, now + 2);
+            wind.connect(filter); filter.connect(gain); gain.connect(audioContext.destination);
+            wind.start(now); wind.stop(now + 2);
+            wind.onended = function () { wind.disconnect(); filter.disconnect(); gain.disconnect(); };
+            [0.25, 0.65, 1.15].forEach(function (offset, index) {
+              var voice = audioContext.createOscillator();
+              var volume = audioContext.createGain();
+              var start = now + offset;
+              voice.type = 'sine';
+              voice.frequency.setValueAtTime(1700 + index * 220, start);
+              voice.frequency.exponentialRampToValueAtTime(3000, start + .09);
+              voice.frequency.exponentialRampToValueAtTime(1900, start + .22);
+              volume.gain.setValueAtTime(.0001, start);
+              volume.gain.exponentialRampToValueAtTime(.025, start + .025);
+              volume.gain.exponentialRampToValueAtTime(.0001, start + .24);
+              voice.connect(volume); volume.connect(audioContext.destination);
+              voice.start(start); voice.stop(start + .25);
+              voice.onended = function () { voice.disconnect(); volume.disconnect(); };
+            });
+          }).catch(function () { /* The visual effect also works without audio. */ });
+        } catch (error) { /* Audio is optional. */ }
+      }
+      function releaseLeaves() {
+        var now = performance.now();
+        if (now - lastBurst < 700) return;
+        lastBurst = now;
+        natureSound();
+        if (reducedMotion.matches) return;
+        cancelAnimationFrame(frame);
+        swarm = Array.from({ length: window.innerWidth < 600 ? 220 : 420 }, function (_, index) {
+          return { reverse: index % 2 === 0, y: Math.random() * 1.15 - .15, delay: Math.random() * .7,
+            life: 3 + Math.random() * 2.5, phase: Math.random() * Math.PI * 2, wave: 25 + Math.random() * 100,
+            spin: (Math.random() - .5) * 5, size: 18 + Math.random() * 30, sprite: index % 10 };
+        });
+        swarmStart = now;
+        frame = requestAnimationFrame(drawSwarm);
+      }
+      reducedMotion.addEventListener('change', function (event) {
+        if (event.matches) { cancelAnimationFrame(frame); swarm = []; paint.clearRect(0, 0, viewWidth, viewHeight); }
+      });
+      title.addEventListener('click', releaseLeaves);
       title.addEventListener('keydown', function (event) {
         if (event.key === 'Enter' || event.key === ' ') {
           event.preventDefault();
-          replayTyping();
+          releaseLeaves();
         }
       });
 
