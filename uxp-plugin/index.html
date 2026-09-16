@@ -1,0 +1,124 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="panel">
+      <div id="helperBanner" class="banner banner-warning is-hidden">
+        <span class="status-dot"></span>
+        <span>Git helper is not running</span>
+        <button id="retryHelperButton" class="link-button">Retry</button>
+      </div>
+
+      <section id="emptyState" class="empty-state">
+        <div class="empty-mark">PG</div>
+        <h1>Version your Photoshop work</h1>
+        <p>Save exact PSD snapshots and review meaningful layer changes.</p>
+        <sp-button id="trackButton" variant="primary">Track this document</sp-button>
+        <p id="emptyHint" class="hint">Open a Photoshop document to begin.</p>
+      </section>
+
+      <section id="projectView" class="is-hidden">
+        <header class="project-header">
+          <div class="branch-toolbar">
+            <label class="sr-only" for="branchSelect">Current branch</label>
+            <select id="branchSelect" aria-label="Current branch"></select>
+            <button id="newBranchButton" class="icon-button" title="New branch" aria-label="New branch">＋</button>
+            <button id="refreshButton" class="icon-button push-right" title="Refresh changes" aria-label="Refresh changes">↻</button>
+          </div>
+
+          <div class="document-row">
+            <span class="ps-badge">Ps</span>
+            <div class="document-copy">
+              <strong id="documentName">No document</strong>
+              <span id="projectLocation">Local project</span>
+            </div>
+          </div>
+
+          <div id="dirtyState" class="dirty-state">
+            <span class="dirty-dot"></span>
+            <span id="dirtyText">Checking document…</span>
+          </div>
+
+          <sp-button id="saveVersionButton" variant="primary">Save version</sp-button>
+        </header>
+
+        <nav class="tabs" aria-label="PhotoGit views">
+          <button id="historyTab" class="tab is-active" aria-selected="true">History <span id="historyCount" class="count">0</span></button>
+          <button id="changesTab" class="tab" aria-selected="false">Changes <span id="changesCount" class="count count-accent">0</span></button>
+        </nav>
+
+        <section id="historyView" class="content-view">
+          <div id="historyList" class="history-list"></div>
+          <div id="historyEmpty" class="small-empty">Your saved versions will appear here.</div>
+        </section>
+
+        <section id="changesView" class="content-view is-hidden">
+          <div class="view-summary">
+            <span id="changesSummary">No unversioned changes</span>
+          </div>
+          <div id="changesList" class="changes-list"></div>
+          <div id="changesEmpty" class="small-empty">Your document matches the latest version.</div>
+        </section>
+
+        <footer class="panel-footer">
+          <span id="helperState">Local Git</span>
+          <button id="changeProjectButton" class="link-button">Change project</button>
+        </footer>
+      </section>
+    </main>
+
+    <dialog id="commitDialog">
+      <form id="commitForm">
+        <header class="dialog-header">
+          <div>
+            <span class="eyebrow">NEW VERSION</span>
+            <h2>Save a version</h2>
+          </div>
+          <button type="button" id="closeCommitButton" class="icon-button" aria-label="Close">×</button>
+        </header>
+        <label for="commitMessage">Version message</label>
+        <textarea id="commitMessage" rows="3" placeholder="What changed?"></textarea>
+        <p id="commitSummary" class="dialog-summary">Ready to capture this document.</p>
+        <footer class="dialog-actions">
+          <sp-button type="button" id="cancelCommitButton" variant="secondary">Cancel</sp-button>
+          <sp-button type="submit" id="confirmCommitButton" variant="primary">Save version</sp-button>
+        </footer>
+      </form>
+    </dialog>
+
+    <dialog id="branchDialog">
+      <form id="branchForm">
+        <header class="dialog-header">
+          <div>
+            <span class="eyebrow">BRANCH</span>
+            <h2>Create a branch</h2>
+          </div>
+          <button type="button" id="closeBranchButton" class="icon-button" aria-label="Close">×</button>
+        </header>
+        <label for="branchName">Branch name</label>
+        <input id="branchName" placeholder="mobile-layout" />
+        <p class="dialog-summary">The new branch starts from the current version.</p>
+        <footer class="dialog-actions">
+          <sp-button type="button" id="cancelBranchButton" variant="secondary">Cancel</sp-button>
+          <sp-button type="submit" id="confirmBranchButton" variant="primary">Create branch</sp-button>
+        </footer>
+      </form>
+    </dialog>
+
+    <dialog id="progressDialog" class="progress-dialog">
+      <div class="progress-body">
+        <sp-progress-circle indeterminate size="m"></sp-progress-circle>
+        <div>
+          <strong id="progressTitle">Saving version</strong>
+          <p id="progressMessage">Capturing Photoshop layers…</p>
+        </div>
+      </div>
+    </dialog>
+
+    <div id="toast" class="toast is-hidden" role="status"></div>
+    <script src="index.js"></script>
+  </body>
+</html>
