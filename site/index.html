@@ -1,0 +1,579 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>PhotoGit — Version control for Photoshop</title>
+  <meta name="description" content="PhotoGit — version control for Photoshop. Try it on GitHub.">
+  <meta name="theme-color" content="#3fa9f5">
+  <link rel="preload" as="image" href="artwork/japanties-pixel.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Silkscreen:wght@400;700&display=swap">
+  <style>
+    :root {
+    /* design-epoch: '536' */
+      --font-pixel: "Silkscreen", "Courier New", ui-monospace, monospace;
+      --font-logo: "Press Start 2P", "Courier New", ui-monospace, monospace;
+      --glass-top: rgba(255, 255, 255, 0.22);
+      --glass-fill: rgba(10, 16, 30, 0.40);
+      --glass-rim: rgba(255, 255, 255, 0.38);
+      --glow: rgba(255, 255, 255, 0.4);
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; }
+    body {
+      background: #3fa9f5;
+      color: #fff;
+      font-family: var(--font-pixel);
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+    .title, a { cursor: pointer; }
+    .title, a, button { touch-action: manipulation; }
+
+    /* Pixel art, rendered pixelated rather than smoothed, filling the frame. */
+    .hero {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: 50% 30%;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+
+    /* Decorative petals stay behind the title and links. */
+    .fx {
+      position: absolute; inset: 0; overflow: hidden; pointer-events: none;
+    }
+    .page-hidden .fx *, .page-hidden .glare { animation-play-state: paused !important; }
+    .sky-cloud {
+      position: absolute;
+      left: -720px;
+      width: min(var(--cloud-width), 72vw);
+      height: auto;
+      opacity: var(--cloud-opacity);
+      image-rendering: pixelated;
+      animation: sky-drift var(--cloud-speed) linear infinite;
+      animation-delay: var(--cloud-delay);
+    }
+    @keyframes sky-drift { to { transform: translateX(calc(100vw + 1440px)); } }
+    .bird { position: absolute; left: var(--rest); top: var(--altitude); width: var(--bird-size, 34px); height: 24px; opacity: .8; animation: bird-float var(--flight) var(--phase) ease-in-out infinite alternate; }
+    .bird svg { width: 100%; overflow: visible; shape-rendering: crispEdges; }
+    .bird .wing { transform-origin: 12px 8px; animation: bird-flap var(--wing-speed, 800ms) steps(2, end) infinite alternate; animation-delay: var(--phase); }
+    @keyframes bird-float { 0% { transform: translate3d(0, 0, 0); } 50% { transform: translate3d(10px, -5px, 0); } 100% { transform: translate3d(-7px, 5px, 0); } }
+    @keyframes bird-flap { to { transform: scaleY(.78); } }
+    .leaf-swarm { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; }
+    @media (prefers-reduced-motion: reduce) { .bird { left: var(--rest); } }
+    /* Petals echo the cherry blossoms already in the artwork. */
+    .petal {
+      position: absolute;
+      top: -5%;
+      width: 18px;
+      height: 18px;
+      background-image: url('artwork/petals/petal-1.png');
+      background-size: contain;
+      background-position: center;
+      background-repeat: no-repeat;
+      image-rendering: pixelated;
+      opacity: var(--alpha);
+      animation: photogit-fall var(--duration) var(--delay) linear infinite;
+    }
+    .petal:nth-of-type(10n + 2) { background-image: url('artwork/petals/petal-2.png'); }
+    .petal:nth-of-type(10n + 3) { background-image: url('artwork/petals/petal-3.png'); }
+    .petal:nth-of-type(10n + 4) { background-image: url('artwork/petals/petal-4.png'); }
+    .petal:nth-of-type(10n + 5) { background-image: url('artwork/petals/petal-5.png'); }
+    .petal:nth-of-type(10n + 6) { background-image: url('artwork/petals/petal-6.png'); }
+    .petal:nth-of-type(10n + 7) { background-image: url('artwork/petals/petal-7.png'); }
+    .petal:nth-of-type(10n + 8) { background-image: url('artwork/petals/petal-8.png'); }
+    .petal:nth-of-type(10n + 9) { background-image: url('artwork/petals/petal-9.png'); }
+    .petal:nth-of-type(10n) { background-image: url('artwork/petals/petal-10.png'); }
+    @keyframes photogit-fall {
+      0% { transform: translate(0, -10vh) rotate(var(--tilt-start, -8deg)); }
+      100% { transform: translate(var(--drift, 120px), 120vh) rotate(var(--tilt-end, 8deg)); }
+    }
+    /* A soft vignette settles the eye on the centred card rather than
+       the frame edges. */
+    .vignette {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at center, transparent 35%, rgba(3, 10, 24, 0.5) 100%);
+      pointer-events: none;
+    }
+    .glare {
+      position: absolute;
+      top: -10%; right: -8%;
+      width: 40vmax; height: 40vmax;
+      background: radial-gradient(circle, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0) 60%);
+      animation: photogit-glare-pulse 7s ease-in-out infinite;
+    }
+    @keyframes photogit-glare-pulse {
+      0%, 100% { opacity: 0.5; }
+      50% { opacity: 0.85; }
+    }
+    .scanlines {
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(to bottom, rgba(255, 255, 255, 0.06) 0 2px, transparent 2px 4px);
+      mix-blend-mode: overlay;
+      opacity: 0.4;
+      animation: photogit-scan 5s linear infinite;
+    }
+    @keyframes photogit-scan {
+      from { background-position: 0 0; }
+      to { background-position: 0 8px; }
+    }
+    /* Explicit stacking, so a future addition to any one layer cannot
+       accidentally end up drawn over the card or its click target. */
+    .hero { z-index: 0; }
+    .vignette { z-index: 1; }
+    .fx { z-index: 2; }
+    .landing { position: relative; min-height: 100svh; display: grid; place-items: center; isolation: isolate; overflow: hidden; }
+    .content { position: relative; z-index: 3; padding: 80px max(20px, env(safe-area-inset-right)) 80px max(20px, env(safe-area-inset-left)); text-align: center; }
+    .title-heading { margin: 0; font: inherit; }
+    .title {
+      display: inline-block; padding: 0; border: 0; background: transparent;
+      user-select: none; -webkit-user-select: none;
+      margin: 0 0 20px; font-family: var(--font-logo); font-size: clamp(30px, 5.2vw, 108px); line-height: 1.25;
+      letter-spacing: .02em; font-weight: 400; color: #fff; text-transform: uppercase;
+      text-shadow: 0 3px 0 #fff, 4px 4px 0 #bdefff, -4px 4px 0 #bdefff, 0 8px 0 #5fc7ff, 0 12px 0 #2d74af, 8px 8px 0 #7bd7ff, -8px 8px 0 #7bd7ff, 0 0 28px #d9f7ff, 0 0 64px #7bd7ff, 0 0 90px #349fff;
+      white-space: nowrap;
+      transition: text-shadow 220ms ease;
+    }
+    .title:hover, .title:focus-visible { text-shadow: 0 3px 0 #fff, 4px 4px 0 #bdefff, -4px 4px 0 #bdefff, 0 8px 0 #5fc7ff, 0 12px 0 #2d74af, 8px 8px 0 #7bd7ff, -8px 8px 0 #7bd7ff, 0 0 20px #dbf8ff, 0 0 38px #65c8ff, 0 0 90px #349fff; }
+    .title:focus-visible { outline: 3px solid #fff; outline-offset: 10px; }
+    /* Temporary typing slots reserve the complete title width. */
+    .title-letter { display: inline-block; }
+    .actions { display: flex; align-items: stretch; justify-content: center; animation: arrive 550ms 651ms ease-out both; }
+    .try-container {
+      display: flex; align-items: center; width: min(clamp(280px, 18vw, 360px), calc(100vw - 48px));
+      border: 2px solid #ffffffd9; border-radius: 999px;
+      background: linear-gradient(145deg, #ffffff65, #c1eaff6b 65%, #78c5f180);
+      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      box-shadow: inset 0 3px 0 #ffffffa0, inset 0 -4px 0 #71bce966, 0 8px 0 #286b9770, 0 17px 26px #0c385b55;
+    }
+    .actions a { position: relative; display: flex; align-items: center; justify-content: center; width: 100%; min-height: clamp(60px, 3.5vw, 72px); padding: 11px 40px 13px; border-radius: 999px; color: #fff; text-decoration: none; font-family: Arial, Helvetica, sans-serif; font-size: clamp(19px, 1.1vw, 24px); font-weight: 700; text-shadow: 0 3px 0 #498caf; transition: background 180ms, transform 180ms; }
+    .actions a:hover { background: #ffffff38; transform: translateY(-3px); }
+    .actions a:focus-visible { outline: 3px solid #ffcbdf; outline-offset: 3px; }
+    .actions a .try-arrow { position: absolute; right: 22px; top: calc(50% - 14px); font-size: 26px; line-height: 1; transition: transform 180ms; }
+    .actions a:hover .try-arrow { transform: translate(3px, -2px); }
+    @keyframes arrive { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .site-footer {
+      position: relative;
+      z-index: 4;
+      min-height: 64px;
+      padding: 8px max(24px, calc((100vw - 1560px) / 2)) max(8px, env(safe-area-inset-bottom));
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      border-top: 4px solid #6ca9d3;
+      background: repeating-linear-gradient(90deg, #123451 0 12px, #153956 12px 24px);
+      box-shadow: inset 0 4px 0 #9bcff54d;
+    }
+    .sound-toggle { min-height: 44px; padding: 8px 12px; border: 1px solid #b6dff5; border-radius: 4px; color: #fff; background: #112d49; font: inherit; font-size: 12px; cursor: pointer; }
+    .sound-toggle:focus-visible { outline: 3px solid #ffcbdf; outline-offset: 3px; }
+    .footer-credit { color: #fff0f7; font-size: 12px; font-weight: 700; letter-spacing: .04em; white-space: nowrap; }
+    .icon-bar { display: flex; align-items: center; gap: 8px; }
+    .icon-bar a {
+      width: 44px;
+      height: 44px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid #b6dff5;
+      border-radius: 3px;
+      background: #112d49;
+      color: #fff;
+      text-decoration: none;
+      box-shadow: inset 0 2px 0 #ffffff30, 3px 3px 0 #09223a;
+      transition: transform 180ms, border-color 180ms;
+    }
+    .icon-bar svg { display: block; width: 23px; height: 23px; fill: currentColor; }
+    .icon-bar a:first-child svg { width: 25px; height: 25px; }
+    .icon-bar a:nth-child(2) svg { width: 24px; height: 24px; padding: 2px; border-radius: 2px; background: #f4faff; }
+    .icon-bar a:nth-child(2) { background: #112d49; color: #123451; border-color: #82c0e9; }
+    .icon-bar a:hover { transform: translateY(-3px); border-color: #ffd8ec; }
+    .icon-bar a:focus-visible { outline: 3px solid #ffcbdf; outline-offset: 3px; }
+    @media (max-width: 560px) {
+      .actions { flex-direction: column; align-items: center; gap: 14px; }
+      .title { margin-bottom: 14px; }
+      .try-container { width: min(280px, calc(100vw - 48px)); justify-content: center; }
+      .actions a { min-height: 60px; font-size: 19px; }
+      .actions a .try-arrow { right: 20px; }
+      .site-footer { padding-inline: 16px; gap: 12px; flex-wrap: wrap; justify-content: center; }
+      .footer-credit { font-size: 10px; }
+      .icon-bar { gap: 7px; }
+      .icon-bar a { width: 44px; height: 44px; }
+      .icon-bar svg { width: 20px; height: 20px; }
+    }
+    @media (max-height: 420px) { .content { padding: 20px; } .title { margin-bottom: 18px; font-size: clamp(24px, 5.2vw, 40px); } .actions { flex-direction: row; } }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; }
+      .title-letter { opacity: 1; }
+      .sky-cloud:nth-child(1) { left: 8%; }
+      .sky-cloud:nth-child(2) { left: 62%; }
+      .sky-cloud:nth-child(3) { left: 38%; }
+      .sky-cloud:nth-child(4) { left: 74%; }
+      .petal { top: calc(var(--size) * 5); }
+    }
+  </style>
+</head>
+<body>
+  <main class="landing">
+    <img class="hero"
+         src="artwork/japanties-pixel.png"
+         width="1058" height="661"
+         alt="Pixel-art Japanese mountain village in cherry-blossom season: wooden houses with dark tiled roofs and pink blossoming trees line a stone path leading through a red torii gate to a five-storey pagoda, forested hills and a snow-capped peak behind, under an open blue sky."
+         decoding="async" fetchpriority="high">
+    <div class="vignette" aria-hidden="true"></div>
+    <div class="fx" aria-hidden="true">
+      <img class="sky-cloud" src="artwork/broad-cloud.png" alt="" width="1452" height="540" style="top:5%;--cloud-width:290px;--cloud-opacity:.56;--cloud-speed:80s;--cloud-delay:0s">
+      <img class="sky-cloud" src="artwork/broad-cloud.png" alt="" width="1452" height="540" style="top:14%;--cloud-width:410px;--cloud-opacity:.62;--cloud-speed:80s;--cloud-delay:-20s">
+      <img class="sky-cloud" src="artwork/broad-cloud.png" alt="" width="1452" height="540" style="top:21%;--cloud-width:250px;--cloud-opacity:.48;--cloud-speed:80s;--cloud-delay:-40s">
+      <img class="sky-cloud" src="artwork/broad-cloud.png" alt="" width="1452" height="540" style="top:9%;--cloud-width:350px;--cloud-opacity:.54;--cloud-speed:80s;--cloud-delay:-60s">
+      <span class="petal" style="left:0%;--size:6px;--duration:10s;--delay:-0.05s;--sway:30px;--alpha:0.45"></span>
+      <span class="petal" style="left:37%;--size:7px;--duration:11s;--delay:-0.17s;--sway:48px;--alpha:0.55"></span>
+      <span class="petal" style="left:74%;--size:8px;--duration:12s;--delay:-0.31s;--sway:66px;--alpha:0.65"></span>
+      <span class="petal" style="left:11%;--size:9px;--duration:13s;--delay:-0.46s;--sway:84px;--alpha:0.75"></span>
+      <span class="petal" style="left:48%;--size:10px;--duration:14s;--delay:-0.64s;--sway:102px;--alpha:0.85"></span>
+      <span class="petal" style="left:85%;--size:11px;--duration:15s;--delay:-0.84s;--sway:30px;--alpha:0.45"></span>
+      <span class="petal" style="left:22%;--size:12px;--duration:16s;--delay:-1.06s;--sway:48px;--alpha:0.55"></span>
+      <span class="petal" style="left:59%;--size:13px;--duration:17s;--delay:-1.30s;--sway:66px;--alpha:0.65"></span>
+      <span class="petal" style="left:96%;--size:6px;--duration:18s;--delay:-1.56s;--sway:84px;--alpha:0.75"></span>
+      <span class="petal" style="left:33%;--size:7px;--duration:19s;--delay:-1.84s;--sway:102px;--alpha:0.85"></span>
+      <span class="petal" style="left:70%;--size:8px;--duration:20s;--delay:-2.14s;--sway:30px;--alpha:0.45"></span>
+      <span class="petal" style="left:7%;--size:9px;--duration:21s;--delay:-2.46s;--sway:48px;--alpha:0.55"></span>
+      <span class="petal" style="left:44%;--size:10px;--duration:22s;--delay:-2.81s;--sway:66px;--alpha:0.65"></span>
+      <span class="petal" style="left:81%;--size:11px;--duration:10s;--delay:-1.38s;--sway:84px;--alpha:0.75"></span>
+      <span class="petal" style="left:18%;--size:12px;--duration:11s;--delay:-1.63s;--sway:102px;--alpha:0.85"></span>
+      <span class="petal" style="left:55%;--size:13px;--duration:12s;--delay:-1.90s;--sway:30px;--alpha:0.45"></span>
+      <span class="petal" style="left:92%;--size:6px;--duration:13s;--delay:-2.19s;--sway:48px;--alpha:0.55"></span>
+      <span class="petal" style="left:29%;--size:7px;--duration:14s;--delay:-2.50s;--sway:66px;--alpha:0.65"></span>
+      <span class="petal" style="left:66%;--size:8px;--duration:15s;--delay:-2.83s;--sway:84px;--alpha:0.75"></span>
+      <span class="petal" style="left:3%;--size:9px;--duration:16s;--delay:-3.18s;--sway:102px;--alpha:0.85"></span>
+      <span class="petal" style="left:40%;--size:10px;--duration:17s;--delay:-3.56s;--sway:30px;--alpha:0.45"></span>
+      <span class="petal" style="left:77%;--size:11px;--duration:18s;--delay:-3.95s;--sway:48px;--alpha:0.55"></span>
+      <span class="petal" style="left:14%;--size:12px;--duration:19s;--delay:-4.36s;--sway:66px;--alpha:0.65"></span>
+      <span class="petal" style="left:51%;--size:13px;--duration:20s;--delay:-4.80s;--sway:84px;--alpha:0.75"></span>
+      <span class="petal" style="left:88%;--size:6px;--duration:21s;--delay:-5.25s;--sway:102px;--alpha:0.85"></span>
+      <span class="petal" style="left:25%;--size:7px;--duration:22s;--delay:-5.72s;--sway:30px;--alpha:0.45"></span>
+      <span class="petal" style="left:62%;--size:8px;--duration:10s;--delay:-2.70s;--sway:48px;--alpha:0.55"></span>
+      <span class="petal" style="left:99%;--size:9px;--duration:11s;--delay:-3.09s;--sway:66px;--alpha:0.65"></span>
+      <span class="petal" style="left:36%;--size:10px;--duration:12s;--delay:-3.49s;--sway:84px;--alpha:0.75"></span>
+      <span class="petal" style="left:73%;--size:11px;--duration:13s;--delay:-3.91s;--sway:102px;--alpha:0.85"></span>
+      <span class="petal" style="left:10%;--size:12px;--duration:14s;--delay:-4.36s;--sway:30px;--alpha:0.45"></span>
+      <span class="petal" style="left:47%;--size:13px;--duration:15s;--delay:-4.82s;--sway:48px;--alpha:0.55"></span>
+      <span class="petal" style="left:84%;--size:6px;--duration:16s;--delay:-5.31s;--sway:66px;--alpha:0.65"></span>
+      <span class="petal" style="left:21%;--size:7px;--duration:17s;--delay:-5.81s;--sway:84px;--alpha:0.75"></span>
+      <span class="petal" style="left:58%;--size:8px;--duration:18s;--delay:-6.34s;--sway:102px;--alpha:0.85"></span>
+      <span class="petal" style="left:95%;--size:9px;--duration:19s;--delay:-6.88s;--sway:30px;--alpha:0.45"></span>
+      <span class="petal" style="left:32%;--size:10px;--duration:20s;--delay:-7.45s;--sway:48px;--alpha:0.55"></span>
+      <span class="petal" style="left:69%;--size:11px;--duration:21s;--delay:-8.04s;--sway:66px;--alpha:0.65"></span>
+      <span class="petal" style="left:6%;--size:12px;--duration:22s;--delay:-8.64s;--sway:84px;--alpha:0.75"></span>
+      <span class="petal" style="left:43%;--size:13px;--duration:10s;--delay:-4.03s;--sway:102px;--alpha:0.85"></span>
+      <span class="petal" style="left:80%;--size:6px;--duration:11s;--delay:-4.55s;--sway:30px;--alpha:0.45"></span>
+      <span class="petal" style="left:17%;--size:7px;--duration:12s;--delay:-5.08s;--sway:48px;--alpha:0.55"></span>
+      <span class="petal" style="left:54%;--size:8px;--duration:13s;--delay:-5.64s;--sway:66px;--alpha:0.65"></span>
+      <span class="petal" style="left:91%;--size:9px;--duration:14s;--delay:-6.21s;--sway:84px;--alpha:0.75"></span>
+      <span class="petal" style="left:28%;--size:10px;--duration:15s;--delay:-6.81s;--sway:102px;--alpha:0.85"></span>
+      <span class="petal" style="left:65%;--size:11px;--duration:16s;--delay:-7.43s;--sway:30px;--alpha:0.45"></span>
+      <span class="petal" style="left:2%;--size:12px;--duration:17s;--delay:-8.07s;--sway:48px;--alpha:0.55"></span>
+      <span class="petal" style="left:39%;--size:13px;--duration:18s;--delay:-8.72s;--sway:66px;--alpha:0.65"></span>
+      <span class="petal" style="left:5%;--size:12px;--duration:14s;--delay:-6.93s;--sway:72px;--alpha:0.9"></span>
+      <span class="petal" style="left:12%;--size:9px;--duration:17s;--delay:-8.59s;--sway:48px;--alpha:0.85"></span>
+      <span class="petal" style="left:19%;--size:14px;--duration:20s;--delay:-10.31s;--sway:65px;--alpha:0.8"></span>
+      <span class="petal" style="left:26%;--size:8px;--duration:12s;--delay:-6.31s;--sway:54px;--alpha:0.95"></span>
+      <span class="petal" style="left:33%;--size:11px;--duration:18s;--delay:-9.64s;--sway:68px;--alpha:0.9"></span>
+      <span class="petal" style="left:41%;--size:10px;--duration:16s;--delay:-8.73s;--sway:50px;--alpha:0.82"></span>
+      <span class="petal" style="left:49%;--size:15px;--duration:21s;--delay:-11.68s;--sway:74px;--alpha:0.78"></span>
+      <span class="petal" style="left:57%;--size:8px;--duration:13s;--delay:-7.36s;--sway:45px;--alpha:0.95"></span>
+      <span class="petal" style="left:64%;--size:12px;--duration:19s;--delay:-10.95s;--sway:62px;--alpha:0.86"></span>
+      <span class="petal" style="left:71%;--size:10px;--duration:15s;--delay:-8.80s;--sway:55px;--alpha:0.92"></span>
+      <span class="petal" style="left:78%;--size:13px;--duration:20s;--delay:-11.94s;--sway:70px;--alpha:0.84"></span>
+      <span class="petal" style="left:86%;--size:9px;--duration:14s;--delay:-8.50s;--sway:49px;--alpha:0.94"></span>
+      <span class="petal" style="left:93%;--size:14px;--duration:22s;--delay:-13.58s;--sway:77px;--alpha:0.8"></span>
+      <span class="petal" style="left:84%;--size:17px;--duration:17s;--delay:-10.67s;--sway:72px;--alpha:0.88"></span>
+      <span class="petal" style="left:34%;--size:15px;--duration:16s;--delay:-10.20s;--sway:66px;--alpha:0.86"></span>
+      <span class="petal" style="left:9%;--size:12px;--duration:12s;--delay:-7.78s;--sway:50px;--alpha:0.91"></span>
+      <span class="petal" style="left:58%;--size:9px;--duration:11s;--delay:-7.24s;--sway:44px;--alpha:0.89"></span>
+      <span class="petal" style="left:79%;--size:10px;--duration:13s;--delay:-8.69s;--sway:60px;--alpha:0.87"></span>
+      <span class="petal" style="left:44%;--size:11px;--duration:15s;--delay:-10.18s;--sway:46px;--alpha:0.93"></span>
+      <span class="petal" style="left:6%;--size:17px;--duration:20s;--delay:-13.78s;--sway:88px;--alpha:0.74"></span>
+      <span class="petal" style="left:83%;--size:16px;--duration:21s;--delay:-14.68s;--sway:74px;--alpha:0.8"></span>
+      <span class="petal" style="left:27%;--size:13px;--duration:22s;--delay:-15.60s;--sway:54px;--alpha:0.86"></span>
+      <span class="glare"></span>
+      <span class="scanlines"></span>
+      <span class="petal" style="left:9%;--size:13px;--duration:15s;--delay:-10.79s;--sway:40px;--alpha:0.68"></span>
+      <span class="petal" style="left:46%;--size:20px;--duration:18s;--delay:-13.13s;--sway:53px;--alpha:0.78"></span>
+      <span class="petal" style="left:83%;--size:16px;--duration:21s;--delay:-15.54s;--sway:66px;--alpha:0.88"></span>
+      <span class="petal" style="left:20%;--size:23px;--duration:24s;--delay:-18.00s;--sway:79px;--alpha:0.94"></span>
+      <span class="petal" style="left:57%;--size:19px;--duration:15s;--delay:-11.40s;--sway:92px;--alpha:0.68"></span>
+      <span class="petal" style="left:94%;--size:15px;--duration:18s;--delay:-13.87s;--sway:105px;--alpha:0.78"></span>
+      <span class="petal" style="left:31%;--size:22px;--duration:21s;--delay:-16.39s;--sway:43px;--alpha:0.88"></span>
+      <span class="petal" style="left:68%;--size:18px;--duration:24s;--delay:-18.98s;--sway:56px;--alpha:0.94"></span>
+      <span class="petal" style="left:5%;--size:14px;--duration:15s;--delay:-12.02s;--sway:69px;--alpha:0.68"></span>
+      <span class="petal" style="left:42%;--size:21px;--duration:18s;--delay:-14.60s;--sway:82px;--alpha:0.78"></span>
+      <span class="petal" style="left:79%;--size:17px;--duration:21s;--delay:-17.25s;--sway:95px;--alpha:0.88"></span>
+      <span class="petal" style="left:16%;--size:13px;--duration:24s;--delay:-19.96s;--sway:108px;--alpha:0.94"></span>
+      <span class="petal" style="left:53%;--size:20px;--duration:15s;--delay:-12.63s;--sway:46px;--alpha:0.68"></span>
+      <span class="petal" style="left:90%;--size:16px;--duration:18s;--delay:-15.34s;--sway:59px;--alpha:0.78"></span>
+      <span class="petal" style="left:27%;--size:23px;--duration:21s;--delay:-18.11s;--sway:72px;--alpha:0.88"></span>
+      <span class="petal" style="left:64%;--size:19px;--duration:24s;--delay:-20.94s;--sway:85px;--alpha:0.94"></span>
+      <span class="petal" style="left:1%;--size:15px;--duration:15s;--delay:-13.24s;--sway:98px;--alpha:0.68"></span>
+      <span class="petal" style="left:38%;--size:22px;--duration:18s;--delay:-16.07s;--sway:111px;--alpha:0.78"></span>
+      <span class="petal" style="left:75%;--size:18px;--duration:21s;--delay:-18.96s;--sway:49px;--alpha:0.88"></span>
+      <span class="petal" style="left:12%;--size:14px;--duration:24s;--delay:-21.92s;--sway:62px;--alpha:0.94"></span>
+      <span class="petal" style="left:49%;--size:21px;--duration:15s;--delay:-13.85s;--sway:75px;--alpha:0.68"></span>
+      <span class="petal" style="left:86%;--size:17px;--duration:18s;--delay:-16.81s;--sway:88px;--alpha:0.78"></span>
+      <span class="petal" style="left:23%;--size:13px;--duration:21s;--delay:-19.82s;--sway:101px;--alpha:0.88"></span>
+      <span class="petal" style="left:60%;--size:20px;--duration:24s;--delay:-22.90s;--sway:114px;--alpha:0.94"></span>
+      <span class="petal" style="left:97%;--size:16px;--duration:15s;--delay:-14.46s;--sway:52px;--alpha:0.68"></span>
+      <span class="petal" style="left:34%;--size:23px;--duration:18s;--delay:-17.54s;--sway:65px;--alpha:0.78"></span>
+      <span class="petal" style="left:71%;--size:19px;--duration:21s;--delay:-20.68s;--sway:78px;--alpha:0.88"></span>
+      <span class="petal" style="left:8%;--size:15px;--duration:24s;--delay:-23.88s;--sway:91px;--alpha:0.94"></span>
+      <!-- fx-end -->
+    </div>
+    <section class="content" aria-label="PhotoGit">
+      <h1 class="title-heading"><button type="button" disabled class="title" aria-label="PhotoGit" aria-description="Click or press Enter for a pink leaf swarm and birdsong" tabindex="0"><span class="title-letter" style="--n:0" aria-hidden="true">P</span><span class="title-letter" style="--n:1" aria-hidden="true">H</span><span class="title-letter" style="--n:2" aria-hidden="true">O</span><span class="title-letter" style="--n:3" aria-hidden="true">T</span><span class="title-letter" style="--n:4" aria-hidden="true">O</span><span class="title-letter" style="--n:5" aria-hidden="true">G</span><span class="title-letter" style="--n:6" aria-hidden="true">I</span><span class="title-letter" style="--n:7" aria-hidden="true">T</span></button></h1>
+      <div class="actions">
+        <div class="try-container">
+          <a class="try-link" href="https://github.com/xingexu/photogit#quick-start">Try it now <span class="try-arrow" aria-hidden="true">→</span></a>
+        </div>
+      </div>
+    </section>
+  </main>
+    <footer class="site-footer">
+      <span class="footer-credit">© 2026 XINGE XU</span>
+      <span class="sound-status" role="status" style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)"></span>
+      <button class="sound-toggle" type="button" hidden aria-pressed="false">Mute sound</button>
+      <nav class="icon-bar" aria-label="Connect with PhotoGit">
+        <a href="https://github.com/xingexu/photogit" target="_blank" rel="noopener noreferrer" aria-label="PhotoGit on GitHub"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .3A12 12 0 0 0 8.21 23.69c.6.11.82-.26.82-.58v-2.04c-3.34.73-4.04-1.61-4.04-1.61-.55-1.39-1.33-1.76-1.33-1.76-1.09-.74.08-.73.08-.73 1.2.09 1.84 1.24 1.84 1.24 1.07 1.83 2.81 1.3 3.49.99.11-.77.42-1.3.76-1.6-2.66-.31-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.13-.3-.54-1.52.12-3.18 0 0 1.01-.32 3.3 1.23A11.5 11.5 0 0 1 12 6.2c1.02 0 2.04.14 3 .4 2.29-1.55 3.3-1.23 3.3-1.23.65 1.66.24 2.88.12 3.18.77.84 1.23 1.91 1.23 3.22 0 4.61-2.81 5.62-5.48 5.92.43.37.82 1.1.82 2.22v3.2c0 .32.22.7.83.58A12 12 0 0 0 12 .3Z"/></svg></a>
+        <a href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fgithub.com%2Fxingexu%2Fphotogit" target="_blank" rel="noopener noreferrer" aria-label="Share PhotoGit on LinkedIn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.2 9h3.1v10.2H4.2V9Zm1.55-4.3a1.8 1.8 0 1 1 0 3.6 1.8 1.8 0 0 1 0-3.6ZM9.2 9h3v1.4h.04c.42-.8 1.45-1.64 3-1.64 3.2 0 3.8 2.1 3.8 4.83v5.61h-3.12v-4.97c0-1.19-.02-2.71-1.65-2.71-1.66 0-1.92 1.29-1.92 2.62v5.06H9.2V9Z"/></svg></a>
+        <a href="mailto:hello@photogit.app" aria-label="Email PhotoGit"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 4h20v16H2V4Zm2 2v1.2l8 6.1 8-6.1V6H4Zm16 12V9.7l-8 6.1-8-6.1V18h16Z"/></svg></a>
+      </nav>
+    </footer>
+  <script>
+    (function () {
+      var reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+      var title = document.querySelector('.title');
+      title.disabled = false;
+      var letters = Array.from(title.querySelectorAll('.title-letter'));
+
+
+      var revealTimers = [];
+      var fullTitle = title.textContent;
+
+      function finishReveal() {
+        revealTimers.forEach(clearTimeout);
+        revealTimers = [];
+        // Render one ordinary text node permanently; no animated letter layers remain.
+        title.textContent = fullTitle;
+      }
+      if (reducedMotion.matches) {
+        finishReveal();
+      } else {
+        letters.forEach(function (letter, index) {
+          letter.style.visibility = 'hidden';
+          revealTimers.push(setTimeout(function () {
+            letter.style.visibility = 'visible';
+            if (index === letters.length - 1) finishReveal();
+          }, 150 + index * 150));
+        });
+      }
+      reducedMotion.addEventListener('change', function (event) {
+        if (event.matches) finishReveal();
+      });
+
+      var fx = document.querySelector('.fx');
+      for (var extraIndex = 0; extraIndex < 36; extraIndex++) {
+        var extraPetal = document.createElement('span');
+        extraPetal.className = 'petal';
+        extraPetal.style.left = ((extraIndex * 29 + 13) % 100) + '%';
+        extraPetal.style.setProperty('--size', '18px');
+        extraPetal.style.setProperty('--alpha', (0.48 + (extraIndex % 5) * 0.1).toFixed(2));
+        fx.appendChild(extraPetal);
+      }
+      var petals = Array.from(document.querySelectorAll('.petal'));
+      var phases = petals.map(function (_, index) { return (index + Math.random()) / petals.length; });
+      for (var i = phases.length - 1; i > 0; i--) {
+        var swapIndex = Math.floor(Math.random() * (i + 1));
+        var phase = phases[i];
+        phases[i] = phases[swapIndex];
+        phases[swapIndex] = phase;
+      }
+      petals.forEach(function (petal, index) {
+        var duration = 16 + Math.random() * 18;
+        petal.style.setProperty('--duration', duration.toFixed(2) + 's');
+        petal.style.setProperty('--delay', (-phases[index] * duration).toFixed(2) + 's');
+        var drift = 80 + Math.random() * 160;
+        drift *= Math.random() < 0.5 ? -1 : 1;
+        petal.style.setProperty('--drift', Math.round(drift) + 'px');
+        var tilt = Math.round(Math.random() * 36 - 18);
+        petal.style.setProperty('--tilt-start', tilt + 'deg');
+        petal.style.setProperty('--tilt-end', (tilt + Math.round(Math.random() * 24 - 12)) + 'deg');
+        petal.style.left = (((index + Math.random()) / petals.length) * 100).toFixed(2) + '%';
+      });
+
+      // Small white pixel birds drift through the open sky behind the title.
+      var sky = document.querySelector('.fx');
+      for (var birdIndex = 0; birdIndex < 7; birdIndex++) {
+        var bird = document.createElement('div');
+        bird.className = 'bird';
+        bird.setAttribute('aria-hidden', 'true');
+        bird.style.cssText = '--altitude:' + (10 + birdIndex % 4 * 5) + '%;--bird-size:34px;--wing-speed:' + (1100 + birdIndex * 90) + 'ms;--flight:' + (9 + birdIndex % 3 * 2) + 's;--phase:-' + (birdIndex * 1.4) + 's;--rest:' + (8 + birdIndex * 13) + '%';
+        bird.innerHTML = '<svg viewBox="0 0 24 16"><path fill="#d1efff" d="M10 8h6v3h-6z"/><path class="wing" fill="#fffdf4" d="M2 2h4v2h3v2h3v3h-3V7H6V5H2z M12 9V6h3V4h3V2h4v3h-4v2h-3v2z"/><path fill="white" d="M10 8h5v2h-5z"/></svg>';
+        sky.appendChild(bird);
+      }
+
+      var canvas = document.createElement('canvas');
+      canvas.className = 'leaf-swarm';
+      canvas.setAttribute('aria-hidden', 'true');
+      document.body.appendChild(canvas);
+      var paint = canvas.getContext('2d');
+      var sprites = Array.from({ length: 10 }, function (_, index) {
+        var sprite = new Image();
+        sprite.src = 'artwork/petals/petal-' + (index + 1) + '.png';
+        return sprite;
+      });
+      var swarm = [];
+      var frame = 0;
+      var swarmStart = 0;
+      var swarmDuration = 0;
+      var lastBurst = -Infinity;
+      var viewWidth, viewHeight;
+      function sizeCanvas() {
+        if (!paint) return;
+        viewWidth = window.innerWidth;
+        viewHeight = window.innerHeight;
+        var scale = Math.min(window.devicePixelRatio || 1, 2, Math.sqrt(8000000 / Math.max(1, viewWidth * viewHeight)));
+        var width = Math.round(viewWidth * scale);
+        var height = Math.round(viewHeight * scale);
+        if (canvas.width === width && canvas.height === height) return;
+        canvas.width = width;
+        canvas.height = height;
+        paint.setTransform(scale, 0, 0, scale, 0, 0);
+        paint.imageSmoothingEnabled = false;
+      }
+      sizeCanvas();
+      var resizeFrame = 0;
+      window.addEventListener('resize', function () {
+        if (resizeFrame) return;
+        resizeFrame = requestAnimationFrame(function () { resizeFrame = 0; sizeCanvas(); });
+      });
+      function drawSwarm(now) {
+        if (!paint) return;
+        var elapsed = (now - swarmStart) / 1000;
+        if (paint) paint.clearRect(0, 0, viewWidth, viewHeight);
+        swarm.forEach(function (leaf) {
+          var age = elapsed - leaf.delay;
+          if (age < 0 || age > leaf.life) return;
+          var progress = age / leaf.life;
+          var x = leaf.reverse ? viewWidth + 50 - progress * (viewWidth + 100) : -50 + progress * (viewWidth + 100);
+          var y = leaf.y * viewHeight + Math.sin(age * 3 + leaf.phase) * leaf.wave + age * 18;
+          if (x < -leaf.size || x > viewWidth + leaf.size || y < -leaf.size || y > viewHeight + leaf.size) return;
+          // Dissolve gradually over the final two-thirds of each leaf's flight.
+          var fade = Math.max(0, Math.min(1, (progress - .35) / .65));
+          var opacity = 1 - fade * fade * (3 - 2 * fade);
+          var alpha = Math.min(1, age * 6) * opacity * .85;
+          if (alpha < .005) return;
+          paint.save();
+          paint.translate(x, y);
+          paint.rotate(leaf.phase + age * leaf.spin);
+          paint.globalAlpha = alpha;
+          var sprite = sprites[leaf.sprite];
+          if (sprite.complete && sprite.naturalWidth) {
+            paint.drawImage(sprite, -leaf.size / 2, -leaf.size / 2, leaf.size, leaf.size);
+          } else {
+            paint.fillStyle = "#f8b4d2";
+            paint.fillRect(-leaf.size / 4, -leaf.size / 4, leaf.size / 2, leaf.size / 2);
+          }
+          paint.restore();
+        });
+        if (elapsed < swarmDuration) frame = requestAnimationFrame(drawSwarm);
+        else { swarm = []; frame = 0; if (paint) paint.clearRect(0, 0, viewWidth, viewHeight); }
+      }
+      // Native PCM playback starts directly in the click/tap/keyboard gesture.
+      // Reuse one player so repeated interactions cannot stack loud sound effects.
+      var whoosh = document.createElement('audio');
+      whoosh.src = 'audio/leaf-whoosh.wav';
+      whoosh.preload = navigator.connection && navigator.connection.saveData ? 'none' : 'auto';
+      whoosh.setAttribute('playsinline', '');
+      document.body.appendChild(whoosh);
+      var soundToggle = document.querySelector('.sound-toggle');
+      soundToggle.hidden = false;
+      var soundMuted = false;
+      try { soundMuted = localStorage.getItem('photogit-sound-muted') === 'true'; } catch (error) {}
+      syncSoundToggle();
+      function syncSoundToggle() {
+        whoosh.muted = soundMuted;
+        soundToggle.setAttribute('aria-pressed', String(soundMuted));
+        soundToggle.textContent = soundMuted ? 'Enable sound' : 'Mute sound';
+      }
+      soundToggle.addEventListener('click', function () {
+        soundMuted = !soundMuted;
+        if (soundMuted) whoosh.pause();
+        syncSoundToggle();
+        try { localStorage.setItem('photogit-sound-muted', String(soundMuted)); } catch (error) {}
+      });
+      function natureSound() {
+        if (soundMuted) return;
+        try {
+          document.querySelector('.sound-status').textContent = '';
+          whoosh.pause();
+          whoosh.currentTime = 0;
+          var playback = whoosh.play();
+          if (playback && typeof playback.catch === 'function') {
+            playback.catch(function () { document.querySelector('.sound-status').textContent = 'Sound is unavailable. The leaf effect still works.'; });
+          }
+        } catch (error) { /* Audio is optional when device playback is unavailable. */ }
+      }
+      function releaseLeaves() {
+        var now = performance.now();
+        if (now - lastBurst < 700) return;
+        lastBurst = now;
+        natureSound();
+        if (reducedMotion.matches || !paint) return;
+        cancelAnimationFrame(frame);
+        var particleCount = window.innerWidth < 600 ? 900 : 1600;
+        if (navigator.connection && navigator.connection.saveData) particleCount = Math.min(particleCount, 400);
+        swarm = Array.from({ length: particleCount }, function (_, index) {
+          return { reverse: index % 2 === 0, y: Math.random() * 1.15 - .15, delay: Math.random() * .7,
+            life: 3 + Math.random() * 2.5, phase: Math.random() * Math.PI * 2, wave: 25 + Math.random() * 100,
+            spin: (Math.random() - .5) * 2.5, size: 22, sprite: index % 10 };
+        });
+        swarmDuration = swarm.reduce(function (end, leaf) { return Math.max(end, leaf.delay + leaf.life); }, 0);
+        swarmStart = now;
+        frame = requestAnimationFrame(drawSwarm);
+      }
+      reducedMotion.addEventListener('change', function (event) {
+        if (event.matches) { cancelAnimationFrame(frame); swarm = []; if (paint) paint.clearRect(0, 0, viewWidth, viewHeight); }
+      });
+      function stopEffects() {
+        cancelAnimationFrame(frame);
+        frame = 0; swarm = [];
+        if (paint) paint.clearRect(0, 0, viewWidth, viewHeight);
+        whoosh.pause();
+      }
+      window.addEventListener('pagehide', stopEffects);
+      document.addEventListener('visibilitychange', function () {
+        document.documentElement.classList.toggle('page-hidden', document.hidden);
+        if (document.hidden) stopEffects();
+      });
+      document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') stopEffects();
+      });
+      title.addEventListener('click', releaseLeaves);
+      title.addEventListener('keydown', function (event) {
+        if (event.repeat && (event.key === 'Enter' || event.key === ' ')) event.preventDefault();
+      });
+
+
+    })();
+  </script>
+</body>
+</html>
