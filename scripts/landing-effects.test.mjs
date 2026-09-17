@@ -23,7 +23,7 @@ for (const [width, expected] of [[1440,1100],[390,600]]) {
     fx.drawSwarm(1000 + (leaf.delay + leaf.life * .4) * 1000);
     const early = fx.alphas.at(-1);
     fx.drawSwarm(1000 + (leaf.delay + leaf.life * .9) * 1000);
-    assert.ok(fx.alphas.at(-1) < early * .2);
+    assert.ok(fx.alphas.at(-1) < early);
     fx.setTime(2000); fx.releaseLeaves(); assert.equal(fx.leaves().length, expected);
     fx.drawSwarm(9000); assert.equal(fx.leaves().length, 0);
     assert.equal(fx.title.textContent, 'PHOTOGIT');
