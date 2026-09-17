@@ -486,7 +486,7 @@
       }
       function releaseLeaves() {
         var now = performance.now();
-        if (now - lastBurst < 700) return;
+        if (frame || now - lastBurst < 700) return;
         lastBurst = now;
         if (reducedMotion.matches || !paint) return;
         cancelAnimationFrame(frame);
