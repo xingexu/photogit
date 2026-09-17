@@ -495,7 +495,7 @@
         swarm = Array.from({ length: particleCount }, function (_, index) {
           return { y: .08 + Math.random() * .84, delay: index / particleCount * .65,
             life: 7, phase: Math.random() * Math.PI * 2, wave: 4 + Math.random() * 8,
-            spin: (Math.random() - .5) * 5, size: 6 + Math.random() * 8, sprite: index % 10 };
+            spin: (Math.random() - .5) * .4, size: 6 + Math.random() * 8, sprite: index % 10 };
         });
         swarmDuration = swarm.reduce(function (end, leaf) { return Math.max(end, leaf.delay + leaf.life); }, 0);
         swarmStart = now;
