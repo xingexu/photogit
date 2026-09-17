@@ -502,7 +502,7 @@
         frame = requestAnimationFrame(drawSwarm);
       }
       reducedMotion.addEventListener('change', function (event) {
-        if (event.matches) { cancelAnimationFrame(frame); swarm = []; if (paint) paint.clearRect(0, 0, viewWidth, viewHeight); }
+        if (event.matches) stopEffects();
       });
       function stopEffects() {
         cancelAnimationFrame(frame);
