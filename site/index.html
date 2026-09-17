@@ -507,6 +507,7 @@
       function stopEffects() {
         cancelAnimationFrame(frame);
         frame = 0; swarm = [];
+        swarmStart = 0; swarmDuration = 0;
         if (paint) paint.clearRect(0, 0, viewWidth, viewHeight);
       }
       window.addEventListener('pagehide', stopEffects);
