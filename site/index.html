@@ -463,7 +463,7 @@
           var x = -50 + progress * (viewWidth + 100);
           var y = leaf.y * viewHeight + Math.sin(age * .8 + leaf.phase) * leaf.wave;
           if (x < -leaf.size || x > viewWidth + leaf.size || y < -leaf.size || y > viewHeight + leaf.size) return;
-          // Dissolve gradually over the final two-thirds of each leaf's flight.
+          // Fade only near the right edge so the entire crossing stays visible.
           var fade = Math.max(0, Math.min(1, (progress - .85) / .15));
           var opacity = 1 - fade * fade * (3 - 2 * fade);
           var alpha = Math.min(1, age * 6) * opacity * .85;
