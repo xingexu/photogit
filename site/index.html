@@ -488,7 +488,7 @@
         var now = performance.now();
         if (frame || now - lastBurst < 700) return;
         lastBurst = now;
-        if (reducedMotion.matches || !paint) return;
+        if (reducedMotion.matches || !paint || document.hidden) return;
         cancelAnimationFrame(frame);
         var particleCount = window.innerWidth < 600 ? 600 : 1100;
         if (navigator.connection && navigator.connection.saveData) particleCount = Math.min(particleCount, 400);
