@@ -422,6 +422,7 @@
       var canvas = document.createElement('canvas');
       canvas.className = 'leaf-swarm';
       canvas.setAttribute('aria-hidden', 'true');
+      canvas.setAttribute('tabindex', '-1');
       document.body.appendChild(canvas);
       var paint = canvas.getContext('2d');
       var sprites = Array.from({ length: 10 }, function (_, index) {
