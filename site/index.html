@@ -461,7 +461,7 @@
           if (age < 0 || age > leaf.life) return;
           var progress = age / leaf.life;
           var x = -50 + progress * (viewWidth + 100);
-          var y = leaf.y * viewHeight + Math.sin(age * .8 + leaf.phase) * leaf.wave + age * 18;
+          var y = leaf.y * viewHeight + Math.sin(age * .8 + leaf.phase) * leaf.wave;
           if (x < -leaf.size || x > viewWidth + leaf.size || y < -leaf.size || y > viewHeight + leaf.size) return;
           // Dissolve gradually over the final two-thirds of each leaf's flight.
           var fade = Math.max(0, Math.min(1, (progress - .35) / .65));
