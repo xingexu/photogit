@@ -505,6 +505,8 @@
         if (event.matches) stopEffects();
       });
       function stopEffects() {
+        cancelAnimationFrame(resizeFrame);
+        resizeFrame = 0;
         cancelAnimationFrame(frame);
         frame = 0; swarm = [];
         swarmStart = 0; swarmDuration = 0;
