@@ -466,7 +466,7 @@
           // Fade only near the right edge so the entire crossing stays visible.
           var fade = Math.max(0, Math.min(1, (progress - .85) / .15));
           var opacity = 1 - fade * fade * (3 - 2 * fade);
-          var alpha = Math.min(1, age * 6) * opacity * .85;
+          var alpha = Math.min(1, age / .35) * opacity * .85;
           if (alpha < .005) return;
           paint.save();
           paint.translate(x, y);
