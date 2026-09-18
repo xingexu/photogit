@@ -55,3 +55,5 @@ test('sweep replay after completion', () => { const fx=setup(); fx.releaseLeaves
 test('escape clears the sweep', () => { const fx=setup(); fx.releaseLeaves(); fx.events.keydown({key:'Escape'}); assert.equal(fx.leaves().length,0); });
 
 test('other keys preserve the sweep', () => { const fx=setup(); fx.releaseLeaves(); fx.events.keydown({key:'a'}); assert.ok(fx.leaves().length); });
+
+test('page departure clears flowers', () => { const fx=setup(); fx.releaseLeaves(); fx.events.pagehide(); assert.equal(fx.leaves().length,0); });
