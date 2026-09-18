@@ -26,7 +26,7 @@ for (const [width, expected] of [[1440,1100],[390,600]]) {
     const early = fx.alphas.at(-1);
     fx.drawSwarm(1000 + (leaf.delay + leaf.life * .9) * 1000);
     assert.ok(fx.alphas.at(-1) < early);
-    fx.setTime(2000); fx.releaseLeaves(); assert.equal(fx.leaves().length, expected);
+    fx.setTime(7500); fx.releaseLeaves(); assert.equal(fx.leaves().length, 1);
     fx.drawSwarm(9000); assert.equal(fx.leaves().length, 0);
     assert.equal(fx.title.textContent, 'PHOTOGIT');
   });
@@ -73,3 +73,5 @@ test('flowers remain in a gentle vertical band', () => { const fx=setup(); fx.re
 test('mobile data saver particle cap', () => { const fx=setup({width:390,saveData:true}); fx.releaseLeaves(); assert.equal(fx.leaves().length,400); });
 
 test('all ten flower sprites participate', () => { const fx=setup(); fx.releaseLeaves(); assert.equal(new Set(fx.leaves().map(l=>l.sprite)).size,10); });
+
+test('petals remain visible through midflight', () => { const fx=setup(); fx.releaseLeaves(); const leaf=fx.leaves()[0]; leaf.y=.5; fx.leaves().splice(1); fx.drawSwarm(4500); assert.ok(fx.alphas.at(-1)>.8); });
