@@ -451,7 +451,8 @@
           bird.className = 'bird';
           bird.style.cssText = '--bird-x:' + position[0] + 'px;--bird-y:' + position[1] + 'px;--wing-speed:' + (560 + flockIndex * 60) + 'ms;--wing-delay:-' + (birdIndex * 65) + 'ms;';
           bird.innerHTML = '<svg viewBox="0 0 28 20" aria-hidden="true" focusable="false"><g class="wing-up" fill="#fffdf4"><path d="M2 3h4v3h4v3h4v3h-4V9H6V6H2z M14 9h4V6h4V3h4v3h-4v3h-4v3h-4z"/></g><g class="wing-down" fill="#e4f3fc"><path d="M2 14h4v-3h4V9h4v3h-4v2H6v3H2z M14 9h4v2h4v3h4v3h-4v-3h-4v-2h-4z"/></g><path class="bird-body" fill="#ffffff" d="M11 9h6v4h-6z"/><path fill="#b9dcea" d="M12 13h4v2h-4z"/></svg>';
-          bird.addEventListener('click', function (event) { event.stopPropagation(); disperseBirds(); });
+          bird.flock = flock;
+          bird.addEventListener('click', function (event) { event.stopPropagation(); disperseBirds(event.currentTarget.flock); });
           birds.push(bird);
           flock.appendChild(bird);
         });
@@ -488,28 +489,33 @@
         });
         var animation = cloud.animate([
           { rotate: '0deg', translate: '0 0' },
-          { rotate: '-4deg', translate: '0 -8px' },
-          { rotate: '4deg', translate: '0 -3px' },
-          { rotate: '-2deg', translate: '0 -5px' },
-          { rotate: '1deg', translate: '0 -1px' },
+          { rotate: '0deg', translate: '0 -3px' },
+          { rotate: '0deg', translate: '2px 0' },
+          { rotate: '0deg', translate: '-2px -1px' },
+          { rotate: '0deg', translate: '0 1px' },
           { rotate: '0deg', translate: '0 0' }
-        ], { duration: 850, easing: 'ease-in-out' });
+        ], { duration: 650, easing: 'ease-in-out' });
         cloudAnimations.push({ cloud: cloud, animation: animation });
       }
       document.querySelectorAll('.sky-cloud').forEach(function (cloud) {
         cloud.addEventListener('click', function () { jiggleCloud(cloud); });
       });
 
-      function resetBirds() {
-        scatterAnimations.forEach(function (animation) { animation.cancel(); });
-        scatterAnimations = [];
+      function resetBirds(flock) {
+        scatterAnimations = scatterAnimations.filter(function (entry) {
+          if (!flock || entry.flock === flock || entry.animation.playState === 'finished') {
+            entry.animation.cancel();
+            return false;
+          }
+          return true;
+        });
       }
-      function disperseBirds() {
+      function disperseBirds(flock) {
         playChirp();
         if (reducedMotion.matches || document.hidden) return;
-        resetBirds();
+        resetBirds(flock);
         birds.forEach(function (bird, index) {
-          if (!bird.animate) return;
+          if (!bird.animate || (flock && bird.flock !== flock)) return;
           var member = index % 5;
           var distance = Math.min(window.innerWidth * .12, 95);
           var dx = [1, .4, .7, -.8, -.5][member] * distance;
@@ -521,7 +527,7 @@
             { transform: spread, offset: .55 },
             { transform: 'translate(0, 0)', offset: 1 }
           ], { duration: 2600, easing: 'cubic-bezier(.16,1,.3,1)' });
-          scatterAnimations.push(animation);
+          scatterAnimations.push({ flock: bird.flock, animation: animation });
         });
       }
 

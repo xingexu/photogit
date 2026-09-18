@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 const html = fs.readFileSync(new URL('../site/index.html', import.meta.url), 'utf8');
-const source = html.match(/<script>([\s\S]*?)<\/script>/)[1].replace('    })();', 'globalThis.effects = {releaseLeaves, drawSwarm, stopEffects, disperseBirds, jiggleCloud, leaves: () => swarm};\n    })();');
+const source = html.match(/<script>([\s\S]*?)<\/script>/)[1].replace('    })();', 'globalThis.effects = {releaseLeaves, drawSwarm, stopEffects, disperseBirds, jiggleCloud, birds, leaves: () => swarm};\n    })();');
 function setup({width = 1440, reduced = false, saveData = false, canvas = true} = {}) {
   let now = 1000;
   const alphas = [];
@@ -105,4 +105,16 @@ test('birds stay close to their formation when startled', () => {
 test('cloud jiggle preserves its horizontal drift and cleans up', () => {
  const fx=setup(); let cancelled=false; let frames; fx.jiggleCloud({animate(f){frames=f; return {cancel(){cancelled=true}}}});
  assert.ok(frames.every(f=>!('transform' in f))); assert.equal(frames.at(-1).rotate,'0deg'); fx.stopEffects(); assert.ok(cancelled);
+});
+
+test('clicking a flock scatters only its five birds', () => {
+ const fx=setup(); fx.disperseBirds(fx.birds[0].flock); assert.equal(fx.scatter.length,5);
+ fx.disperseBirds(fx.birds[5].flock); assert.equal(fx.scatter.length,10);
+ assert.ok(fx.scatter.slice(0,5).every(a=>!a.cancelled));
+ fx.disperseBirds(fx.birds[0].flock); assert.equal(fx.scatter.length,15);
+ assert.ok(fx.scatter.slice(0,5).every(a=>a.cancelled)); assert.ok(fx.scatter.slice(5,10).every(a=>!a.cancelled));
+});
+test('cloud jiggle stays within three pixels without rotation', () => {
+ const fx=setup(); let frames; fx.jiggleCloud({animate(f){frames=f;return {cancel(){}}}});
+ for(const f of frames){assert.equal(f.rotate,'0deg');const [x,y]=f.translate.split(' ').map(parseFloat);assert.ok(Math.hypot(x,y)<=3);}
 });
