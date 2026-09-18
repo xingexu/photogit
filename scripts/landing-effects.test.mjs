@@ -74,7 +74,7 @@ test('mobile data saver particle cap', () => { const fx=setup({width:390,saveDat
 
 test('all ten flower sprites participate', () => { const fx=setup(); fx.releaseLeaves(); assert.equal(new Set(fx.leaves().map(l=>l.sprite)).size,10); });
 
-test('petals remain visible through midflight', () => { const fx=setup(); fx.releaseLeaves(); const leaf=fx.leaves()[0]; leaf.y=.5; leaf.offset=.5; fx.leaves().splice(1); fx.drawSwarm(4500); assert.ok(fx.alphas.at(-1)>.8); });
+test('petals stay visible while gradually fading through midflight', () => { const fx=setup(); fx.releaseLeaves(); const leaf=fx.leaves()[0]; leaf.y=.5; leaf.offset=.5; fx.leaves().splice(1); fx.drawSwarm(4500); assert.ok(fx.alphas.at(-1)>.3 && fx.alphas.at(-1)<.85); });
 
 test('title activation disperses fifteen birds without scaling and returns to formation', () => {
   const fx=setup(); fx.releaseLeaves(); assert.equal(fx.scatter.length,15);
@@ -117,4 +117,10 @@ test('clicking a flock scatters only its five birds', () => {
 test('cloud jiggle stays within three pixels without rotation', () => {
  const fx=setup(); let frames; fx.jiggleCloud({animate(f){frames=f;return {cancel(){}}}});
  for(const f of frames){assert.equal(f.rotate,'0deg');const [x,y]=f.translate.split(' ').map(parseFloat);assert.ok(Math.hypot(x,y)<=3);}
+});
+
+test('leaf opacity gradually falls through the middle and bottom of the screen', () => {
+ const fx=setup(); fx.releaseLeaves(); const leaf=fx.leaves()[0]; Object.assign(leaf,{y:.5,offset:.5,wave:0,delay:0});fx.leaves().splice(1);
+ const levels=[.2,.45,.7,.95].map(y=>{const progress=(y*900+40+.5*900*.6)/(900*1.6+80);fx.drawSwarm(1000+progress*7000);return fx.alphas.at(-1)});
+ assert.ok(levels.every((v,i)=>i===0||v<levels[i-1])); assert.ok(levels.at(-1)<.02);
 });
