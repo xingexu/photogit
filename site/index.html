@@ -63,9 +63,9 @@
     }
     @keyframes sky-drift { to { transform: translateX(calc(100vw + 1440px)); } }
     /* A flock translates as one unit; wing poses never scale the bird body. */
-    .bird-flock { position: absolute; left: -180px; top: var(--altitude); width: 140px; height: 100px; opacity: var(--flock-alpha, .85); animation: bird-flight var(--flight) var(--phase) linear infinite; }
-    .bird { position: absolute; left: var(--bird-x); top: var(--bird-y); width: 28px; height: 20px; }
-    .bird svg { display: block; width: 28px; height: 20px; overflow: visible; shape-rendering: crispEdges; }
+    .bird-flock { position: absolute; left: -180px; top: var(--altitude); width: 174px; height: 130px; opacity: var(--flock-alpha, .85); animation: bird-flight var(--flight) var(--phase) linear infinite; }
+    .bird { position: absolute; left: var(--bird-x); top: var(--bird-y); width: 42px; height: 30px; }
+    .bird svg { display: block; width: 42px; height: 30px; overflow: visible; shape-rendering: crispEdges; }
     .bird .wing-up, .bird .wing-down { animation: bird-flap var(--wing-speed, 560ms) steps(1, end) infinite; animation-delay: var(--wing-delay, 0ms); }
     .bird .wing-down { animation-name: bird-flap-down; }
     @keyframes bird-flight { to { transform: translateX(calc(100vw + 360px)); } }
@@ -349,7 +349,7 @@
       <!-- fx-end -->
     </div>
     <section class="content" aria-label="PhotoGit">
-      <h1 class="title-heading"><button type="button" disabled class="title" aria-label="PhotoGit" aria-description="Click or press Enter or Space for a silent left-to-right flower sweep" tabindex="0"><span class="title-letter" style="--n:0" aria-hidden="true">P</span><span class="title-letter" style="--n:1" aria-hidden="true">H</span><span class="title-letter" style="--n:2" aria-hidden="true">O</span><span class="title-letter" style="--n:3" aria-hidden="true">T</span><span class="title-letter" style="--n:4" aria-hidden="true">O</span><span class="title-letter" style="--n:5" aria-hidden="true">G</span><span class="title-letter" style="--n:6" aria-hidden="true">I</span><span class="title-letter" style="--n:7" aria-hidden="true">T</span></button></h1>
+      <h1 class="title-heading"><button type="button" disabled class="title" aria-label="PhotoGit" aria-description="Click or press Enter or Space to scatter the birds and sweep leaves from top left to bottom right" tabindex="0"><span class="title-letter" style="--n:0" aria-hidden="true">P</span><span class="title-letter" style="--n:1" aria-hidden="true">H</span><span class="title-letter" style="--n:2" aria-hidden="true">O</span><span class="title-letter" style="--n:3" aria-hidden="true">T</span><span class="title-letter" style="--n:4" aria-hidden="true">O</span><span class="title-letter" style="--n:5" aria-hidden="true">G</span><span class="title-letter" style="--n:6" aria-hidden="true">I</span><span class="title-letter" style="--n:7" aria-hidden="true">T</span></button></h1>
       <div class="actions">
         <div class="try-container">
           <a class="try-link" href="https://github.com/xingexu/photogit#quick-start">Try it now <span class="try-arrow" aria-hidden="true">→</span></a>
@@ -397,6 +397,12 @@
         if (event.matches) finishReveal();
       });
 
+      var ambientSky = document.querySelector('.fx');
+      for (var extraLeafIndex = 0; extraLeafIndex < 36; extraLeafIndex++) {
+        var extraLeaf = document.createElement('span');
+        extraLeaf.className = 'petal';
+        ambientSky.appendChild(extraLeaf);
+      }
       var petals = Array.from(document.querySelectorAll('.petal'));
       var phases = petals.map(function (_, index) { return (index + Math.random()) / petals.length; });
       for (var i = phases.length - 1; i > 0; i--) {
@@ -408,7 +414,7 @@
       petals.forEach(function (petal, index) {
         var depth = index % 3;
         var duration = 22 + (2 - depth) * 6 + Math.random() * 8;
-        petal.style.setProperty('--petal-size', (8 + depth * 2) + 'px');
+        petal.style.setProperty('--petal-size', (12 + depth * 2) + 'px');
         petal.style.setProperty('--alpha', (.4 + depth * .18).toFixed(2));
         petal.style.setProperty('--flutter', (10 + depth * 5) + 'px');
         petal.style.setProperty('--tilt-mid', (20 + Math.random() * 24) + 'deg');
@@ -425,7 +431,9 @@
 
       // Five birds: one leader and two pairs trailing in a right-facing V.
       var sky = document.querySelector('.fx');
-      var formation = [[88, 40], [44, 20], [44, 60], [0, 0], [0, 80]];
+      var birds = [];
+      var scatterAnimations = [];
+      var formation = [[112, 48], [56, 24], [56, 72], [0, 0], [0, 96]];
       for (var flockIndex = 0; flockIndex < 3; flockIndex++) {
         var flock = document.createElement('div');
         flock.className = 'bird-flock';
@@ -436,9 +444,33 @@
           bird.className = 'bird';
           bird.style.cssText = '--bird-x:' + position[0] + 'px;--bird-y:' + position[1] + 'px;--wing-speed:' + (560 + flockIndex * 60) + 'ms;--wing-delay:-' + (birdIndex * 65) + 'ms;';
           bird.innerHTML = '<svg viewBox="0 0 28 20" aria-hidden="true" focusable="false"><g class="wing-up" fill="#fffdf4"><path d="M2 3h4v3h4v3h4v3h-4V9H6V6H2z M14 9h4V6h4V3h4v3h-4v3h-4v3h-4z"/></g><g class="wing-down" fill="#e4f3fc"><path d="M2 14h4v-3h4V9h4v3h-4v2H6v3H2z M14 9h4v2h4v3h4v3h-4v-3h-4v-2h-4z"/></g><path class="bird-body" fill="#ffffff" d="M11 9h6v4h-6z"/><path fill="#b9dcea" d="M12 13h4v2h-4z"/></svg>';
+          birds.push(bird);
           flock.appendChild(bird);
         });
         sky.appendChild(flock);
+      }
+
+      function resetBirds() {
+        scatterAnimations.forEach(function (animation) { animation.cancel(); });
+        scatterAnimations = [];
+      }
+      function disperseBirds() {
+        if (reducedMotion.matches || document.hidden) return;
+        resetBirds();
+        birds.forEach(function (bird, index) {
+          if (!bird.animate) return;
+          var member = index % 5;
+          var dx = [150, 45, 80, -80, -45][member];
+          var dy = [-30, -100, 80, -130, 140][member];
+          var spread = 'translate(' + dx + 'px, ' + dy + 'px)';
+          var animation = bird.animate([
+            { transform: 'translate(0, 0)', offset: 0 },
+            { transform: spread, offset: .3 },
+            { transform: spread, offset: .55 },
+            { transform: 'translate(0, 0)', offset: 1 }
+          ], { duration: 3800, easing: 'cubic-bezier(.25,.1,.25,1)' });
+          scatterAnimations.push(animation);
+        });
       }
 
       var canvas = document.createElement('canvas');
@@ -487,10 +519,11 @@
           var progress = age / leaf.life;
           var spread = viewWidth * .22;
           var x = -50 - leaf.offset * spread + progress * (viewWidth + 100 + spread);
-          var y = leaf.y * viewHeight + Math.sin(age * .8 + leaf.phase) * leaf.wave;
+          var y = -50 - leaf.offset * viewHeight * .22 + progress * (viewHeight * 1.22 + 100)
+            + (leaf.y - .5) * viewHeight * .55 + Math.sin(age * .8 + leaf.phase) * leaf.wave;
           if (x < -leaf.size || x > viewWidth + leaf.size || y < -leaf.size || y > viewHeight + leaf.size) return;
-          // Fade only near the right edge so the entire crossing stays visible.
-          var crossing = (x + 50) / (viewWidth + 100);
+          // Fade near either exit edge of the diagonal crossing.
+          var crossing = Math.max((x + 50) / (viewWidth + 100), (y + 50) / (viewHeight + 100));
           var fade = Math.max(0, Math.min(1, (crossing - .85) / .15));
           var opacity = 1 - fade * fade * (3 - 2 * fade);
           var alpha = Math.min(1, age / .35) * opacity * .85;
@@ -515,14 +548,15 @@
         var now = performance.now();
         if (frame || now - lastBurst < 700) return;
         lastBurst = now;
+        disperseBirds();
         if (reducedMotion.matches || !paint || document.hidden) return;
         cancelAnimationFrame(frame);
-        var particleCount = window.innerWidth < 600 ? 180 : 360;
-        if (navigator.connection && navigator.connection.saveData) particleCount = Math.min(particleCount, 160);
+        var particleCount = window.innerWidth < 600 ? 360 : 720;
+        if (navigator.connection && navigator.connection.saveData) particleCount = Math.min(particleCount, 200);
         swarm = Array.from({ length: particleCount }, function (_, index) {
           return { offset: Math.random(), y: .08 + Math.random() * .84, delay: index / particleCount * .65,
             life: 7, phase: Math.random() * Math.PI * 2, wave: 4 + Math.random() * 8,
-            spin: (Math.random() - .5) * .4, size: 8 + (index % 4) * 2, sprite: index % 10 };
+            spin: (Math.random() - .5) * .4, size: 12 + (index % 4) * 2, sprite: index % 10 };
         });
         swarmDuration = swarm.reduce(function (end, leaf) { return Math.max(end, leaf.delay + leaf.life); }, 0);
         swarmStart = now;
@@ -532,6 +566,7 @@
         if (event.matches) stopEffects();
       });
       function stopEffects() {
+        resetBirds();
         cancelAnimationFrame(resizeFrame);
         resizeFrame = 0;
         cancelAnimationFrame(frame);
