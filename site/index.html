@@ -460,8 +460,6 @@
       }
 
       var chirpPlayer = window.Audio ? new window.Audio('audio/bird-chirp.wav') : null;
-      var swooshPlayer = window.Audio ? new window.Audio('audio/soft-swoosh.wav') : null;
-      if (swooshPlayer) { swooshPlayer.preload = 'none'; swooshPlayer.volume = .28; }
       var chirpMuted = false;
       var lastChirp = -Infinity;
       var chirpToggle = document.querySelector('.chirp-toggle');
@@ -472,7 +470,6 @@
         chirpToggle.setAttribute('aria-label', chirpMuted ? 'Enable sounds' : 'Mute sounds');
         chirpToggle.textContent = chirpMuted ? 'Sound off' : 'Sound on ♪';
         if (chirpMuted && chirpPlayer) chirpPlayer.pause();
-        if (chirpMuted && swooshPlayer) swooshPlayer.pause();
       });
       function playChirp() {
         if (!chirpPlayer || chirpMuted || document.hidden || performance.now() - lastChirp < 650) return;
@@ -482,14 +479,6 @@
           var playback = chirpPlayer.play();
           if (playback && playback.catch) playback.catch(function () {});
         } catch (error) { /* The visual interaction remains available without audio. */ }
-      }
-      function playSwoosh() {
-        if (!swooshPlayer || chirpMuted || document.hidden) return;
-        try {
-          swooshPlayer.currentTime = 0;
-          var playback = swooshPlayer.play();
-          if (playback && playback.catch) playback.catch(function () {});
-        } catch (error) { /* Sound is optional; the leaves still fall. */ }
       }
       var cloudAnimations = [];
       function jiggleCloud(cloud) {
@@ -587,11 +576,11 @@
           if (age < 0 || age > leaf.life) return;
           var progress = age / leaf.life;
           var x = leaf.offset * viewWidth + Math.sin(age * .9 + leaf.phase) * leaf.wave;
-          var y = -40 - leaf.y * viewHeight * .6 + progress * (viewHeight * 1.6 + 80);
+          var y = -40 - leaf.y * viewHeight * 1.1 + progress * (viewHeight * 2.1 + 80);
           if (x < -leaf.size || x > viewWidth + leaf.size || y < -leaf.size || y > viewHeight + leaf.size) return;
-          // Dissolve slowly through most of the fall, finishing at the bottom.
+          // Stay visible through the upper half, then dissolve toward the bottom.
           var crossing = y / viewHeight;
-          var fade = Math.max(0, Math.min(1, (crossing - .15) / .85));
+          var fade = Math.max(0, Math.min(1, (crossing - .45) / .55));
           var opacity = 1 - fade * fade * (3 - 2 * fade);
           var alpha = Math.min(1, age / .35) * opacity * .85;
           if (alpha < .005) return;
@@ -617,13 +606,12 @@
         if (frame || now - lastBurst < 700) return;
         lastBurst = now;
         if (reducedMotion.matches || !paint || document.hidden) return;
-        playSwoosh();
         cancelAnimationFrame(frame);
-        var particleCount = window.innerWidth < 600 ? 360 : 720;
-        if (navigator.connection && navigator.connection.saveData) particleCount = Math.min(particleCount, 200);
+        var particleCount = window.innerWidth < 600 ? 200 : 420;
+        if (navigator.connection && navigator.connection.saveData) particleCount = Math.min(particleCount, 140);
         swarm = Array.from({ length: particleCount }, function (_, index) {
-          return { offset: Math.random(), y: .08 + Math.random() * .84, delay: index / particleCount * .65,
-            life: 7, phase: Math.random() * Math.PI * 2, wave: 4 + Math.random() * 8,
+          return { offset: (index % 20 + Math.random()) / 20, y: .08 + Math.random() * .84, delay: index / particleCount * .65,
+            life: 4.2, phase: Math.random() * Math.PI * 2, wave: 4 + Math.random() * 8,
             spin: (Math.random() - .5) * .4, size: 12 + (index % 4) * 2, sprite: index % 10 };
         });
         swarmDuration = swarm.reduce(function (end, leaf) { return Math.max(end, leaf.delay + leaf.life); }, 0);
@@ -637,7 +625,6 @@
         cloudAnimations.forEach(function (entry) { entry.animation.cancel(); });
         cloudAnimations = [];
         if (chirpPlayer) chirpPlayer.pause();
-        if (swooshPlayer) swooshPlayer.pause();
         resetBirds();
         cancelAnimationFrame(resizeFrame);
         resizeFrame = 0;
