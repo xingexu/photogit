@@ -7,3 +7,5 @@ Click a bird for one soft two-note chirp and a small 2.6-second scatter of only 
 Escape, hiding the tab, or leaving the page stops the effects and sound. Reduced motion suppresses the shower, bird movement, and cloud jiggle. Desktop uses 420 petals, mobile 200, and data saver caps either at 140. Evenly distributed horizontal lanes and a wider launch spread leave more space between leaves.
 
 Run `npm run test:landing` and verify desktop/mobile clicks, keyboard cloud activation, mute, and reduced motion in the browser.
+
+Flocks randomize their starting position, altitude, opacity, and shared travel speed on load. Equally spaced flight slots prevent overtaking. Scatter distances adapt to viewport width and preserve at least 30 pixels between flock envelopes. Resizing cancels active scatter; reduced motion uses separated vertical resting lanes.

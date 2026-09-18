@@ -79,7 +79,7 @@
     @keyframes bird-flap-down { 0%, 100% { opacity: 0; } 50% { opacity: 1; } }
     .leaf-swarm { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; }
     @media (prefers-reduced-motion: reduce) {
-      .bird-flock { left: var(--rest); }
+      .bird-flock { left: var(--rest); top: calc(20px + var(--flock-index) * 144px); }
       .bird .wing-down { display: none; }
     }
     /* Petals echo the cherry blossoms already in the artwork. */
@@ -440,12 +440,20 @@
       var sky = document.querySelector('.fx');
       var birds = [];
       var scatterAnimations = [];
+      // Equal travel speed keeps randomized starting slots from overtaking.
+      var flockFlight = 44 + Math.random() * 18;
+      var flockPhase = Math.random();
+      function flockScatterLimit() {
+        var slotWidth = (window.innerWidth + 360) / 3;
+        return Math.max(0, Math.min(95, (slotWidth - 154 - 30) / 2));
+      }
       var formation = [[112, 48], [56, 24], [56, 72], [0, 0], [0, 96]];
       for (var flockIndex = 0; flockIndex < 3; flockIndex++) {
         var flock = document.createElement('div');
         flock.className = 'bird-flock';
         flock.setAttribute('aria-hidden', 'true');
-        flock.style.cssText = '--altitude:' + (6 + flockIndex * 7) + '%;--flight:' + (46 + flockIndex * 7) + 's;--phase:-' + (flockIndex * 17 + 12) + 's;--rest:' + (8 + flockIndex * 28) + '%;--flock-alpha:' + (.9 - flockIndex * .12) + ';';
+        flock.flightPhase = (flockPhase + flockIndex / 3) % 1;
+        flock.style.cssText = '--altitude:' + (5 + Math.random() * 13).toFixed(2) + '%;--flight:' + flockFlight + 's;--phase:-' + (flock.flightPhase * flockFlight) + 's;--rest:' + (8 + Math.random() * 42).toFixed(2) + '%;--flock-index:' + flockIndex + ';--flock-alpha:' + (.72 + Math.random() * .18).toFixed(2) + ';';
         formation.forEach(function (position, birdIndex) {
           var bird = document.createElement('div');
           bird.className = 'bird';
@@ -517,7 +525,7 @@
         birds.forEach(function (bird, index) {
           if (!bird.animate || (flock && bird.flock !== flock)) return;
           var member = index % 5;
-          var distance = Math.min(window.innerWidth * .12, 95);
+          var distance = flockScatterLimit();
           var dx = [1, .4, .7, -.8, -.5][member] * distance;
           var dy = [-12, -38, 42, -30, 58][member];
           var spread = 'translate(' + dx + 'px, ' + dy + 'px)';
@@ -564,6 +572,7 @@
       sizeCanvas();
       var resizeFrame = 0;
       window.addEventListener('resize', function () {
+        resetBirds();
         if (resizeFrame) return;
         resizeFrame = requestAnimationFrame(function () { resizeFrame = 0; sizeCanvas(); });
       });

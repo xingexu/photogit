@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 const html = fs.readFileSync(new URL('../site/index.html', import.meta.url), 'utf8');
-const source = html.match(/<script>([\s\S]*?)<\/script>/)[1].replace('    })();', 'globalThis.effects = {releaseLeaves, drawSwarm, stopEffects, disperseBirds, jiggleCloud, birds, leaves: () => swarm};\n    })();');
+const source = html.match(/<script>([\s\S]*?)<\/script>/)[1].replace('    })();', 'globalThis.effects = {releaseLeaves, drawSwarm, stopEffects, disperseBirds, jiggleCloud, flockScatterLimit, birds, leaves: () => swarm};\n    })();');
 function setup({width = 1440, reduced = false, saveData = false, canvas = true} = {}) {
   let now = 1000;
   const alphas = [];
@@ -123,4 +123,13 @@ test('leaf opacity fades through the lower half of the screen', () => {
  const fx=setup(); fx.releaseLeaves(); const leaf=fx.leaves()[0]; Object.assign(leaf,{y:.5,offset:.5,wave:0,delay:0});fx.leaves().splice(1);
  const levels=[.5,.65,.8,.95].map(y=>{const progress=(y*900+40+.5*900*1.1)/(900*2.1+80);fx.drawSwarm(1000+progress*4200);return fx.alphas.at(-1)});
  assert.ok(levels.every((v,i)=>i===0||v<levels[i-1])); assert.ok(levels.at(-1)<.02);
+});
+
+test('randomized flock slots cannot overlap even at maximum scatter', () => {
+ for (const width of [320,390,768,1440,2560]) {
+  const fx=setup({width});const travel=width+360;
+  const phases=[...new Set(fx.birds.map(b=>b.flock))].map(f=>f.flightPhase).sort((a,b)=>a-b);
+  const envelope=154+2*fx.flockScatterLimit();
+  for(let i=0;i<3;i++){const gap=((phases[(i+1)%3]-phases[i]+1)%1)*travel;assert.ok(gap>=envelope+29.9);}
+ }
 });
