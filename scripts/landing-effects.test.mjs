@@ -71,3 +71,5 @@ test('activation creates no audio elements', () => { const fx=setup(); fx.releas
 test('flowers remain in a gentle vertical band', () => { const fx=setup(); fx.releaseLeaves(); assert.ok(fx.leaves().every(l=>l.y>=.08 && l.y<.92 && l.wave>=4 && l.wave<12)); });
 
 test('mobile data saver particle cap', () => { const fx=setup({width:390,saveData:true}); fx.releaseLeaves(); assert.equal(fx.leaves().length,400); });
+
+test('all ten flower sprites participate', () => { const fx=setup(); fx.releaseLeaves(); assert.equal(new Set(fx.leaves().map(l=>l.sprite)).size,10); });
