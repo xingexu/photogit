@@ -51,3 +51,5 @@ test('a compact launch window', () => { const fx=setup(); fx.releaseLeaves(); as
 test('repeat clicks preserve active flowers', () => { const fx=setup(); fx.releaseLeaves(); const first=fx.leaves()[0]; fx.setTime(3000); fx.releaseLeaves(); assert.equal(fx.leaves()[0],first); });
 
 test('sweep replay after completion', () => { const fx=setup(); fx.releaseLeaves(); const first=fx.leaves()[0]; fx.drawSwarm(9000); fx.setTime(10000); fx.releaseLeaves(); assert.ok(fx.leaves().length); assert.notEqual(fx.leaves()[0],first); });
+
+test('escape clears the sweep', () => { const fx=setup(); fx.releaseLeaves(); fx.events.keydown({key:'Escape'}); assert.equal(fx.leaves().length,0); });
