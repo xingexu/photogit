@@ -47,3 +47,5 @@ test('flowers advance across the viewport', () => { const fx=setup(); fx.release
 test('a unified flight duration', () => { const fx=setup(); fx.releaseLeaves(); assert.ok(fx.leaves().every(l=>l.life===7)); });
 
 test('a compact launch window', () => { const fx=setup(); fx.releaseLeaves(); assert.ok(fx.leaves().every(l=>l.delay>=0 && l.delay<.65)); });
+
+test('repeat clicks preserve active flowers', () => { const fx=setup(); fx.releaseLeaves(); const first=fx.leaves()[0]; fx.setTime(3000); fx.releaseLeaves(); assert.equal(fx.leaves()[0],first); });
