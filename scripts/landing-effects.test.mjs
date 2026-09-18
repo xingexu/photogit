@@ -43,3 +43,5 @@ test('data saver caps particles and Escape cleanup clears them', () => {
 });
 
 test('flowers advance across the viewport', () => { const fx=setup(); fx.releaseLeaves(); const leaf=fx.leaves()[0]; leaf.y=.5; fx.leaves().splice(1); fx.drawSwarm(3000); const x=fx.positions.at(-1)[0]; fx.drawSwarm(6000); assert.ok(fx.positions.at(-1)[0]>x); });
+
+test('a unified flight duration', () => { const fx=setup(); fx.releaseLeaves(); assert.ok(fx.leaves().every(l=>l.life===7)); });
