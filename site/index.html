@@ -64,7 +64,7 @@
     @keyframes sky-drift { to { transform: translateX(calc(100vw + 1440px)); } }
     /* A flock translates as one unit; wing poses never scale the bird body. */
     .bird-flock { position: absolute; left: -180px; top: var(--altitude); width: 174px; height: 130px; opacity: var(--flock-alpha, .85); animation: bird-flight var(--flight) var(--phase) linear infinite; }
-    .bird { position: absolute; left: var(--bird-x); top: var(--bird-y); width: 42px; height: 30px; }
+    .bird { position: absolute; left: var(--bird-x); top: var(--bird-y); width: 42px; height: 30px; pointer-events: auto; cursor: pointer; }
     .bird svg { display: block; width: 42px; height: 30px; overflow: visible; shape-rendering: crispEdges; }
     .bird .wing-up, .bird .wing-down { animation: bird-flap var(--wing-speed, 560ms) steps(1, end) infinite; animation-delay: var(--wing-delay, 0ms); }
     .bird .wing-down { animation-name: bird-flap-down; }
@@ -444,6 +444,7 @@
           bird.className = 'bird';
           bird.style.cssText = '--bird-x:' + position[0] + 'px;--bird-y:' + position[1] + 'px;--wing-speed:' + (560 + flockIndex * 60) + 'ms;--wing-delay:-' + (birdIndex * 65) + 'ms;';
           bird.innerHTML = '<svg viewBox="0 0 28 20" aria-hidden="true" focusable="false"><g class="wing-up" fill="#fffdf4"><path d="M2 3h4v3h4v3h4v3h-4V9H6V6H2z M14 9h4V6h4V3h4v3h-4v3h-4v3h-4z"/></g><g class="wing-down" fill="#e4f3fc"><path d="M2 14h4v-3h4V9h4v3h-4v2H6v3H2z M14 9h4v2h4v3h4v3h-4v-3h-4v-2h-4z"/></g><path class="bird-body" fill="#ffffff" d="M11 9h6v4h-6z"/><path fill="#b9dcea" d="M12 13h4v2h-4z"/></svg>';
+          bird.addEventListener('click', function (event) { event.stopPropagation(); disperseBirds(); });
           birds.push(bird);
           flock.appendChild(bird);
         });
@@ -460,15 +461,16 @@
         birds.forEach(function (bird, index) {
           if (!bird.animate) return;
           var member = index % 5;
-          var dx = [150, 45, 80, -80, -45][member];
-          var dy = [-30, -100, 80, -130, 140][member];
+          var distance = Math.min(window.innerWidth * .32, 360);
+          var dx = [1, .4, .7, -.8, -.5][member] * distance;
+          var dy = [-45, -140, 160, -90, 230][member];
           var spread = 'translate(' + dx + 'px, ' + dy + 'px)';
           var animation = bird.animate([
             { transform: 'translate(0, 0)', offset: 0 },
             { transform: spread, offset: .3 },
             { transform: spread, offset: .55 },
             { transform: 'translate(0, 0)', offset: 1 }
-          ], { duration: 3800, easing: 'cubic-bezier(.25,.1,.25,1)' });
+          ], { duration: 4800, easing: 'cubic-bezier(.16,1,.3,1)' });
           scatterAnimations.push(animation);
         });
       }
@@ -517,10 +519,10 @@
           var age = elapsed - leaf.delay;
           if (age < 0 || age > leaf.life) return;
           var progress = age / leaf.life;
-          var spread = viewWidth * .22;
+          var spread = viewWidth * .95;
           var x = -50 - leaf.offset * spread + progress * (viewWidth + 100 + spread);
-          var y = -50 - leaf.offset * viewHeight * .22 + progress * (viewHeight * 1.22 + 100)
-            + (leaf.y - .5) * viewHeight * .55 + Math.sin(age * .8 + leaf.phase) * leaf.wave;
+          var y = -50 - leaf.y * viewHeight * .95 + progress * (viewHeight * 1.95 + 100)
+            + Math.sin(age * .8 + leaf.phase) * leaf.wave;
           if (x < -leaf.size || x > viewWidth + leaf.size || y < -leaf.size || y > viewHeight + leaf.size) return;
           // Fade near either exit edge of the diagonal crossing.
           var crossing = Math.max((x + 50) / (viewWidth + 100), (y + 50) / (viewHeight + 100));
@@ -545,10 +547,10 @@
         else { swarm = []; frame = 0; if (paint) paint.clearRect(0, 0, viewWidth, viewHeight); }
       }
       function releaseLeaves() {
+        disperseBirds();
         var now = performance.now();
         if (frame || now - lastBurst < 700) return;
         lastBurst = now;
-        disperseBirds();
         if (reducedMotion.matches || !paint || document.hidden) return;
         cancelAnimationFrame(frame);
         var particleCount = window.innerWidth < 600 ? 360 : 720;

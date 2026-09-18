@@ -21,10 +21,10 @@ for (const [width, expected] of [[1440,720],[390,360]]) {
     const fx = setup({width}); fx.releaseLeaves();
     assert.equal(fx.leaves().length, expected);
     assert.ok(fx.leaves().every(leaf => leaf.size >= 12 && leaf.size <= 18));
-    const leaf = fx.leaves()[0]; leaf.y = .5; leaf.wave = 0; leaf.offset = 1; fx.leaves().splice(1);
-    fx.drawSwarm(1000 + (leaf.delay + leaf.life * .4) * 1000);
+    const leaf = fx.leaves()[0]; leaf.y = 1; leaf.wave = 0; leaf.offset = 1; fx.leaves().splice(1);
+    fx.drawSwarm(1000 + (leaf.delay + leaf.life * .65) * 1000);
     const early = fx.alphas.at(-1);
-    fx.drawSwarm(1000 + (leaf.delay + leaf.life * .9) * 1000);
+    fx.drawSwarm(1000 + (leaf.delay + leaf.life * .94) * 1000);
     assert.ok(fx.alphas.at(-1) < early);
     fx.setTime(7500); fx.releaseLeaves(); assert.equal(fx.leaves().length, 1);
     fx.drawSwarm(9000); assert.equal(fx.leaves().length, 0);
@@ -91,4 +91,15 @@ test('stopping effects also cancels bird dispersal', () => {
 });
 test('reduced motion never scatters birds', () => {
   const fx=setup({reduced:true}); fx.releaseLeaves(); assert.equal(fx.scatter.length,0);
+});
+
+test('repeat title clicks scatter birds while the leaves keep moving', () => {
+  const fx=setup(); fx.releaseLeaves(); const leaf=fx.leaves()[0]; fx.setTime(2000); fx.releaseLeaves();
+  assert.equal(fx.scatter.length,30); assert.ok(fx.scatter.slice(0,15).every(a=>a.cancelled)); assert.equal(fx.leaves()[0],leaf);
+});
+test('independent leaf offsets spread the sweep across both viewport axes', () => {
+  const fx=setup(); fx.releaseLeaves(); const a=fx.leaves()[0], b=fx.leaves()[1];
+  Object.assign(a,{offset:.1,y:.1,delay:0,wave:0}); Object.assign(b,{offset:.9,y:.9,delay:0,wave:0});
+  fx.leaves().splice(2); fx.drawSwarm(4500);
+  assert.equal(fx.positions.length,2); assert.ok(Math.abs(fx.positions[0][0]-fx.positions[1][0])>900); assert.ok(Math.abs(fx.positions[0][1]-fx.positions[1][1])>600);
 });
