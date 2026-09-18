@@ -56,11 +56,17 @@
       left: -720px;
       width: min(var(--cloud-width), 72vw);
       height: auto;
+      padding: 0; border: 0; background: none; pointer-events: auto; cursor: pointer;
       opacity: var(--cloud-opacity);
       image-rendering: pixelated;
       animation: sky-drift var(--cloud-speed) linear infinite;
       animation-delay: var(--cloud-delay);
     }
+    .sky-cloud img { display: block; width: 100%; height: auto; image-rendering: pixelated; }
+    .sky-cloud:focus-visible { outline: 2px dashed #fff; outline-offset: 6px; border-radius: 40%; }
+    .chirp-toggle { font: inherit; font-size: 11px; color: #fff; background: #ffffff16; border: 1px solid #ffffff66; border-radius: 20px; padding: 10px 14px; min-height: 44px; cursor: pointer; }
+    .chirp-toggle:hover { background: #ffffff30; }
+    .chirp-toggle:focus-visible { outline: 2px solid #ffcbdf; outline-offset: 3px; }
     @keyframes sky-drift { to { transform: translateX(calc(100vw + 1440px)); } }
     /* A flock translates as one unit; wing poses never scale the bird body. */
     .bird-flock { position: absolute; left: -180px; top: var(--altitude); width: 174px; height: 130px; opacity: var(--flock-alpha, .85); animation: bird-flight var(--flight) var(--phase) linear infinite; }
@@ -241,11 +247,11 @@
          alt="Pixel-art Japanese mountain village in cherry-blossom season: wooden houses with dark tiled roofs and pink blossoming trees line a stone path leading through a red torii gate to a five-storey pagoda, forested hills and a snow-capped peak behind, under an open blue sky."
          decoding="async" fetchpriority="high">
     <div class="vignette" aria-hidden="true"></div>
-    <div class="fx" aria-hidden="true">
-      <img class="sky-cloud" src="artwork/broad-cloud.png" alt="" width="1452" height="540" style="top:5%;--cloud-width:290px;--cloud-opacity:.56;--cloud-speed:80s;--cloud-delay:0s">
-      <img class="sky-cloud" src="artwork/broad-cloud.png" alt="" width="1452" height="540" style="top:14%;--cloud-width:410px;--cloud-opacity:.62;--cloud-speed:80s;--cloud-delay:-20s">
-      <img class="sky-cloud" src="artwork/broad-cloud.png" alt="" width="1452" height="540" style="top:21%;--cloud-width:250px;--cloud-opacity:.48;--cloud-speed:80s;--cloud-delay:-40s">
-      <img class="sky-cloud" src="artwork/broad-cloud.png" alt="" width="1452" height="540" style="top:9%;--cloud-width:350px;--cloud-opacity:.54;--cloud-speed:80s;--cloud-delay:-60s">
+    <div class="fx">
+      <button class="sky-cloud" type="button" aria-label="Tickle this cloud" style="top:5%;--cloud-width:290px;--cloud-opacity:.56;--cloud-speed:80s;--cloud-delay:0s"><img src="artwork/broad-cloud.png" alt="" width="1452" height="540" draggable="false"></button>
+      <button class="sky-cloud" type="button" aria-label="Tickle this cloud" style="top:14%;--cloud-width:410px;--cloud-opacity:.62;--cloud-speed:80s;--cloud-delay:-20s"><img src="artwork/broad-cloud.png" alt="" width="1452" height="540" draggable="false"></button>
+      <button class="sky-cloud" type="button" aria-label="Tickle this cloud" style="top:21%;--cloud-width:250px;--cloud-opacity:.48;--cloud-speed:80s;--cloud-delay:-40s"><img src="artwork/broad-cloud.png" alt="" width="1452" height="540" draggable="false"></button>
+      <button class="sky-cloud" type="button" aria-label="Tickle this cloud" style="top:9%;--cloud-width:350px;--cloud-opacity:.54;--cloud-speed:80s;--cloud-delay:-60s"><img src="artwork/broad-cloud.png" alt="" width="1452" height="540" draggable="false"></button>
       <span class="petal" style="left:0%;--size:6px;--duration:10s;--delay:-0.05s;--sway:30px;--alpha:0.45"></span>
       <span class="petal" style="left:37%;--size:7px;--duration:11s;--delay:-0.17s;--sway:48px;--alpha:0.55"></span>
       <span class="petal" style="left:74%;--size:8px;--duration:12s;--delay:-0.31s;--sway:66px;--alpha:0.65"></span>
@@ -349,7 +355,7 @@
       <!-- fx-end -->
     </div>
     <section class="content" aria-label="PhotoGit">
-      <h1 class="title-heading"><button type="button" disabled class="title" aria-label="PhotoGit" aria-description="Click or press Enter or Space to scatter the birds and sweep leaves from top left to bottom right" tabindex="0"><span class="title-letter" style="--n:0" aria-hidden="true">P</span><span class="title-letter" style="--n:1" aria-hidden="true">H</span><span class="title-letter" style="--n:2" aria-hidden="true">O</span><span class="title-letter" style="--n:3" aria-hidden="true">T</span><span class="title-letter" style="--n:4" aria-hidden="true">O</span><span class="title-letter" style="--n:5" aria-hidden="true">G</span><span class="title-letter" style="--n:6" aria-hidden="true">I</span><span class="title-letter" style="--n:7" aria-hidden="true">T</span></button></h1>
+      <h1 class="title-heading"><button type="button" disabled class="title" aria-label="PhotoGit" aria-description="Click or press Enter or Space for fluttering leaves and chirping birds" tabindex="0"><span class="title-letter" style="--n:0" aria-hidden="true">P</span><span class="title-letter" style="--n:1" aria-hidden="true">H</span><span class="title-letter" style="--n:2" aria-hidden="true">O</span><span class="title-letter" style="--n:3" aria-hidden="true">T</span><span class="title-letter" style="--n:4" aria-hidden="true">O</span><span class="title-letter" style="--n:5" aria-hidden="true">G</span><span class="title-letter" style="--n:6" aria-hidden="true">I</span><span class="title-letter" style="--n:7" aria-hidden="true">T</span></button></h1>
       <div class="actions">
         <div class="try-container">
           <a class="try-link" href="https://github.com/xingexu/photogit#quick-start">Try it now <span class="try-arrow" aria-hidden="true">→</span></a>
@@ -359,6 +365,7 @@
   </main>
     <footer class="site-footer">
       <span class="footer-credit">© 2026 XINGE XU</span>
+      <button class="chirp-toggle" type="button" aria-pressed="false" aria-label="Mute bird sounds">Sound on ♪</button>
       <nav class="icon-bar" aria-label="Connect with PhotoGit">
         <a href="https://github.com/xingexu/photogit" target="_blank" rel="noopener noreferrer" aria-label="PhotoGit on GitHub"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .3A12 12 0 0 0 8.21 23.69c.6.11.82-.26.82-.58v-2.04c-3.34.73-4.04-1.61-4.04-1.61-.55-1.39-1.33-1.76-1.33-1.76-1.09-.74.08-.73.08-.73 1.2.09 1.84 1.24 1.84 1.24 1.07 1.83 2.81 1.3 3.49.99.11-.77.42-1.3.76-1.6-2.66-.31-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.13-.3-.54-1.52.12-3.18 0 0 1.01-.32 3.3 1.23A11.5 11.5 0 0 1 12 6.2c1.02 0 2.04.14 3 .4 2.29-1.55 3.3-1.23 3.3-1.23.65 1.66.24 2.88.12 3.18.77.84 1.23 1.91 1.23 3.22 0 4.61-2.81 5.62-5.48 5.92.43.37.82 1.1.82 2.22v3.2c0 .32.22.7.83.58A12 12 0 0 0 12 .3Z"/></svg></a>
         <a href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fgithub.com%2Fxingexu%2Fphotogit" target="_blank" rel="noopener noreferrer" aria-label="Share PhotoGit on LinkedIn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.2 9h3.1v10.2H4.2V9Zm1.55-4.3a1.8 1.8 0 1 1 0 3.6 1.8 1.8 0 0 1 0-3.6ZM9.2 9h3v1.4h.04c.42-.8 1.45-1.64 3-1.64 3.2 0 3.8 2.1 3.8 4.83v5.61h-3.12v-4.97c0-1.19-.02-2.71-1.65-2.71-1.66 0-1.92 1.29-1.92 2.62v5.06H9.2V9Z"/></svg></a>
@@ -451,26 +458,69 @@
         sky.appendChild(flock);
       }
 
+      var chirpPlayer = window.Audio ? new window.Audio('audio/bird-chirp.wav') : null;
+      var chirpMuted = false;
+      var lastChirp = -Infinity;
+      var chirpToggle = document.querySelector('.chirp-toggle');
+      if (chirpPlayer) { chirpPlayer.preload = 'none'; chirpPlayer.volume = .35; }
+      chirpToggle.addEventListener('click', function () {
+        chirpMuted = !chirpMuted;
+        chirpToggle.setAttribute('aria-pressed', String(chirpMuted));
+        chirpToggle.setAttribute('aria-label', chirpMuted ? 'Enable bird sounds' : 'Mute bird sounds');
+        chirpToggle.textContent = chirpMuted ? 'Sound off' : 'Sound on ♪';
+        if (chirpMuted && chirpPlayer) chirpPlayer.pause();
+      });
+      function playChirp() {
+        if (!chirpPlayer || chirpMuted || document.hidden || performance.now() - lastChirp < 650) return;
+        lastChirp = performance.now();
+        try {
+          chirpPlayer.currentTime = 0;
+          var playback = chirpPlayer.play();
+          if (playback && playback.catch) playback.catch(function () {});
+        } catch (error) { /* The visual interaction remains available without audio. */ }
+      }
+      var cloudAnimations = [];
+      function jiggleCloud(cloud) {
+        if (reducedMotion.matches || document.hidden || !cloud.animate) return;
+        cloudAnimations = cloudAnimations.filter(function (entry) {
+          if (entry.cloud === cloud || entry.animation.playState === 'finished') { entry.animation.cancel(); return false; }
+          return true;
+        });
+        var animation = cloud.animate([
+          { rotate: '0deg', translate: '0 0' },
+          { rotate: '-4deg', translate: '0 -8px' },
+          { rotate: '4deg', translate: '0 -3px' },
+          { rotate: '-2deg', translate: '0 -5px' },
+          { rotate: '1deg', translate: '0 -1px' },
+          { rotate: '0deg', translate: '0 0' }
+        ], { duration: 850, easing: 'ease-in-out' });
+        cloudAnimations.push({ cloud: cloud, animation: animation });
+      }
+      document.querySelectorAll('.sky-cloud').forEach(function (cloud) {
+        cloud.addEventListener('click', function () { jiggleCloud(cloud); });
+      });
+
       function resetBirds() {
         scatterAnimations.forEach(function (animation) { animation.cancel(); });
         scatterAnimations = [];
       }
       function disperseBirds() {
+        playChirp();
         if (reducedMotion.matches || document.hidden) return;
         resetBirds();
         birds.forEach(function (bird, index) {
           if (!bird.animate) return;
           var member = index % 5;
-          var distance = Math.min(window.innerWidth * .32, 360);
+          var distance = Math.min(window.innerWidth * .12, 95);
           var dx = [1, .4, .7, -.8, -.5][member] * distance;
-          var dy = [-45, -140, 160, -90, 230][member];
+          var dy = [-12, -38, 42, -30, 58][member];
           var spread = 'translate(' + dx + 'px, ' + dy + 'px)';
           var animation = bird.animate([
             { transform: 'translate(0, 0)', offset: 0 },
             { transform: spread, offset: .3 },
             { transform: spread, offset: .55 },
             { transform: 'translate(0, 0)', offset: 1 }
-          ], { duration: 4800, easing: 'cubic-bezier(.16,1,.3,1)' });
+          ], { duration: 2600, easing: 'cubic-bezier(.16,1,.3,1)' });
           scatterAnimations.push(animation);
         });
       }
@@ -519,13 +569,11 @@
           var age = elapsed - leaf.delay;
           if (age < 0 || age > leaf.life) return;
           var progress = age / leaf.life;
-          var spread = viewWidth * .95;
-          var x = -50 - leaf.offset * spread + progress * (viewWidth + 100 + spread);
-          var y = -50 - leaf.y * viewHeight * .95 + progress * (viewHeight * 1.95 + 100)
-            + Math.sin(age * .8 + leaf.phase) * leaf.wave;
+          var x = leaf.offset * viewWidth + Math.sin(age * .9 + leaf.phase) * leaf.wave;
+          var y = -40 - leaf.y * viewHeight * .6 + progress * (viewHeight * 1.6 + 80);
           if (x < -leaf.size || x > viewWidth + leaf.size || y < -leaf.size || y > viewHeight + leaf.size) return;
-          // Fade near either exit edge of the diagonal crossing.
-          var crossing = Math.max((x + 50) / (viewWidth + 100), (y + 50) / (viewHeight + 100));
+          // A wide shower falls downward and fades gently near the bottom.
+          var crossing = (y + 40) / (viewHeight + 80);
           var fade = Math.max(0, Math.min(1, (crossing - .85) / .15));
           var opacity = 1 - fade * fade * (3 - 2 * fade);
           var alpha = Math.min(1, age / .35) * opacity * .85;
@@ -568,6 +616,9 @@
         if (event.matches) stopEffects();
       });
       function stopEffects() {
+        cloudAnimations.forEach(function (entry) { entry.animation.cancel(); });
+        cloudAnimations = [];
+        if (chirpPlayer) chirpPlayer.pause();
         resetBirds();
         cancelAnimationFrame(resizeFrame);
         resizeFrame = 0;
