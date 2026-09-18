@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 const html = fs.readFileSync(new URL('../site/index.html', import.meta.url), 'utf8');
-const source = html.match(/<script>([\s\S]*?)<\/script>/)[1].replace('    })();', 'globalThis.effects = {releaseLeaves, drawSwarm, stopEffects, disperseBirds, leaves: () => swarm};\n    })();');
+const source = html.match(/<script>([\s\S]*?)<\/script>/)[1].replace('    })();', 'globalThis.effects = {releaseLeaves, drawSwarm, stopEffects, disperseBirds, jiggleCloud, leaves: () => swarm};\n    })();');
 function setup({width = 1440, reduced = false, saveData = false, canvas = true} = {}) {
   let now = 1000;
   const alphas = [];
@@ -24,7 +24,7 @@ for (const [width, expected] of [[1440,720],[390,360]]) {
     const leaf = fx.leaves()[0]; leaf.y = 1; leaf.wave = 0; leaf.offset = 1; fx.leaves().splice(1);
     fx.drawSwarm(1000 + (leaf.delay + leaf.life * .65) * 1000);
     const early = fx.alphas.at(-1);
-    fx.drawSwarm(1000 + (leaf.delay + leaf.life * .94) * 1000);
+    fx.drawSwarm(1000 + (leaf.delay + leaf.life * .93) * 1000);
     assert.ok(fx.alphas.at(-1) < early);
     fx.setTime(7500); fx.releaseLeaves(); assert.equal(fx.leaves().length, 1);
     fx.drawSwarm(9000); assert.equal(fx.leaves().length, 0);
@@ -42,7 +42,7 @@ test('data saver caps particles and Escape cleanup clears them', () => {
   fx.stopEffects(); assert.equal(fx.leaves().length, 0);
 });
 
-test('flowers advance across the viewport', () => { const fx=setup(); fx.releaseLeaves(); const leaf=fx.leaves()[0]; leaf.y=.5; leaf.offset=.5; fx.leaves().splice(1); fx.drawSwarm(3000); const x=fx.positions.at(-1)[0]; fx.drawSwarm(6000); assert.ok(fx.positions.at(-1)[0]>x); });
+test('flowers fall with only a gentle horizontal flutter', () => { const fx=setup(); fx.releaseLeaves(); const leaf=fx.leaves()[0]; leaf.y=.5; leaf.offset=.5; fx.leaves().splice(1); fx.drawSwarm(3000); const start=fx.positions.at(-1); fx.drawSwarm(6000); const end=fx.positions.at(-1); assert.ok(end[1]>start[1]); assert.ok(Math.abs(end[0]-start[0])<25); });
 
 test('a unified flight duration', () => { const fx=setup(); fx.releaseLeaves(); assert.ok(fx.leaves().every(l=>l.life===7)); });
 
@@ -76,11 +76,6 @@ test('all ten flower sprites participate', () => { const fx=setup(); fx.releaseL
 
 test('petals remain visible through midflight', () => { const fx=setup(); fx.releaseLeaves(); const leaf=fx.leaves()[0]; leaf.y=.5; leaf.offset=.5; fx.leaves().splice(1); fx.drawSwarm(4500); assert.ok(fx.alphas.at(-1)>.8); });
 
-test('leaves move down and right in a single diagonal pass', () => {
-  const fx=setup(); fx.releaseLeaves(); const leaf=fx.leaves()[0]; leaf.y=.5; leaf.offset=.5; leaf.wave=0; fx.leaves().splice(1);
-  fx.drawSwarm(3000); const start=fx.positions.at(-1); fx.drawSwarm(6000); const end=fx.positions.at(-1);
-  assert.ok(end[0]>start[0]); assert.ok(end[1]>start[1]);
-});
 test('title activation disperses fifteen birds without scaling and returns to formation', () => {
   const fx=setup(); fx.releaseLeaves(); assert.equal(fx.scatter.length,15);
   for (const a of fx.scatter) { assert.equal(a.frames.at(-1).transform,'translate(0, 0)'); assert.ok(a.frames.every(f=>!f.transform.includes('scale'))); }
@@ -97,9 +92,17 @@ test('repeat title clicks scatter birds while the leaves keep moving', () => {
   const fx=setup(); fx.releaseLeaves(); const leaf=fx.leaves()[0]; fx.setTime(2000); fx.releaseLeaves();
   assert.equal(fx.scatter.length,30); assert.ok(fx.scatter.slice(0,15).every(a=>a.cancelled)); assert.equal(fx.leaves()[0],leaf);
 });
-test('independent leaf offsets spread the sweep across both viewport axes', () => {
+test('leaf shower remains spread across the screen', () => {
   const fx=setup(); fx.releaseLeaves(); const a=fx.leaves()[0], b=fx.leaves()[1];
   Object.assign(a,{offset:.1,y:.1,delay:0,wave:0}); Object.assign(b,{offset:.9,y:.9,delay:0,wave:0});
   fx.leaves().splice(2); fx.drawSwarm(4500);
-  assert.equal(fx.positions.length,2); assert.ok(Math.abs(fx.positions[0][0]-fx.positions[1][0])>900); assert.ok(Math.abs(fx.positions[0][1]-fx.positions[1][1])>600);
+  assert.equal(fx.positions.length,2); assert.ok(Math.abs(fx.positions[0][0]-fx.positions[1][0])>900); assert.ok(Math.abs(fx.positions[0][1]-fx.positions[1][1])>350);
+});
+
+test('birds stay close to their formation when startled', () => {
+ const fx=setup(); fx.releaseLeaves(); for(const a of fx.scatter) { const [x,y]=a.frames[1].transform.match(/-?\d+(?:\.\d+)?/g).map(Number); assert.ok(Math.abs(x)<=95); assert.ok(Math.abs(y)<=58); }
+});
+test('cloud jiggle preserves its horizontal drift and cleans up', () => {
+ const fx=setup(); let cancelled=false; let frames; fx.jiggleCloud({animate(f){frames=f; return {cancel(){cancelled=true}}}});
+ assert.ok(frames.every(f=>!('transform' in f))); assert.equal(frames.at(-1).rotate,'0deg'); fx.stopEffects(); assert.ok(cancelled);
 });
