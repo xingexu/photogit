@@ -16,15 +16,15 @@ function setup({width = 1440, reduced = false, saveData = false, canvas = true} 
   vm.runInNewContext(source, c);
   return {...c.effects, alphas, positions, scatter, rotations, events, created, media, document:c.document, title, setTime:value => {now = value}};
 }
-for (const [width, expected] of [[1440,720],[390,360]]) {
+for (const [width, expected] of [[1440,420],[390,200]]) {
   test(`leaf density, size, fade and cleanup at ${width}px`, () => {
     const fx = setup({width}); fx.releaseLeaves();
     assert.equal(fx.leaves().length, expected);
     assert.ok(fx.leaves().every(leaf => leaf.size >= 12 && leaf.size <= 18));
     const leaf = fx.leaves()[0]; leaf.y = 1; leaf.wave = 0; leaf.offset = 1; fx.leaves().splice(1);
-    fx.drawSwarm(1000 + (leaf.delay + leaf.life * .65) * 1000);
+    fx.drawSwarm(1000 + (leaf.delay + leaf.life * .7) * 1000);
     const early = fx.alphas.at(-1);
-    fx.drawSwarm(1000 + (leaf.delay + leaf.life * .93) * 1000);
+    fx.drawSwarm(1000 + (leaf.delay + leaf.life * .95) * 1000);
     assert.ok(fx.alphas.at(-1) < early);
     fx.setTime(7500); fx.releaseLeaves(); assert.equal(fx.leaves().length, 1);
     fx.drawSwarm(9000); assert.equal(fx.leaves().length, 0);
@@ -38,13 +38,13 @@ test('reduced motion and unavailable canvas keep the title usable', () => {
   }
 });
 test('data saver caps particles and Escape cleanup clears them', () => {
-  const fx = setup({saveData:true}); fx.releaseLeaves(); assert.equal(fx.leaves().length, 200);
+  const fx = setup({saveData:true}); fx.releaseLeaves(); assert.equal(fx.leaves().length, 140);
   fx.stopEffects(); assert.equal(fx.leaves().length, 0);
 });
 
-test('flowers fall with only a gentle horizontal flutter', () => { const fx=setup(); fx.releaseLeaves(); const leaf=fx.leaves()[0]; leaf.y=.5; leaf.offset=.5; fx.leaves().splice(1); fx.drawSwarm(3000); const start=fx.positions.at(-1); fx.drawSwarm(6000); const end=fx.positions.at(-1); assert.ok(end[1]>start[1]); assert.ok(Math.abs(end[0]-start[0])<25); });
+test('flowers fall with only a gentle horizontal flutter', () => { const fx=setup(); fx.releaseLeaves(); const leaf=fx.leaves()[0]; leaf.y=.5; leaf.offset=.5; fx.leaves().splice(1); fx.drawSwarm(3000); const start=fx.positions.at(-1); fx.drawSwarm(3800); const end=fx.positions.at(-1); assert.ok(end[1]>start[1]); assert.ok(Math.abs(end[0]-start[0])<25); });
 
-test('a unified flight duration', () => { const fx=setup(); fx.releaseLeaves(); assert.ok(fx.leaves().every(l=>l.life===7)); });
+test('a unified flight duration', () => { const fx=setup(); fx.releaseLeaves(); assert.ok(fx.leaves().every(l=>l.life===4.2)); });
 
 test('a compact launch window', () => { const fx=setup(); fx.releaseLeaves(); assert.ok(fx.leaves().every(l=>l.delay>=0 && l.delay<.65)); });
 
@@ -70,11 +70,11 @@ test('activation creates no audio elements', () => { const fx=setup(); fx.releas
 
 test('flowers remain in a gentle vertical band', () => { const fx=setup(); fx.releaseLeaves(); assert.ok(fx.leaves().every(l=>l.y>=.08 && l.y<.92 && l.wave>=4 && l.wave<12)); });
 
-test('mobile data saver particle cap', () => { const fx=setup({width:390,saveData:true}); fx.releaseLeaves(); assert.equal(fx.leaves().length,200); });
+test('mobile data saver particle cap', () => { const fx=setup({width:390,saveData:true}); fx.releaseLeaves(); assert.equal(fx.leaves().length,140); });
 
 test('all ten flower sprites participate', () => { const fx=setup(); fx.releaseLeaves(); assert.equal(new Set(fx.leaves().map(l=>l.sprite)).size,10); });
 
-test('petals stay visible while gradually fading through midflight', () => { const fx=setup(); fx.releaseLeaves(); const leaf=fx.leaves()[0]; leaf.y=.5; leaf.offset=.5; fx.leaves().splice(1); fx.drawSwarm(4500); assert.ok(fx.alphas.at(-1)>.3 && fx.alphas.at(-1)<.85); });
+test('petals stay visible while gradually fading through midflight', () => { const fx=setup(); fx.releaseLeaves(); const leaf=fx.leaves()[0]; leaf.y=.5; leaf.offset=.5; fx.leaves().splice(1); fx.drawSwarm(3100); assert.ok(fx.alphas.at(-1)>.3 && fx.alphas.at(-1)<=.85); });
 
 test('title activation disperses fifteen birds without scaling and returns to formation', () => {
   const fx=setup(); fx.releaseLeaves(); assert.equal(fx.scatter.length,15);
@@ -95,7 +95,7 @@ test('repeat title clicks scatter birds while the leaves keep moving', () => {
 test('leaf shower remains spread across the screen', () => {
   const fx=setup(); fx.releaseLeaves(); const a=fx.leaves()[0], b=fx.leaves()[1];
   Object.assign(a,{offset:.1,y:.1,delay:0,wave:0}); Object.assign(b,{offset:.9,y:.9,delay:0,wave:0});
-  fx.leaves().splice(2); fx.drawSwarm(4500);
+  fx.leaves().splice(2); fx.drawSwarm(3100);
   assert.equal(fx.positions.length,2); assert.ok(Math.abs(fx.positions[0][0]-fx.positions[1][0])>900); assert.ok(Math.abs(fx.positions[0][1]-fx.positions[1][1])>350);
 });
 
@@ -119,8 +119,8 @@ test('cloud jiggle stays within three pixels without rotation', () => {
  for(const f of frames){assert.equal(f.rotate,'0deg');const [x,y]=f.translate.split(' ').map(parseFloat);assert.ok(Math.hypot(x,y)<=3);}
 });
 
-test('leaf opacity gradually falls through the middle and bottom of the screen', () => {
+test('leaf opacity fades through the lower half of the screen', () => {
  const fx=setup(); fx.releaseLeaves(); const leaf=fx.leaves()[0]; Object.assign(leaf,{y:.5,offset:.5,wave:0,delay:0});fx.leaves().splice(1);
- const levels=[.2,.45,.7,.95].map(y=>{const progress=(y*900+40+.5*900*.6)/(900*1.6+80);fx.drawSwarm(1000+progress*7000);return fx.alphas.at(-1)});
+ const levels=[.5,.65,.8,.95].map(y=>{const progress=(y*900+40+.5*900*1.1)/(900*2.1+80);fx.drawSwarm(1000+progress*4200);return fx.alphas.at(-1)});
  assert.ok(levels.every((v,i)=>i===0||v<levels[i-1])); assert.ok(levels.at(-1)<.02);
 });
