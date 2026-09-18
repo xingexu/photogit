@@ -65,3 +65,5 @@ test('hidden tabs cannot launch flowers', () => { const fx=setup(); fx.document.
 test('reduced motion cancels an active sweep', () => { const fx=setup(); fx.releaseLeaves(); fx.media.matches=true; fx.events.media({matches:true}); assert.equal(fx.leaves().length,0); });
 
 test('re-enabling motion allows a fresh sweep', () => { const fx=setup(); fx.releaseLeaves(); fx.events.media({matches:true}); fx.setTime(3000); fx.media.matches=false; fx.releaseLeaves(); assert.ok(fx.leaves().length); });
+
+test('activation creates no audio elements', () => { const fx=setup(); fx.releaseLeaves(); assert.ok(!fx.created.includes('audio')); });
