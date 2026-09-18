@@ -57,3 +57,5 @@ test('escape clears the sweep', () => { const fx=setup(); fx.releaseLeaves(); fx
 test('other keys preserve the sweep', () => { const fx=setup(); fx.releaseLeaves(); fx.events.keydown({key:'a'}); assert.ok(fx.leaves().length); });
 
 test('page departure clears flowers', () => { const fx=setup(); fx.releaseLeaves(); fx.events.pagehide(); assert.equal(fx.leaves().length,0); });
+
+test('hiding a tab clears flowers', () => { const fx=setup(); fx.releaseLeaves(); fx.document.hidden=true; fx.events.visibilitychange(); assert.equal(fx.leaves().length,0); });
