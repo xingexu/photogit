@@ -61,3 +61,5 @@ test('page departure clears flowers', () => { const fx=setup(); fx.releaseLeaves
 test('hiding a tab clears flowers', () => { const fx=setup(); fx.releaseLeaves(); fx.document.hidden=true; fx.events.visibilitychange(); assert.equal(fx.leaves().length,0); });
 
 test('hidden tabs cannot launch flowers', () => { const fx=setup(); fx.document.hidden=true; fx.releaseLeaves(); assert.equal(fx.leaves().length,0); });
+
+test('reduced motion cancels an active sweep', () => { const fx=setup(); fx.releaseLeaves(); fx.media.matches=true; fx.events.media({matches:true}); assert.equal(fx.leaves().length,0); });
