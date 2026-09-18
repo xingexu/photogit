@@ -7,12 +7,14 @@ const source = html.match(/<script>([\s\S]*?)<\/script>/)[1].replace('    })();'
 function setup({width = 1440, reduced = false, saveData = false, canvas = true} = {}) {
   let now = 1000;
   const alphas = [];
-  const paint = {setTransform(){}, clearRect(){}, save(){}, restore(){}, translate(){}, rotate(){}, drawImage(){alphas.push(this.globalAlpha)}, fillRect(){}};
+  const positions = []; const rotations = []; const events = {}; const created = [];
+  const media = {matches:reduced, addEventListener(name, callback){events.media = callback}};
+  const paint = {setTransform(){}, clearRect(){}, save(){}, restore(){}, translate(x,y){positions.push([x,y])}, rotate(value){rotations.push(value)}, drawImage(){alphas.push(this.globalAlpha)}, fillRect(){}};
   const element = () => ({style:{setProperty(){}}, setAttribute(){}, appendChild(){}, addEventListener(){}, getContext:() => canvas ? paint : null, pause(){}, play(){return Promise.resolve()}});
   const title = {...element(), textContent:'PHOTOGIT', querySelectorAll:() => []};
-  const c = {document:{querySelector:s => s === '.title' ? title : element(), querySelectorAll:() => [], createElement:element, body:element(), addEventListener(){}, documentElement:{classList:{toggle(){}}}}, window:{innerWidth:width, innerHeight:900, addEventListener(){}}, navigator:{connection:{saveData}}, localStorage:{getItem(){return null}}, matchMedia:() => ({matches:reduced, addEventListener(){}}), Image:class{complete=true; naturalWidth=32}, performance:{now:() => now}, setTimeout(){return 1}, clearTimeout(){}, requestAnimationFrame(){return 1}, cancelAnimationFrame(){}};
+  const c = {document:{querySelector:s => s === '.title' ? title : element(), querySelectorAll:() => [], createElement:tag => {created.push(tag); return element()}, body:element(), hidden:false, addEventListener(name, callback){events[name] = callback}, documentElement:{classList:{toggle(){}}}}, window:{innerWidth:width, innerHeight:900, addEventListener(name, callback){events[name] = callback}}, navigator:{connection:{saveData}}, localStorage:{getItem(){return null}}, matchMedia:() => media, Image:class{complete=true; naturalWidth=32}, performance:{now:() => now}, setTimeout(){return 1}, clearTimeout(){}, requestAnimationFrame(){return 1}, cancelAnimationFrame(){}};
   vm.runInNewContext(source, c);
-  return {...c.effects, alphas, title, setTime:value => {now = value}};
+  return {...c.effects, alphas, positions, rotations, events, created, media, document:c.document, title, setTime:value => {now = value}};
 }
 for (const [width, expected] of [[1440,1100],[390,600]]) {
   test(`leaf density, size, fade and cleanup at ${width}px`, () => {
@@ -39,3 +41,5 @@ test('data saver caps particles and Escape cleanup clears them', () => {
   const fx = setup({saveData:true}); fx.releaseLeaves(); assert.equal(fx.leaves().length, 400);
   fx.stopEffects(); assert.equal(fx.leaves().length, 0);
 });
+
+test('flowers advance across the viewport', () => { const fx=setup(); fx.releaseLeaves(); const leaf=fx.leaves()[0]; leaf.y=.5; fx.leaves().splice(1); fx.drawSwarm(3000); const x=fx.positions.at(-1)[0]; fx.drawSwarm(6000); assert.ok(fx.positions.at(-1)[0]>x); });
