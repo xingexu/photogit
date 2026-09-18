@@ -69,3 +69,5 @@ test('re-enabling motion allows a fresh sweep', () => { const fx=setup(); fx.rel
 test('activation creates no audio elements', () => { const fx=setup(); fx.releaseLeaves(); assert.ok(!fx.created.includes('audio')); });
 
 test('flowers remain in a gentle vertical band', () => { const fx=setup(); fx.releaseLeaves(); assert.ok(fx.leaves().every(l=>l.y>=.08 && l.y<.92 && l.wave>=4 && l.wave<12)); });
+
+test('mobile data saver particle cap', () => { const fx=setup({width:390,saveData:true}); fx.releaseLeaves(); assert.equal(fx.leaves().length,400); });
