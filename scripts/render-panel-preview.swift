@@ -34,6 +34,26 @@ while !waiter.done && Date() < deadline { RunLoop.current.run(mode: .default, be
 let settle = Date().addingTimeInterval(4)
 while Date() < settle { RunLoop.current.run(mode: .default, before: Date().addingTimeInterval(0.05)) }
 
+// This offscreen view is never added to a window, so document.hidden is
+// true and WebKit throttles every entrance animation (photogit-fade-in,
+// photogit-reveal, ...) — with animation-fill-mode: backwards, that leaves
+// elements stuck at their near-invisible 0% keyframe forever. Drop the
+// animation on anything mid-entrance so it falls back to its resting CSS
+// state before snapshotting; this only affects the screenshot tool, not
+// the panel itself.
+let forceSettleJS = """
+document.querySelectorAll('*').forEach((el) => {
+  const name = getComputedStyle(el).animationName;
+  if (name && name !== 'none' && name.startsWith('photogit-')) {
+    el.style.animation = 'none';
+  }
+});
+"""
+var jsDone = false
+view.evaluateJavaScript(forceSettleJS) { _, _ in jsDone = true }
+let jsDeadline = Date().addingTimeInterval(5)
+while !jsDone && Date() < jsDeadline { RunLoop.current.run(mode: .default, before: Date().addingTimeInterval(0.05)) }
+
 let cfg = WKSnapshotConfiguration()
 cfg.rect = NSRect(x: 0, y: 0, width: w, height: h)
 var finished = false
