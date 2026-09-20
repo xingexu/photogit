@@ -16,7 +16,11 @@ let url = URL(string: args[1])!, out = URL(fileURLWithPath: args[4])
 let app = NSApplication.shared
 app.setActivationPolicy(.accessory)
 
+// Non-persistent so a stale cached styles.css/demo.js from a previous run of
+// this script never masks an edit — each invocation should reflect the
+// files on disk right now, not whatever WebKit's shared HTTP cache kept.
 let config = WKWebViewConfiguration()
+config.websiteDataStore = WKWebsiteDataStore.nonPersistent()
 let view = WKWebView(frame: NSRect(x: 0, y: 0, width: w, height: h), configuration: config)
 
 final class Waiter: NSObject, WKNavigationDelegate {
@@ -26,7 +30,7 @@ final class Waiter: NSObject, WKNavigationDelegate {
 }
 let waiter = Waiter()
 view.navigationDelegate = waiter
-view.load(URLRequest(url: url))
+view.load(URLRequest(url: url, cachePolicy: .reloadIgnoringLocalAndRemoteCacheData))
 
 let deadline = Date().addingTimeInterval(25)
 while !waiter.done && Date() < deadline { RunLoop.current.run(mode: .default, before: Date().addingTimeInterval(0.05)) }

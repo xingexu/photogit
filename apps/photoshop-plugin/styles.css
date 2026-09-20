@@ -737,7 +737,11 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
   .capture-panel { flex: 0 0 320px; min-width: 0; margin: 0 0 var(--space-5); padding: var(--space-5); }
   .history-layout { display: flex; align-items: flex-start; }
   .history-list-panel { flex: 0 0 250px; padding-right: var(--space-5); }
-  #history-inspector { display: block; flex: 1; padding-left: var(--space-6); border-left: 1px solid var(--line); min-height: 440px; }
+  #history-inspector { display: flex; flex-direction: column; flex: 1; padding-left: var(--space-6); border-left: 1px solid var(--line); min-height: 440px; }
+  /* Selecting no version leaves this column's only child far shorter than
+     the version list beside it. Center it in the reserved height instead of
+     letting it sit pinned to the top of an otherwise empty column. */
+  #history-inspector .inspector-empty { flex: 1; display: flex; flex-direction: column; justify-content: center; }
   .branch-layout { display: flex; align-items: flex-start; }
   .branch-list-panel { flex: 1; padding-right: var(--space-6); }
   /* A grid keeps every card one track wide, so a lone card on the last row does
@@ -749,7 +753,10 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
   .branch-create-card { flex: 0 0 260px; margin-top: 0; }
   .review-layout { display: flex; align-items: flex-start; margin-top: var(--space-4); }
   .review-list-panel { flex: 0 0 290px; padding-right: var(--space-5); }
-  #review-inspector { display: block; flex: 1; padding-left: var(--space-6); border-left: 1px solid var(--line); min-height: 400px; }
+  #review-inspector { display: flex; flex-direction: column; flex: 1; padding-left: var(--space-6); border-left: 1px solid var(--line); min-height: 400px; }
+  /* Same fix as #history-inspector: an unselected comparison is far shorter
+     than the review list beside it, so center it in the reserved height. */
+  #review-inspector .inspector-empty { flex: 1; display: flex; flex-direction: column; justify-content: center; }
   .review-card:first-child { margin-top: 0; }
   .review-title > span { width: 100%; margin-top: 5px; }
   .comparison-summary { padding-right: 0; flex-basis: 100%; }
