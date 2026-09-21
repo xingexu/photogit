@@ -611,8 +611,13 @@ kbd { font-family: var(--mono); font-size: 11px; padding: 1px var(--space); bord
 /* A notice interrupts: the helper dropped, the document is not the project's.
    Arriving on the sheet's short rise marks it as new rather than as a
    region that was always there and just changed colour. */
-.notice { margin: var(--space-3) var(--space-4); padding: var(--space-3); border: 1px solid var(--warning); border-radius: var(--radius); background: var(--warning-surface); color: var(--warning); animation: photogit-sheet-in var(--motion-nav) var(--ease-liquid) backwards; }
+.notice { margin: var(--space-3) var(--space-4); padding: var(--space-3); border: 1px solid var(--line); border-radius: var(--radius); background: var(--elevated); color: var(--text); animation: photogit-sheet-in var(--motion-nav) var(--ease-liquid) backwards; }
+/* A calm setup card by default. Only a genuinely lost connection turns it
+   into a warning, so first-run choices never read as errors. */
+.notice.is-warning { border-color: var(--warning); background: var(--warning-surface); color: var(--warning); }
 .notice p { color: var(--text); font-size: var(--text-small); margin: 6px 0 var(--space-2); }
+.notice .text-link { margin-top: var(--space-2); }
+.notice .setup-command { margin-top: var(--space-2); }
 .notice .button { margin-top: var(--space-2); }
 .status-message, #result { font-size: var(--text-small); margin: var(--space-2) var(--space-4); overflow-wrap: break-word; }
 #result:empty { display: none; }

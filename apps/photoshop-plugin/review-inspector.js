@@ -96,7 +96,7 @@ function render(container, { comparison, onMerge, previews } = {}) {
       append(document, item, "p", "", text(change?.summary, "Edit details not recorded"));
     }
     if (changes.length > 100) append(document, edits, "p", "comparison-limit fine-print", `Showing the first 100 of ${changes.length} recorded edits. The comparison includes all edits, not only this displayed list.`);
-  } else append(document, edits, "p", "fine-print", "No semantic differences recorded. Read the file changes and notes before deciding whether to merge.");
+  } else append(document, edits, "p", "fine-print", "No layer changes were recorded. Check the changed files and notes before combining.");
   const fileSection = append(document, summary, "section", "comparison-files");
   append(document, fileSection, "h3", "", "Changed files");
   if (files.length) {
@@ -111,11 +111,11 @@ function render(container, { comparison, onMerge, previews } = {}) {
 
   const status = append(document, layout, "aside", `comparison-status${mergeable ? "" : " merge-blocked"}`);
   status.setAttribute("aria-label", "Merge status and safeguards");
-  append(document, status, "h3", mergeable ? "ready" : "blocked", mergeable ? "Git merge available" : "Git merge blocked");
+  append(document, status, "h3", mergeable ? "ready" : "blocked", mergeable ? "Ready to combine" : "Can’t combine yet");
   append(document, status, "p", "", mergeable
-    ? "Review the changes before continuing. PhotoGit checks the branches again and asks for confirmation before merging."
-    : "Resolve conflicting files outside PhotoGit, then refresh this comparison. For PSD conflicts, inspect both documents in Photoshop and save the resolved design.");
-  append(document, status, "p", "comparison-safety-note fine-print", "Ordinary Git merge only. PhotoGit does not blend PSD layers or automatically resolve document conflicts.");
+    ? "Review the changes before continuing. PhotoGit checks both branches again and asks for confirmation before combining."
+    : "Both branches changed the same file. Sort that out outside PhotoGit, then refresh this comparison. For a PSD, open both documents in Photoshop and save the design you want to keep.");
+  append(document, status, "p", "comparison-safety-note fine-print", "Combining keeps every saved version from both branches. It doesn’t blend layers or pick between two edits of the same file — review the result in Photoshop.");
   if (conflicts.length) {
     append(document, status, "h3", "", "Conflicts");
     const list = append(document, status, "ul", "comparison-conflicts");

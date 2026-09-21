@@ -30,7 +30,7 @@ describe("review comparison inspector", () => {
     const facts = Array.from(p.container.querySelectorAll(".comparison-fact")).map(row => row.textContent);
     expect(facts).toEqual(["Source-only commits2", "Destination-only commits1", "Recorded edits1", "Changed files1"]);
     expect(p.container.textContent).toContain("from the common ancestor to the source branch");
-    expect(p.container.querySelector(".comparison-status")!.textContent).toContain("Git merge available");
+    expect(p.container.querySelector(".comparison-status")!.textContent).toContain("Ready to combine");
     expect(p.container.querySelector(".comparison-merge")!.textContent).toBe("Review merge…");
     expect(p.container.querySelector("img")).toBeNull();
     expect(JSON.stringify(data)).toBe(before); expect(p.onMerge).not.toHaveBeenCalled();
@@ -42,8 +42,8 @@ describe("review comparison inspector", () => {
     expect(p.container.querySelector(".comparison-merge")).toBeNull();
     expect(p.container.querySelector(".merge-blocked")).not.toBeNull();
     expect(p.container.querySelectorAll(".comparison-warnings li")).toHaveLength(120);
-    expect(p.container.textContent).toContain("Resolve conflicting files outside PhotoGit");
-    expect(p.container.textContent).toContain("does not blend PSD layers");
+    expect(p.container.textContent).toContain("Sort that out outside PhotoGit");
+    expect(p.container.textContent).toContain("doesn’t blend layers");
     expect(p.container.textContent).toContain("Both branches changed the Photoshop design");
     (p.container.querySelector(".comparison-status")! as HTMLElement).click(); expect(p.onMerge).not.toHaveBeenCalled();
   });
@@ -105,7 +105,7 @@ describe("review comparison inspector", () => {
     const p = fixture(); p.render({ comparison: undefined });
     expect(p.container.textContent).toContain("Choose a branch review");
     p.render({ comparison: comparison({ changes: [], files: [] }), onMerge: undefined });
-    expect(p.container.textContent).toContain("Read the file changes and notes");
+    expect(p.container.textContent).toContain("Check the changed files and notes");
     expect(p.container.textContent).toContain("No incoming file changes recorded");
     expect(p.container.querySelector(".comparison-merge")).toBeNull();
   });

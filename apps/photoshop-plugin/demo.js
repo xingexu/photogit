@@ -169,7 +169,7 @@ function renderCommandDocs() {
 }
 
 function openCommandPalette(initial = "") {
-  if (busyNow) return show("Wait for the current operation before running a command.", false);
+  if (busyNow) return show("PhotoGit is busy. Try again in a moment.", false);
   openDetail("Go to or run a command", "");
   const content = document.getElementById("detail-content");
   const field = document.createElement("input");

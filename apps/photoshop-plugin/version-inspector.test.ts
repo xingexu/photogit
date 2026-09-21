@@ -69,7 +69,7 @@ describe("version inspector presentation", () => {
     const p = fixture(); p.render({ details: details(), currentVersionId: version.id });
     expect(p.container.textContent).toContain(version.message);
     const facts = Array.from(p.container.querySelectorAll(".version-inspector-fact")).map(row => row.textContent);
-    expect(facts).toContain("Commit" + version.id);
+    expect(facts).toContain("Version ID" + version.id);
     expect(facts).toContain("Recorded edits3");
     expect(facts).toContain("Text edits1");
     expect(facts).toContain("Appearance edits1");
@@ -108,14 +108,14 @@ describe("version inspector presentation", () => {
   it("does not offer opening for missing snapshots or without an explicit caller callback", () => {
     const p = fixture(); p.render({ details: details({ snapshotAvailable: false }), onOpen: vi.fn() });
     expect(p.container.querySelector(".version-inspector-open")).toBeNull();
-    expect(p.container.textContent).toContain("No valid PSD snapshot");
+    expect(p.container.textContent).toContain("Saved file unavailable");
     p.render({ details: details() }); expect(p.container.querySelector(".version-inspector-open")).toBeNull();
   });
 
   it("does not label zero semantic edits as proof that the version has no changes", () => {
     const p = fixture(); p.render({ details: details({ changes: [], warnings: ["First saved layer state: 42 layers."] }) });
     expect(p.container.textContent).toContain("First saved layer state: 42 layers.");
-    expect(p.container.textContent).toContain("without comparable layer data");
+    expect(p.container.textContent).toContain("no earlier version to compare against");
     expect(p.container.textContent).not.toContain("No changes in this version");
   });
 

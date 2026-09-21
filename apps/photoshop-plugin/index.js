@@ -66,6 +66,11 @@ function bindPanelEvents() {
     instructions.hidden = !instructions.hidden;
     document.getElementById("setup-toggle").setAttribute("aria-expanded", String(!instructions.hidden));
   });
+  bind("setup-command-toggle", "click", () => {
+    const command = document.getElementById("setup-command-live");
+    command.hidden = !command.hidden;
+    document.getElementById("setup-command-toggle").setAttribute("aria-expanded", String(!command.hidden));
+  });
   bind("change-project", "click", chooseProject);
   bind("reconnect-helper", "click", reconnectHelper);
   bind("connect-document", "click", connectDocument);
@@ -300,7 +305,7 @@ function handleOutsideClick(event) {
 }
 
 async function chooseProject() {
-  if (busyNow) return show("Wait for the current operation before changing projects.", true);
+  if (busyNow) return show("PhotoGit is busy. Try again in a moment.", true);
   const folder = await storage.localFileSystem.getFolder();
   if (!folder) return;
   cancelScan();
@@ -366,15 +371,16 @@ async function refreshWorkspace(announceErrors = false, readTimeoutMs = HELPER_T
   try {
     const status = await callHelper("status", {}, HELPER_HEALTH_TIMEOUT_MS);
     if (!current()) return;
-    setHelper("Helper online", true);
+    setHelper("Synced", true);
     await loadStatus(status);
     const [branches, history, reviews] = await Promise.all([callHelper("branches", {}, readTimeoutMs), callHelper("history", {}, readTimeoutMs), callHelper("reviews", {}, readTimeoutMs)]);
     if (!current()) return;
     await Promise.all([loadBranches(branches), loadHistory(history), loadReviews(reviews)]);
   } catch (error) {
     if (!current() || error.name === "StaleScanError") return;
-    setHelper("Helper offline", false);
-    document.getElementById("connection-message").textContent = `The helper is not answering. In the PhotoGit source folder run: npm run helper -- --approve-root "${projectFolder.name}" (use its full folder path). Then Reconnect. Your saved versions are unchanged.`;
+    setHelper("Not connected", false);
+    document.getElementById("connection-message").textContent = `PhotoGit’s background service isn’t responding. Your saved versions are safe. Start the service for “${safeInlineText(projectFolder.name, 200)}”, then choose Reconnect.`;
+    document.getElementById("setup-command-live").textContent = `npm run helper -- --approve-root "${projectFolder.nativePath || projectFolder.name}"`;
     log(`Refresh failed: ${error.message || String(error)}`);
     if (announceErrors) show(error.message || "PhotoGit could not refresh this project.", true);
   }
@@ -675,13 +681,13 @@ function connectDocument() {
 }
 
 async function reconnectHelper() {
-  if (busyNow) return show("Wait for the current operation before reconnecting.", false);
+  if (busyNow) return show("PhotoGit is busy. Try again in a moment.", false);
   if (!projectFolder) return chooseProject();
   // The header dot breathes while the reconnect is in flight.
   const status = document.getElementById("helper-status");
   status.classList.add("is-reconnecting");
-  try { await loadPairing(); await refreshWorkspace(true); if (helperOnline) { show("Helper connected.", false); queueAutomaticScan("reconnected", 100); } }
-  catch (error) { show(`${error.message} Run setup for this project, then Reconnect.`, true); }
+  try { await loadPairing(); await refreshWorkspace(true); if (helperOnline) { show("Connected.", false); queueAutomaticScan("reconnected", 100); } }
+  catch (error) { show(`${error.message} Finish setup for this project, then choose Reconnect.`, true); }
   finally { status.classList.remove("is-reconnecting"); }
 }
 
@@ -802,8 +808,8 @@ async function mergeReview(branch) {
   if (!ensureReady()) return;
   return run("Reviewing merge…", async () => {
     const comparison = await callHelper("compareBranches", { branch });
-    const summary = comparison.changes.slice(0, 100).map(change => change.summary).join("\n") || "No semantic changes.";
-    openDetail(comparison.gitMergeable ? "Merge this branch?" : "Git merge blocked", `Base: ${comparison.baseBranch}\nIncoming: ${comparison.incomingBranch}\n\n${summary}\n\n${fileSummary(comparison.files)}\n\n${comparison.conflicts.join("\n")}\n${comparison.warnings.join("\n")}\n\nThis uses ordinary Git. PhotoGit does not blend PSD layers. Your open document stays open.`, comparison.gitMergeable ? "Merge branch" : "", comparison.gitMergeable ? () => {
+    const summary = comparison.changes.slice(0, 100).map(change => change.summary).join("\n") || "No layer changes recorded.";
+    openDetail(comparison.gitMergeable ? "Combine this branch?" : "Can’t combine yet", `Into: ${comparison.baseBranch}\nFrom: ${comparison.incomingBranch}\n\n${summary}\n\n${fileSummary(comparison.files)}\n\n${comparison.conflicts.join("\n")}\n${comparison.warnings.join("\n")}\n\nCombining keeps every saved version from both branches. It doesn’t blend layers, so review the result in Photoshop. Your open document stays open.`, comparison.gitMergeable ? "Combine branch" : "", comparison.gitMergeable ? () => {
       closeDetail();
       return performMerge(branch, comparison.baseBranch);
     } : null);
@@ -967,7 +973,7 @@ function openRepositorySettings() {
   closeToolsMenu();
   const provider = repositoryDetails?.provider || "unknown";
   const remote = repositoryDetails?.remoteConfigured ? "Remote configured" : "No remote configured";
-  openDetail("Project information", `Project: ${projectFolder?.nativePath || "Not connected"}\nHelper: ${helperOnline ? "Online" : "Offline"}\nProvider: ${provider}\n${remote}\n\nSetup from the PhotoGit source folder:\nnpm run photogit -- init "/path/to/project"\nnpm run helper -- --approve-root "/path/to/project"\n\nDocking: open Plugins → PhotoGit. Drag PhotoGit’s native panel tab beside the left toolbar. Wait for Photoshop’s docking highlight, then release. Photoshop controls panel placement.`, "Choose project", () => { closeDetail(); return chooseProject(); });
+  openDetail("Project information", `Project: ${projectFolder?.nativePath || "Not connected"}\nBackground service: ${helperOnline ? "Connected" : "Not connected"}\nSharing: ${provider}\n${remote}\n\nFirst-time setup (run once in Terminal, from the PhotoGit folder):\nnpm run photogit -- init "/path/to/project"\nnpm run helper -- --approve-root "/path/to/project"\n\nTo keep PhotoGit docked, drag its panel tab next to Photoshop’s toolbar and let go when a highlight appears.`, "Choose project", () => { closeDetail(); return chooseProject(); });
 }
 
 async function openSnapshot(version = "HEAD", rebind = true) {
@@ -1535,7 +1541,7 @@ function renderCommandDocs() {
 
 function openCommandPalette(initial = "") {
   if (startupPending) return;
-  if (busyNow) return show("Wait for the current operation before running a command.", false);
+  if (busyNow) return show("PhotoGit is busy. Try again in a moment.", false);
   openDetail("Go to or run a command", "");
   const content = document.getElementById("detail-content");
   const field = document.createElement("input");
@@ -1654,7 +1660,7 @@ function selectTab(name, animate = true) {
 }
 
 async function run(label, action) {
-  if (busyNow) return show("Another operation is running. Please wait.", false);
+  if (busyNow) return show("PhotoGit is busy. Try again in a moment.", false);
   busy(true);
   workspaceGeneration += 1;
   try {
@@ -1676,7 +1682,7 @@ async function run(label, action) {
 function ensureReady() {
   if (startupPending) { show("PhotoGit is still opening your project. Please wait.", false); return false; }
   if (!projectFolder) { show("Choose a PhotoGit project folder first.", true); return false; }
-  if (!helperToken) { show("Start the helper for this project, then choose the folder again.", true); return false; }
+  if (!helperToken) { show("Finish first-time setup for this project, then choose the folder again.", true); return false; }
   return true;
 }
 
@@ -1871,9 +1877,12 @@ function setHelper(label, ok) {
   // it clears here rather than waiting for the next message to replace it.
   if (ok) {
     const result = document.getElementById("result");
-    if (result.classList.contains("error") && /helper/i.test(result.textContent)) { result.textContent = ""; result.className = "status-message"; }
+    if (result.classList.contains("error") && /helper|background service|not responding|connection lost/i.test(result.textContent)) { result.textContent = ""; result.className = "status-message"; }
   }
-  document.getElementById("connection-notice").hidden = ok || !projectFolder;
+  const notice = document.getElementById("connection-notice");
+  notice.hidden = ok || !projectFolder;
+  // Only a lost connection earns the warning treatment; setup states stay calm.
+  notice.classList.toggle("is-warning", !ok && Boolean(projectFolder));
   const element = document.getElementById("helper-status");
   element.className = `repo-state ${ok ? "ok" : "warning"}`;
   // Below 360px only the dot is visible; the title carries the label there.

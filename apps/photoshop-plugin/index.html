@@ -50,24 +50,26 @@
         <p>Track readable layer edits, save exact PSD versions, and explore branches.</p>
         <ol class="onboarding-steps"><li><b>01</b> Connect your project folder</li><li><b>02</b> Make edits in Photoshop</li><li><b>03</b> Save a version worth keeping</li></ol>
         <div id="choose-project" class="button button-primary button-wide" role="button" tabindex="0">Connect a project</div>
-        <div id="setup-toggle" class="text-link" role="button" tabindex="0" aria-expanded="false" aria-controls="setup-instructions">Helper setup instructions<svg class="disclosure-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></div>
+        <div id="setup-toggle" class="text-link" role="button" tabindex="0" aria-expanded="false" aria-controls="setup-instructions">First-time setup<svg class="disclosure-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></div>
         <section id="setup-instructions" hidden>
-        <p id="pairing-help" class="fine-print">From the PhotoGit source folder in Terminal, initialize your project and start its helper. Keep the helper running, then choose the project folder here.</p>
+        <p id="pairing-help" class="fine-print">PhotoGit runs a small background service that keeps your versions safe. To set it up once, open Terminal in the PhotoGit folder and run these two lines, replacing the path with your project folder. Leave that window open while you work, then choose the same folder here.</p>
         <p class="setup-command" tabindex="0">npm run photogit -- init "/path/to/project"<br>npm run helper -- --approve-root "/path/to/project"</p>
-        <p class="fine-print">Open PhotoGit from Photoshop’s Plugins → PhotoGit menu. Drag its native panel tab beside the left toolbar. Release when Photoshop shows a docking highlight. Panel placement is controlled by Photoshop.</p>
+        <p class="fine-print">To keep PhotoGit docked, drag its panel tab next to Photoshop’s toolbar and let go when a highlight appears.</p>
         </section>
       </section>
 
       <section id="connection-notice" class="notice" role="alert" hidden>
-        <strong>Reconnect the helper</strong>
-        <p id="connection-message">In the PhotoGit source folder, run: npm run helper -- --approve-root "/path/to/project". Then reconnect.</p>
+        <strong>Connection lost</strong>
+        <p id="connection-message">PhotoGit’s background service isn’t responding. Your saved versions are safe. Start the service, then choose Reconnect.</p>
+        <div id="setup-command-toggle" class="text-link" role="button" tabindex="0" aria-expanded="false" aria-controls="setup-command-live">Show setup command<svg class="disclosure-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></div>
+        <p id="setup-command-live" class="setup-command" tabindex="0" hidden>npm run helper -- --approve-root "/path/to/project"</p>
         <div id="reconnect-helper" class="button button-quiet" role="button" tabindex="0">Reconnect</div>
       </section>
       <p id="result" class="status-message" role="status" aria-live="polite"></p>
 
       <section id="workspace" class="workspace" hidden>
         <section id="document-connection" class="notice" role="status" hidden>
-          <strong>Choose the project document</strong>
+          <strong>Which document belongs to this project?</strong>
           <p id="document-connection-message"></p>
           <div id="connect-document" class="button button-quiet" role="button" tabindex="0">Connect active document</div>
           <div id="open-project-document" class="button button-quiet" role="button" tabindex="0">Open saved project version</div>
@@ -154,7 +156,7 @@
             <div id="changes" class="list change-list"></div>
             <section id="changes-empty" class="empty-state" role="status">
               <strong>No detected layer edits</strong>
-              <p>Edit in Photoshop, then scan. Sampled appearance checks can miss tiny edits; saved versions preserve the exact PSD.</p>
+              <p>Edit in Photoshop, then scan. Very small edits can slip past the quick scan — a saved version always keeps your complete file.</p>
             </section>
           </section>
 
@@ -199,7 +201,7 @@
             <div id="history" class="list history-list"></div>
             <section id="history-empty" class="empty-state" role="status" hidden><strong id="history-empty-title">No saved versions yet</strong><p id="history-empty-copy">Save your first version to start this document’s history.</p></section>
           </section>
-          <section id="history-inspector" class="version-inspector" role="region" aria-label="Selected version details"><div class="inspector-empty"><h2>Version details</h2><p>Select a saved version to inspect its changes and available PSD copy.</p></div></section>
+          <section id="history-inspector" class="version-inspector" role="region" aria-label="Selected version details"><div class="inspector-empty"><h2>Version details</h2><p>Select a saved version to see what changed and open a copy of it.</p></div></section>
           </div>
         </section>
 
@@ -237,12 +239,12 @@
             <p class="page-description">Compare branches before bringing their work together.</p>
             <div id="review-provider" class="provider-note">Reviewing local branches</div>
             <div class="review-layout"><div class="review-list-panel"><div id="reviews" class="review-list"></div>
-            <section id="reviews-empty" class="empty-state" role="status" hidden><strong>No branches to review</strong><p>Create a branch or fetch a shared branch to begin a review.</p></section></div><section id="review-inspector" class="review-inspector" role="region" aria-label="Branch comparison"><div class="inspector-empty"><h2>Compare before merging</h2><p>Choose Compare to inspect the source and destination, changed files, and merge safeguards.</p><p>PhotoGit uses ordinary Git. It does not blend PSD layers.</p></div></section></div>
+            <section id="reviews-empty" class="empty-state" role="status" hidden><strong>No branches to review</strong><p>Create a branch or fetch a shared branch to begin a review.</p></section></div><section id="review-inspector" class="review-inspector" role="region" aria-label="Branch comparison"><div class="inspector-empty"><h2>Compare before combining</h2><p>Choose Compare to see what each branch changed and whether they can be combined safely.</p><p>Combining branches doesn’t blend layers together — review the result in Photoshop.</p></div></section></div>
           </section>
           <section id="conflict-panel" class="liquid-card content-card conflict-panel" hidden>
             <div class="section-heading"><h2>Conflicts</h2></div>
             <div id="conflicts" class="conflict-list"></div>
-            <p class="fine-print">PhotoGit does not resolve PSD conflicts. Save your open work separately. Resolve or abort the Git merge outside Photoshop, then refresh this project.</p>
+            <p class="fine-print">Two branches changed the same file, and PhotoGit can’t combine them automatically. Save your open work under a new name first, sort out the conflict outside Photoshop, then refresh this project.</p>
           </section>
         </section>
 
@@ -257,15 +259,16 @@
         <section id="docs-view" class="view-panel" role="tabpanel" aria-labelledby="docs-tab" hidden>
           <section class="liquid-card content-card">
             <div class="section-heading"><h2>Command directory</h2><span class="meta-chip">Quick access</span></div>
-            <p class="docs-intro">Search or choose a command. Press <kbd>/</kbd> outside a text field, or <kbd>Ctrl</kbd>+<kbd>K</kbd> (<kbd>⌘</kbd><kbd>K</kbd> on a Mac), while the panel has focus. If Photoshop intercepts a shortcut, use Commands above. Enter submits the version-message field.</p>
+            <p class="docs-intro">Search or pick a command. Shortcut: press <kbd>/</kbd> (or <kbd>Ctrl</kbd>+<kbd>K</kbd>, <kbd>⌘</kbd><kbd>K</kbd> on a Mac) while the panel is focused. If a shortcut doesn’t respond, use the Commands box above.</p>
             <div class="field-shell search-field"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 4.5 4.5"/></svg><input id="docs-search" type="search" maxlength="200" placeholder="Search save, merge, history…" aria-label="Search command directory" spellcheck="false" uxp-quiet="true"></div>
             <div id="command-directory"></div>
           </section>
           <section class="content-card">
-            <h2>Setup in Terminal</h2>
-            <p class="fine-print">Run these from the PhotoGit source folder, not in the command palette. Replace the example with your project’s full path.</p>
+            <h2>First-time setup</h2>
+            <p class="fine-print">Run these once in Terminal, from the PhotoGit folder — not in the Commands box. Replace the path with your project folder. The last line checks that everything is set up correctly.</p>
             <p class="setup-command" tabindex="0">npm run photogit -- init "/path/to/project"<br>npm run helper -- --approve-root "/path/to/project"<br>npm run photogit -- doctor "/path/to/project"</p>
-            <p class="fine-print">A saved version is a Git commit. /commit is an alias for /save. Earlier PSDs open separately; adopt a copy deliberately before saving it into a project. Merge uses ordinary Git, not layer blending. Sampled appearance comparisons can miss tiny edits.</p>
+            <p class="fine-print">Every saved version keeps a complete copy of your PSD. Opening an earlier version opens it as a separate copy, so nothing is overwritten. Combining branches doesn’t blend layers — review the result in Photoshop. Very small edits can slip past the quick scan; a saved version always has the full file.</p>
+            <p class="fine-print">For the technically curious: each saved version is a Git commit, and /commit works as a shortcut for /save.</p>
           </section>
         </section>
 

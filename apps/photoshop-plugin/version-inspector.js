@@ -36,7 +36,7 @@ function facts(document, parent, entries) {
   for (const [label, value] of entries) {
     const row = append(document, list, "div", "version-inspector-fact");
     append(document, row, "dt", "", label);
-    const detail = append(document, row, "dd", label === "Commit" ? "version-inspector-commit" : "");
+    const detail = append(document, row, "dd", label === "Version ID" ? "version-inspector-commit" : "");
     // A fact that is a moment keeps its exact timestamp on a time element
     // behind the localised reading.
     if (value && typeof value === "object" && typeof value.datetime === "string") {
@@ -146,7 +146,7 @@ function render(container, options = {}) {
     preview.textContent = "";
     preview.classList.add("version-inspector-fallback");
     append(document, preview, "span", "version-inspector-document-mark", "PSD");
-    append(document, preview, "strong", "", snapshotAvailable ? "Saved Photoshop snapshot" : "No valid PSD snapshot");
+    append(document, preview, "strong", "", snapshotAvailable ? "Saved Photoshop file" : "Saved file unavailable");
     append(document, preview, "p", "version-inspector-meta", snapshotAvailable
       ? "An artwork preview is not available in this panel. Open a separate copy to inspect the saved document."
       : "The version metadata is available, but its PSD cannot be opened locally.");
@@ -168,14 +168,14 @@ function render(container, options = {}) {
   } else fallback();
   append(document, visual, "p", "version-inspector-notice fine-print", snapshotAvailable
     ? "Opens a separate PSD copy. Your current document and branch stay unchanged."
-    : "Snapshot unavailable. Choose a version with a valid local PSD snapshot to open a copy.");
+    : "This version’s saved file isn’t on this computer. Choose a version whose file is available to open a copy.");
 
   const information = append(document, grid, "div", "version-inspector-information");
   facts(document, section(document, information, "Version details"), [
     ["Saved", /^\d{4}-\d{2}-\d{2}T/.test(String(version.date)) ? { text: formatDate(version.date), datetime: version.date } : formatDate(version.date)],
     ["Author", text(version.author, "Not recorded")],
-    ["Commit", id || text(version.shortId, "Not recorded")],
-    ["PSD snapshot", snapshotAvailable ? "Available locally" : "Unavailable locally"]
+    ["Version ID", id || text(version.shortId, "Not recorded")],
+    ["Saved file", snapshotAvailable ? "On this computer" : "Not on this computer"]
   ]);
   const summary = section(document, information, "Changes in this version");
   const domains = [
@@ -199,7 +199,7 @@ function render(container, options = {}) {
       if (text(change?.layerName)) append(document, item, "strong", "", change.layerName);
       append(document, item, "p", "", text(change?.summary, "Edit details not recorded"));
     });
-  } else append(document, recorded, "p", "version-inspector-meta", "No semantic differences recorded. This can be the first saved state or a version without comparable layer data.");
+  } else append(document, recorded, "p", "version-inspector-meta", "No layer changes were recorded for this version. That’s normal for a first save, or when there’s no earlier version to compare against.");
   if (files.length) {
     pagedList(document, section(document, container, "Changed files"), files, "version-inspector-files", "files", (item, file) => {
       append(document, item, "span", "meta-chip", text(file?.status, "—"));

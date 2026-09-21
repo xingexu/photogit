@@ -503,7 +503,7 @@ describe("PhotoGit production panel behavior — host mocked", () => {
     waiting.resolve({ changes: [], files: [], snapshotAvailable: false }); await inspection;
     expect(p.id("history-inspector").getAttribute("aria-busy")).toBe("false");
     expect(p.id("history-inspector").textContent).toContain("Second version");
-    expect(p.id("history-inspector").textContent).toContain("No valid PSD snapshot");
+    expect(p.id("history-inspector").textContent).toContain("Saved file unavailable");
     expect(p.id("history-inspector").querySelector(".version-inspector-open")).toBeNull();
   });
 
@@ -615,7 +615,7 @@ describe("PhotoGit production panel behavior — host mocked", () => {
     const endpoints = [...p.id("detail-content").querySelectorAll(".comparison-endpoint")];
     expect(endpoints.map(endpoint => endpoint.textContent)).toEqual(["Sourcefeature", "Destinationmain"]);
     expect(p.id("detail-content").textContent).toContain("Headline text changed");
-    expect(p.id("detail-content").textContent).toContain("Git merge blocked");
+    expect(p.id("detail-content").textContent).toContain("Can’t combine yet");
   });
 
   it.each([false, true])("routes comparison review through a fresh check and confirmation (wide: %s)", async wide => {
@@ -629,16 +629,16 @@ describe("PhotoGit production panel behavior — host mocked", () => {
     await p.evaluate('compareBranch("feature")');
     const content = p.id(wide ? "review-inspector" : "detail-content");
     expect(content.querySelector(".comparison-summary")!.textContent).toContain("Layer 1: Opacity changed");
-    expect(content.querySelector(".comparison-status")!.textContent).toContain("Git merge available");
-    expect(content.textContent).toContain("does not blend PSD layers");
+    expect(content.querySelector(".comparison-status")!.textContent).toContain("Ready to combine");
+    expect(content.textContent).toContain("doesn’t blend layers");
     expect(p.id("detail-sheet").hidden).toBe(wide);
     expect(merge).not.toHaveBeenCalled();
     p.keyboard(content.querySelector(".comparison-merge"), "Enter"); await settle();
     expect(helper).toHaveBeenCalledTimes(2);
     expect(helper).toHaveBeenNthCalledWith(2, "compareBranches", { branch: "feature" });
-    expect(p.id("detail-title").textContent).toBe("Merge this branch?");
-    expect(p.id("detail-content").textContent).toContain("Base: main");
-    expect(p.id("detail-content").textContent).toContain("Incoming: feature");
+    expect(p.id("detail-title").textContent).toBe("Combine this branch?");
+    expect(p.id("detail-content").textContent).toContain("Into: main");
+    expect(p.id("detail-content").textContent).toContain("From: feature");
     expect(p.id("detail-action").hidden).toBe(false);
     expect(merge).not.toHaveBeenCalled();
   });
@@ -657,8 +657,8 @@ describe("PhotoGit production panel behavior — host mocked", () => {
     expect(content.textContent).toContain("<script>literal</script>");
     expect(content.querySelector("img, script")).toBeNull();
     expect(content.querySelector(".comparison-merge")).toBeNull();
-    expect(content.textContent).toContain("Git merge blocked");
-    expect(content.textContent).toContain("Resolve conflicting files outside PhotoGit");
+    expect(content.textContent).toContain("Can’t combine yet");
+    expect(content.textContent).toContain("Sort that out outside PhotoGit");
     expect(content.textContent).toContain("snapshot/document.psd");
     expect(merge).not.toHaveBeenCalled();
   });
@@ -730,9 +730,9 @@ describe("PhotoGit production panel behavior — host mocked", () => {
     const merge = vi.fn(async () => undefined); p.context.performMerge = merge;
     await p.evaluate('mergeReview("feature")');
     expect(helper).toHaveBeenCalledExactlyOnceWith("compareBranches", { branch: "feature" });
-    expect(p.id("detail-title").textContent).toBe("Merge this branch?");
-    expect(p.id("detail-content").textContent).toContain("Base: main");
-    expect(p.id("detail-content").textContent).toContain("Incoming: feature");
+    expect(p.id("detail-title").textContent).toBe("Combine this branch?");
+    expect(p.id("detail-content").textContent).toContain("Into: main");
+    expect(p.id("detail-content").textContent).toContain("From: feature");
     expect(p.id("detail-content").textContent).toContain("Title position changed");
     expect(p.id("detail-content").textContent).toContain("snapshot/document.psd");
     expect(merge).not.toHaveBeenCalled();
@@ -746,7 +746,7 @@ describe("PhotoGit production panel behavior — host mocked", () => {
     p.connect();
     p.context.callHelper = vi.fn(async () => ({ baseBranch: "main", incomingBranch: "feature", changes: [], files: [], conflicts: ["snapshot/document.psd"], warnings: ["Both branches changed the PSD"], gitMergeable: false }));
     await p.evaluate('mergeReview("feature")');
-    expect(p.id("detail-title").textContent).toBe("Git merge blocked");
+    expect(p.id("detail-title").textContent).toBe("Can’t combine yet");
     expect(p.id("detail-content").textContent).toContain("snapshot/document.psd");
     expect(p.id("detail-action").hidden).toBe(true);
     expect(p.evaluate("detailAction")).toBeNull();
@@ -1092,7 +1092,7 @@ describe("PhotoGit production panel behavior — host mocked", () => {
     await p.evaluate("reconnectHelper()");
     expect(pairing).not.toHaveBeenCalled();
     expect(refresh).not.toHaveBeenCalled();
-    expect(p.id("result").textContent).toContain("Wait for the current operation");
+    expect(p.id("result").textContent).toContain("PhotoGit is busy");
   });
 
   it("captures leaf pixels plus the document composite, disposes images, and reports bounded batch progress", async () => {
@@ -1188,7 +1188,7 @@ describe("PhotoGit production startup — mocked host and filesystem", () => {
     expect(p.id("startup-state").hidden).toBe(true);
     expect(helper.mock.calls.map(call => call[0])).toEqual(["status", "branches", "history", "reviews"]);
     for (const call of helper.mock.calls as unknown[][]) expect(call[2]).toBe(5000);
-    expect(p.id("repo-sync-status").textContent).toBe("Helper online");
+    expect(p.id("repo-sync-status").textContent).toBe("Synced");
   });
   it.each(["token", "pairing", "preferences"])("recovers from %s failure and keeps setup usable", async failure => {
     const p = await panel();
@@ -1225,7 +1225,7 @@ describe("PhotoGit production startup — mocked host and filesystem", () => {
     expect(p.id("startup-state").hidden).toBe(true);
     expect(p.id("workspace").hidden).toBe(false);
     expect(p.id("connection-notice").hidden).toBe(false);
-    expect(p.id("repo-sync-status").textContent).toBe("Helper offline");
+    expect(p.id("repo-sync-status").textContent).toBe("Not connected");
     expect(p.evaluate("helperOnline")).toBe(false);
     expect([...p.timers.values()].some(timer => timer.delay === 150)).toBe(false);
   });
@@ -1318,7 +1318,7 @@ describe("PhotoGit rounded design and label clarity", () => {
       expect(p.id(id).hasAttribute("aria-label")).toBe(false);
       expect(p.document.querySelector(`label[for="${id}"]`)!.textContent).toBe(label);
     }
-    expect(p.id("docs-view").textContent).toContain("Merge uses ordinary Git, not layer blending");
+    expect(p.id("docs-view").textContent).toContain("Combining branches doesn’t blend layers");
     p.evaluate("renderChanges(testChanges)", { testChanges: [change(12), change(0, { domain: "document", layerName: "Document" })] });
     expect(p.id("changes").textContent).toContain("Layer #12");
     expect(p.id("changes").textContent).not.toContain("Whole document");
