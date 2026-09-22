@@ -1,5 +1,20 @@
 # Acceptance report: 0.2.0 development
 
+## Reference glass workspace and container spacing — 2026-09-22
+
+Both themes now share translucent, tinted glass surfaces over soft blue/lilac gradients, with inset highlights, lighter field surfaces and a brighter selected state. The wide layout places project context under navigation, the scan and layer list in the center, and the saved preview above Save version on the right. Narrow panels keep the scan and composer ahead of the layer list, with saved artwork afterward. The preview still explicitly describes the latest saved version; it does not imply that unsaved edits are rendered.
+
+Tally cards use explicit 8–12px sibling margins instead of flex gap; major cards and columns have 16px separation. Branch cards retain 12px vertical spacing when grid is unsupported. Soft gradients and alpha fills provide the material without requiring backdrop blur; blur remains an enhancement. The same scan/preview DOM nodes move at the 900px breakpoint, retaining handlers and focus. The save field is never recreated.
+
+Verification: all 467 tests in 25 suites pass. A new regression exercises resizing with a focused scan control and an unfinished draft. The browser interaction checks measure spacing with CSS gap disabled at 1180, 900, 899 and 420px in both themes, and verify filters, keyboard navigation, simulated save and version inspection. The eight-viewport/theme matrix passes all six destinations and empty, 500-row/long-name, error, setup and loading states. Eleven additional inspector/dialog screenshots pass without page or container overflow. A stale browser assertion was aligned with the existing conflict explanation; the absent merge action and blocked state remain asserted.
+
+Wide dark/light and docked light previews were visually reviewed. Activating the reduced-transparency CSS rules yields opaque, unblurred surfaces without gradients or shadows for eight surface types in each theme. Removing the grid enhancement leaves 12px between branch cards. These are browser CSS-fallback checks, not native OS preference or Photoshop checks. Local screenshots and reports are in `/tmp/photogit-glass-matrix`, `/tmp/photogit-glass-detail-qa`, and `/tmp/photogit-glass-{dark,light}.png`.
+
+TypeScript, security inventory, DOM/escaping, tokens, synchronized assets and development-package verification pass. Assets are v103. Bundle SHA-256: `c84e3d3afadbefe8cb9d90948da46a57f6e55e78d0abdc9ae907e006c29e4f5f`.
+
+Native Photoshop/UXP acceptance remains pending because native automation surfaces are unavailable. In particular, native resize-event delivery and gradient compositing still require the live acceptance matrix. This work updates draft [PR #21](https://github.com/xingexu/photogit/pull/21); it is not a published CCX release or a claim of native acceptance.
+
+
 ## Light liquid glass — 2026-09-22
 
 Light-mode content cards, History, setup documentation, project context and navigation now use translucent white surfaces, a diagonal reflection, bright inset edges and a soft shadow. Backdrop blur is a progressive enhancement; hosts without it retain opaque surfaces. Inputs and artwork stay readable against their own backgrounds. Dark-mode styling from the compact-workspace pass is preserved.

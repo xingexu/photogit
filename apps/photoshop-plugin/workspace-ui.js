@@ -59,6 +59,33 @@ function arrowRow(container) {
   });
 }
 
+// Keep the same live nodes when the dock changes width. UXP has no CSS grid
+// and some versions lack matchMedia; ordinary flex columns plus measured
+// width preserve the compact reading order without duplicating controls.
+function setupLayout(document) {
+  const view = document.getElementById("changes-view");
+  const main = document.querySelector(".changes-main");
+  const aside = document.querySelector(".changes-aside");
+  const scan = document.querySelector(".scan-panel");
+  const preview = document.getElementById("document-preview");
+  const host = document.defaultView || (typeof window !== "undefined" ? window : globalThis);
+  if (!view || !main || !aside || !scan || !preview) return;
+  const relocate = (node, parent, before = null) => {
+    if (node.parentNode === parent) return;
+    const focus = document.activeElement;
+    const restoreFocus = focus && node.contains(focus);
+    parent.insertBefore(node, before);
+    if (restoreFocus) focus.focus();
+  };
+  const update = () => {
+    const wide = (Number(document.documentElement.clientWidth) || Number(host.innerWidth) || 0) >= 900;
+    relocate(scan, wide ? main : view, wide ? main.firstChild : view.firstChild);
+    relocate(preview, wide ? aside : view, wide ? aside.firstChild : null);
+  };
+  host.addEventListener?.("resize", update);
+  update();
+}
+
 const initialized = new WeakMap();
 const MESSAGE_LIMIT = 500;
 // The counter is silent while typing — announcing every keystroke's count is
@@ -163,6 +190,7 @@ function setup(document, { navigate, openCommands }) {
     if (!slash && !commandK) return;
     event.preventDefault(); openCommands();
   });
+  setupLayout(document);
   const controls = { refreshChanges: () => refreshChanges(document) };
   initialized.set(document, controls);
   controls.refreshChanges();

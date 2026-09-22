@@ -4,13 +4,13 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>PhotoGit</title>
-    <script src="motion.js?v=100"></script>
-    <script src="appearance.js?v=100"></script>
-    <script src="depth.js?v=100"></script>
-    <script src="counter.js?v=100"></script>
-    <script src="reveal.js?v=100"></script>
-    <link rel="stylesheet" href="styles.css?v=100">
-    <script src="index.js?v=100"></script>
+    <script src="motion.js?v=103"></script>
+    <script src="appearance.js?v=103"></script>
+    <script src="depth.js?v=103"></script>
+    <script src="counter.js?v=103"></script>
+    <script src="reveal.js?v=103"></script>
+    <link rel="stylesheet" href="styles.css?v=103">
+    <script src="index.js?v=103"></script>
   </head>
   <body class="is-initializing">
     <main class="panel-root">
@@ -75,21 +75,17 @@
           <div id="open-project-document" class="button button-quiet" role="button" tabindex="0">Open saved project version</div>
         </section>
 
+        <div class="workspace-body">
+        <div class="workspace-rail">
         <section class="repo-context liquid-card" data-depth aria-label="Current repository">
-          <div class="repo-topline">
             <div class="repo-project">
               <span class="context-badge" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 7h6l2 2h10v10H3z"/></svg></span>
               <div class="context-copy"><span class="context-label">Project</span><strong id="project-status">No project selected</strong>
               <div id="change-project" class="text-link project-switch" role="button" tabindex="0">Change project</div></div>
             </div>
-          </div>
-          <div class="repo-meta">
             <div class="repo-branch" data-destination="branches" role="button" tabindex="0" title="Manage branches"><span class="context-badge" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="6" cy="5" r="2"/><circle cx="18" cy="7" r="2"/><circle cx="6" cy="19" r="2"/><path d="M6 7v10m2-2c6 0 8-2 8-6"/></svg></span><span class="context-copy"><span class="context-label">Branch</span><span class="context-value"><strong id="branch-name">—</strong><svg class="branch-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></span></span></div>
             <span class="repo-document"><span class="context-badge" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 3.5h8l4 4V20H6z"/><path d="M14 3.5V8h4"/></svg></span><span class="context-copy"><span class="context-label">Document</span><span id="document-name">None open</span></span></span>
-          </div>
         </section>
-        <div class="workspace-body">
-        <div class="workspace-rail">
         <nav id="section-nav" class="section-nav liquid-card" role="tablist" aria-label="PhotoGit sections">
           <div id="changes-tab" class="nav-item active" role="tab" tabindex="0" aria-controls="changes-view" aria-selected="true">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3.5h8l4 4V20H6z"/><path d="M14 3.5V8h4"/></svg>
@@ -119,10 +115,11 @@
         </div>
         <div class="workspace-content">
         <section id="changes-view" class="view-panel" role="tabpanel" aria-labelledby="changes-tab">
-          <div class="view-heading changes-heading"><h2>Changes</h2></div>
+          <div class="scan-panel">
           <section class="liquid-card scan-card" data-depth>
             <div class="scan-copy">
-              <h2 id="change-summary">Waiting for a scan</h2>
+              <h2 class="scan-title">Changes</h2>
+              <p id="change-summary">Waiting for a scan</p>
               <div id="watch-status" class="watch-status ready" role="status" aria-live="polite" aria-atomic="true"><i aria-hidden="true"></i><span>Watching Photoshop</span></div>
               <p id="last-scan" class="scan-detail">Scanning this document automatically.</p>
               <div id="jump-save" class="text-link" role="button" tabindex="0">Write a version message <span aria-hidden="true">↓</span></div>
@@ -139,7 +136,18 @@
           </section>
           <div id="cancel-scan" class="button button-quiet" role="button" tabindex="0" hidden>Cancel scan</div>
 
+          </div>
+
           <div class="changes-layout">
+          <div class="changes-aside">
+            <section id="document-preview" class="document-preview liquid-card content-card" hidden>
+              <h3 class="preview-title">Preview</h3>
+              <figure id="document-preview-figure" class="preview-figure" hidden>
+                <img id="document-preview-image" alt="Preview saved with the latest version">
+                <figcaption class="fine-print">Latest saved version. Unsaved edits are not shown.</figcaption>
+              </figure>
+              <dl id="document-facts" class="document-facts"></dl>
+            </section>
           <section class="liquid-card content-card capture-panel">
             <div class="capture-title"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10v16l-5-4-5 4z"/></svg><div><h2>Save version</h2><small>A message and an exact copy of the PSD</small></div></div>
             <div class="capture-heading"><label class="version-label" for="message">What changed?</label><span id="message-count" class="meta-chip" aria-live="off">0/500</span></div>
@@ -148,12 +156,15 @@
             </div>
             <div class="message-presets" role="toolbar" aria-label="Version message suggestions"><div class="preset" role="button" tabindex="0" data-message-preset="Minor refinement">Minor refinement</div><div class="preset" role="button" tabindex="0" data-message-preset="Color grade update">Color grade</div><div class="preset" role="button" tabindex="0" data-message-preset="Retouching details">Retouch</div></div>
             <div class="capture-actions">
-              <div id="save-version" class="button button-primary" role="button" tabindex="0">Save version</div>
+              <div id="save-version" class="button button-primary" role="button" tabindex="0"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m-4 4 4-4 4 4M5 15v5h14v-5"/></svg><span>Save version</span></div>
             </div>
             <div id="progress" class="progress-track" role="progressbar" aria-label="PhotoGit operation in progress" hidden><span></span></div>
             <p class="capture-hint">Saves the whole PSD, including edits hidden by filters.</p>
           </section>
 
+          </div>
+
+          <div class="changes-main">
           <section class="liquid-card content-card changes-card">
             <div class="section-heading"><h2>Changed layers</h2></div>
             <div id="change-filters">
@@ -172,15 +183,9 @@
               <strong>No detected layer edits</strong>
               <p>Edit in Photoshop, then scan. Very small edits can slip past the quick scan — a saved version always keeps your complete file.</p>
             </section>
-            <section id="document-preview" class="document-preview" hidden>
-              <h3 class="preview-title">Preview</h3>
-              <figure id="document-preview-figure" class="preview-figure" hidden>
-                <img id="document-preview-image" alt="Preview saved with the latest version">
-                <figcaption class="fine-print">Latest saved version. Unsaved edits are not shown.</figcaption>
-              </figure>
-              <dl id="document-facts" class="document-facts"></dl>
-            </section>
+
           </section>
+          </div>
 
           </div>
 

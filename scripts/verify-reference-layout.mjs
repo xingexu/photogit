@@ -94,7 +94,7 @@ try {
   click("#reviews .review-card:nth-child(2) .compare-action");
   assert.equal(value('document.getElementById("review-inspector").dataset.mergeable'), "false");
   assert.equal(value('document.querySelector("#review-inspector .comparison-merge") === null'), true);
-  assert.match(value('document.getElementById("review-inspector").textContent'), /Resolve conflicting files outside PhotoGit/);
+  assert.match(value('document.getElementById("review-inspector").textContent'), /Sort that out outside PhotoGit/);
   capture("demo-dark-review-blocked-1280x900");
 
   click("#activity-tab"); capture("demo-dark-activity-1280x900");
