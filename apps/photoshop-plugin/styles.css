@@ -832,6 +832,8 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
 }
 /* Light liquid glass uses opaque fallbacks in hosts without backdrop blur.
    Keep these theme rules before the accessibility overrides below. */
+:root[data-theme="light"] .history-layout,
+:root[data-theme="light"] .view-panel > .content-card,
 :root[data-theme="light"] .scan-card.liquid-card,
 :root[data-theme="light"] .content-card.liquid-card,
 :root[data-theme="light"] .capture-panel,
@@ -842,6 +844,12 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
   border-color: var(--glass-rim);
   box-shadow: var(--glass-glow);
 }
+:root[data-theme="light"] .history-layout,
+:root[data-theme="light"] #docs-view > .content-card {
+  padding: var(--space-4); border: 1px solid var(--glass-rim); border-radius: var(--radius-panel);
+}
+:root[data-theme="light"] .history-layout { margin-bottom: var(--space-4); }
+:root[data-theme="light"] .history-list-panel { margin-bottom: 0; }
 :root[data-theme="light"] .workspace-rail .section-nav {
   border: 1px solid var(--glass-rim); border-radius: var(--radius-panel);
 }
@@ -851,6 +859,8 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
   box-shadow: 0 1px 0 var(--shine) inset;
 }
 @supports (backdrop-filter: blur(2px)) {
+  :root[data-theme="light"] .history-layout,
+  :root[data-theme="light"] .view-panel > .content-card,
   :root[data-theme="light"] .scan-card.liquid-card,
   :root[data-theme="light"] .content-card.liquid-card,
   :root[data-theme="light"] .capture-panel,
@@ -908,6 +918,8 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
 }
 
 @media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  :root[data-theme="light"] .history-layout,
+  :root[data-theme="light"] .view-panel > .content-card,
   :root[data-theme="light"] .scan-card.liquid-card,
   :root[data-theme="light"] .content-card.liquid-card,
   :root[data-theme="light"] .capture-panel,

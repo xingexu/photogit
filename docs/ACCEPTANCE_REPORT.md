@@ -2,11 +2,11 @@
 
 ## Light liquid glass — 2026-09-22
 
-Light-mode content cards, project context and navigation now use translucent white surfaces, a diagonal reflection, bright inset edges and a soft shadow. Backdrop blur is a progressive enhancement; hosts without it retain opaque surfaces. Inputs and artwork stay readable against their own backgrounds. Dark-mode styling from the compact-workspace pass is preserved.
+Light-mode content cards, History, setup documentation, project context and navigation now use translucent white surfaces, a diagonal reflection, bright inset edges and a soft shadow. Backdrop blur is a progressive enhancement; hosts without it retain opaque surfaces. Inputs and artwork stay readable against their own backgrounds. Dark-mode styling from the compact-workspace pass is preserved.
 
 Verified in the simulated browser: all six sections across eight viewport/theme combinations (230×200, 320×600, 420×800, 900×800; dark and light), plus empty, long/500-row, error, setup and loading states. Both-theme interaction checks pass for filtering/reset/focus, branch navigation, command keyboard shortcuts, simulated save and history inspection, and theme switching. Wide 1100×900 and docked 420×800 light previews were visually reviewed. No browser errors or horizontal overflow were observed. Activating the reduced-transparency CSS media rules and waiting for transitions produced an opaque white surface with no gradient, blur or shadow. This checks the CSS cascade, not a native OS preference toggle.
 
-TypeScript, local security inventory, panel DOM/escaping, design token, asset and development bundle checks pass. Assets are v99. Bundle SHA-256: `a9d1c2c9740c7f85319e16762be3c03342f95192a320a459eed999a505d0486f`.
+TypeScript, local security inventory, panel DOM/escaping, design token, asset and development bundle checks pass. Assets are v100. Bundle SHA-256: `256f38fcfc700ecd0c6995486d72323b47c0fd6dccfd0397b5783aae739df519`.
 
 Native Photoshop verification remains pending because native automation surfaces are unavailable. The UI is prepared for draft review, not claimed as native acceptance. The separate Vitest security fix is tracked in [PR #20](https://github.com/xingexu/photogit/pull/20); its isolated checkout passes 466 tests and GitHub CI passes all 52 checks, including the dependency audit.
 
