@@ -4,13 +4,13 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>PhotoGit</title>
-    <script src="motion.js?v=96"></script>
-    <script src="appearance.js?v=96"></script>
-    <script src="depth.js?v=96"></script>
-    <script src="counter.js?v=96"></script>
-    <script src="reveal.js?v=96"></script>
-    <link rel="stylesheet" href="styles.css?v=96">
-    <script src="index.js?v=96"></script>
+    <script src="motion.js?v=99"></script>
+    <script src="appearance.js?v=99"></script>
+    <script src="depth.js?v=99"></script>
+    <script src="counter.js?v=99"></script>
+    <script src="reveal.js?v=99"></script>
+    <link rel="stylesheet" href="styles.css?v=99">
+    <script src="index.js?v=99"></script>
   </head>
   <body class="is-initializing">
     <main class="panel-root">
@@ -140,6 +140,20 @@
           <div id="cancel-scan" class="button button-quiet" role="button" tabindex="0" hidden>Cancel scan</div>
 
           <div class="changes-layout">
+          <section class="liquid-card content-card capture-panel">
+            <div class="capture-title"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10v16l-5-4-5 4z"/></svg><div><h2>Save version</h2><small>A message and an exact copy of the PSD</small></div></div>
+            <div class="capture-heading"><label class="version-label" for="message">What changed?</label><span id="message-count" class="meta-chip" aria-live="off">0/500</span></div>
+            <div class="field-shell">
+              <input id="message" type="text" maxlength="500" placeholder="Describe this version" autocomplete="off" aria-describedby="message-count" uxp-quiet="true">
+            </div>
+            <div class="message-presets" role="toolbar" aria-label="Version message suggestions"><div class="preset" role="button" tabindex="0" data-message-preset="Minor refinement">Minor refinement</div><div class="preset" role="button" tabindex="0" data-message-preset="Color grade update">Color grade</div><div class="preset" role="button" tabindex="0" data-message-preset="Retouching details">Retouch</div></div>
+            <div class="capture-actions">
+              <div id="save-version" class="button button-primary" role="button" tabindex="0">Save version</div>
+            </div>
+            <div id="progress" class="progress-track" role="progressbar" aria-label="PhotoGit operation in progress" hidden><span></span></div>
+            <p class="capture-hint">Saves the whole PSD, including edits hidden by filters.</p>
+          </section>
+
           <section class="liquid-card content-card changes-card">
             <div class="section-heading"><h2>Changed layers</h2></div>
             <div id="change-filters">
@@ -158,20 +172,6 @@
               <strong>No detected layer edits</strong>
               <p>Edit in Photoshop, then scan. Very small edits can slip past the quick scan — a saved version always keeps your complete file.</p>
             </section>
-          </section>
-
-          <section class="liquid-card content-card capture-panel">
-            <div class="capture-title"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10v16l-5-4-5 4z"/></svg><div><h2>Save version</h2><small>A message and an exact copy of the PSD</small></div></div>
-            <div class="capture-heading"><label class="version-label" for="message">What changed?</label><span id="message-count" class="meta-chip" aria-live="off">0/500</span></div>
-            <div class="field-shell">
-              <input id="message" type="text" maxlength="500" placeholder="Describe this version" autocomplete="off" aria-describedby="message-count" uxp-quiet="true">
-            </div>
-            <div class="message-presets" role="toolbar" aria-label="Version message suggestions"><div class="preset" role="button" tabindex="0" data-message-preset="Minor refinement">Minor refinement</div><div class="preset" role="button" tabindex="0" data-message-preset="Color grade update">Color grade</div><div class="preset" role="button" tabindex="0" data-message-preset="Retouching details">Retouch</div></div>
-            <div class="capture-actions">
-              <div id="save-version" class="button button-primary" role="button" tabindex="0">Save version</div>
-            </div>
-            <div id="progress" class="progress-track" role="progressbar" aria-label="PhotoGit operation in progress" hidden><span></span></div>
-            <p class="capture-hint">Saves the whole PSD, including edits hidden by filters.</p>
             <section id="document-preview" class="document-preview" hidden>
               <h3 class="preview-title">Preview</h3>
               <figure id="document-preview-figure" class="preview-figure" hidden>

@@ -340,13 +340,13 @@ describe("PhotoGit production panel behavior — host mocked", () => {
     expect(p.id("changes-empty").hidden).toBe(true);
   });
 
-  it("keeps the layer list before the composer with a keyboard shortcut past large lists", async () => {
+  it("keeps saving reachable before a large layer list, including through the keyboard shortcut", async () => {
     const p = await panel();
     p.connect(); p.evaluate("bindPanelEvents()");
     p.document.body.classList.remove("is-initializing"); p.id("workspace").hidden = false;
     p.evaluate("renderChanges(testChanges)", { testChanges: Array.from({ length: 600 }, (_, index) => change(index + 1)) });
     const sections = [...p.id("changes-view").querySelectorAll(".changes-card, .capture-panel")];
-    expect(sections).toEqual([p.document.querySelector(".changes-card"), p.document.querySelector(".capture-panel")]);
+    expect(sections).toEqual([p.document.querySelector(".capture-panel"), p.document.querySelector(".changes-card")]);
     const controls = [...p.id("changes-view").querySelectorAll('[tabindex="0"], input')];
     expect(controls.indexOf(p.id("jump-save"))).toBeGreaterThanOrEqual(0);
     expect(controls.indexOf(p.id("jump-save"))).toBeLessThan(controls.indexOf(p.document.querySelector(".change-row")!));

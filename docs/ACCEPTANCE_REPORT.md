@@ -1,5 +1,31 @@
 # Acceptance report: 0.2.0 development
 
+## Light liquid glass — 2026-09-22
+
+Light-mode content cards, project context and navigation now use translucent white surfaces, a diagonal reflection, bright inset edges and a soft shadow. Backdrop blur is a progressive enhancement; hosts without it retain opaque surfaces. Inputs and artwork stay readable against their own backgrounds. Dark-mode styling from the compact-workspace pass is preserved.
+
+Verified in the simulated browser: all six sections across eight viewport/theme combinations (230×200, 320×600, 420×800, 900×800; dark and light), plus empty, long/500-row, error, setup and loading states. Both-theme interaction checks pass for filtering/reset/focus, branch navigation, command keyboard shortcuts, simulated save and history inspection, and theme switching. Wide 1100×900 and docked 420×800 light previews were visually reviewed. No browser errors or horizontal overflow were observed. Activating the reduced-transparency CSS media rules and waiting for transitions produced an opaque white surface with no gradient, blur or shadow. This checks the CSS cascade, not a native OS preference toggle.
+
+TypeScript, local security inventory, panel DOM/escaping, design token, asset and development bundle checks pass. Assets are v99. Bundle SHA-256: `a9d1c2c9740c7f85319e16762be3c03342f95192a320a459eed999a505d0486f`.
+
+Native Photoshop verification remains pending because native automation surfaces are unavailable. The UI is prepared for draft review, not claimed as native acceptance. The separate Vitest security fix is tracked in [PR #20](https://github.com/xingexu/photogit/pull/20); its isolated checkout passes 466 tests and GitHub CI passes all 52 checks, including the dependency audit.
+
+
+## Compact workspace and dependency patch — 2026-09-21
+
+Working branch: `codex/photogit-ui-security`, based on `6b8b4898`.
+
+The save form now precedes changed layers in document and keyboard order; wide layouts keep it beside the list. Saved artwork and document facts follow the layer list. Navigation uses compact icon/label/count rows, inactive counts are quieter, narrow repository context and scan tallies take less space, and content cards use opaque neutral backgrounds with restrained shadows. Demo and production fallback counters both expose their actual value for zero-state styling. Assets are stamped at v98.
+
+Verified locally: 466 tests in 25 suites, 39 landing-page tests, TypeScript check, clean `npm ci --ignore-scripts --no-audit`, security inventory, design tokens, panel DOM safety/escaping, synchronized assets, and development bundle verification. Browser checks cover all six destinations across 230×200, 320×600, 420×800 and 900×800 in both themes, plus empty, 500-row/long-name, error, setup and loading states at 320×600. Keyboard palette dispatch, theme persistence, focus return, filters and the simulated save/inspection flow pass in both themes. Verification scripts now wait for counter animations before asserting their displayed values. Additional 1100×900 dark/light previews were visually inspected.
+
+Vitest and its mocker are pinned by the lockfile to 4.1.11, the first patched version identified by PhotoGit's two open GitHub dependency alerts. Full tests pass after this upgrade. No fresh external npm audit was completed: automatic approval review blocked exporting dependency metadata to npm and explicit approval remains pending. The local inventory does not scan Git history or unknown secret formats.
+
+Development bundle SHA-256: `ba8b710b3c0d08d7a6f6331b4641e5aff801b29f0bb3abca383bc9e84da4a5f1`.
+
+Native Photoshop acceptance remains unverified: native automation surfaces were unavailable. Browser evidence is simulated and does not establish UXP rendering or real Photoshop save behavior. No artwork was touched. No code was pushed, merged or deployed, and no GitHub repository settings were changed in this pass.
+
+
 ## Interaction pass · pointer depth, settling counters, staggered lists
 
 **Verified.** All suites pass (`npm test`), including three new ones: depth

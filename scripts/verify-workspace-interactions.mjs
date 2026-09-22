@@ -8,7 +8,7 @@ const click = selector => { run("scrollintoview", selector); run("click", select
 const settle = () => run("eval", `new Promise((resolve, reject) => {
   const start = Date.now(); const check = () => {
     const fading = Array.from(document.querySelectorAll('.panel-root, .view-panel, .tool-sheet')).some(e => e.style.opacity);
-    if (!fading && !document.body.classList.contains('is-busy')) return resolve(true);
+    if (!fading && !document.querySelector(".is-counting") && !document.body.classList.contains('is-busy')) return resolve(true);
     if (Date.now() - start > 3000) return reject(new Error('UI did not settle'));
     setTimeout(check, 16);
   }; check();

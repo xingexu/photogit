@@ -517,7 +517,7 @@ function renderDemoTally() {
   const counts = { "tally-changed": changes.filter(c => !["added", "removed"].includes(c.category)).length,
                    "tally-added": changes.filter(c => c.category === "added").length,
                    "tally-removed": changes.filter(c => c.category === "removed").length };
-  for (const [id, value] of Object.entries(counts)) { const el = byId(id); if (el) el.textContent = String(value); }
+  for (const [id, value] of Object.entries(counts)) { const el = byId(id); if (el) { el.textContent = String(value); el.dataset.value = String(value); } }
   const arriving = tally.hidden && changes.length > 0;
   tally.hidden = changes.length === 0;
   if (arriving) globalThis.PhotoGitReveal?.stagger(tally.querySelectorAll(".tally-tile"));

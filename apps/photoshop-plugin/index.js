@@ -1086,7 +1086,7 @@ function renderChangeTally(changes) {
     const node = document.getElementById(id);
     if (!node) return;
     if (counter && typeof counter.set === "function") counter.set(node, value);
-    else node.textContent = String(value);
+    else { node.textContent = String(value); node.dataset.value = String(value); }
   };
   show("tally-changed", count("modified"));
   show("tally-added", count("added"));
