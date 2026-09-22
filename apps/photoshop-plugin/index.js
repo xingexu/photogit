@@ -1112,6 +1112,7 @@ function renderDocumentFacts(meta) {
   if (typeof meta?.name === "string" && meta.name) facts.push(["Document", meta.name]);
   for (const [label, value] of facts) {
     const row = document.createElement("div");
+    if (label === "Document") row.className = "document-filename";
     const term = document.createElement("dt"); term.textContent = label;
     const detail = document.createElement("dd"); detail.textContent = value;
     row.append(term, detail); list.appendChild(row);

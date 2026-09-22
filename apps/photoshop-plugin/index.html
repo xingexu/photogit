@@ -4,17 +4,16 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>PhotoGit</title>
-    <script src="motion.js?v=103"></script>
-    <script src="appearance.js?v=103"></script>
-    <script src="depth.js?v=103"></script>
-    <script src="counter.js?v=103"></script>
-    <script src="reveal.js?v=103"></script>
-    <link rel="stylesheet" href="styles.css?v=103">
-    <script src="index.js?v=103"></script>
+    <script src="motion.js?v=107"></script>
+    <script src="appearance.js?v=107"></script>
+    <script src="depth.js?v=107"></script>
+    <script src="counter.js?v=107"></script>
+    <script src="reveal.js?v=107"></script>
+    <link rel="stylesheet" href="styles.css?v=107">
+    <script src="index.js?v=107"></script>
   </head>
   <body class="is-initializing">
     <main class="panel-root">
-      <div class="panel-aurora" aria-hidden="true"><i></i><i></i><i></i></div>
       <header class="app-header">
         <div class="app-brand">
           <div class="pg-mark" aria-hidden="true"><img src="icons/photogit.png" alt=""></div>
@@ -26,7 +25,7 @@
         <div id="helper-status" class="repo-state warning" role="status"><i></i><span id="repo-sync-status">Not connected</span></div>
         <div id="global-search" class="header-action command-trigger" role="button" tabindex="0" aria-disabled="true" aria-label="Open commands" aria-keyshortcuts="/ Control+K Meta+K" title="Open the searchable command palette">
           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 4.5 4.5"/></svg>
-          <span class="command-trigger-label">Commands</span>
+          <span class="command-trigger-label">Search commands…</span>
         </div>
         <div id="appearance-toggle" class="header-action appearance-toggle" role="button" tabindex="0" aria-label="Switch to Light mode" title="Switch to Light mode">
           <svg class="theme-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg>
@@ -129,9 +128,9 @@
               <span>Scan now</span>
             </div>
             <dl id="change-tally" class="change-tally" hidden>
-              <div class="tally-tile" data-depth><dt>Changed layers</dt><dd id="tally-changed">0</dd></div>
-              <div class="tally-tile" data-depth><dt>New layers</dt><dd id="tally-added">0</dd></div>
-              <div class="tally-tile" data-depth><dt>Deleted layers</dt><dd id="tally-removed">0</dd></div>
+              <div class="tally-tile" data-depth><dt>Changed layers</dt><dd id="tally-changed">0</dd><span class="tally-glyph" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m4 8 8-4 8 4-8 4zM4 12l8 4 8-4M4 16l8 4 8-4"/></svg></span></div>
+              <div class="tally-tile" data-depth><dt>New layers</dt><dd id="tally-added">0</dd><span class="tally-glyph" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span></div>
+              <div class="tally-tile" data-depth><dt>Deleted layers</dt><dd id="tally-removed">0</dd><span class="tally-glyph" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12h14"/></svg></span></div>
             </dl>
           </section>
           <div id="cancel-scan" class="button button-quiet" role="button" tabindex="0" hidden>Cancel scan</div>

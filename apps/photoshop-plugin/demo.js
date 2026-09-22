@@ -530,6 +530,7 @@ function renderDemoDocumentPreview() {
   list.textContent = "";
   for (const [label, value] of [["Size", "3456 × 5184 px"], ["Resolution", "300 ppi"], ["Mode", "RGB"], ["Depth", "16 bpc"], ["Document", "document.psd"]]) {
     const row = document.createElement("div");
+    if (label === "Document") row.className = "document-filename";
     const term = document.createElement("dt"); term.textContent = label;
     const detail = document.createElement("dd"); detail.textContent = value;
     row.append(term, detail); list.appendChild(row);

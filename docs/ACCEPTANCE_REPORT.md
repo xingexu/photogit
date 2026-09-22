@@ -1,5 +1,17 @@
 # Acceptance report: 0.2.0 development
 
+## Blurred reference backdrop, frosted Light and smoked Dark — 2026-09-22
+
+Replaced the pastel light theme with the reference's frosted blue-gray glass and white lettering; Dark uses near-black navy glass. Both share a generated, pre-blurred ribbon wallpaper painted directly on the panel root, luminous edges, blue badges, a paired sun/moon control and a brighter Save version button. Painting the bitmap on the root fixes the missing background observed with a negative stacking layer in UXP. The native wide header and selected navigation fills were also corrected. See [design and asset provenance](LIQUID_GLASS_DESIGN.md).
+
+Native visual verification now succeeds through UXP Developer Tools in Photoshop 27.10.0 / UXP 9.4.1 on macOS. Both themes were viewed and captured with the real helper connected and saved preview loaded. Reloaded final v107 assets; the panel reports ready, Synced, and 1100 × 780 client dimensions. Both tally gaps measure 12px in the native DOM. The preferred floating size now opens directly in the three-column layout. UXP manifest validation passes. Original Dark appearance was restored. No document save, discard, branch switch or artwork mutation was performed. Local screenshots: `/tmp/photogit-native-dark-final.png` and `/tmp/photogit-native-light-final.png` (v106 visuals; v107 additionally includes the reduced-transparency fallback).
+
+All 467 tests in 25 suites pass: 465 passed in the sandbox; the two helper integration tests passed when rerun with permission to bind temporary loopback ports. Browser verification covers eight viewport/theme combinations and six destinations, stress/loading/setup states, both-theme interactions and spacing with gap disabled, and eleven inspector/dialog captures without overflow. Reduced-transparency CSS cascade checks now cover ten surface types in each theme, including the sidebar and header; the backdrop becomes none and surfaces become opaque without blur, gradients or shadows. Branch cards retain 12px separation without grid. These preference checks simulate the browser cascade, not native OS settings.
+
+TypeScript, token, DOM/escaping, local security inventory, synchronized asset and development-package checks pass. Assets are v107. The 21-file development source bundle has SHA-256 `44762f789cd4c0bef44d38ec37b95daf8da68a0b9cbac8989e87cf0701531350`.
+
+Draft [PR #21](https://github.com/xingexu/photogit/pull/21) remains open for the full real-document acceptance matrix. Native theme/rendering verification is complete for this pass; real PSD save, merge and recovery workflows have not been re-exercised. This is not a published CCX release. Historical entries below describe earlier verification limits.
+
 ## Reference glass workspace and container spacing — 2026-09-22
 
 Both themes now share translucent, tinted glass surfaces over soft blue/lilac gradients, with inset highlights, lighter field surfaces and a brighter selected state. The wide layout places project context under navigation, the scan and layer list in the center, and the saved preview above Save version on the right. Narrow panels keep the scan and composer ahead of the layer list, with saved artwork afterward. The preview still explicitly describes the latest saved version; it does not imply that unsaved edits are rendered.

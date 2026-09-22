@@ -1,19 +1,18 @@
-/* PhotoGit · Glass Studio. Flex and explicit margins work in UXP;
-   soft background gradients keep the glass readable even without blur. */
+/* PhotoGit · Liquid Glass. A pre-blurred wallpaper and translucent native
+   surfaces reproduce the material in hosts without backdrop-filter. */
 :root {
   color-scheme: dark;
-  --bg: #202c43; --surface: #2b3b55; --elevated: #354863; --input: #283b56; --overlay: #27292c;
-  --text: #f4f7ff; --muted: #d2dbeb; --disabled: #8c9199; --line: #383b3f; --border: #a7b6ca;
-  --hover: #354765; --pressed: #3c5274; --selected: #214f85; --focus: #9ac6ff;
-  --accent: #b1d3ff; --primary: #2a62d2; --primary-text: #ffffff; --primary-hover: #2f6fed; --primary-pressed: #2456bd;
-  --success: #a6d6ad; --success-surface: #26382d; --warning: #efce8a; --warning-surface: #3d3220;
-  --error: #ffb2ac; --error-surface: #432a29; --backdrop: rgba(0,0,0,.5);
-  --rim: #494d52; --shine: rgba(255,255,255,.055); --shadow: rgba(0,0,0,.28); --press-veil: rgba(0,0,0,.12);
-  --glow: rgba(150,190,255,.5); --focus-halo: rgba(154,198,255,.22);
-  --glass: rgba(57,79,116,.3); --glass-rim: rgba(212,230,255,.22); --glass-top: rgba(225,239,255,.12); --nested: #31353c;
-  --bubble-1: rgba(114,162,255,.4); --bubble-2: rgba(181,153,187,.34); --bubble-3: rgba(72,129,232,.4);
-  --glass-glow: 0 1px 0 rgba(235,245,255,.22) inset, 1px 0 0 rgba(225,239,255,.06) inset, 0 12px 28px -18px rgba(8,18,38,.65);
-  --field-glass: rgba(199,220,255,.1);
+  --bg: #080e19; --surface: #111b29; --elevated: #1d2a3d; --input: #152235; --overlay: #172236;
+  --text: #f4f7ff; --muted: #bfcde2; --disabled: #8190a7; --line: #34435a; --border: #94aac8;
+  --hover: #263c5b; --pressed: #2b4569; --selected: #194b87; --focus: #adddff;
+  --accent: #7fcfff; --primary: #075ce5; --primary-text: #ffffff; --primary-hover: #0752cc; --primary-pressed: #0648b4;
+  --success: #99eba9; --success-surface: #1e3c2d; --warning: #f7da9a; --warning-surface: #3d3220;
+  --error: #ffb2ac; --error-surface: #432a29; --backdrop: rgba(0,0,0,.58);
+  --rim: #40536f; --shine: rgba(255,255,255,.12); --shadow: rgba(0,0,0,.42); --press-veil: rgba(0,0,0,.12);
+  --glow: rgba(81,156,255,.5); --focus-halo: rgba(154,198,255,.22);
+  --glass: rgba(12,20,33,.73); --glass-rim: rgba(187,213,255,.16); --glass-top: rgba(198,220,255,.09); --nested: #172437;
+  --glass-glow: 0 1px 0 rgba(215,234,255,.14) inset, 0 12px 28px -18px rgba(0,0,0,.7);
+  --field-glass: rgba(154,186,229,.12); --backdrop-tint: rgba(3,8,18,.2);
   --space: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-5: 20px; --space-6: 24px;
   --text-small: 12px; --text-body: 13px; --text-subhead: 15px; --text-title: 18px; --text-heading: 22px;
   --control: 32px; --control-tall: 40px;
@@ -27,26 +26,19 @@
 }
 :root[data-theme="light"] {
   color-scheme: light;
-  --bg: #e0e8f3; --surface: #ffffff; --elevated: #eaedf1; --input: #f6f7f9; --overlay: #ffffff;
-  --text: #1c2330; --muted: #505966; --disabled: #6f7781; --line: #dde1e7; --border: #68717d;
-  --hover: #e8ecf2; --pressed: #dce3ed; --selected: #e0eafb; --focus: #245bb6;
-  --accent: #245bb6; --primary: #2d60b5; --primary-text: #ffffff; --primary-hover: #234e98; --primary-pressed: #1c4080;
-  --success: #2b653b; --success-surface: #e8f2eb; --warning: #765006; --warning-surface: #fbf1db;
-  --error: #a12e29; --error-surface: #fceceb; --backdrop: rgba(21,29,42,.24);
-  --rim: #c5cbd3; --shine: rgba(255,255,255,.65); --shadow: rgba(27,35,48,.11); --press-veil: rgba(0,0,0,.12);
-  --glow: rgba(45,96,181,.32); --focus-halo: rgba(36,91,182,.22);
-  /* Light glass: a translucent white over the aurora, a white inner edge
-     and a bluish hairline, so the colour behind a card shows through it. */
-  --glass: rgba(255,255,255,.42); --glass-rim: rgba(255,255,255,.8); --glass-top: rgba(255,255,255,.6); --nested: #ffffff;
-  --depth-sheen: rgba(255,255,255,.7);
-  --field-glass: rgba(255,255,255,.48);
-  --bubble-1: rgba(96,145,237,.48); --bubble-2: rgba(192,159,207,.38); --bubble-3: rgba(100,160,232,.32);
-  --glass-glow:
-    0 1px 0 rgba(255,255,255,.96) inset,
-    1px 0 0 rgba(255,255,255,.58) inset,
-    0 -1px 0 rgba(133,155,195,.12) inset,
-    0 4px 10px -7px rgba(46,68,110,.24),
-    0 18px 38px -24px rgba(62,90,145,.35);
+  /* The lighter reference is pearl-blue frosted glass with light lettering. */
+  --bg: #4c5970; --surface: #465770; --elevated: #3e4e66; --input: #34455e; --overlay: #3b4c65;
+  --text: #ffffff; --muted: #e0e8f5; --disabled: #b5c3d9; --line: #6c7c94; --border: #c5d7f0;
+  --hover: #394f6b; --pressed: #2d4362; --selected: #29558f; --focus: #d3edff;
+  --accent: #a4e5ff; --primary: #1760d5; --primary-text: #ffffff; --primary-hover: #1254c0; --primary-pressed: #1049a8;
+  --success: #b4ecb6; --success-surface: #304e43; --warning: #ffe1a0; --warning-surface: #56442e;
+  --error: #ffcbc8; --error-surface: #5b303b; --backdrop: rgba(21,29,42,.34);
+  --rim: #9eafc9; --shine: rgba(255,255,255,.28); --shadow: rgba(10,21,44,.3); --press-veil: rgba(0,0,0,.12);
+  --glow: rgba(113,176,255,.48); --focus-halo: rgba(178,222,255,.3);
+  --glass: rgba(69,88,122,.55); --glass-rim: rgba(238,247,255,.28); --glass-top: rgba(241,247,255,.16); --nested: #435673;
+  --depth-sheen: rgba(255,255,255,.25);
+  --field-glass: rgba(212,227,255,.16); --backdrop-tint: rgba(192,199,218,.25);
+  --glass-glow: 0 1px 0 rgba(255,255,255,.28) inset, 1px 0 0 rgba(240,249,255,.12) inset, 0 12px 28px -18px rgba(12,28,56,.46);
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; width: 100%; height: 100%; }
@@ -63,16 +55,12 @@ p, strong, span, b, code, small, dd, dt, li, h1, h2, h3, label { min-width: 0; o
 svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
 img { max-width: 100%; }
 .panel-root { position: relative; z-index: 0; width: 100%; min-width: 0; max-width: 1600px; min-height: 100%; margin: 0 auto; }
-/* Aurora · three soft colour bubbles sit behind the panel, fixed to the
-   viewport, so the glass has something to be glass over. They are a real
-   element rather than a pseudo-element so every host draws them, they take
-   no pointer events, and they paint above the root's own ground and below
-   everything in it. */
-.panel-aurora { position: fixed; z-index: -1; top: 0; left: 0; width: 100%; height: 100%; overflow: hidden; pointer-events: none; }
-.panel-aurora i { position: absolute; display: block; border-radius: 0; }
-.panel-aurora i:nth-child(1) { top: -35%; left: -16%; width: 110%; height: 110%; background: radial-gradient(ellipse closest-side at 50% 50%, var(--bubble-1), rgba(0,0,0,0) 100%); }
-.panel-aurora i:nth-child(2) { top: -22%; right: -40%; width: 105%; height: 115%; background: radial-gradient(ellipse closest-side at 50% 50%, var(--bubble-2), rgba(0,0,0,0) 100%); }
-.panel-aurora i:nth-child(3) { bottom: -58%; left: -5%; width: 130%; height: 110%; background: radial-gradient(ellipse closest-side at 50% 50%, var(--bubble-3), rgba(0,0,0,0) 100%); }
+/* Paint on the panel itself: negative stacking layers are inconsistent in UXP.
+   The bitmap is already blurred, so the native host needs no CSS filter. */
+.panel-root {
+  background-image: linear-gradient(var(--backdrop-tint), var(--backdrop-tint)), url("assets/liquid-glass-backdrop.png");
+  background-size: cover; background-position: center center; background-attachment: fixed;
+}
 .app-header { display: flex; align-items: center; min-height: 64px; padding: var(--space-3) var(--space-4); background: var(--surface); border-bottom: 1px solid var(--line); }
 .app-brand { display: flex; align-items: center; min-width: 0; flex: 1; }
 .pg-mark { display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; flex-shrink: 0; margin-right: var(--space-2); }
@@ -209,7 +197,7 @@ body.is-busy [aria-disabled="true"], body.is-busy input:disabled { cursor: progr
   .view-panel > .liquid-card, .capture-panel, .scan-card.liquid-card, .content-card.liquid-card, .onboarding.liquid-card,
   .tools-menu, .tool-sheet { backdrop-filter: blur(22px) saturate(150%); }
 }
-.nav-item:not(.active) b { background: var(--elevated); color: var(--muted); }
+.nav-item:not(.active) b { background: var(--primary); color: var(--primary-text); }
 .tally-tile dd[data-value="0"] { color: var(--muted); }
 
 /* Every glass card gets the same internal room, so nothing sits on its border. */
@@ -236,7 +224,7 @@ body.is-busy [aria-disabled="true"], body.is-busy input:disabled { cursor: progr
 [data-depth].is-depth-active::before { opacity: 1; }
 [data-depth] > * { position: relative; z-index: 1; }
 
-/* The rail is a solid column, never a floating card. */
+/* Project context shares the navigation rail. */
 
 
 /* Reference: project, branch and document are one card of labelled cells, each
@@ -682,7 +670,7 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
 }
 @media (min-width: 720px) {
   /* Brand and navigation share a column in the wide workspace. */
-  .app-header { padding: var(--space-4) var(--space-6) var(--space-2); min-height: 78px; border-bottom: 0; background: var(--bg); }
+  .app-header { padding: var(--space-4) var(--space-6) var(--space-2); min-height: 78px; border-bottom: 0; background: var(--field-glass); }
   .app-brand { flex: 1 1 auto; min-width: 0; }
 
   .app-title > span { display: block; }
@@ -709,7 +697,7 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
   .nav-item:hover { border-color: var(--glass-rim); box-shadow: 0 0 0 1px rgba(255,255,255,.05), 0 0 26px -8px var(--glow), 0 1px 0 var(--shine) inset; }
   .nav-item:hover svg { transform: translateY(-2px) scale(1.07); }
   .nav-item:hover b { box-shadow: 0 0 16px -3px var(--primary); }
-  .nav-item.active { border-color: var(--glass-rim); background: var(--elevated); color: var(--text); box-shadow: 0 1px 0 var(--shine) inset, 0 0 34px -10px var(--glow); }
+  .nav-item.active { border-color: var(--glass-rim); background: var(--selected); color: var(--text); box-shadow: 0 1px 0 var(--shine) inset, 0 0 34px -10px var(--glow); }
   .nav-item.active b { box-shadow: 0 0 18px -4px var(--primary); }
   .workspace-content { flex: 1; min-width: 0; padding: 0; }
   .workspace-body { padding: 0 var(--space-6) var(--space-6); }
@@ -909,6 +897,91 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
   .section-nav { margin: 0 var(--space-3); }
 }
 
+/* Reference composition: thin luminous rims, compact tools and a continuous
+   sidebar. Every action is still a real control; previews show saved artwork. */
+.scan-button { background: var(--field-glass); border-color: var(--glass-rim); box-shadow: 0 1px 0 var(--shine) inset; }
+.tally-tile { position: relative; }
+.tally-glyph { position: absolute; right: 10px; top: 14px; display: flex; align-items: center; justify-content: center; width: 22px; height: 22px; border: 1px solid var(--glass-rim); border-radius: 11px; background: var(--field-glass); color: var(--accent); }
+.tally-glyph svg { width: 14px; height: 14px; }
+.tally-tile:nth-child(2) .tally-glyph { color: var(--success); }
+.tally-tile:nth-child(3) .tally-glyph { color: var(--muted); }
+.tally-tile dd { padding-right: 22px; }
+.nav-item.active { background-color: var(--selected); box-shadow: 0 1px 0 rgba(222,241,255,.25) inset, 0 -8px 18px -14px #78ceff inset, 0 4px 18px -12px var(--glow); }
+#save-version { background-image: linear-gradient(180deg, rgba(78,210,255,.45), transparent 35%, rgba(0,24,120,.14)); box-shadow: 0 1px 2px rgba(222,249,255,.55) inset, 0 -1px 2px rgba(82,183,255,.55) inset, 0 6px 18px -9px #006aff; }
+.row-glyph { background: var(--field-glass); border: 1px solid var(--glass-rim); box-shadow: 0 1px 0 var(--shine) inset; }
+.document-facts { padding: var(--space-2) 4px; }
+.document-facts div { margin: 0 3px; padding: 3px; }
+.document-facts .document-filename { flex: 1 1 100%; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--glass-rim); }
+.document-filename dt { display: none; }
+.document-filename dd { font-weight: 500; }
+.capture-heading { margin-bottom: 6px; }
+.capture-heading .version-label { font-size: var(--text-small); font-weight: 500; color: var(--muted); }
+.capture-hint { font-size: 11px; }
+.preset { font-size: 11px; padding: 4px 9px; }
+@media (min-width: 720px) {
+  .workspace-rail { padding: 8px; border: 1px solid var(--glass-rim); border-radius: var(--radius-panel); background: var(--glass); box-shadow: var(--glass-glow); }
+  .workspace-rail .section-nav { padding: 0; border: 0; background: transparent; background-image: none; box-shadow: none; backdrop-filter: none; }
+  .workspace-rail .repo-context { padding: 12px; margin-left: -2px; margin-right: -2px; }
+  .repo-context .context-label { display: none; }
+  .repo-context .repo-document .context-badge { display: none; }
+  .repo-context .repo-document #document-name { font-size: 11px; font-weight: 400; color: var(--muted); }
+  .repo-context .repo-branch { margin-top: 6px; }
+  .repo-project .project-switch { font-size: 11px; }
+  .nav-item { min-height: 50px; padding: 8px; }
+  .nav-item svg { width: 20px; height: 20px; }
+  .app-title > span { display: block; font-size: 10px; }
+  .app-header { min-height: 74px; padding-top: 14px; padding-bottom: 14px; }
+  .command-trigger { min-height: 34px; }
+  .command-trigger-label { font-size: 12px; font-style: italic; }
+  .repo-state { font-size: 11px; }
+  .appearance-toggle { width: 64px; border: 1px solid var(--glass-rim); background: var(--field-glass); }
+  .appearance-toggle svg { width: 16px; height: 16px; box-sizing: content-box; padding: 5px; border-radius: 13px; transform: none; }
+  .appearance-toggle .theme-sun { left: 2px; opacity: .65; }
+  .appearance-toggle .theme-moon { right: 2px; opacity: 1; background: var(--selected); box-shadow: 0 0 12px var(--glow); }
+  :root[data-theme="light"] .appearance-toggle .theme-sun { opacity: 1; transform: none; background: var(--field-glass); box-shadow: 0 0 12px var(--glow); }
+  :root[data-theme="light"] .appearance-toggle .theme-moon { opacity: .65; transform: none; background: transparent; box-shadow: none; }
+}
+@media (min-width: 900px) {
+  .panel-root { border: 1px solid var(--glass-rim); border-radius: 22px; }
+  .workspace-body { padding: 0 14px 14px; }
+  .app-header { padding-left: 18px; padding-right: 18px; }
+  .workspace-rail { flex-basis: 190px; min-width: 190px; margin-right: 12px; }
+  .app-brand { flex-basis: 200px; }
+  .changes-main { margin-right: 16px; }
+  .changes-aside { flex-basis: 40%; }
+  .scan-card.liquid-card, .content-card.liquid-card { padding: 14px; }
+  .scan-copy { padding-right: 4px; }
+  .scan-copy .scan-title { font-size: 16px; }
+  #change-summary { font-size: 11px; color: var(--muted); }
+  .scan-detail { font-size: 11px; }
+  #jump-save { display: none; }
+  #change-summary, .scan-detail { display: inline; }
+  .scan-detail::before { content: " · "; }
+  .scan-copy .scan-title { margin-bottom: 4px; }
+  .change-tally { margin-top: 12px; }
+  .tally-tile { padding: 12px 10px; min-height: 68px; }
+  .tally-tile dd { font-size: 23px; }
+  .tally-tile dt { font-size: 10px; }
+  .changes-card .section-heading { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .field-shell { min-height: 34px; }
+  .field-shell input { height: 32px; font-size: 12px; }
+  .search-field input::placeholder { font-size: 12px; font-style: italic; }
+  .filter-bar { margin-top: 8px; margin-bottom: 8px; }
+  .filter-chip { font-size: 11px; padding: 4px 8px; }
+  .list-row { padding: 12px 10px; }
+  .change-list { max-height: 460px; }
+  .preview-figure img { height: 260px; max-height: 260px; }
+  .preview-figure figcaption { font-size: 10px; }
+  .document-facts dt { font-size: 10px; }
+  .document-facts dd { font-size: 11px; }
+  .capture-panel .capture-title h2, .preview-title { font-size: 15px; }
+  .capture-panel .capture-title { margin-bottom: 8px; }
+  #save-version { min-height: 40px; }
+  .capture-actions { margin-top: 8px; }
+}
+@media (max-width: 899px) { .tally-glyph { display: none; } .tally-tile dd { padding-right: 0; } }
+@media (max-width: 719px) { .nav-item svg { display: none; } }
+
 @media (prefers-reduced-motion: reduce) {
   :root { --motion-enabled: 0; }
   * { transition: none !important; animation: none !important; }
@@ -939,13 +1012,13 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
      boundary. When the host asks for more contrast, bring them up to it. */
   :root { --line: #5c6169; --glass-rim: rgba(255,255,255,.55); --shine: rgba(255,255,255,.1); }
   :root[data-theme="light"] { --line: #98a1ac; --glass-rim: rgba(60,80,120,.5); }
-  .panel-aurora { display: none; }
+  .panel-root { background-image: none; }
 }
 @media (prefers-reduced-transparency: reduce) {
   /* Take the glass back to an opaque tonal surface: no translucent fill, no
      blur behind it, and no sheen gradient over it. */
   :root, :root[data-theme="light"] { --glass: var(--surface); --glass-top: transparent; }
-  .panel-aurora { display: none; }
+  .panel-root { background-image: none; }
   .view-panel > .liquid-card, .capture-panel, .scan-card.liquid-card, .content-card.liquid-card,
   .onboarding.liquid-card, .repo-context, .section-nav, .tools-menu, .tool-sheet, .app-header {
     background-image: none; backdrop-filter: none;
@@ -956,7 +1029,7 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
 
 @media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
   .history-layout, .view-panel > .content-card, .scan-card.liquid-card,
-  .content-card.liquid-card, .capture-panel, .repo-context, .workspace-rail .section-nav,
+  .content-card.liquid-card, .capture-panel, .repo-context, .workspace-rail, .workspace-rail .section-nav, .app-header,
   .tally-tile, .context-badge, .document-facts, .field-shell, .preset, .command-trigger {
     background-color: var(--surface); background-image: none;
     backdrop-filter: none; box-shadow: none; border-color: var(--line);
