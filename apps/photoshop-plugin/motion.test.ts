@@ -33,6 +33,52 @@ async function fixture(reduce = false, cssFallback = false) {
 }
 
 describe("Shared native-compatible PhotoGit motion", () => {
+  async function nativeFixture() {
+    const p = await fixture();
+    p.context.require = () => ({ host: { name: "Photoshop" } });
+    p.context.getComputedStyle = () => ({ overflow: "visible", borderRadius: "12px" });
+    const view = p.id("changes-view");
+    view.getBoundingClientRect = () => ({ left: 20, top: 40, right: 320, bottom: 440, width: 300, height: 400 } as DOMRect);
+    return { ...p, view, veil: () => p.document.querySelector<HTMLElement>(".native-fade-veil") };
+  }
+  it("composites native content with alpha instead of unsupported container opacity", async () => {
+    const p = await nativeFixture();
+    p.context.PhotoGitMotion.enter(p.view);
+    expect(p.view.style.opacity || "").toBe("");
+    expect(p.veil()!.style.backgroundColor).toBe("rgba(6, 15, 31, 1)");
+    expect(p.veil()!.getAttribute("aria-hidden")).toBe("true");
+    expect(p.veil()!.style.pointerEvents).toBe("none");
+    p.advance(384);
+    expect(p.veil()!.style.backgroundColor).toBe("rgba(6, 15, 31, 0.5)");
+    p.advance(384);
+    expect(p.veil()).toBeNull();
+  });
+  it("removes native veils and completes a dismissal on scroll", async () => {
+    const p = await nativeFixture(), finish = vi.fn();
+    p.context.PhotoGitMotion.exit(p.view, finish);
+    p.advance(192);
+    expect(p.veil()!.style.backgroundColor).toBe("rgba(6, 15, 31, 0.5)");
+    p.document.dispatchEvent(new p.window.Event("scroll"));
+    expect(p.veil()).toBeNull(); expect(finish).toHaveBeenCalledOnce();
+    p.advance(800); expect(finish).toHaveBeenCalledOnce();
+  });
+  it("reverses a native dismissal from its rendered alpha and discards stale completion", async () => {
+    const p = await nativeFixture(), finish = vi.fn();
+    p.context.PhotoGitMotion.exit(p.view, finish); p.advance(192);
+    p.context.PhotoGitMotion.enter(p.view);
+    expect(p.veil()!.style.backgroundColor).toBe("rgba(6, 15, 31, 0.5)");
+    expect(p.document.querySelectorAll(".native-fade-veil")).toHaveLength(1);
+    p.advance(768); expect(p.veil()).toBeNull(); expect(finish).not.toHaveBeenCalled();
+  });
+  it("uses paint frames when available and cancels scheduled frames", async () => {
+    const p = await fixture();
+    p.context.requestAnimationFrame = vi.fn(work => p.context.setTimeout(work, 16));
+    p.context.cancelAnimationFrame = vi.fn(id => p.context.clearTimeout(id));
+    p.context.PhotoGitMotion.enter(p.id("changes-view")); p.advance(32);
+    expect(p.context.requestAnimationFrame).toHaveBeenCalled();
+    p.context.PhotoGitMotion.cancel(p.id("changes-view"));
+    expect(p.context.cancelAnimationFrame).toHaveBeenCalled(); expect(p.timers.size).toBe(0);
+  });
   it("visibly fades entrances and restores their final frame", async () => {
     const p = await fixture();
     const view = p.id("changes-view");

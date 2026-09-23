@@ -104,9 +104,9 @@ Custom controls retain roles, names, Enter/Space activation and explicit disable
 
 The [Adobe UXP styles reference](https://developer.adobe.com/photoshop/uxp/2022/uxp-api/reference-css/styles/) is the baseline for supported flex layout, colors, borders, radii and typography. Shadows, CSS transitions and selector/media enhancements are optional decoration; losing them must not remove hierarchy or functionality. Nothing depends on backdrop blur: it is applied only behind an `@supports` guard, and the rim, gradient and shadow carry the material without it. Spectrum styling is explicitly themed, but host-owned internals require native inspection.
 
-The timing vocabulary lives in the tokens described above. `motion.js` applies local opacity: view entry 0%→100% over 768ms, clicked control 84%→100% over 240ms. User-dismissed sheets and menus fade out over 384ms before hiding; command navigation closes them immediately. Header/navigation do not fade, no layout dimensions animate, and no descendant colors are repainted frame by frame. Overlapping effects cancel cleanly and restore original opacity. Reduced motion skips the fades. Each timer tick advances at most 48ms of animation time, so a busy Photoshop layout cannot skip an entire fade. Native Photoshop rendering was checked separately from browser verification.
+The timing vocabulary lives in the tokens described above. `motion.js` applies browser opacity and a native alpha veil: view entry 0%→100% over 768ms, clicked control 84%→100% over 240ms. User-dismissed sheets and menus fade out over 384ms before hiding; command navigation closes them immediately. Header/navigation do not fade, no layout dimensions animate, and no descendant colors are repainted frame by frame. Overlapping effects cancel cleanly and restore original opacity. Reduced motion skips the fades. Frames use requestAnimationFrame when available, with a timer fallback, and linear alpha so the first frame is visible immediately. Each frame advances at most 48ms of animation time. Photoshop 27.10 accepts fractional CSS opacity without compositing it; its fade instead animates an aria-hidden, pointer-transparent navy veil over the content. Veils are clipped to scroll containers and removed on completion, cancellation, scroll, or resize.
 
-History rows and inspector sections use the same timer-driven 768ms fade in the demo and Photoshop, staggered by 26ms per row up to 208ms. They no longer depend on CSS keyframes. Text fields, command search and setup commands use transparent backgrounds. Cards use translucent glass fills so the panel background remains visible behind text. Reduced-transparency preferences retain solid surface fills.
+History rows and inspector sections use the same frame-driven 768ms fade in the demo and Photoshop, staggered by 26ms per row up to 208ms. They no longer depend on CSS keyframes. Text fields, command search and setup commands use transparent backgrounds. Cards use translucent glass fills so the panel background remains visible behind text. Reduced-transparency preferences retain solid surface fills.
 
 ## Saved previews
 
@@ -175,7 +175,7 @@ or a value changes. Both use the same four motions and nothing else.
 
 | Motion | Keyframes | Used for |
 | --- | --- | --- |
-| reveal | fade in; shared timer-driven opacity for staggered rows | rows, cards, tally tiles, document facts, inspector sections, activity rows, empty states, unfolded details; staggered through `reveal.js` where there are several |
+| reveal | fade in; shared frame-driven fade for staggered rows | rows, cards, tally tiles, document facts, inspector sections, activity rows, empty states, unfolded details; staggered through `reveal.js` where there are several |
 | fade-in | fade only | status line, scan verdict, saved preview, filter count, Cancel scan, the workspace and first-run card after startup |
 | sheet-in | rise 10px, fade in | tool sheets, the tools menu, notices |
 | pop / rule-in | scale in and settle | a count pill going from zero; the active section's rule; the icon of the section that becomes active; the helper dot coming online; a failure mark in the activity feed |
