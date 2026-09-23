@@ -102,7 +102,7 @@ describe("branch design directions", () => {
 
   it("renders a useful empty state and supports read-only use without switch callbacks", () => {
     const p = fixture(); p.render({ branches: [] });
-    expect(p.container.querySelector('[role="status"]')!.textContent).toContain("Save your first version");
+    expect(p.container.querySelector('[role="status"]')!.textContent).toContain("Save a version to create your first branch");
     expect(p.container.querySelector(".branch-row")).toBeNull();
     p.render({ onSwitch: undefined }); expect(p.container.querySelector(".branch-switch")).toBeNull();
     expect(p.container.querySelectorAll(".branch-row")).toHaveLength(3);

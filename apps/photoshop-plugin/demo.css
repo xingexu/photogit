@@ -238,4 +238,9 @@
 .panel-only, .panel-only .demo-window, .panel-only .right-rail, .plugin-panel { background: var(--bg); color: var(--text); }
 .panel-only .plugin-panel { position: static; transform: none !important; opacity: 1 !important; transition: none; }
 .simulation-label { margin: 0; padding: 4px 16px; font-size: 11px; color: var(--muted); text-align: center; border-bottom: 1px solid var(--line); }
+@media (min-width: 720px) and (min-height: 600px) {
+  .panel-only .plugin-panel { display: flex; flex-direction: column; height: 100vh; min-height: 0; overflow: hidden; }
+  .panel-only .simulation-label { flex: 0 0 auto; }
+  .panel-only .plugin-panel .panel-root { flex: 1; height: auto; min-height: 0; }
+}
 .demo-select { color: var(--text); background: var(--input); border: 1px solid var(--border); border-radius: var(--radius); }

@@ -32,8 +32,8 @@ function render(container, { comparison, onMerge, previews } = {}) {
   container.setAttribute("aria-label", "Branch comparison");
   container.dataset.mergeable = "false";
   if (!comparison) {
-    append(document, container, "h3", "", "Compare design directions");
-    append(document, container, "p", "fine-print", "Choose a branch review to inspect the incoming changes and merge safeguards.");
+    append(document, container, "h3", "", "Compare branches");
+    append(document, container, "p", "fine-print", "Select Compare on a branch.");
     return container;
   }
   const incoming = text(comparison.incomingBranch);

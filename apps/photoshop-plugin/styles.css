@@ -1,59 +1,28 @@
-/* PhotoGit · Graphite Studio. Native flex layout and opaque tonal fallbacks.
-   Glass is limited to chrome/dialog depth. Artwork and content stay neutral. */
+/* PhotoGit · Liquid Glass. A pre-blurred wallpaper and translucent native
+   surfaces reproduce the material in hosts without backdrop-filter. */
 :root {
   color-scheme: dark;
-  --bg: #191a1b; --surface: #202224; --elevated: #2b2d30; --input: #191b1d; --overlay: #27292c;
-  --text: #f2f3f4; --muted: #b4b7bd; --disabled: #8c9199; --line: #383b3f; --border: #828891;
-  --hover: #30343a; --pressed: #383e47; --selected: #293849; --focus: #9ac6ff;
-  --accent: #7ea9ff; --primary: #2a62d2; --primary-text: #ffffff; --primary-hover: #2f6fed; --primary-pressed: #2456bd;
-  --success: #a6d6ad; --success-surface: #26382d; --warning: #efce8a; --warning-surface: #3d3220;
-  --error: #ffb2ac; --error-surface: #432a29; --backdrop: rgba(0,0,0,.5);
-  --rim: #494d52; --shine: rgba(255,255,255,.055); --shadow: rgba(0,0,0,.28); --press-veil: rgba(0,0,0,.12);
-  --glow: rgba(150,190,255,.5); --focus-halo: rgba(154,198,255,.22);
-  --glass: rgba(50,55,63,.70); --glass-rim: rgba(255,255,255,.38); --glass-top: rgba(255,255,255,.14); --nested: #31353c;
-  --bubble-1: rgba(84,132,255,.36); --bubble-2: rgba(156,112,255,.30); --bubble-3: rgba(72,202,190,.24);
-  --glass-glow:
-    0 1px 0 rgba(255,255,255,.45) inset,
-    0 0 0 1px rgba(255,255,255,.10),
-    0 0 70px -6px rgba(150,190,255,.28) inset,
-    0 0 26px -2px rgba(150,190,255,.30),
-    0 0 64px -10px rgba(120,170,255,.24),
-    0 0 46px -12px rgba(120,170,255,.36),
-    0 28px 58px -26px rgba(0,0,0,.78);
+  --bg: #080e19; --surface: #111b29; --elevated: #1d2a3d; --input: #152235; --overlay: #172236;
+  --text: #f4f7ff; --muted: #f4f7ff; --disabled: #f4f7ff; --line: #34435a; --border: #94aac8;
+  --hover: #263c5b; --pressed: #2b4569; --selected: #194b87; --focus: #adddff;
+  --accent: #7fcfff; --primary: #075ce5; --primary-text: #f4f7ff; --primary-hover: #0752cc; --primary-pressed: #0648b4;
+  --success: #99eba9; --success-surface: #1e3c2d; --warning: #f7da9a; --warning-surface: #3d3220;
+  --error: #ffb2ac; --error-surface: #432a29; --backdrop: rgba(0,0,0,.58);
+  --rim: #40536f; --shine: rgba(255,255,255,.12); --shadow: rgba(0,0,0,.42); --press-veil: rgba(0,0,0,.12);
+  --glow: rgba(81,156,255,.5); --focus-halo: rgba(154,198,255,.22);
+  --glass: rgba(12,20,33,.32); --glass-rim: rgba(187,213,255,.20); --glass-top: rgba(198,220,255,.05); --nested: #172437;
+  --glass-glow: 0 1px 0 rgba(215,234,255,.14) inset, 0 12px 28px -18px rgba(0,0,0,.7);
+  --field-glass: rgba(154,186,229,.05); --backdrop-tint: rgba(3,8,18,.52);
   --space: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-5: 20px; --space-6: 24px;
   --text-small: 12px; --text-body: 13px; --text-subhead: 15px; --text-title: 18px; --text-heading: 22px;
   --control: 32px; --control-tall: 40px;
-  --radius-chip: 10px; --radius: 14px; --radius-panel: 24px; --radius-overlay: 30px; --radius-pill: 20px;
+  --radius-chip: 10px; --radius: 10px; --radius-panel: 16px; --radius-overlay: 30px; --radius-pill: 20px;
   --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --mono: "SFMono-Regular", Consolas, monospace;
   --tilt-x: 0deg; --tilt-y: 0deg; --pointer-x: 50%; --pointer-y: 50%;
   --depth-lift: 0px; --depth-perspective: 900px; --depth-sheen: rgba(255,255,255,.16);
   --motion-enabled: 1; --motion-control: 320ms; --motion-nav: 480ms; --motion-press: 200ms;
   --ease-liquid: cubic-bezier(.22,.9,.24,1);
-}
-:root[data-theme="light"] {
-  color-scheme: light;
-  --bg: #f3f4f6; --surface: #ffffff; --elevated: #eaedf1; --input: #f6f7f9; --overlay: #ffffff;
-  --text: #1c2330; --muted: #505966; --disabled: #6f7781; --line: #dde1e7; --border: #78818d;
-  --hover: #e8ecf2; --pressed: #dce3ed; --selected: #e0eafb; --focus: #245bb6;
-  --accent: #245bb6; --primary: #2d60b5; --primary-text: #ffffff; --primary-hover: #234e98; --primary-pressed: #1c4080;
-  --success: #2b653b; --success-surface: #e8f2eb; --warning: #765006; --warning-surface: #fbf1db;
-  --error: #a12e29; --error-surface: #fceceb; --backdrop: rgba(21,29,42,.24);
-  --rim: #c5cbd3; --shine: rgba(255,255,255,.65); --shadow: rgba(27,35,48,.11); --press-veil: rgba(0,0,0,.12);
-  --glow: rgba(45,96,181,.32); --focus-halo: rgba(36,91,182,.22);
-  /* Light glass: a translucent white over the aurora, a white inner edge
-     and a bluish hairline, so the colour behind a card shows through it. */
-  --glass: rgba(255,255,255,.56); --glass-rim: rgba(90,120,180,.34); --glass-top: rgba(255,255,255,.95); --nested: #ffffff;
-  --depth-sheen: rgba(255,255,255,.7);
-  --bubble-1: rgba(90,140,255,.55); --bubble-2: rgba(175,130,255,.48); --bubble-3: rgba(70,200,185,.42);
-  --glass-glow:
-    0 1px 0 rgba(255,255,255,1) inset,
-    0 0 0 1px rgba(255,255,255,.75),
-    0 0 60px -8px rgba(255,255,255,.7) inset,
-    0 0 24px -2px rgba(120,160,225,.22),
-    0 0 56px -12px rgba(120,160,225,.20),
-    0 0 44px -12px rgba(120,160,225,.30),
-    0 24px 50px -26px rgba(27,35,48,.35);
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; width: 100%; height: 100%; }
@@ -70,16 +39,12 @@ p, strong, span, b, code, small, dd, dt, li, h1, h2, h3, label { min-width: 0; o
 svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
 img { max-width: 100%; }
 .panel-root { position: relative; z-index: 0; width: 100%; min-width: 0; max-width: 1600px; min-height: 100%; margin: 0 auto; }
-/* Aurora · three soft colour bubbles sit behind the panel, fixed to the
-   viewport, so the glass has something to be glass over. They are a real
-   element rather than a pseudo-element so every host draws them, they take
-   no pointer events, and they paint above the root's own ground and below
-   everything in it. */
-.panel-aurora { position: fixed; z-index: -1; top: 0; left: 0; width: 100%; height: 100%; overflow: hidden; pointer-events: none; }
-.panel-aurora i { position: absolute; display: block; border-radius: 50%; }
-.panel-aurora i:nth-child(1) { top: -22%; left: -14%; width: 70%; height: 62%; background: radial-gradient(circle at 50% 50%, var(--bubble-1), rgba(0,0,0,0) 70%); }
-.panel-aurora i:nth-child(2) { top: 26%; right: -24%; width: 76%; height: 70%; background: radial-gradient(circle at 50% 50%, var(--bubble-2), rgba(0,0,0,0) 70%); }
-.panel-aurora i:nth-child(3) { bottom: -26%; left: 10%; width: 64%; height: 58%; background: radial-gradient(circle at 50% 50%, var(--bubble-3), rgba(0,0,0,0) 70%); }
+/* Paint on the panel itself: negative stacking layers are inconsistent in UXP.
+   The bitmap is already blurred, so the native host needs no CSS filter. */
+.panel-root {
+  background-image: linear-gradient(var(--backdrop-tint), var(--backdrop-tint)), url("assets/liquid-glass-backdrop.png");
+  background-size: cover; background-position: center center; background-attachment: fixed;
+}
 .app-header { display: flex; align-items: center; min-height: 64px; padding: var(--space-3) var(--space-4); background: var(--surface); border-bottom: 1px solid var(--line); }
 .app-brand { display: flex; align-items: center; min-width: 0; flex: 1; }
 .pg-mark { display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; flex-shrink: 0; margin-right: var(--space-2); }
@@ -93,13 +58,6 @@ img { max-width: 100%; }
 .sheet-close svg { transition: transform var(--motion-control) var(--ease-liquid); }
 .sheet-close:hover svg { transform: rotate(90deg); }
 .command-trigger-label { display: none; }
-/* The sun and moon share one slot and hand over on a short fade and quarter
-   turn, so the toggle reads as one glyph changing rather than two swapping. */
-.appearance-toggle { position: relative; }
-.appearance-toggle svg { position: absolute; transition: opacity var(--motion-control) var(--ease-liquid), transform var(--motion-control) var(--ease-liquid); }
-.theme-moon { opacity: 0; transform: rotate(-90deg) scale(.7); }
-:root[data-theme="light"] .theme-sun { opacity: 0; transform: rotate(90deg) scale(.7); }
-:root[data-theme="light"] .theme-moon { opacity: 1; transform: none; }
 [role="button"], [role="tab"], [role="menuitem"] { position: relative; cursor: pointer; transition: background-color var(--motion-control) var(--ease-liquid), color var(--motion-control) var(--ease-liquid), border-color var(--motion-control) var(--ease-liquid), box-shadow var(--motion-control) var(--ease-liquid), transform var(--motion-nav) var(--ease-liquid); }
 /* The press compresses quickly and releases slowly on a spring-like curve, so
    it settles rather than snapping. Transform only: no layout is animated. */
@@ -129,6 +87,10 @@ img { max-width: 100%; }
    pointer says why rather than only that. */
 body.is-busy [aria-disabled="true"], body.is-busy input:disabled { cursor: progress; }
 ::selection { background: var(--selected); color: var(--text); }
+/* Status color belongs to indicators; all labels share the text color. */
+.repo-state.ok i, .rail-sync.ok svg { color: var(--success); }
+.repo-state.warning i, .rail-sync.warning svg, .watch-status.warning i { color: var(--warning); }
+.watch-status.error i { color: var(--error); }
 /* Project context and responsive navigation. */
 .repo-project strong { font-size: var(--text-body); }
 .repo-project > span { min-width: 0; }
@@ -138,15 +100,13 @@ body.is-busy [aria-disabled="true"], body.is-busy input:disabled { cursor: progr
 #jump-save:hover span { transform: translateY(2px); }
 .repo-state { display: flex; align-items: center; flex-shrink: 0; margin-right: var(--space-3); font-size: var(--text-small); color: var(--muted); }
 .repo-state i, .watch-status i { width: 5px; height: 5px; border-radius: 50%; background: currentColor; margin-right: 6px; }
-.repo-state.ok { color: var(--success); }
+.repo-state.ok { color: var(--text); }
 /* The dot pops once when the helper comes online. */
 .repo-state.ok i { animation: photogit-pop var(--motion-nav) var(--ease-liquid) backwards; }
-.repo-state.warning { color: var(--warning); }
+.repo-state.warning { color: var(--text); }
 /* Helper online, helper offline: the colour crosses rather than cuts, so a
    reconnect reads as recovery rather than as a different control. */
 .repo-state, .rail-sync { transition: color var(--motion-nav) var(--ease-liquid); }
-.repo-meta { margin-top: var(--space-2); }
-.repo-meta svg { width: 16px; height: 16px; margin-right: var(--space-2); }
 .repo-branch { border: 1px solid transparent; border-radius: var(--radius); font-size: var(--text-body); }
 .repo-branch strong { min-width: 0; }
 .branch-chevron { flex-shrink: 0; width: 12px; height: 12px; margin-left: var(--space-2); color: var(--muted); }
@@ -182,7 +142,7 @@ body.is-busy [aria-disabled="true"], body.is-busy input:disabled { cursor: progr
   60% { transform: scale(1.12); }
   to { opacity: 1; transform: none; }
 }
-.nav-item.active { background: var(--selected); color: var(--accent); border-color: var(--line); }
+.nav-item.active { background: var(--selected); color: var(--text); border-color: var(--line); }
 .workspace-content { padding: var(--space-4) var(--space-4) var(--space-2); }
 .view-panel { width: 100%; min-width: 0; }
 /* A selected section rises into place. The display change replays it, so
@@ -197,15 +157,14 @@ body.is-busy [aria-disabled="true"], body.is-busy input:disabled { cursor: progr
    the tone eases in so the warning arrives without a flicker on the
    keystroke that crosses the line. */
 #message-count { font-variant-numeric: tabular-nums; transition: color var(--motion-control) var(--ease-liquid), background-color var(--motion-control) var(--ease-liquid); }
-#message-count[data-limit="near"] { color: var(--warning); background: var(--warning-surface); }
-#message-count[data-limit="full"] { color: var(--error); background: var(--error-surface); }
+#message-count[data-limit="near"] { color: var(--text); background: var(--warning-surface); }
+#message-count[data-limit="full"] { color: var(--text); background: var(--error-surface); }
 
-.changes-heading { display: none; }
 .rail-footer { display: none; }
 .rail-sync { display: flex; align-items: center; min-height: 34px; color: var(--muted); font-size: var(--text-small); }
 .rail-sync svg { width: 15px; height: 15px; margin-right: var(--space-2); }
-.rail-sync.ok { color: var(--success); }
-.rail-sync.warning { color: var(--warning); }
+.rail-sync.ok { color: var(--text); }
+.rail-sync.warning { color: var(--text); }
 
 /* Liquid glass: rim light, top sheen and a soft drop, layered on a translucent
    fill. Blur is applied only where the host supports it; without it the same
@@ -219,6 +178,9 @@ body.is-busy [aria-disabled="true"], body.is-busy input:disabled { cursor: progr
   .view-panel > .liquid-card, .capture-panel, .scan-card.liquid-card, .content-card.liquid-card, .onboarding.liquid-card,
   .tools-menu, .tool-sheet { backdrop-filter: blur(22px) saturate(150%); }
 }
+.nav-item:not(.active) b { background: var(--primary); color: var(--primary-text); }
+.tally-tile dd[data-value="0"] { color: var(--muted); }
+
 /* Every glass card gets the same internal room, so nothing sits on its border. */
 .view-panel > .liquid-card, .capture-panel, .scan-card.liquid-card, .content-card.liquid-card, .onboarding.liquid-card { padding: var(--space-4) var(--space-5); }
 /* Depth · a surface marked data-depth leans a couple of degrees away from the
@@ -243,13 +205,13 @@ body.is-busy [aria-disabled="true"], body.is-busy input:disabled { cursor: progr
 [data-depth].is-depth-active::before { opacity: 1; }
 [data-depth] > * { position: relative; z-index: 1; }
 
-/* The rail is a solid column, never a floating card. */
-.workspace-rail .liquid-card { border: 0; border-radius: 0; background-image: none; box-shadow: none; }
+/* Project context shares the navigation rail. */
+
 
 /* Reference: project, branch and document are one card of labelled cells, each
    led by a circular badge. */
 .repo-context { display: flex; flex-wrap: wrap; align-items: stretch; padding: var(--space-3); border: 1px solid var(--glass-rim); border-radius: var(--radius-panel); background-color: var(--glass); background-image: linear-gradient(180deg, var(--glass-top), rgba(255,255,255,0) 58%); box-shadow: var(--glass-glow); }
-.repo-topline, .repo-meta { display: contents; }
+
 .repo-project, .repo-branch, .repo-document { display: flex; align-items: flex-start; flex: 1 1 0; min-width: 0; margin: var(--space) 0; padding: var(--space) 6px; }
 .context-badge { display: flex; align-items: center; justify-content: center; flex-shrink: 0; width: 38px; height: 38px; margin-right: var(--space-3); border: 1px solid var(--glass-rim); border-radius: 50%; background: var(--elevated); color: var(--muted); }
 .context-badge svg { width: 17px; height: 17px; }
@@ -265,7 +227,7 @@ body.is-busy [aria-disabled="true"], body.is-busy input:disabled { cursor: progr
 /* Below 360px two cells side by side leave each about 110px, which is less
    than a typical branch name. Stack them so a name has the full width. */
 @media (max-width: 360px) { .repo-branch, .repo-document { flex-basis: 100%; } }
-/* Changes: dense list first, complete-document composer second. */
+/* Saving comes before the layer list in reading and keyboard order. */
 .scan-card { display: flex; align-items: flex-start; flex-wrap: wrap; margin-bottom: var(--space-4); }
 .scan-copy { flex: 1 1 160px; min-width: 0; padding-right: 10px; }
 /* The headline is the scan's one-line verdict. A new verdict fades in over
@@ -273,24 +235,26 @@ body.is-busy [aria-disabled="true"], body.is-busy input:disabled { cursor: progr
 .scan-copy h2 { font-size: var(--text-subhead); font-weight: 600; letter-spacing: -.2px; animation: photogit-fade-in var(--motion-control) var(--ease-liquid) backwards; }
 .scan-detail { color: var(--muted); font-size: var(--text-small); margin-top: var(--space); white-space: pre-line; animation: photogit-fade-in var(--motion-control) var(--ease-liquid) backwards; }
 .watch-status { display: flex; align-items: center; color: var(--muted); font-size: var(--text-small); margin-top: var(--space); }
-.change-tally { display: flex; flex-wrap: wrap; width: 100%; gap: var(--space-3); margin: var(--space-4) 0 2px; }
+.change-tally { display: flex; width: 100%; margin: var(--space-4) 0 2px; }
+/* Explicit sibling margins: flex gap is not available in every UXP host. */
+.tally-tile + .tally-tile { margin-left: var(--space-3); }
 /* Each tile is a term and its value in source order — the label names the
    number — while the layout shows the number first, as a readout does. */
-.tally-tile { display: flex; flex-direction: column-reverse; flex: 1 1 90px; min-width: 0; margin: 0; padding: var(--space-3) var(--space-4); border: 1px solid var(--glass-rim); border-radius: var(--radius); background: var(--elevated); box-shadow: 0 1px 0 var(--shine) inset; }
+.tally-tile { display: flex; flex-direction: column-reverse; flex: 1 1 0; min-width: 0; margin: 0; padding: var(--space-3) var(--space-4); border: 1px solid var(--glass-rim); border-radius: var(--radius); background: var(--elevated); box-shadow: 0 1px 0 var(--shine) inset; }
 .tally-tile dd { margin: 0; font-size: var(--text-heading); font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: -.5px; line-height: 1.1; transition: transform var(--motion-control) var(--ease-liquid); }
 /* A number that is still settling sits a touch larger, and drops back
    the moment it lands, so a changing total is visibly in motion. */
 .tally-tile dd.is-counting, .nav-item b.is-counting { transform: scale(1.08); }
-.tally-tile:first-child dd { color: var(--accent); }
+.tally-tile:first-child dd { color: var(--text); }
 /* New and deleted layers take the colours the rows already give those
    states, but only once the number is not zero: a red nought draws the
    eye to nothing. */
-.tally-tile:nth-child(2) dd:not([data-value="0"]) { color: var(--success); }
-.tally-tile:nth-child(3) dd:not([data-value="0"]) { color: var(--error); }
+.tally-tile:nth-child(2) dd:not([data-value="0"]) { color: var(--text); }
+.tally-tile:nth-child(3) dd:not([data-value="0"]) { color: var(--text); }
 .tally-tile dt { margin-top: var(--space); color: var(--muted); font-size: var(--text-small); }
 .watch-status.ready, .watch-status.changed { display: none; }
-.watch-status.error { color: var(--error); }
-.watch-status.warning { color: var(--warning); }
+.watch-status.error { color: var(--text); }
+.watch-status.warning { color: var(--text); }
 /* While the panel is reading layers the dot breathes, so "Reading layer 12
    of 40…" is visibly in progress even between updates of the number. It
    stops with the scan; reduced motion never starts it. */
@@ -300,13 +264,13 @@ body.is-busy [aria-disabled="true"], body.is-busy input:disabled { cursor: progr
   from { opacity: .35; transform: scale(.8); }
   to { opacity: 1; transform: scale(1.25); }
 }
-.changes-layout { min-width: 0; }
+.changes-layout, .changes-main, .scan-panel { min-width: 0; }
 /* The change list scrolls inside its card, so the search and filters stay
    in reach above it and the composer beside it never sinks below a long
    scan. The 3px of right padding leaves room for the row's hover slide. */
 .change-list { max-height: 480px; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; padding-right: 3px; }
 .changes-card .section-heading h2 { font-size: var(--text-subhead); }
-.capture-panel { margin-top: var(--space-4); }
+.capture-panel { margin-top: 0; }
 .capture-title { display: flex; align-items: center; margin-bottom: var(--space-4); }
 .capture-title h2 { font-size: var(--text-subhead); font-weight: 600; letter-spacing: -.2px; }
 .capture-title small { display: block; margin-top: 3px; color: var(--muted); font-size: var(--text-small); }
@@ -317,8 +281,10 @@ body.is-busy [aria-disabled="true"], body.is-busy input:disabled { cursor: progr
 /* While an operation runs the composer's field and suggestions are
    disabled; they dim so the busy track is not the only sign. */
 .capture-panel.is-busy .field-shell, .capture-panel.is-busy .message-presets { opacity: .6; }
-/* Reference 01: preview and document facts close the inspector column. */
-.document-preview { margin-top: var(--space-4); padding-top: var(--space-4); border-top: 1px solid var(--line); }
+/* Saved artwork has its own card; it never represents unsaved edits. */
+.document-preview { margin-top: 0; }
+.changes-aside { min-width: 0; display: flex; flex-direction: column; }
+@media (max-width: 899px) { .capture-panel { order: -1; } }
 .preview-title { font-size: var(--text-subhead); font-weight: 600; letter-spacing: -.2px; margin-bottom: var(--space-3); }
 .preview-figure { margin: 0 0 var(--space-3); }
 .preview-figure img { display: block; width: 100%; max-height: 300px; object-fit: contain; border-radius: var(--radius); background: var(--input); }
@@ -399,7 +365,7 @@ sp-menu, sp-menu-item { background: var(--overlay); color: var(--text); }
 .filter-note { margin: var(--space-2) 0; color: var(--muted); font-size: var(--text-small); animation: photogit-fade-in var(--motion-control) var(--ease-liquid) backwards; }
 /* Selection is a fill, a slide and an accent edge; the edge is carried by
    box-shadow, so it must transition with the other two or it snaps on. */
-.list-row { display: flex; align-items: flex-start; min-width: 0; padding: var(--space-3) var(--space-2); border-bottom: 1px solid var(--line); border-radius: var(--radius); background: transparent; transition: background-color var(--motion-control) var(--ease-liquid), box-shadow var(--motion-control) var(--ease-liquid), transform var(--motion-nav) var(--ease-liquid); }
+.list-row { display: flex; align-items: flex-start; min-width: 0; padding: var(--space-3) var(--space-2); margin-bottom: var(--space); border-bottom: 1px solid var(--glass-rim); border-radius: var(--radius); background: transparent; transition: background-color var(--motion-control) var(--ease-liquid), box-shadow var(--motion-control) var(--ease-liquid), transform var(--motion-nav) var(--ease-liquid); }
 .list-row[role="button"]:hover { background: var(--hover); }
 .row-glyph, .history-marker { display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; flex-shrink: 0; margin-right: var(--space-3); color: var(--muted); background: var(--elevated); border-radius: var(--radius-chip); }
 .row-glyph svg { width: 17px; height: 17px; }
@@ -410,9 +376,9 @@ sp-menu, sp-menu-item { background: var(--overlay); color: var(--text); }
 .change-detail { margin-top: var(--space); }
 .change-domain { flex-shrink: 0; text-align: right; color: var(--muted); font-size: var(--text-small); margin-left: 8px; max-width: 80px; }
 .change-state, .change-kind { display: block; }
-.change-state { color: var(--warning); }
-.change-state.added { color: var(--success); }
-.change-state.removed { color: var(--error); }
+.change-state { color: var(--text); }
+.change-state.added { color: var(--text); }
+.change-state.removed { color: var(--text); }
 /* An empty state replaces a list that just emptied. Easing it up from a few
    pixels below reads as "the list is now this" rather than a flash of new
    text; a display change replays the animation each time it appears. */
@@ -456,15 +422,42 @@ sp-menu, sp-menu-item { background: var(--overlay); color: var(--text); }
 .version-inspector-document-mark { display: inline-block; padding: 6px 8px; border: 1px solid var(--line); border-radius: var(--radius-chip); color: var(--muted); font-size: var(--text-small); }
 .version-inspector-files code, .version-inspector-commit { font-family: var(--mono); font-size: 11px; margin-left: 5px; }
 .version-inspector-section { flex: 1 1 210px; min-width: 0; margin: 6px; padding: var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--surface); }
+.version-inspector > .version-inspector-section { flex: 0 0 auto; }
 .version-inspector-section h3 { margin-bottom: var(--space-3); font-size: var(--text-subhead); }
 .version-inspector-facts { margin: 0; }
 .version-inspector-facts dt { font-size: var(--text-small); color: var(--muted); margin-top: var(--space-2); }
 .version-inspector-facts dd { margin: 2px 0 0; overflow-wrap: anywhere; }
+.version-inspector-information .version-inspector-facts { display: flex; flex-wrap: wrap; margin: 0 -6px; }
+.version-inspector-information .version-inspector-fact { flex: 1 1 95px; min-width: 0; margin: 0 6px var(--space-2); }
 .version-inspector-changes, .version-inspector-files { padding-left: 16px; color: var(--muted); font-size: var(--text-small); overflow-wrap: anywhere; }
 .version-inspector-changes li, .version-inspector-files li { margin: 7px 0; }
 .version-inspector-notice, .version-inspector-fallback { padding: 14px 0; color: var(--muted); font-size: var(--text-small); }
 .version-inspector-preview img { display: block; max-width: 100%; max-height: 520px; object-fit: contain; border-radius: var(--radius); }
 .version-inspector-open { flex: 0 1 auto; margin-top: 4px; }
+.history-thumbnail { flex: 0 0 56px; width: 56px; height: 70px; margin-right: var(--space-3); object-fit: contain; background: var(--input); border: 1px solid var(--glass-rim); border-radius: var(--radius-chip); }
+.history-row.has-thumbnail { align-items: center; flex-wrap: wrap; }
+.history-row.has-thumbnail .history-marker { display: none; }
+.history-row.has-thumbnail .row-copy { flex: 1 1 90px; }
+.history-row.has-thumbnail .commit-id { margin-left: auto; padding-left: var(--space-2); }
+.version-preview-pair { display: flex; flex-wrap: wrap; margin: 0 -4px; }
+.version-preview-pair > .version-inspector-preview, .version-before { flex: 1 1 150px; min-width: 0; margin: 4px; padding: var(--space-2); border: 1px solid var(--glass-rim); border-radius: var(--radius); background: var(--input); }
+.version-preview-pair figure { margin: 0; }
+.version-preview-pair > .version-before { margin: 4px; }
+.version-preview-pair img { display: block; width: 100%; height: 240px; object-fit: contain; border-radius: 6px; }
+.version-preview-label { margin-bottom: var(--space-2); font-size: var(--text-small); color: var(--text); font-weight: 600; }
+.version-change-tally { display: flex; flex-wrap: wrap; margin: 0 -4px var(--space-3); }
+.version-change-stat { flex: 1 1 60px; min-width: 0; margin: 4px; padding: var(--space-2); border: 1px solid var(--line); border-radius: var(--radius-chip); }
+.version-change-stat strong { display: block; font-size: var(--text-heading); font-variant-numeric: tabular-nums; }
+.version-change-stat span { display: block; font-size: var(--text-small); color: var(--muted); }
+.version-change-stat.added, .version-edit-badge.added { color: var(--text); }
+.version-change-stat.removed, .version-edit-badge.removed { color: var(--text); }
+.version-change-stat.modified, .version-edit-badge.modified { color: var(--text); }
+.version-inspector-changes { list-style: none; padding: 0; }
+.version-inspector-changes li { padding: var(--space-3); border: 1px solid var(--line); border-radius: var(--radius); background: var(--input); }
+.version-edit-badge { display: inline-block; margin-right: var(--space-2); margin-bottom: var(--space); font-size: 11px; font-weight: 600; }
+.version-inspector-changes strong { color: var(--text); }
+.version-edit-values { margin-top: var(--space-2); padding-top: var(--space-2); border-top: 1px solid var(--line); }
+.version-edit-values span { display: block; margin-top: var(--space); white-space: pre-wrap; }
 .version-inspector-state { color: var(--muted); padding: 20px 0; }
 /* Branches and reviews separate choices from consequential operations. */
 .branch-layout, .review-layout { min-width: 0; }
@@ -514,11 +507,11 @@ sp-menu, sp-menu-item { background: var(--overlay); color: var(--text); }
 .review-meta { display: flex; flex-wrap: wrap; align-items: center; color: var(--muted); font-size: var(--text-small); margin-top: var(--space-2); }
 .review-meta > span { margin-right: 6px; }
 .review-meta .ready, .review-meta .blocked { padding: 2px var(--space-2); border-radius: 11px; }
-.review-meta .ready { color: var(--success); background: var(--success-surface); }
-.review-meta .blocked { color: var(--warning); background: var(--warning-surface); }
+.review-meta .ready { color: var(--text); background: var(--success-surface); }
+.review-meta .blocked { color: var(--text); background: var(--warning-surface); }
 .review-actions { display: flex; flex-wrap: wrap; margin: var(--space-3) -3px 0; }
 .review-actions > .button { flex: 1 1 90px; margin: 3px; }
-.review-actions > .merge-action[aria-disabled="true"] { flex-basis: 100%; justify-content: flex-start; padding-left: 3px; background: transparent; opacity: 1; border: 0; color: var(--warning); font-weight: 400; }
+.review-actions > .merge-action[aria-disabled="true"] { flex-basis: 100%; justify-content: flex-start; padding-left: 3px; background: transparent; opacity: 1; border: 0; color: var(--text); font-weight: 400; }
 .review-inspector { min-width: 0; color: var(--text); }
 #review-inspector { display: none; }
 .comparison-endpoint { min-width: 0; max-width: 100%; }
@@ -531,8 +524,8 @@ sp-menu, sp-menu-item { background: var(--overlay); color: var(--text); }
 .comparison-change-list, .comparison-file-list, .comparison-conflicts, .comparison-warnings { padding-left: 18px; overflow-wrap: anywhere; font-size: var(--text-small); }
 .comparison-change-list li, .comparison-file-list li, .comparison-conflicts li, .comparison-warnings li { margin: 8px 0; }
 .comparison-file-list code { font: 11px/1.5 var(--mono); margin-left: 6px; }
-.comparison-status .ready { color: var(--success); }
-.comparison-status .blocked { color: var(--warning); }
+.comparison-status .ready { color: var(--text); }
+.comparison-status .blocked { color: var(--text); }
 .comparison-status.merge-blocked { border-color: var(--warning); background: var(--warning-surface); }
 .comparison-status > h3 { margin-top: 14px; font-size: var(--text-subhead); }
 .comparison-status > h3:first-child { margin-top: 0; }
@@ -583,7 +576,7 @@ kbd { font-family: var(--mono); font-size: 11px; padding: 1px var(--space); bord
 .command-copy > span { margin-top: 3px; }
 .command-hint { margin: var(--space-2) 0; }
 .command-row:focus { outline-offset: -2px; background: var(--selected); }
-#command-error { color: var(--error); white-space: normal; margin: var(--space-2) 0; }
+#command-error { color: var(--text); white-space: normal; margin: var(--space-2) 0; }
 /* A command is copied, not read: it stays on one line and scrolls sideways
    in a narrow panel rather than breaking a path in the middle of a word. */
 .setup-command { padding: var(--space-3); margin-top: var(--space-3); background: var(--input); border: 1px solid var(--line); border-radius: var(--radius); font: 11px/1.7 var(--mono); white-space: pre; overflow-x: auto; overflow-wrap: normal; word-break: normal; }
@@ -614,7 +607,7 @@ kbd { font-family: var(--mono); font-size: 11px; padding: 1px var(--space); bord
 .notice { margin: var(--space-3) var(--space-4); padding: var(--space-3); border: 1px solid var(--line); border-radius: var(--radius); background: var(--elevated); color: var(--text); animation: photogit-sheet-in var(--motion-nav) var(--ease-liquid) backwards; }
 /* A calm setup card by default. Only a genuinely lost connection turns it
    into a warning, so first-run choices never read as errors. */
-.notice.is-warning { border-color: var(--warning); background: var(--warning-surface); color: var(--warning); }
+.notice.is-warning { border-color: var(--warning); background: var(--warning-surface); color: var(--text); }
 .notice p { color: var(--text); font-size: var(--text-small); margin: 6px 0 var(--space-2); }
 .notice .text-link { margin-top: var(--space-2); }
 .notice .setup-command { margin-top: var(--space-2); }
@@ -635,8 +628,8 @@ kbd { font-family: var(--mono); font-size: 11px; padding: 1px var(--space); bord
   to { opacity: 1; }
 }
 #result.success, #result.error { padding: var(--space-2) var(--space-3); border-radius: var(--radius); border: 1px solid var(--line); }
-#result.success { color: var(--success); background: var(--success-surface); }
-#result.error { color: var(--error); background: var(--error-surface); border-color: var(--error); }
+#result.success { color: var(--text); background: var(--success-surface); }
+#result.error { color: var(--text); background: var(--error-surface); border-color: var(--error); }
 /* Native fields must not paint through modal surfaces. */
 body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body.has-surface #workspace select { visibility: hidden; }
 .is-initializing #workspace, .is-initializing #onboarding, .is-initializing #connection-notice { display: none !important; }
@@ -684,11 +677,8 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
   .tool-sheet { left: 50%; right: auto; width: 580px; margin-left: -290px; }
 }
 @media (min-width: 720px) {
-  /* Reference 01: the brand sits in the rail's column so the sidebar reads to
-     the top edge, and the remaining header becomes the content top bar. */
-  /* The sidebar column runs unbroken from the logo down, so the header carries
-     no rule across the brand; the content area supplies its own top edge. */
-  .app-header { padding: var(--space-4) var(--space-6) var(--space-2); min-height: 78px; border-bottom: 0; background: var(--bg); }
+  /* Brand and navigation share a column in the wide workspace. */
+  .app-header { padding: var(--space-4) var(--space-6) var(--space-2); min-height: 78px; border-bottom: 0; background: var(--field-glass); }
   .app-brand { flex: 1 1 auto; min-width: 0; }
 
   .app-title > span { display: block; }
@@ -697,26 +687,25 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
   .command-trigger svg { margin-right: 9px; }
   .command-trigger-label { display: block; font-size: var(--text-body); }
   .workspace-body { display: flex; align-items: stretch; }
-  /* Reference 01: project, branch and document context belong to the rail, not a full-width strip. */
-  .workspace-rail { display: flex; flex-direction: column; flex: 0 0 148px; min-width: 148px; margin-right: var(--space-4); }
+  /* Project context stays with navigation in the rail. */
+  .workspace-rail { display: flex; flex-direction: column; flex: 0 0 180px; min-width: 180px; margin-right: var(--space-4); }
 
-  /* Reference: icons sit above their labels, counts ride as pills, and the
-     selected destination lifts into its own glass tile. */
+  /* Compact icon, label and count rows keep every destination in reach. */
   .section-nav { display: flex; flex-direction: column; flex-wrap: nowrap; flex: 0 0 auto; min-width: 0; padding: var(--space-3); border: 1px solid var(--glass-rim); border-radius: var(--radius-panel); border-bottom: 1px solid var(--glass-rim); background-color: var(--glass); background-image: linear-gradient(180deg, var(--glass-top), rgba(255,255,255,0) 58%); box-shadow: var(--glass-glow); }
   /* Separate destinations with space rather than rules, so the selected tile
      never collides with a divider. */
-  .nav-item { position: relative; flex: 0 0 auto; flex-direction: column; align-items: flex-start; justify-content: center; min-height: 76px; padding: 14px 14px 15px; margin: 3px 0; border: 1px solid transparent; border-radius: var(--radius); font-size: var(--text-body); }
-  .nav-item svg { display: block; width: 20px; height: 20px; margin: 0 0 11px; }
+  .nav-item { position: relative; flex: 0 0 auto; flex-direction: row; align-items: center; justify-content: flex-start; min-height: 44px; padding: 10px; margin: 2px 0; border: 1px solid transparent; border-radius: var(--radius); font-size: var(--text-body); }
+  .nav-item svg { display: block; width: 18px; height: 18px; margin: 0 10px 0 0; }
   #changes-tab svg { margin-left: -5px; }
   #history-tab svg, #branches-tab svg, #reviews-tab svg { margin-left: -3px; }
   #activity-tab svg, #docs-tab svg { margin-left: -2px; }
-  .nav-item span { flex: none; }
-  .nav-item b { position: absolute; top: 13px; right: 13px; min-width: 21px; margin: 0; }
+  .nav-item span { flex: 1; }
+  .nav-item b { position: static; min-width: 21px; margin: 0 0 0 6px; }
   /* Hover lights the tile; the icon and count lift with it. */
   .nav-item:hover { border-color: var(--glass-rim); box-shadow: 0 0 0 1px rgba(255,255,255,.05), 0 0 26px -8px var(--glow), 0 1px 0 var(--shine) inset; }
   .nav-item:hover svg { transform: translateY(-2px) scale(1.07); }
   .nav-item:hover b { box-shadow: 0 0 16px -3px var(--primary); }
-  .nav-item.active { border-color: var(--glass-rim); background: var(--elevated); color: var(--text); box-shadow: 0 1px 0 var(--shine) inset, 0 0 34px -10px var(--glow); }
+  .nav-item.active { border-color: var(--glass-rim); background: var(--selected); color: var(--text); box-shadow: 0 1px 0 var(--shine) inset, 0 0 34px -10px var(--glow); }
   .nav-item.active b { box-shadow: 0 0 18px -4px var(--primary); }
   .workspace-content { flex: 1; min-width: 0; padding: 0; }
   .workspace-body { padding: 0 var(--space-6) var(--space-6); }
@@ -726,7 +715,6 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
      read as the panel's focus rather than as something stuck in a corner. */
   .startup-card, .onboarding { margin: 32px auto; }
   .notice, .status-message, #result { margin-left: var(--space-6); margin-right: var(--space-6); }
-  .changes-heading { display: flex; }
   /* Same rule, inset and row height as the footer bar across from it, so
      the two rules and the two rows line up. */
   .rail-footer { display: block; margin-top: auto; padding: var(--space-3) var(--space-4); border-top: 1px solid var(--line); }
@@ -737,9 +725,10 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
   .changes-layout { display: flex; align-items: flex-start; }
   /* The composer sits beside the list here, not below it. */
   #jump-save span { display: none; }
-  .changes-card { flex: 1; min-width: 0; margin-right: var(--space-4); }
+  .changes-main { order: -1; flex: 1; min-width: 0; margin-right: var(--space-4); }
+  .changes-aside { flex: 0 0 37%; min-width: 260px; }
   .change-list { max-height: 640px; }
-  .capture-panel { flex: 0 0 320px; min-width: 0; margin: 0 0 var(--space-5); padding: var(--space-5); }
+  .capture-panel { min-width: 0; margin: 0 0 var(--space-4); padding: var(--space-4); }
   .history-layout { display: flex; align-items: flex-start; }
   .history-list-panel { flex: 0 0 250px; padding-right: var(--space-5); }
   #history-inspector { display: flex; flex-direction: column; flex: 1; padding-left: var(--space-6); border-left: 1px solid var(--line); min-height: 440px; }
@@ -749,10 +738,13 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
   #history-inspector .inspector-empty { flex: 1; display: flex; flex-direction: column; justify-content: center; }
   .branch-layout { display: flex; align-items: flex-start; }
   .branch-list-panel { flex: 1; padding-right: var(--space-6); }
-  /* A grid keeps every card one track wide, so a lone card on the last row does
-     not stretch to fill it the way a flex item would. */
-  .branch-list-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(228px, 1fr)); gap: var(--space-3); margin: 0 0 var(--space-5); }
-  .branch-list-cards .branch-row { max-width: 100%; margin: 0; }
+  /* Keep vertical spacing in UXP hosts without grid support. */
+  .branch-list-cards { margin: 0 0 var(--space-5); }
+  .branch-list-cards .branch-row { max-width: 100%; margin: 0 0 var(--space-3); }
+  @supports (display: grid) {
+    .branch-list-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(228px, 1fr)); gap: var(--space-3); }
+    .branch-list-cards .branch-row { margin: 0; }
+  }
   .branch-list-cards .branch-row.has-preview { padding-top: 0; }
   .branch-list-cards .branch-row-preview { margin-top: 0; }
   .branch-create-card { flex: 0 0 260px; margin-top: 0; }
@@ -771,12 +763,28 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
   .sync-panel { max-width: 520px; }
 }
 @media (min-width: 1200px) {
-  .workspace-rail { flex-basis: 164px; min-width: 164px; }
-  .capture-panel { flex-basis: 372px; padding: var(--space-5) var(--space-6); }
+  .workspace-rail { flex-basis: 190px; min-width: 190px; }
+
   .history-list-panel { flex-basis: 300px; }
   .review-list-panel { flex-basis: 330px; }
   .comparison-summary { flex-basis: 240px; padding-right: var(--space-5); }
   .comparison-status { flex: 0 0 220px; margin-top: 0; }
+}
+@media (max-width: 899px) {
+  .change-tally { margin-top: var(--space-3); }
+  .tally-tile + .tally-tile { margin-left: var(--space-2); }
+  .tally-tile { flex: 1 1 0; padding: var(--space-2); border-color: var(--line); }
+  .tally-tile dd { font-size: var(--text-title); }
+  .tally-tile dt { font-size: 11px; }
+  .preview-figure img { max-height: 180px; }
+}
+@media (max-width: 719px) {
+  .repo-context { border-radius: 0; border-left: 0; border-right: 0; padding: var(--space-2) var(--space-3); box-shadow: none; background: var(--surface); }
+  .context-badge { width: 28px; height: 28px; margin-right: var(--space-2); border-color: var(--line); }
+  .repo-project, .repo-branch, .repo-document { padding: 2px; }
+  .repo-project .context-copy { flex: 1; }
+  .repo-project .project-switch { margin-top: 0; }
+  .section-nav { padding: var(--space); }
 }
 @media (max-width: 360px) {
   .app-header, .repo-context { padding-left: var(--space-3); padding-right: var(--space-3); }
@@ -818,6 +826,190 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
   .footer-action svg { display: none; }
   .tools-toggle svg { display: block; }
 }
+/* A shared material in both themes. The backdrop is already soft, so UXP
+   needs only gradients and alpha fills. Blur is an optional enhancement. */
+.history-layout, .view-panel > .content-card, .scan-card.liquid-card,
+.content-card.liquid-card, .capture-panel, .repo-context, .section-nav {
+  background-color: var(--glass);
+  background-image: linear-gradient(135deg, var(--glass-top), rgba(255,255,255,0) 52%);
+  border-color: var(--glass-rim);
+  box-shadow: var(--glass-glow);
+}
+.history-layout, #docs-view > .content-card {
+  padding: var(--space-4); border: 1px solid var(--glass-rim); border-radius: var(--radius-panel);
+}
+.history-layout { margin-bottom: var(--space-4); }
+.history-list-panel { margin-bottom: 0; }
+.workspace-rail .section-nav { border: 1px solid var(--glass-rim); border-radius: var(--radius-panel); }
+.tally-tile, .context-badge, .document-facts div, .field-shell, .preset {
+  background-color: var(--field-glass);
+  border-color: var(--glass-rim);
+  box-shadow: 0 1px 0 var(--shine) inset;
+}
+.tally-tile { background-image: linear-gradient(145deg, var(--glass-top), transparent 75%); }
+/* A stable reading surface keeps the command field and status legible even
+   over the brightest part of the wallpaper in hosts without backdrop blur. */
+.app-header { background: var(--glass); }
+.nav-item.active {
+  background-color: var(--selected);
+  background-image: linear-gradient(130deg, var(--glass-top), transparent);
+  border-color: var(--glass-rim); box-shadow: var(--glass-glow);
+}
+#save-version {
+  background-image: linear-gradient(165deg, rgba(141,225,255,.1), transparent 45%, rgba(42,75,196,.3));
+  border-color: rgba(158,209,255,.65);
+}
+#change-summary { font-weight: 500; margin-top: var(--space); }
+.scan-copy .scan-title { font-size: var(--text-title); }
+.capture-title svg { display: none; }
+.capture-title small { display: none; }
+.capture-title { margin-bottom: var(--space-3); }
+.content-card { margin-bottom: var(--space-4); }
+.document-facts { padding: var(--space-2); border: 1px solid var(--glass-rim); border-radius: var(--radius); background: var(--field-glass); margin: 0; }
+.document-facts div { flex: 1 1 auto; flex-direction: column; border: 0; border-radius: 0; box-shadow: none; background: transparent; padding: 2px 4px; }
+@supports (backdrop-filter: blur(2px)) {
+  .history-layout, .view-panel > .content-card, .scan-card.liquid-card,
+  .content-card.liquid-card, .capture-panel, .repo-context, .section-nav {
+    backdrop-filter: blur(24px) saturate(130%);
+  }
+}
+@media (min-width: 720px) {
+  .app-header { min-height: 76px; padding-bottom: var(--space-4); }
+  .app-brand { flex: 0 0 196px; padding-right: var(--space-3); }
+  .app-title > span { display: none; }
+  .command-trigger { order: 1; margin-right: var(--space-4); background: var(--field-glass); border-color: var(--glass-rim); box-shadow: 0 1px 0 var(--shine) inset; }
+  .repo-state { order: 2; margin: 0 var(--space-2) 0 auto; padding: 6px 10px; border: 1px solid var(--glass-rim); border-radius: 16px; }
+  #header-menu { order: 4; }
+  .workspace-rail { min-height: 650px; height: calc(100vh - 126px); max-height: 900px; align-self: flex-start; }
+  .section-nav { padding: var(--space-2); }
+  .nav-item { min-height: 48px; margin: 3px 0; }
+  .repo-context { order: 1; flex-direction: column; flex-wrap: nowrap; flex-shrink: 0; margin: auto 0 0; padding: var(--space-3); }
+  .repo-project, .repo-branch, .repo-document { flex: 0 0 auto; width: 100%; margin: 0; padding: 0; }
+  .repo-branch, .repo-document { margin-top: var(--space-3); }
+  .context-badge { width: 28px; height: 28px; margin-right: var(--space-2); border-radius: 9px; }
+  .context-label { font-size: 11px; }
+  .rail-footer { order: 2; margin-top: var(--space-3); padding: 0 var(--space-2); border: 0; }
+  .section-nav { margin-bottom: var(--space-4); }
+}
+@media (min-width: 900px) {
+  .scan-card { align-items: center; }
+  .scan-copy { flex: 1 1 140px; }
+  .scan-button { margin-left: var(--space-2); }
+  .preview-figure img { max-height: 240px; }
+  .tally-tile { padding: var(--space-3); }
+  .tally-tile dt { font-size: 11px; }
+  .change-list { max-height: 520px; }
+}
+@media (min-width: 1200px) { .app-brand { flex-basis: 206px; } }
+@media (max-width: 719px) {
+  .repo-context { margin: var(--space-3); border: 1px solid var(--glass-rim); border-radius: var(--radius-panel); }
+  .section-nav { margin: 0 var(--space-3); }
+}
+
+/* Reference composition: thin luminous rims, compact tools and a continuous
+   sidebar. Every action is still a real control; previews show saved artwork. */
+.scan-button { background: var(--field-glass); border-color: var(--glass-rim); box-shadow: 0 1px 0 var(--shine) inset; }
+.tally-tile { position: relative; }
+.tally-glyph { position: absolute; right: 10px; top: 14px; display: flex; align-items: center; justify-content: center; width: 22px; height: 22px; border: 1px solid var(--glass-rim); border-radius: 11px; background: var(--field-glass); color: var(--accent); }
+.tally-glyph svg { width: 14px; height: 14px; }
+.tally-tile:nth-child(2) .tally-glyph { color: var(--success); }
+.tally-tile:nth-child(3) .tally-glyph { color: var(--muted); }
+.tally-tile dd { padding-right: 22px; }
+.nav-item.active { background-color: var(--selected); box-shadow: 0 1px 0 rgba(222,241,255,.25) inset, 0 -8px 18px -14px #78ceff inset, 0 4px 18px -12px var(--glow); }
+#save-version { background-image: linear-gradient(180deg, rgba(78,210,255,.45), transparent 35%, rgba(0,24,120,.14)); box-shadow: 0 1px 2px rgba(222,249,255,.55) inset, 0 -1px 2px rgba(82,183,255,.55) inset, 0 6px 18px -9px #006aff; }
+.row-glyph { background: var(--field-glass); border: 1px solid var(--glass-rim); box-shadow: 0 1px 0 var(--shine) inset; }
+.document-facts { padding: var(--space-2) 4px; }
+.document-facts div { margin: 0 3px; padding: 3px; }
+.document-facts .document-filename { flex: 1 1 100%; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--glass-rim); }
+.document-filename dt { display: none; }
+.document-filename dd { font-weight: 500; }
+.capture-heading { margin-bottom: 6px; }
+.capture-heading .version-label { font-size: var(--text-small); font-weight: 500; color: var(--muted); }
+.capture-hint { font-size: 11px; }
+.preset { font-size: 11px; padding: 4px 9px; }
+@media (min-width: 720px) {
+  .workspace-rail { padding: 8px; border: 1px solid var(--glass-rim); border-radius: var(--radius-panel); background: var(--glass); box-shadow: var(--glass-glow); }
+  .workspace-rail .section-nav { padding: 0; border: 0; background: transparent; background-image: none; box-shadow: none; backdrop-filter: none; }
+  .workspace-rail .repo-context { padding: 12px; margin-left: -2px; margin-right: -2px; }
+  .repo-context .context-label { display: none; }
+  .repo-context .repo-document .context-badge { display: none; }
+  .repo-context .repo-document #document-name { font-size: 11px; font-weight: 400; color: var(--muted); }
+  .repo-context .repo-branch { margin-top: 6px; }
+  .repo-project .project-switch { font-size: 11px; }
+  .nav-item { min-height: 50px; padding: 8px; }
+  .nav-item svg { width: 20px; height: 20px; }
+  .app-title > span { display: block; font-size: 10px; }
+  .app-header { min-height: 74px; padding-top: 14px; padding-bottom: 14px; }
+  .command-trigger { min-height: 34px; }
+  .command-trigger-label { font-size: 12px; font-style: italic; }
+  .repo-state { font-size: 11px; }
+}
+@media (min-width: 900px) {
+  .panel-root { border: 1px solid var(--glass-rim); border-radius: 22px; }
+  .app-header { border-radius: 20px 20px 0 0; }
+  .workspace-body { padding: 0 14px 14px; }
+  .app-header { padding-left: 18px; padding-right: 18px; }
+  .workspace-rail { flex-basis: 190px; min-width: 190px; margin-right: 12px; }
+  .app-brand { flex-basis: 200px; }
+  .changes-main { margin-right: 16px; }
+  .changes-aside { flex-basis: 40%; }
+  .scan-card.liquid-card, .content-card.liquid-card { padding: 14px; }
+  .scan-copy { padding-right: 4px; }
+  .scan-copy .scan-title { font-size: 16px; }
+  #change-summary { font-size: 11px; color: var(--muted); }
+  .scan-detail { font-size: 11px; }
+  #jump-save { display: none; }
+  #change-summary, .scan-detail { display: inline; }
+  .scan-detail::before { content: " · "; }
+  .scan-copy .scan-title { margin-bottom: 4px; }
+  .change-tally { margin-top: 12px; }
+  .tally-tile { padding: 12px 10px; min-height: 68px; }
+  .tally-tile dd { font-size: 23px; }
+  .tally-tile dt { font-size: 10px; }
+  .changes-card .section-heading { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .field-shell { min-height: 34px; }
+  .field-shell input { height: 32px; font-size: 12px; }
+  .search-field input::placeholder { font-size: 12px; font-style: italic; }
+  .filter-bar { margin-top: 8px; margin-bottom: 8px; }
+  .filter-chip { font-size: 11px; padding: 4px 8px; }
+  .list-row { padding: 12px 10px; }
+  .change-list { max-height: 460px; }
+  .preview-figure img { height: 260px; max-height: 260px; }
+  .preview-figure figcaption { font-size: 10px; }
+  .document-facts dt { font-size: 10px; }
+  .document-facts dd { font-size: 11px; }
+  .capture-panel .capture-title h2, .preview-title { font-size: 15px; }
+  .capture-panel .capture-title { margin-bottom: 8px; }
+  #save-version { min-height: 40px; }
+  .capture-actions { margin-top: 8px; }
+}
+@media (max-width: 899px) { .tally-glyph { display: none; } .tally-tile dd { padding-right: 0; } }
+@media (max-width: 719px) { .nav-item svg { display: none; } }
+
+/* A workspace, rather than one long page: keep navigation and Git actions in
+   reach while the history list and version details scroll independently. */
+@media (min-width: 720px) and (min-height: 600px) {
+  .panel-root { display: flex; flex-direction: column; height: 100vh; min-height: 0; overflow: hidden; }
+  .app-header, .panel-root > .notice, .panel-root > .status-message { flex: 0 0 auto; }
+  .workspace { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; }
+  .workspace > .notice, .shortcut-note { flex: 0 0 auto; }
+  .workspace-body { flex: 1; min-height: 0; padding-bottom: 8px; }
+  .workspace-rail { align-self: stretch; height: auto; min-height: 0; max-height: none; overflow: auto; }
+  .workspace-content { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+  .view-panel { flex: 1; min-height: 0; overflow: auto; padding-right: 4px; }
+  .sync-panel { flex: 0 0 auto; width: 100%; max-width: none; margin-top: 8px; padding: 8px 0; }
+  .shortcut-note { margin: 0 0 8px; font-size: 11px; }
+}
+@media (min-width: 900px) and (min-height: 600px) {
+  #history-view { display: flex; overflow: hidden; }
+  .history-layout { flex: 1; min-height: 0; align-items: stretch; margin-bottom: 0; overflow: hidden; }
+  .history-list-panel { display: flex; flex-direction: column; flex: 0 0 28%; min-width: 210px; max-width: 280px; min-height: 0; }
+  .history-list-panel > .view-heading, .history-list-panel > .field-shell { flex: 0 0 auto; }
+  #history { flex: 1; min-height: 0; overflow: auto; padding-right: 4px; }
+  #history-inspector { min-height: 0; overflow: auto; padding-right: 4px; }
+  .version-inspector-header, .version-inspector-grid { flex: 0 0 auto; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   :root { --motion-enabled: 0; }
   * { transition: none !important; animation: none !important; }
@@ -847,19 +1039,34 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
   /* Separators and rims are deliberately quieter than the interactive
      boundary. When the host asks for more contrast, bring them up to it. */
   :root { --line: #5c6169; --glass-rim: rgba(255,255,255,.55); --shine: rgba(255,255,255,.1); }
-  :root[data-theme="light"] { --line: #98a1ac; --glass-rim: rgba(60,80,120,.5); }
-  .panel-aurora { display: none; }
+  .panel-root { background-image: none; }
 }
+/* Keep the wallpaper visible behind reading cards and every text field. */
+.field-shell, .command-trigger, .setup-command, input, textarea { background-color: transparent; background-image: none; }
+.review-card, .branch-row, .version-inspector-section, .version-inspector-changes li,
+.version-preview-pair > .version-inspector-preview, .version-before,
+.comparison-section, .comparison-status, .task-card, .branch-create-card,
+.startup-card, .onboarding, .inspector-empty, .document-facts { background-color: var(--glass); }
+
 @media (prefers-reduced-transparency: reduce) {
   /* Take the glass back to an opaque tonal surface: no translucent fill, no
      blur behind it, and no sheen gradient over it. */
   :root { --glass: var(--surface); --glass-top: transparent; }
-  .panel-aurora { display: none; }
+  .panel-root { background-image: none; }
   .view-panel > .liquid-card, .capture-panel, .scan-card.liquid-card, .content-card.liquid-card,
   .onboarding.liquid-card, .repo-context, .section-nav, .tools-menu, .tool-sheet, .app-header {
     background-image: none; backdrop-filter: none;
   }
   .app-header, .tools-menu, .tool-sheet { box-shadow: none; }
+  .nav-item.active, .list-row.selected { background-image: none; }
+}
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  .history-layout, .view-panel > .content-card, .scan-card.liquid-card,
+  .content-card.liquid-card, .capture-panel, .repo-context, .workspace-rail, .workspace-rail .section-nav, .app-header,
+  .tally-tile, .context-badge, .document-facts, .field-shell, .preset, .command-trigger {
+    background-color: var(--surface); background-image: none;
+    backdrop-filter: none; box-shadow: none; border-color: var(--line);
+  }
 }
 
 /* --- Interaction polish ------------------------------------------------- */
@@ -947,7 +1154,8 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
   from { opacity: .01; transform: translateY(6px); }
   to { opacity: 1; transform: none; }
 }
-.is-revealing { animation: photogit-reveal var(--motion-nav) var(--ease-liquid) var(--reveal-delay, 0ms) backwards; }
+/* Shared JavaScript drives the fade because UXP does not run these keyframes. */
+.is-revealing { animation: none; }
 
 /* The host scrollbar is the one piece of chrome the panel does not control by
    default, and its light track cuts a bright stripe down the glass. */
@@ -981,9 +1189,9 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
   from { opacity: 1; }
   to { opacity: .01; transform: scale(.985); }
 }
-.tool-sheet:not([hidden]), .tools-menu:not([hidden]) { animation: photogit-sheet-in var(--motion-nav) var(--ease-liquid) backwards; }
-.tool-sheet.is-closing, .tools-menu.is-closing { animation: photogit-surface-out var(--motion-press) var(--ease-liquid) both; pointer-events: none; }
-.surface-backdrop { opacity: 0; transition: opacity var(--motion-press) var(--ease-liquid); }
+.tool-sheet:not([hidden]), .tools-menu:not([hidden]), .view-panel:not([hidden]) { animation: none; }
+.tool-sheet.is-closing, .tools-menu.is-closing { pointer-events: none; }
+.surface-backdrop { opacity: 1; }
 .surface-backdrop.is-open { opacity: 1; }
 
 /* Scan now turns its arrow while a scan is reading layers. Bounded by the
@@ -1024,10 +1232,9 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
    keystroke that nears the limit is felt at the counter. */
 #message-count[data-limit="near"], #message-count[data-limit="full"] { animation: photogit-pop-soft var(--motion-control) var(--ease-liquid) backwards; }
 
-/* The command and tools actions in the header grow their icon a touch on
-   hover. The theme toggle keeps its own sun-to-moon transform. */
-.header-action:not(.appearance-toggle) svg { transition: transform var(--motion-control) var(--ease-liquid); }
-.header-action:not(.appearance-toggle):hover svg { transform: scale(1.1); }
+/* The command and tools actions grow their icon slightly on hover. */
+.header-action svg { transition: transform var(--motion-control) var(--ease-liquid); }
+.header-action:hover svg { transform: scale(1.1); }
 
 /* The helper dot breathes while a reconnect is in flight, and stops
    with the answer. */
@@ -1050,10 +1257,6 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
 /* The counter pops when it carries a note, which is the one time it has
    something to say beyond the count. */
 #message-count[aria-live="polite"] { animation: photogit-pop-soft var(--motion-control) var(--ease-liquid) backwards; }
-
-/* The theme toggle carries a halo on hover, matching the glow the other
-   circular controls take. */
-.appearance-toggle:hover { box-shadow: 0 0 18px -6px var(--glow); }
 
 /* A sheet's action arrives a beat after its content, so the question is
    read before the answer is offered. */

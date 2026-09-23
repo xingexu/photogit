@@ -6,6 +6,7 @@ const workspaceUI = require("./workspace-ui.js");
 const versionInspector = require("./version-inspector.js");
 const branchView = require("./branch-view.js");
 const reviewInspector = require("./review-inspector.js");
+const { encodePreviewPng } = require("./preview-png.js");
 const scans = new panelModel.ScanCoordinator();
 
 entrypoints.setup({
@@ -34,6 +35,8 @@ let projectFolder = null;
 let helperToken = null;
 let busyNow = false;
 let historyEntries = [];
+let historyPreviews = {};
+let historyPreviewGeneration = 0;
 let selectedVersionId = null;
 let reviewEntries = [];
 let repositoryDetails = null;
@@ -54,6 +57,7 @@ let detailAction = null;
 let lastScanCount = null;
 let startupPromise = null;
 let startupPending = false;
+let historyRefreshPending = false;
 const surfaceTimers = new Map();
 
 document.addEventListener("DOMContentLoaded", () => { void initializePanel(); });
@@ -76,7 +80,7 @@ function bindPanelEvents() {
   bind("connect-document", "click", connectDocument);
   bind("open-project-document", "click", () => run("Opening project document…", () => openSnapshot()));
   bind("cancel-scan", "click", cancelScan);
-  bind("close-detail", "click", closeDetail);
+  bind("close-detail", "click", () => closeDetail(false));
   bind("detail-action", "click", () => detailAction?.());
   bind("refresh", "click", refreshAndScan);
   bind("global-search", "click", () => openCommandPalette());
@@ -108,7 +112,7 @@ function bindPanelEvents() {
   bind("tool-create-tag", "click", openTagSheet);
   bind("tool-settings", "click", openRepositorySettings);
   bind("close-tag-sheet", "click", () => closeTagSheet(false, true));
-  bind("surface-backdrop", "click", () => { closeTagSheet(false, true); closeDetail(); });
+  bind("surface-backdrop", "click", () => { closeTagSheet(false, true); closeDetail(false); });
   bind("create-tag", "click", createTag);
   bindInputAction("message", saveVersion);
   bindInputAction("new-branch-name", createBranch);
@@ -123,6 +127,52 @@ function bindPanelEvents() {
   try { lastSection = localStorage.getItem("photogit.section"); } catch { /* Default below. */ }
   selectTab(SECTIONS.includes(lastSection) ? lastSection : "changes", false);
   window.setInterval(syncDocumentLabel, 1000);
+  window.setInterval(() => { void refreshHistoryInBackground(); }, 10000);
+  document.addEventListener("input", savePanelState);
+  document.addEventListener("click", savePanelState);
+}
+
+function panelStateKey() {
+  return projectFolder ? `photogit.workspace:${projectFolder.nativePath || projectFolder.name}` : null;
+}
+
+function savePanelState() {
+  const key = panelStateKey();
+  if (!key || startupPending) return;
+  try {
+    localStorage.setItem(key, JSON.stringify({
+      message: document.getElementById("message").value.slice(0, 500),
+      historySearch: document.getElementById("history-search").value.slice(0, 500),
+      selectedVersionId
+    }));
+  } catch { /* Storage is optional; keep the live draft intact. */ }
+}
+
+async function restorePanelState() {
+  const key = panelStateKey();
+  if (!key) return;
+  let saved = {};
+  try { const text = localStorage.getItem(key); if (text && text.length < 4096) saved = JSON.parse(text) || {}; } catch { /* Use current defaults. */ }
+  if (typeof saved.message === "string") document.getElementById("message").value = saved.message.slice(0, 500);
+  if (typeof saved.historySearch === "string") document.getElementById("history-search").value = saved.historySearch.slice(0, 500);
+  workspaceUI.refreshChanges(document);
+  filterHistory();
+  if (helperOnline && !document.getElementById("history-view").hidden && wideWorkspace()) {
+    const version = historyEntries.find(entry => entry.id === saved.selectedVersionId) || historyEntries[0];
+    if (version) await inspectVersion(version);
+  }
+}
+
+async function refreshHistoryInBackground() {
+  if (historyRefreshPending || startupPending || busyNow || scans.running || !helperOnline || !projectFolder || !helperToken) return;
+  const folder = projectFolder, generation = workspaceGeneration;
+  historyRefreshPending = true;
+  try {
+    const result = await callHelper("history", {}, HELPER_HEALTH_TIMEOUT_MS);
+    if (folder !== projectFolder || generation !== workspaceGeneration || busyNow) return;
+    if (JSON.stringify(result.versions) !== JSON.stringify(historyEntries)) await loadHistory(result);
+  } catch { /* Background reads leave the current history and draft in place. */ }
+  finally { historyRefreshPending = false; }
 }
 
 function initializePanel() {
@@ -162,6 +212,7 @@ async function startPanel() {
     setStartup(false);
   }
   await installPhotoshopChangeDetection();
+  await restorePanelState();
   if (helperOnline) queueAutomaticScan("initial-load", 150);
 }
 
@@ -265,7 +316,7 @@ function handleGlobalKeyboard(event) {
   if (!sheet.hidden) {
     event.preventDefault();
     event.stopPropagation();
-    return sheet.id === "detail-sheet" ? closeDetail() : closeTagSheet(false, true);
+    return sheet.id === "detail-sheet" ? closeDetail(false) : closeTagSheet(false, true);
   }
   const menu = document.getElementById("tools-menu");
   if (!menu.hidden) {
@@ -308,13 +359,18 @@ async function chooseProject() {
   if (busyNow) return show("PhotoGit is busy. Try again in a moment.", true);
   const folder = await storage.localFileSystem.getFolder();
   if (!folder) return;
+  savePanelState();
   cancelScan();
   workspaceGeneration += 1;
   projectStatus = null;
   lastScanCount = null;
   helperToken = null;
   projectFolder = folder;
+  document.getElementById("message").value = "";
+  document.getElementById("history-search").value = "";
   branchPreviews = {};
+  historyPreviews = {};
+  historyPreviewGeneration++;
   document.getElementById("document-preview").hidden = true;
   document.getElementById("document-preview-figure").hidden = true;
   branchView.render(document.getElementById("branch-list"));
@@ -337,6 +393,7 @@ async function chooseProject() {
   await refreshWorkspace();
   queueAutomaticScan("project-connected", 150);
   } finally { busy(false); }
+  await restorePanelState();
 }
 
 async function loadPairing() {
@@ -453,6 +510,23 @@ async function loadHistory(existingResult) {
   setCount("history-count", historyEntries.length);
   document.getElementById("history-total").textContent = `${historyEntries.length} ${historyEntries.length === 1 ? "version" : "versions"}`;
   filterHistory();
+  void loadHistoryPreviews(result.versions);
+}
+
+async function loadHistoryPreviews(versions) {
+  const generation = ++historyPreviewGeneration;
+  const folder = projectFolder;
+  historyPreviews = {};
+  // Bound image memory and helper work. Any selected older version still loads
+  // its own preview in the inspector, independently of this thumbnail strip.
+  for (const version of versions.slice(0, 8)) {
+    const preview = await readVersionPreview(version.id);
+    if (folder !== projectFolder || generation !== historyPreviewGeneration) return;
+    historyPreviews[version.id] = preview;
+    for (const row of document.querySelectorAll(".history-row")) {
+      if (row.dataset.version === version.id) versionInspector.historyPreview(row, { preview });
+    }
+  }
 }
 
 async function loadReviews(existingResult) {
@@ -529,6 +603,7 @@ function renderHistory(versions) {
       const message = escapeHtml(version.message);
       const shortId = escapeHtml(version.shortId);
       row.innerHTML = `<span class="history-marker" aria-hidden="true">${historyIcon()}</span><span class="row-copy"><strong title="${message}">${message}</strong><span>${escapeHtml(version.author)} · <time datetime="${escapeHtml(version.date)}" title="${escapeHtml(versionInspector.formatDate(version.date))}">${escapeHtml(versionInspector.formatDate(version.date, true))}</time></span></span><span class="commit-id" title="Version ${shortId}">${shortId}</span>`;
+      versionInspector.historyPreview(row, { preview: historyPreviews[version.id] });
       row.setAttribute("role", "button");
       row.setAttribute("aria-pressed", String(version.id === selectedVersionId));
       row.setAttribute("aria-label", `Inspect version ${version.shortId}: ${version.message}`);
@@ -626,11 +701,11 @@ async function scanChanges({ automatic = false, eventName = "manual" } = {}) {
   });
 }
 
-function cancelScan() {
+function cancelScan(announce = true) {
   clearTimeout(autoScanTimer);
   autoScanTimer = null;
   scans.cancel();
-  setWatchStatus("Scan paused · Scan now to resume", "warning");
+  if (announce) setWatchStatus("Scan paused · Scan now to resume", "warning");
   return scans.running || Promise.resolve();
 }
 
@@ -715,12 +790,14 @@ async function saveVersion() {
     let capture;
     suppressNotifications = true;
     try {
-    await core.executeAsModal(async () => {
+    await core.executeAsModal(async (executionContext) => {
       assertSaveTarget();
+      const check = () => { assertSaveTarget(); if (executionContext?.isCancelled) throw new Error("Version capture cancelled. No version was written."); };
       // Capture and PSD export share the same modal lock: they describe one state.
-      capture = await captureDocument(doc, { progress: (done, total) => setWatchStatus(`Saving · reading ${done} of ${total}…`, "scanning") });
+      capture = await captureDocument(doc, { check, progress: (done, total) => setWatchStatus(`Saving · reading ${done} of ${total}…`, "scanning") });
       await doc.saveAs.psd(snapshot, { embedColorProfile: true }, true);
-      await doc.saveAs.png(preview, {}, true);
+      check();
+      await saveVersionPreview(doc, preview, check);
     }, { commandName: "Save PhotoGit version artifacts" });
     } finally { suppressNotifications = false; }
     if (projectFolder !== folder || app.activeDocument?.id !== doc.id) throw new Error("Document changed before save completed. No version was written.");
@@ -732,6 +809,7 @@ async function saveVersion() {
       documentIdentity: identity
     });
     document.getElementById("message").value = "";
+    savePanelState();
     renderChanges([]);
     setWatchStatus("Watching Photoshop", "ready");
     log(`Saved ${result.shortId}: ${message}`);
@@ -742,6 +820,21 @@ async function saveVersion() {
     document.querySelector("#history .history-row")?.classList.add("is-new");
     selectTab("history");
   });
+}
+
+async function saveVersionPreview(doc, destination, check) {
+  let imageData;
+  try {
+    const width = number(doc.width), height = number(doc.height);
+    const targetSize = width >= height ? { width: Math.min(768, width) } : { height: Math.min(768, height) };
+    const pixels = await imaging.getPixels({ documentID: doc.id, sourceBounds: { left: 0, top: 0, right: width, bottom: height }, targetSize, componentSize: 8, colorSpace: "RGB", colorProfile: "sRGB IEC61966-2.1", applyAlpha: false });
+    imageData = pixels.imageData;
+    check();
+    const data = await imageData.getData({ chunky: true });
+    const png = encodePreviewPng(imageData.width, imageData.height, imageData.components, new Uint8Array(data.buffer, data.byteOffset, data.byteLength));
+    await destination.write(png.buffer, { format: storage.formats.binary });
+    check();
+  } finally { try { imageData?.dispose(); } catch { /* Already released by Photoshop. */ } }
 }
 
 async function pull() {
@@ -909,6 +1002,7 @@ function openBackdrop() {
   document.body.classList.add("has-surface");
   const backdrop = document.getElementById("surface-backdrop");
   clearTimeout(surfaceTimers.get(backdrop));
+  globalThis.PhotoGitMotion?.cancel(backdrop);
   backdrop.hidden = false;
   backdrop.classList.remove("is-open");
   void backdrop.offsetWidth;
@@ -919,8 +1013,10 @@ function closeBackdrop(immediate = false) {
   const backdrop = document.getElementById("surface-backdrop");
   clearTimeout(surfaceTimers.get(backdrop));
   backdrop.classList.remove("is-open");
-  if (immediate) { backdrop.hidden = true; document.body.classList.remove("has-surface"); return; }
-  surfaceTimers.set(backdrop, setTimeout(() => { backdrop.hidden = true; document.body.classList.remove("has-surface"); }, 160));
+  globalThis.PhotoGitMotion?.cancel(backdrop);
+  const finish = () => { backdrop.hidden = true; document.body.classList.remove("has-surface"); };
+  if (immediate || !globalThis.PhotoGitMotion?.exit) finish();
+  else globalThis.PhotoGitMotion.exit(backdrop, finish);
 }
 
 function setToolsExpanded(expanded) {
@@ -949,10 +1045,12 @@ function closeSurface(element, immediate = false) {
     return;
   }
   element.classList.add("is-closing");
-  surfaceTimers.set(element, setTimeout(() => {
+  const finish = () => {
     element.classList.remove("is-closing");
     element.hidden = true;
-  }, 150));
+  };
+  if (globalThis.PhotoGitMotion?.exit) globalThis.PhotoGitMotion.exit(element, finish);
+  else finish();
 }
 
 async function createTag() {
@@ -1014,9 +1112,9 @@ function openDetail(title, content, actionLabel = "", action = null) {
   document.getElementById("close-detail").focus();
 }
 
-function closeDetail() {
-  closeSurface(document.getElementById("detail-sheet"), true);
-  closeBackdrop(true);
+function closeDetail(immediate = true) {
+  closeSurface(document.getElementById("detail-sheet"), immediate);
+  closeBackdrop(immediate);
   detailAction = null;
   surfaceReturnFocus?.focus?.();
 }
@@ -1031,9 +1129,13 @@ function inspectVersion(version) {
       const details = await callHelper("versionDetails", { version: version.id });
       if (folder !== projectFolder) return;
       // A missing or unreadable preview must never block the version details.
-      const preview = await readVersionPreview(version.id);
+      const [preview, previousPreview] = await Promise.all([
+        readVersionPreview(version.id),
+        details.parentVersionId ? readVersionPreview(details.parentVersionId) : Promise.resolve(null)
+      ]);
       if (folder !== projectFolder) return;
       selectedVersionId = version.id;
+      savePanelState();
       for (const row of document.querySelectorAll(".history-row")) {
         const active = row.dataset.version === version.id;
         row.classList.toggle("selected", active); row.setAttribute("aria-pressed", String(active));
@@ -1042,10 +1144,10 @@ function inspectVersion(version) {
         if (folder !== projectFolder) return show("The project changed. Select this version again.", true);
         return run("Opening version copy…", async () => { await openSnapshot(version.id, false); closeDetail(); show("Opened a version copy. Connect it explicitly to save it as a new version.", false); });
       };
-      if (inline) versionInspector.render(inspector, { details, version, preview, onOpen: open });
+      if (inline) versionInspector.render(inspector, { details, version, preview, previousPreview, onOpen: open });
       else {
         openDetail(`Version ${version.shortId || version.id.slice(0, 8)}`, "", details.snapshotAvailable ? "Open version copy" : "", details.snapshotAvailable ? open : null);
-        versionInspector.render(document.getElementById("detail-content"), { details, version, preview });
+        versionInspector.render(document.getElementById("detail-content"), { details, version, preview, previousPreview });
       }
     } catch (error) {
       if (inline && folder === projectFolder) versionInspector.render(inspector, { state: "error", error: error.message });
@@ -1086,7 +1188,7 @@ function renderChangeTally(changes) {
     const node = document.getElementById(id);
     if (!node) return;
     if (counter && typeof counter.set === "function") counter.set(node, value);
-    else node.textContent = String(value);
+    else { node.textContent = String(value); node.dataset.value = String(value); }
   };
   show("tally-changed", count("modified"));
   show("tally-added", count("added"));
@@ -1112,6 +1214,7 @@ function renderDocumentFacts(meta) {
   if (typeof meta?.name === "string" && meta.name) facts.push(["Document", meta.name]);
   for (const [label, value] of facts) {
     const row = document.createElement("div");
+    if (label === "Document") row.className = "document-filename";
     const term = document.createElement("dt"); term.textContent = label;
     const detail = document.createElement("dd"); detail.textContent = value;
     row.append(term, detail); list.appendChild(row);
@@ -1309,6 +1412,7 @@ function validateHelperResult(operation, value) {
     const path = requireHelperText(result.snapshotPath, "openVersion.snapshotPath", 4096);
     if (!/^\.photogit\/recovered\/[A-Za-z0-9._-]+\.psd$/.test(path)) throw invalidHelperData("version path");
   } else if (["versionDetails", "compareBranches"].includes(operation)) {
+    if (operation === "versionDetails" && result.parentVersionId != null && (typeof result.parentVersionId !== "string" || !/^[a-f0-9]{40,64}$/.test(result.parentVersionId))) throw invalidHelperData("parent version ID");
     requireHelperArray(result.files, "version files", 10000).forEach(file => {
       requireHelperRecord(file, "version file");
       requireHelperText(file.path, "version file path", 4096);
@@ -1389,19 +1493,19 @@ async function captureDocument(doc, { check = () => {}, progress = () => {} } = 
     for (let childIndex = children.length - 1; childIndex >= 0; childIndex -= 1) pending.push({ layer: children[childIndex], order: childIndex, parentPhotoshopId: layer.id });
   }
   await panelModel.inBatches(fingerprintTargets, async target => {
-    try { target.capturedLayer.content.fingerprint = await fingerprintLayerPixels(doc, target.layer); }
+    try { target.capturedLayer.content.fingerprint = await fingerprintLayerPixels(doc, target.layer, check); }
     catch (error) {
       if (!target.capturedLayer.content.opaque || !/unsupported layer type/i.test(error.message)) throw error;
       target.capturedLayer.content.reason = "Rendered changes are compared at document level; exact layer data is preserved in the PSD.";
     }
   }, { check, progress, batchSize: 4, yieldTask: () => delay(0) });
   check();
-  const renderedFingerprint = await fingerprintLayerPixels(doc);
+  const renderedFingerprint = await fingerprintLayerPixels(doc, undefined, check);
   check();
   return { document: { documentId: String(doc.id), name: doc.name, width: number(doc.width), height: number(doc.height), resolution: number(doc.resolution), mode: normalizeEnum(doc.mode), bitDepth: number(doc.bitsPerChannel, 8), colorProfile: doc.colorProfileName || null, renderedFingerprint }, layers };
 }
 
-async function fingerprintLayerPixels(doc, layer) {
+async function fingerprintLayerPixels(doc, layer, check = () => {}) {
   const pixelBounds = layer ? bounds(layer.boundsNoEffects || layer.bounds) : { left: 0, top: 0, right: number(doc.width), bottom: number(doc.height) };
   if (pixelBounds.right <= pixelBounds.left || pixelBounds.bottom <= pixelBounds.top) return "pixels-v1:empty";
   let imageData = null;
@@ -1421,13 +1525,49 @@ async function fingerprintLayerPixels(doc, layer) {
     let hash = 0x811c9dc5;
     for (const byte of bytes) hash = Math.imul(hash ^ byte, 0x01000193) >>> 0;
     const dimensions = `${number(imageData.width)}x${number(imageData.height)}x${number(imageData.components)}`;
-    return `pixels-v1:${dimensions}:${hash.toString(16).padStart(8, "0")}`;
+    const sampled = `pixels-v1:${dimensions}:${hash.toString(16).padStart(8, "0")}`;
+    imageData.dispose(); imageData = null;
+    // Keep the old thumbnail digest for comparisons with older saved versions.
+    // New versions also compare every source pixel, without thumbnail scaling.
+    const full = await fullResolutionFingerprint(doc, layer, pixelBounds, check);
+    return `${sampled}|full-v2:${full}`;
   } catch (error) {
+    if (error.name === "StaleScanError") throw error;
     runtimeLog("warn", "content_fingerprint_skipped", { layerId: layer?.id || null, kind: layer ? normalizeEnum(layer.kind) : "document", message: error.message || String(error) });
     throw new Error(`Could not read pixels for “${layer?.name || doc.name}”. Scan incomplete: ${error.message || String(error)}`);
   } finally {
     try { imageData?.dispose(); } catch { /* Photoshop already released this thumbnail. */ }
   }
+}
+
+async function fullResolutionFingerprint(doc, layer, source, check) {
+  const region = { left: Math.floor(source.left), top: Math.floor(source.top), right: Math.ceil(source.right), bottom: Math.ceil(source.bottom) };
+  const tileSize = 512;
+  const tiles = Math.ceil((region.right - region.left) / tileSize) * Math.ceil((region.bottom - region.top) / tileSize);
+  if (tiles > 16384) throw new Error("This layer is too large for a full-resolution scan.");
+  let first = 0x811c9dc5, second = 0x9e3779b9, completed = 0;
+  const mix = value => { first = Math.imul(first ^ value, 0x01000193) >>> 0; second = Math.imul(second ^ value, 0x85ebca6b) >>> 0; };
+  const metadata = value => { for (const char of JSON.stringify(value)) mix(char.charCodeAt(0)); };
+  metadata(region);
+  for (let top = region.top; top < region.bottom; top += tileSize) {
+    for (let left = region.left; left < region.right; left += tileSize) {
+      check();
+      const sourceBounds = { left, top, right: Math.min(left + tileSize, region.right), bottom: Math.min(top + tileSize, region.bottom) };
+      let imageData;
+      try {
+        const pixels = await imaging.getPixels({ documentID: doc.id, ...(layer ? { layerID: layer.id } : {}), sourceBounds, componentSize: -1, applyAlpha: false });
+        imageData = pixels.imageData;
+        check();
+        if (pixels.level != null && pixels.level !== 0) throw new Error("Photoshop returned a reduced-resolution pixel buffer.");
+        const data = await imageData.getData({ chunky: true });
+        check();
+        metadata([sourceBounds, pixels.sourceBounds || sourceBounds, imageData.width, imageData.height, imageData.components, imageData.componentSize]);
+        for (const byte of new Uint8Array(data.buffer, data.byteOffset, data.byteLength)) mix(byte);
+      } finally { try { imageData?.dispose(); } catch { /* Already released by Photoshop. */ } }
+      if (++completed % 4 === 0) { await delay(0); check(); }
+    }
+  }
+  return first.toString(16).padStart(8, "0") + second.toString(16).padStart(8, "0");
 }
 
 function renderChanges(changes, { baselineMissing = false, changeCount = changes.length, warnings = [] } = {}) {
@@ -1661,10 +1801,11 @@ function selectTab(name, animate = true) {
 
 async function run(label, action) {
   if (busyNow) return show("PhotoGit is busy. Try again in a moment.", false);
+  const resumeScanning = Boolean(scans.running || autoScanTimer);
   busy(true);
   workspaceGeneration += 1;
   try {
-    await cancelScan();
+    await cancelScan(false);
     show(label, false);
     await action();
   }
@@ -1676,7 +1817,10 @@ async function run(label, action) {
       openDetail("Repository recovery needed", `${error.message}\n${error.details.outcomeUnknown ? "The final state is not confirmed." : "The Git operation changed the repository."} Check project information and history before retrying.`, "View history", () => { closeDetail(); selectTab("history"); });
     }
   }
-  finally { busy(false); }
+  finally {
+    busy(false);
+    if (resumeScanning) queueAutomaticScan("operation-finished", 250);
+  }
 }
 
 function ensureReady() {

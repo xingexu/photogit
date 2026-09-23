@@ -1,5 +1,58 @@
 # Acceptance report: 0.2.0 development
 
+## Blurred reference backdrop, frosted Light and smoked Dark — 2026-09-22
+
+Replaced the pastel light theme with the reference's frosted blue-gray glass and white lettering; Dark uses near-black navy glass. Both share a generated, pre-blurred ribbon wallpaper painted directly on the panel root, luminous edges, blue badges, a paired sun/moon control and a brighter Save version button. Painting the bitmap on the root fixes the missing background observed with a negative stacking layer in UXP. The native wide header and selected navigation fills were also corrected. See [design and asset provenance](LIQUID_GLASS_DESIGN.md).
+
+Native visual verification now succeeds through UXP Developer Tools in Photoshop 27.10.0 / UXP 9.4.1 on macOS. Both themes were viewed and captured with the real helper connected and saved preview loaded. Reloaded final v107 assets; the panel reports ready, Synced, and 1100 × 780 client dimensions. Both tally gaps measure 12px in the native DOM. The preferred floating size now opens directly in the three-column layout. UXP manifest validation passes. Original Dark appearance was restored. No document save, discard, branch switch or artwork mutation was performed. Local screenshots: `/tmp/photogit-native-dark-final.png` and `/tmp/photogit-native-light-final.png` (v106 visuals; v107 additionally includes the reduced-transparency fallback).
+
+All 467 tests in 25 suites pass: 465 passed in the sandbox; the two helper integration tests passed when rerun with permission to bind temporary loopback ports. Browser verification covers eight viewport/theme combinations and six destinations, stress/loading/setup states, both-theme interactions and spacing with gap disabled, and eleven inspector/dialog captures without overflow. Reduced-transparency CSS cascade checks now cover ten surface types in each theme, including the sidebar and header; the backdrop becomes none and surfaces become opaque without blur, gradients or shadows. Branch cards retain 12px separation without grid. These preference checks simulate the browser cascade, not native OS settings.
+
+TypeScript, token, DOM/escaping, local security inventory, synchronized asset and development-package checks pass. Assets are v107. The 21-file development source bundle has SHA-256 `44762f789cd4c0bef44d38ec37b95daf8da68a0b9cbac8989e87cf0701531350`.
+
+Draft [PR #21](https://github.com/xingexu/photogit/pull/21) remains open for the full real-document acceptance matrix. Native theme/rendering verification is complete for this pass; real PSD save, merge and recovery workflows have not been re-exercised. This is not a published CCX release. Historical entries below describe earlier verification limits.
+
+## Reference glass workspace and container spacing — 2026-09-22
+
+Both themes now share translucent, tinted glass surfaces over soft blue/lilac gradients, with inset highlights, lighter field surfaces and a brighter selected state. The wide layout places project context under navigation, the scan and layer list in the center, and the saved preview above Save version on the right. Narrow panels keep the scan and composer ahead of the layer list, with saved artwork afterward. The preview still explicitly describes the latest saved version; it does not imply that unsaved edits are rendered.
+
+Tally cards use explicit 8–12px sibling margins instead of flex gap; major cards and columns have 16px separation. Branch cards retain 12px vertical spacing when grid is unsupported. Soft gradients and alpha fills provide the material without requiring backdrop blur; blur remains an enhancement. The same scan/preview DOM nodes move at the 900px breakpoint, retaining handlers and focus. The save field is never recreated.
+
+Verification: all 467 tests in 25 suites pass. A new regression exercises resizing with a focused scan control and an unfinished draft. The browser interaction checks measure spacing with CSS gap disabled at 1180, 900, 899 and 420px in both themes, and verify filters, keyboard navigation, simulated save and version inspection. The eight-viewport/theme matrix passes all six destinations and empty, 500-row/long-name, error, setup and loading states. Eleven additional inspector/dialog screenshots pass without page or container overflow. A stale browser assertion was aligned with the existing conflict explanation; the absent merge action and blocked state remain asserted.
+
+Wide dark/light and docked light previews were visually reviewed. Activating the reduced-transparency CSS rules yields opaque, unblurred surfaces without gradients or shadows for eight surface types in each theme. Removing the grid enhancement leaves 12px between branch cards. These are browser CSS-fallback checks, not native OS preference or Photoshop checks. Local screenshots and reports are in `/tmp/photogit-glass-matrix`, `/tmp/photogit-glass-detail-qa`, and `/tmp/photogit-glass-{dark,light}.png`.
+
+TypeScript, security inventory, DOM/escaping, tokens, synchronized assets and development-package verification pass. Assets are v103. Bundle SHA-256: `c84e3d3afadbefe8cb9d90948da46a57f6e55e78d0abdc9ae907e006c29e4f5f`.
+
+Native Photoshop/UXP acceptance remains pending because native automation surfaces are unavailable. In particular, native resize-event delivery and gradient compositing still require the live acceptance matrix. This work updates draft [PR #21](https://github.com/xingexu/photogit/pull/21); it is not a published CCX release or a claim of native acceptance.
+
+
+## Light liquid glass — 2026-09-22
+
+Light-mode content cards, History, setup documentation, project context and navigation now use translucent white surfaces, a diagonal reflection, bright inset edges and a soft shadow. Backdrop blur is a progressive enhancement; hosts without it retain opaque surfaces. Inputs and artwork stay readable against their own backgrounds. Dark-mode styling from the compact-workspace pass is preserved.
+
+Verified in the simulated browser: all six sections across eight viewport/theme combinations (230×200, 320×600, 420×800, 900×800; dark and light), plus empty, long/500-row, error, setup and loading states. Both-theme interaction checks pass for filtering/reset/focus, branch navigation, command keyboard shortcuts, simulated save and history inspection, and theme switching. Wide 1100×900 and docked 420×800 light previews were visually reviewed. No browser errors or horizontal overflow were observed. Activating the reduced-transparency CSS media rules and waiting for transitions produced an opaque white surface with no gradient, blur or shadow. This checks the CSS cascade, not a native OS preference toggle.
+
+TypeScript, local security inventory, panel DOM/escaping, design token, asset and development bundle checks pass. Assets are v100. Bundle SHA-256: `256f38fcfc700ecd0c6995486d72323b47c0fd6dccfd0397b5783aae739df519`.
+
+Native Photoshop verification remains pending because native automation surfaces are unavailable. The UI is prepared for draft review, not claimed as native acceptance. The separate Vitest security fix is tracked in [PR #20](https://github.com/xingexu/photogit/pull/20); its isolated checkout passes 466 tests and GitHub CI passes all 52 checks, including the dependency audit.
+
+
+## Compact workspace and dependency patch — 2026-09-21
+
+Working branch: `codex/photogit-ui-security`, based on `6b8b4898`.
+
+The save form now precedes changed layers in document and keyboard order; wide layouts keep it beside the list. Saved artwork and document facts follow the layer list. Navigation uses compact icon/label/count rows, inactive counts are quieter, narrow repository context and scan tallies take less space, and content cards use opaque neutral backgrounds with restrained shadows. Demo and production fallback counters both expose their actual value for zero-state styling. Assets are stamped at v98.
+
+Verified locally: 466 tests in 25 suites, 39 landing-page tests, TypeScript check, clean `npm ci --ignore-scripts --no-audit`, security inventory, design tokens, panel DOM safety/escaping, synchronized assets, and development bundle verification. Browser checks cover all six destinations across 230×200, 320×600, 420×800 and 900×800 in both themes, plus empty, 500-row/long-name, error, setup and loading states at 320×600. Keyboard palette dispatch, theme persistence, focus return, filters and the simulated save/inspection flow pass in both themes. Verification scripts now wait for counter animations before asserting their displayed values. Additional 1100×900 dark/light previews were visually inspected.
+
+Vitest and its mocker are pinned by the lockfile to 4.1.11, the first patched version identified by PhotoGit's two open GitHub dependency alerts. Full tests pass after this upgrade. No fresh external npm audit was completed: automatic approval review blocked exporting dependency metadata to npm and explicit approval remains pending. The local inventory does not scan Git history or unknown secret formats.
+
+Development bundle SHA-256: `ba8b710b3c0d08d7a6f6331b4641e5aff801b29f0bb3abca383bc9e84da4a5f1`.
+
+Native Photoshop acceptance remains unverified: native automation surfaces were unavailable. Browser evidence is simulated and does not establish UXP rendering or real Photoshop save behavior. No artwork was touched. No code was pushed, merged or deployed, and no GitHub repository settings were changed in this pass.
+
+
 ## Interaction pass · pointer depth, settling counters, staggered lists
 
 **Verified.** All suites pass (`npm test`), including three new ones: depth

@@ -78,6 +78,40 @@ function safeVersionPreview(preview) {
     /^data:image\/(?:png|jpeg);base64,[A-Za-z0-9+/]+={0,2}$/.test(preview.src);
 }
 
+function changeKind(change) {
+  if (change?.category === "added") return ["added", "Added"];
+  if (change?.category === "removed") return ["removed", "Deleted"];
+  if (change?.category === "moved") return ["modified", "Moved"];
+  if (change?.category === "reordered") return ["modified", "Reordered"];
+  return ["modified", "Edited"];
+}
+
+function changeTotals(changes) {
+  const groups = { added: new Set(), removed: new Set(), modified: new Set() };
+  let documentEdits = 0;
+  for (const change of changes) {
+    if (change?.domain === "document") { documentEdits++; continue; }
+    const key = change?.layerUuid || change?.photoshopId || change?.layerName;
+    if (key) groups[changeKind(change)[0]].add(key);
+  }
+  return { added: groups.added.size, removed: groups.removed.size, modified: groups.modified.size, documentEdits };
+}
+
+function historyPreview(row, options = {}) {
+  row.querySelector(".history-thumbnail")?.remove();
+  row.classList.remove("has-thumbnail");
+  const real = safeVersionPreview(options.preview);
+  const demo = safeDemoPreview(options.demoPreview);
+  if (!real && !demo) return;
+  const image = row.ownerDocument.createElement("img");
+  image.className = "history-thumbnail";
+  image.alt = real ? "Saved version preview" : "Illustrative demo preview";
+  image.addEventListener("error", () => { image.remove(); row.classList.remove("has-thumbnail"); });
+  image.src = real ? options.preview.src : options.demoPreview.src;
+  row.insertBefore(image, row.firstChild);
+  row.classList.add("has-thumbnail");
+}
+
 function safeDemoPreview(preview) {
   // Deliberately excludes arbitrary helper paths, remote URLs, data URIs and SVG.
   return preview?.demo === true && typeof preview.src === "string" &&
@@ -103,11 +137,11 @@ function render(container, options = {}) {
   container.setAttribute("aria-busy", String(state === "loading"));
   container.dataset.state = state;
   if (state !== "ready" || !options.details) {
-    const titles = { empty: "Your creative history", loading: "Loading version…", error: "Could not load this version" };
+    const titles = { empty: "Version details", loading: "Loading version…", error: "Could not load this version" };
     const messages = {
-      empty: "Select a saved version to inspect its details. Opening a copy keeps your current document unchanged.",
-      loading: "Reading the saved version and checking its PSD snapshot.",
-      error: text(options.error, "Check the helper connection and select the version again to retry.")
+      empty: "Select a saved version.",
+      loading: "Reading saved files…",
+      error: text(options.error, "Check the connection and retry.")
     };
     append(document, container, "h3", "version-inspector-heading", titles[state] || titles.empty);
     const message = append(document, container, "p", "version-inspector-meta", messages[state] || messages.empty);
@@ -140,7 +174,19 @@ function render(container, options = {}) {
 
   const grid = append(document, container, "div", "version-inspector-grid");
   const visual = append(document, grid, "div", "version-inspector-visual");
-  const preview = append(document, visual, "div", "version-inspector-preview");
+  const pair = append(document, visual, "div", "version-preview-pair");
+  const comparing = safeVersionPreview(options.previousPreview) || safeDemoPreview(options.demoPreviousPreview);
+  if (comparing) {
+    pair.classList.add("has-before");
+    const before = append(document, pair, "figure", "version-before");
+    append(document, before, "figcaption", "version-preview-label", "Before");
+    const image = append(document, before, "img", "");
+    image.alt = "Previous saved version";
+    image.addEventListener("error", () => { before.textContent = "Previous preview unavailable"; });
+    image.src = safeVersionPreview(options.previousPreview) ? options.previousPreview.src : options.demoPreviousPreview.src;
+  }
+  const preview = append(document, pair, "div", "version-inspector-preview");
+  if (comparing) append(document, preview, "p", "version-preview-label", "After");
   function fallback() {
     grid.classList.add("metadata-only");
     preview.textContent = "";
@@ -148,8 +194,8 @@ function render(container, options = {}) {
     append(document, preview, "span", "version-inspector-document-mark", "PSD");
     append(document, preview, "strong", "", snapshotAvailable ? "Saved Photoshop file" : "Saved file unavailable");
     append(document, preview, "p", "version-inspector-meta", snapshotAvailable
-      ? "An artwork preview is not available in this panel. Open a separate copy to inspect the saved document."
-      : "The version metadata is available, but its PSD cannot be opened locally.");
+      ? "Preview unavailable. Open a version copy to inspect it."
+      : "PSD unavailable on this computer.");
   }
   if (safeVersionPreview(options.preview)) {
     const figure = append(document, preview, "figure", "version-inspector-artwork");
@@ -157,18 +203,16 @@ function render(container, options = {}) {
     image.alt = "Preview saved with this version";
     image.addEventListener("error", fallback);
     image.src = options.preview.src;
-    append(document, figure, "figcaption", "fine-print", "Preview saved with this version");
   } else if (safeDemoPreview(options.demoPreview)) {
     const figure = append(document, preview, "figure", "version-inspector-artwork");
     const image = append(document, figure, "img", "");
     image.alt = text(options.demoPreview.alt, "Representative demo artwork");
     image.addEventListener("error", fallback);
     image.src = options.demoPreview.src;
-    append(document, figure, "figcaption", "fine-print", "Demo artwork · illustrative, not a saved PSD preview");
+    append(document, figure, "figcaption", "fine-print", "Demo artwork");
   } else fallback();
-  append(document, visual, "p", "version-inspector-notice fine-print", snapshotAvailable
-    ? "Opens a separate PSD copy. Your current document and branch stay unchanged."
-    : "This version’s saved file isn’t on this computer. Choose a version whose file is available to open a copy.");
+  if (!comparing && details.parentVersionId) append(document, visual, "p", "fine-print", "Previous preview unavailable.");
+  if (!snapshotAvailable) append(document, visual, "p", "version-inspector-notice fine-print", "Saved file unavailable on this computer.");
 
   const information = append(document, grid, "div", "version-inspector-information");
   facts(document, section(document, information, "Version details"), [
@@ -178,6 +222,15 @@ function render(container, options = {}) {
     ["Saved file", snapshotAvailable ? "On this computer" : "Not on this computer"]
   ]);
   const summary = section(document, information, "Changes in this version");
+  const totals = changeTotals(changes);
+  const tally = append(document, summary, "div", "version-change-tally");
+  for (const [key, label] of [["added", "Added layers"], ["removed", "Deleted layers"], ["modified", "Edited layers"]]) {
+    const tile = append(document, tally, "div", `version-change-stat ${key}`);
+    append(document, tile, "strong", "", String(totals[key]));
+    append(document, tile, "span", "", label);
+  }
+  if (totals.documentEdits) append(document, summary, "p", "fine-print", `${totals.documentEdits} document-wide ${totals.documentEdits === 1 ? "edit" : "edits"}`);
+  if (details.truncated) append(document, summary, "p", "fine-print", `Showing ${changes.length} of ${details.changeCount} recorded edits. Layer totals cover the displayed entries.`);
   const domains = [
     ["document", "Document edits"], ["structure", "Structure edits"], ["appearance", "Appearance edits"],
     ["text", "Text edits"], ["content", "Content edits"]
@@ -196,10 +249,20 @@ function render(container, options = {}) {
   const recorded = section(document, container, "Recorded edits");
   if (changes.length) {
     pagedList(document, recorded, changes, "version-inspector-changes", "edits", (item, change) => {
+      const [kind, label] = changeKind(change);
+      item.classList.add(`version-edit-${kind}`);
+      append(document, item, "span", `version-edit-badge ${kind}`, label);
       if (text(change?.layerName)) append(document, item, "strong", "", change.layerName);
       append(document, item, "p", "", text(change?.summary, "Edit details not recorded"));
+      const readable = value => typeof value === "string" ? value.slice(0, 240) : ["number", "boolean"].includes(typeof value) ? String(value) : null;
+      const before = readable(change?.baseValue), after = readable(change?.currentValue);
+      if (!/fingerprint/i.test(change?.propertyPath || "") && before !== null && after !== null && before !== after) {
+        const values = append(document, item, "div", "version-edit-values");
+        append(document, values, "span", "", `Before: ${before}`);
+        append(document, values, "span", "", `After: ${after}`);
+      }
     });
-  } else append(document, recorded, "p", "version-inspector-meta", "No layer changes were recorded for this version. That’s normal for a first save, or when there’s no earlier version to compare against.");
+  } else append(document, recorded, "p", "version-inspector-meta", "No recorded layer changes.");
   if (files.length) {
     pagedList(document, section(document, container, "Changed files"), files, "version-inspector-files", "files", (item, file) => {
       append(document, item, "span", "meta-chip", text(file?.status, "—"));
@@ -213,6 +276,6 @@ function render(container, options = {}) {
   return container;
 }
 
-if (typeof module !== "undefined") module.exports = { render, formatDate };
-else window.PhotoGitVersionInspector = { render, formatDate };
+if (typeof module !== "undefined") module.exports = { render, formatDate, historyPreview, changeTotals };
+else window.PhotoGitVersionInspector = { render, formatDate, historyPreview, changeTotals };
 })();

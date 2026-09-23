@@ -16,7 +16,7 @@ const settle = () => run("eval", `new Promise((resolve, reject) => {
   const started = Date.now();
   const check = () => {
     const fading = Array.from(document.querySelectorAll('.panel-root, .view-panel, .tool-sheet')).some(element => element.style.opacity);
-    if (!fading) return requestAnimationFrame(() => requestAnimationFrame(() => resolve(true)));
+    if (!fading && !document.querySelector(".is-counting")) return requestAnimationFrame(() => requestAnimationFrame(() => resolve(true)));
     if (Date.now() - started > 1500) return reject(new Error('Motion did not settle'));
     setTimeout(check, 16);
   }; check();

@@ -116,6 +116,7 @@ describe("immutable history, recovery, and Git comparison", () => {
     const currentId = await repo.saveVersion(changed, "Resize", { snapshotPath: source });
     const details = await repo.versionDetails(currentId);
     expect(details.version.message).toBe("Resize");
+    expect(details.parentVersionId).toBe(id);
     expect(details.changes).toContainEqual(expect.objectContaining({ domain: "document", propertyPath: "width", baseValue: 20, currentValue: 40 }));
     expect(details.files).toContainEqual({ path: "snapshot/document.psd", status: "M" });
     expect(details.snapshotAvailable).toBe(true);

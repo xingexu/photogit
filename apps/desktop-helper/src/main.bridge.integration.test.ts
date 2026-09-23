@@ -262,3 +262,33 @@ function waitForOutput(child: ChildProcess, target: string): Promise<void> {
     child.once("exit", (code) => { clearTimeout(timeout); reject(new Error(`Helper exited (${code}): ${output}`)); });
   });
 }
+
+describe("full-resolution history through the filesystem bridge", () => {
+  it("establishes a legacy baseline, detects a tiny pixel edit, and retains it in version details", async () => {
+    const f = await fixture();
+    const sampled = "pixels-v1:64x64x4:11111111";
+    f.capture.document.renderedFingerprint = sampled;
+    f.capture.layers[0]!.content.fingerprint = sampled;
+    await f.request("capture", { capture: f.capture, documentIdentity: f.identity, message: "Legacy baseline" });
+    const upgraded = structuredClone(f.capture);
+    upgraded.document.renderedFingerprint += "|full-v2:0000000000000001";
+    upgraded.layers[0]!.content.fingerprint += "|full-v2:0000000000000001";
+    const migration = await f.request("refresh", { capture: upgraded, documentIdentity: f.identity });
+    expect(migration).toMatchObject({ ok: true, result: { changeCount: 0 } });
+    expect(migration.result.comparisonWarnings[0]).toContain("full-resolution pixel tracking");
+    const baseline = await f.request("capture", { capture: upgraded, documentIdentity: f.identity, message: "Full-resolution baseline" });
+    const painted = structuredClone(upgraded);
+    painted.document.renderedFingerprint = sampled + "|full-v2:0000000000000002";
+    painted.layers[0]!.content.fingerprint = sampled + "|full-v2:0000000000000002";
+    const scan = await f.request("refresh", { capture: painted, documentIdentity: f.identity });
+    expect(scan).toMatchObject({ ok: true, result: { changeCount: 2, comparisonWarnings: [] } });
+    expect(scan.result.changes).toEqual(expect.arrayContaining([expect.objectContaining({ domain: "content", category: "modified", photoshopId: painted.layers[0]!.photoshopId })]));
+    const saved = await f.request("capture", { capture: painted, documentIdentity: f.identity, message: "Small brush stroke" });
+    const version = await f.request("versionDetails", { version: saved.result.versionId });
+    expect(version).toMatchObject({ ok: true, result: { parentVersionId: baseline.result.versionId, version: { message: "Small brush stroke" } } });
+    expect(version.result.changes).toHaveLength(2);
+    expect(await f.request("refresh", { capture: painted, documentIdentity: f.identity })).toMatchObject({ ok: true, result: { changeCount: 0 } });
+    // Erasing back to the prior artwork is also an edit relative to the saved stroke.
+    expect(await f.request("refresh", { capture: upgraded, documentIdentity: f.identity })).toMatchObject({ ok: true, result: { changeCount: 2 } });
+  });
+});

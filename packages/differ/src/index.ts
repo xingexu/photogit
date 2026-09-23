@@ -64,6 +64,15 @@ function diffObject(
   prefix = ""
 ): void {
   if (same(before, after)) return;
+  if ((domain === "content" && prefix === "fingerprint") || (domain === "document" && prefix === "renderedFingerprint")) {
+    // Full-resolution hashes compare new checkpoints. Legacy checkpoints can
+    // only compare the retained thumbnail; upgrading alone is not an edit.
+    if (typeof before === "string" && typeof after === "string") {
+      const [oldSample, oldFull] = before.split("|full-v2:");
+      const [newSample, newFull] = after.split("|full-v2:");
+      if (oldFull && newFull ? oldFull === newFull : oldSample === newSample) return;
+    }
+  }
   const compositeChange = domain === "document" && prefix === "renderedFingerprint";
   // A legacy baseline or an unsupported scan has no comparable composite.
   // The helper reports that coverage gap; it is not evidence of a design edit.

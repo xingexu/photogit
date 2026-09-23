@@ -103,7 +103,7 @@ describe("review comparison inspector", () => {
 
   it("supports absent comparison, no semantic data and callback-less read-only use", () => {
     const p = fixture(); p.render({ comparison: undefined });
-    expect(p.container.textContent).toContain("Choose a branch review");
+    expect(p.container.textContent).toContain("Select Compare on a branch");
     p.render({ comparison: comparison({ changes: [], files: [] }), onMerge: undefined });
     expect(p.container.textContent).toContain("Check the changed files and notes");
     expect(p.container.textContent).toContain("No incoming file changes recorded");

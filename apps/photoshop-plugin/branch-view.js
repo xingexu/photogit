@@ -19,7 +19,7 @@ function render(container, { branches = [], current, onSwitch, previews, demoPre
   container.textContent = "";
   container.classList.add("branch-list");
   container.setAttribute("role", "list");
-  container.setAttribute("aria-label", "Design directions");
+  container.setAttribute("aria-label", "Branches");
   const entries = Array.isArray(branches) ? branches.filter(branch => typeof branch?.name === "string" && branch.name.trim()) : [];
   const currentName = typeof current === "string" && current ? current : entries.find(branch => branch.current === true)?.name;
   const ordered = [...entries.filter(branch => branch.name === currentName), ...entries.filter(branch => branch.name !== currentName)];
@@ -34,7 +34,7 @@ function render(container, { branches = [], current, onSwitch, previews, demoPre
     const empty = document.createElement("p");
     empty.className = "branch-list-empty fine-print";
     empty.setAttribute("role", "status");
-    empty.textContent = "No saved branches yet. Save your first version to start a design direction.";
+    empty.textContent = "Save a version to create your first branch.";
     container.appendChild(empty);
     return container;
   }

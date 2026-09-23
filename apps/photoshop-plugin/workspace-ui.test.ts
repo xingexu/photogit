@@ -34,6 +34,41 @@ async function fixture() {
 }
 
 describe("Studio workspace interactions", () => {
+  it("moves live scan and preview nodes on resize without losing focus or a draft", async () => {
+    const p = await fixture();
+    const viewport = p.document.documentElement;
+    const scan = p.document.querySelector(".scan-panel")!;
+    const preview = p.id("document-preview");
+    const rescan = p.id("rescan");
+    const message = p.id("message") as HTMLInputElement;
+    const scanHandler = vi.fn();
+    rescan.addEventListener("click", scanHandler);
+    message.value = "Keep this draft while docking";
+    const focus = vi.fn();
+    rescan.focus = focus;
+    Object.defineProperty(p.document, "activeElement", { configurable: true, get: () => rescan });
+    const resize = (width: number) => {
+      Object.defineProperty(viewport, "clientWidth", { configurable: true, value: width });
+      p.window.dispatchEvent(new p.window.Event("resize"));
+    };
+    resize(1180);
+    expect(scan.parentElement).toBe(p.document.querySelector(".changes-main"));
+    expect(preview.parentElement).toBe(p.document.querySelector(".changes-aside"));
+    expect(focus).toHaveBeenCalledTimes(1);
+    rescan.click();
+    expect(scanHandler).toHaveBeenCalledTimes(1);
+    resize(420);
+    expect(scan.parentElement).toBe(p.id("changes-view"));
+    expect(preview.parentElement).toBe(p.id("changes-view"));
+    expect(p.id("changes-view").firstElementChild).toBe(scan);
+    expect(p.id("changes-view").lastElementChild).toBe(preview);
+    expect(focus).toHaveBeenCalledTimes(2);
+    expect(message.value).toBe("Keep this draft while docking");
+    resize(320);
+    expect(focus).toHaveBeenCalledTimes(2);
+    expect(p.document.querySelectorAll("#rescan")).toHaveLength(1);
+  });
+
   it("staggers the rows that survive a filter change and holds still when nothing changed", async () => {
     const stagger = vi.fn();
     (globalThis as any).PhotoGitReveal = { stagger };

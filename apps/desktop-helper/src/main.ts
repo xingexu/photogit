@@ -120,6 +120,7 @@ async function executeRequest(payload: HelperRequest, helperConfig: HelperConfig
     const comparisonWarnings: string[] = [];
     if (base && !current.document.renderedFingerprint) comparisonWarnings.push("This scan did not include document-wide rendered comparison. Update or reload the PhotoGit panel, then scan again to compare group effects and masks.");
     else if (base && !base.document.renderedFingerprint) comparisonWarnings.push("This version predates document-wide rendered comparison. Save a version to enable group effects and mask comparison.");
+    else if (base && current.document.renderedFingerprint?.includes("|full-v2:") && !base.document.renderedFingerprint?.includes("|full-v2:")) comparisonWarnings.push("This saved version uses thumbnail comparison, which can miss small brush or eraser edits. Save a new version to establish full-resolution pixel tracking.");
     log("info", { event: "refresh_complete", requestId: payload.requestId, capturedLayerCount: payload.capture!.layers.length, changeCount: changes.length });
     return { ...boundedChanges(changes), baselineMissing: base === null, baseline: "HEAD", comparisonWarnings };
   }

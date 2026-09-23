@@ -31,7 +31,7 @@ export type ReviewEntry = { branch: string; baseBranch: string; ahead: number; b
 export type RepositoryInfo = { remoteUrl: string | null; provider: "github" | "local" | "other"; currentBranch: string; baseBranch: string };
 export type FileChange = { path: string; status: string };
 export type BranchComparison = { baseBranch: string; incomingBranch: string; mergeBase: string; ahead: number; behind: number; files: FileChange[]; changes: SemanticChange[]; gitMergeable: boolean; conflicts: string[]; warnings: string[] };
-export type VersionDetails = { version: VersionEntry; files: FileChange[]; changes: SemanticChange[]; snapshotAvailable: boolean; warnings: string[] };
+export type VersionDetails = { version: VersionEntry; parentVersionId: string | null; files: FileChange[]; changes: SemanticChange[]; snapshotAvailable: boolean; warnings: string[] };
 
 export class GitRepository {
   readonly root: string;
@@ -406,7 +406,7 @@ export class GitRepository {
     } catch { warnings.push("Saved layer details are unavailable for this version."); }
     const snapshotAvailable = await this.validateSnapshotAt(id).then(() => true).catch(() => false);
     if (!snapshotAvailable) warnings.push("This version has no locally available valid PSD snapshot.");
-    return { version: { id: fullId, shortId, author: safeDisplayText(author, 200), date: safeDisplayText(date, 64), message: safeDisplayText(message, 500) }, files, changes, snapshotAvailable, warnings };
+    return { version: { id: fullId, shortId, author: safeDisplayText(author, 200), date: safeDisplayText(date, 64), message: safeDisplayText(message, 500) }, parentVersionId: previous ?? null, files, changes, snapshotAvailable, warnings };
   }
 
   async validateSnapshotAt(version: string): Promise<{ version: string; bytes: number }> {
