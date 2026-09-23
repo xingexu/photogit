@@ -36,11 +36,7 @@ async function boot() {
   mount.innerHTML = "";
   mount.appendChild(document.importNode(parsed.querySelector(".panel-root"), true));
   setupDemoPanel();
-  const theme = demoParams.get("theme");
-  if (theme === "light" || theme === "dark") document.documentElement.setAttribute("data-theme", theme);
-  const themeLabel = document.documentElement.getAttribute("data-theme") === "light" ? "Switch to Dark mode" : "Switch to Light mode";
-  byId("appearance-toggle").setAttribute("aria-label", themeLabel);
-  byId("appearance-toggle").setAttribute("title", themeLabel);
+  document.documentElement.setAttribute("data-theme", "dark");
   const badge = document.createElement("p"); badge.className = "simulation-label"; badge.textContent = "Simulated preview · no Photoshop or Git operations";
   mount.prepend(badge);
   if (demoParams.get("state") === "empty") { changes = []; renderChanges(); }
@@ -88,7 +84,7 @@ function setupDemoPanel() {
   bind("reviews-tab", () => selectTab("reviews"));
   bind("activity-tab", () => selectTab("activity"));
   bind("docs-tab", () => selectTab("docs"));
-  bind("close-detail", closeDetail);
+  bind("close-detail", () => closeDetail(false));
   byId("docs-search").addEventListener("input", renderCommandDocs);
   renderCommandDocs();
   bind("setup-toggle", () => { byId("setup-instructions").hidden = !byId("setup-instructions").hidden; byId("setup-toggle").setAttribute("aria-expanded", String(!byId("setup-instructions").hidden)); });
@@ -109,7 +105,7 @@ function setupDemoPanel() {
   bind("tool-create-tag", openTagSheet);
   bind("tool-settings", () => { closeToolsMenu(); selectTab("activity"); addActivity("Repository settings inspected."); });
   bind("close-tag-sheet", () => closeTagSheet(false, true));
-  bind("surface-backdrop", () => { closeTagSheet(false, true); closeDetail(); });
+  bind("surface-backdrop", () => { closeTagSheet(false, true); closeDetail(false); });
   bind("create-tag", createTag);
   bind("new-pull-request", () => flashResult("Pull-request review opened in GitHub."));
   byId("branch-picker").addEventListener("change", switchBranch);
@@ -138,8 +134,8 @@ function openDetail(title) {
   byId("detail-content").innerHTML = "";
   openBackdrop(); openSurface(byId("detail-sheet"));
 }
-function closeDetail() {
-  closeSurface(byId("detail-sheet"), true); closeBackdrop(true);
+function closeDetail(immediate = true) {
+  closeSurface(byId("detail-sheet"), immediate); closeBackdrop(immediate);
   surfaceReturnFocus?.focus();
 }
 function show(message) { flashResult(message, true); }
@@ -269,6 +265,7 @@ function closeTagSheet(immediate = false, returnFocus = false) {
 function openBackdrop() {
   const backdrop = byId("surface-backdrop");
   clearTimeout(surfaceTimers.get(backdrop));
+  globalThis.PhotoGitMotion?.cancel(backdrop);
   backdrop.hidden = false;
   backdrop.classList.remove("is-open");
   void backdrop.offsetWidth;
@@ -279,8 +276,10 @@ function closeBackdrop(immediate = false) {
   const backdrop = byId("surface-backdrop");
   clearTimeout(surfaceTimers.get(backdrop));
   backdrop.classList.remove("is-open");
-  if (immediate) return void (backdrop.hidden = true);
-  surfaceTimers.set(backdrop, setTimeout(() => { backdrop.hidden = true; }, 160));
+  globalThis.PhotoGitMotion?.cancel(backdrop);
+  const finish = () => { backdrop.hidden = true; };
+  if (immediate || !globalThis.PhotoGitMotion?.exit) finish();
+  else globalThis.PhotoGitMotion.exit(backdrop, finish);
 }
 
 function openSurface(element) {
@@ -303,10 +302,12 @@ function closeSurface(element, immediate = false) {
     return;
   }
   element.classList.add("is-closing");
-  surfaceTimers.set(element, setTimeout(() => {
+  const finish = () => {
     element.classList.remove("is-closing");
     element.hidden = true;
-  }, 150));
+  };
+  if (globalThis.PhotoGitMotion?.exit) globalThis.PhotoGitMotion.exit(element, finish);
+  else finish();
 }
 
 function handleMenuKeyboard(event) {
@@ -346,7 +347,7 @@ function handleGlobalKeyboard(event) {
   if (!sheet.hidden) {
     event.preventDefault();
     event.stopPropagation();
-    return sheet.id === "detail-sheet" ? closeDetail() : closeTagSheet(false, true);
+    return sheet.id === "detail-sheet" ? closeDetail(false) : closeTagSheet(false, true);
   }
   const menu = byId("tools-menu");
   if (!menu.hidden) {
@@ -404,7 +405,7 @@ function renderDemoBranches() {
     // branch tip's committed preview.
     demoPreviews: Object.fromEntries(Array.from(picker.options, (option, index) => [option.value, DEMO_POSTERS[index % DEMO_POSTERS.length]])),
     onSwitch: name => {
-      openDetail("Switch design direction?");
+      openDetail("Switch branch?");
       const description = document.createElement("p");
       description.textContent = `Simulation: switch to ${name}. In Photoshop, PhotoGit checks for unsaved work before switching.`;
       const confirm = document.createElement("div");
@@ -480,6 +481,7 @@ function renderHistory() {
       const message = escapeHtml(version.message);
       const shortId = escapeHtml(version.shortId);
       row.innerHTML = `<span class="history-marker" aria-hidden="true">${historyIcon()}</span><span class="row-copy"><strong title="${message}">${message}</strong><span>${escapeHtml(version.author)} · ${escapeHtml(version.date)}</span></span><span class="commit-id" title="Version ${shortId}">${shortId}</span>`;
+      window.PhotoGitVersionInspector.historyPreview(row, { demoPreview: demoPosterFor(version) });
       row.setAttribute("role", "button"); row.tabIndex = 0;
       row.setAttribute("aria-pressed", String(selectedDemoVersion === version.shortId));
       row.setAttribute("aria-label", `Inspect version ${version.shortId}: ${version.message}`);
@@ -496,8 +498,8 @@ function renderHistory() {
   }
 }
 
-// Representative artwork for the simulated prototype only. Production has no
-// version preview channel, so the inspector falls back to metadata there.
+// Representative artwork for the simulated prototype only. Production reads
+// each version's actual committed preview through the helper.
 const DEMO_POSTERS = ["assets/poster-main.jpg", "assets/poster-type.jpg", "assets/poster-home.jpg"];
 
 function demoPosterFor(version) {
@@ -546,13 +548,21 @@ function renderDemoDocumentPreview() {
 }
 
 function renderDemoVersion(container, version) {
+  const index = versions.indexOf(version);
+  const previous = versions[index + 1];
   window.PhotoGitVersionInspector.render(container, {
     demoPreview: demoPosterFor(version),
+    demoPreviousPreview: previous ? demoPosterFor(previous) : null,
     details: {
-      version: { ...version, id: version.shortId }, snapshotAvailable: true,
-      changes: [{ domain: "text", layerName: "Hero typography", summary: "Refined the title spacing and hierarchy." }, { domain: "appearance", layerName: "Color grade", summary: "Adjusted contrast and color balance." }],
+      version: { ...version, id: version.shortId }, parentVersionId: previous?.shortId || null, snapshotAvailable: true,
+      changes: previous ? [
+        { domain: "content", category: "modified", layerUuid: "drawing", layerName: "Brush details", propertyPath: "fingerprint", summary: "Rendered appearance changed after drawing or erasing." },
+        { domain: "structure", category: "added", layerUuid: "highlight", layerName: "Highlights", summary: "Added layer Highlights" },
+        { domain: "structure", category: "removed", layerUuid: "rough", layerName: "Rough sketch", summary: "Removed layer Rough sketch" },
+        { domain: "text", category: "modified", layerUuid: "title", layerName: "Hero typography", propertyPath: "contents", baseValue: "Make something ordinary", currentValue: "Make the ordinary unmissable.", summary: "Updated the title." }
+      ] : [],
       files: [{ status: "M", path: "snapshot/document.psd" }, { status: "M", path: ".photogit/document.json" }],
-      warnings: ["Simulated preview only. No Photoshop or Git operations occur here."]
+      warnings: []
     },
     onOpen: () => flashResult("Simulation only: a separate version copy would open. No file was opened.")
   });
@@ -606,7 +616,7 @@ function showDemoComparison(review) {
       changes: [{ layerName: "Hero typography", summary: "Adjusted title spacing and scale." }, { layerName: "Color grade", summary: "Updated the recorded contrast settings." }],
       files: [{ status: "M", path: "snapshot/document.psd" }, { status: "M", path: ".photogit/document.json" }],
       conflicts: review.mergeable ? [] : ["snapshot/document.psd"],
-      warnings: ["Simulation only. No branches or files will be changed."]
+      warnings: []
     }, onMerge: () => confirmDemoMerge(review)
   });
 }

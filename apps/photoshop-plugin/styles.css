@@ -3,16 +3,16 @@
 :root {
   color-scheme: dark;
   --bg: #080e19; --surface: #111b29; --elevated: #1d2a3d; --input: #152235; --overlay: #172236;
-  --text: #f4f7ff; --muted: #bfcde2; --disabled: #8190a7; --line: #34435a; --border: #94aac8;
+  --text: #f4f7ff; --muted: #f4f7ff; --disabled: #f4f7ff; --line: #34435a; --border: #94aac8;
   --hover: #263c5b; --pressed: #2b4569; --selected: #194b87; --focus: #adddff;
-  --accent: #7fcfff; --primary: #075ce5; --primary-text: #ffffff; --primary-hover: #0752cc; --primary-pressed: #0648b4;
+  --accent: #7fcfff; --primary: #075ce5; --primary-text: #f4f7ff; --primary-hover: #0752cc; --primary-pressed: #0648b4;
   --success: #99eba9; --success-surface: #1e3c2d; --warning: #f7da9a; --warning-surface: #3d3220;
   --error: #ffb2ac; --error-surface: #432a29; --backdrop: rgba(0,0,0,.58);
   --rim: #40536f; --shine: rgba(255,255,255,.12); --shadow: rgba(0,0,0,.42); --press-veil: rgba(0,0,0,.12);
   --glow: rgba(81,156,255,.5); --focus-halo: rgba(154,198,255,.22);
-  --glass: rgba(12,20,33,.73); --glass-rim: rgba(187,213,255,.16); --glass-top: rgba(198,220,255,.09); --nested: #172437;
+  --glass: rgba(12,20,33,.32); --glass-rim: rgba(187,213,255,.20); --glass-top: rgba(198,220,255,.05); --nested: #172437;
   --glass-glow: 0 1px 0 rgba(215,234,255,.14) inset, 0 12px 28px -18px rgba(0,0,0,.7);
-  --field-glass: rgba(154,186,229,.12); --backdrop-tint: rgba(3,8,18,.2);
+  --field-glass: rgba(154,186,229,.05); --backdrop-tint: rgba(3,8,18,.52);
   --space: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-5: 20px; --space-6: 24px;
   --text-small: 12px; --text-body: 13px; --text-subhead: 15px; --text-title: 18px; --text-heading: 22px;
   --control: 32px; --control-tall: 40px;
@@ -23,22 +23,6 @@
   --depth-lift: 0px; --depth-perspective: 900px; --depth-sheen: rgba(255,255,255,.16);
   --motion-enabled: 1; --motion-control: 320ms; --motion-nav: 480ms; --motion-press: 200ms;
   --ease-liquid: cubic-bezier(.22,.9,.24,1);
-}
-:root[data-theme="light"] {
-  color-scheme: light;
-  /* The lighter reference is pearl-blue frosted glass with light lettering. */
-  --bg: #4c5970; --surface: #465770; --elevated: #3e4e66; --input: #34455e; --overlay: #3b4c65;
-  --text: #ffffff; --muted: #e0e8f5; --disabled: #b5c3d9; --line: #6c7c94; --border: #c5d7f0;
-  --hover: #394f6b; --pressed: #2d4362; --selected: #29558f; --focus: #d3edff;
-  --accent: #a4e5ff; --primary: #1760d5; --primary-text: #ffffff; --primary-hover: #1254c0; --primary-pressed: #1049a8;
-  --success: #b4ecb6; --success-surface: #304e43; --warning: #ffe1a0; --warning-surface: #56442e;
-  --error: #ffcbc8; --error-surface: #5b303b; --backdrop: rgba(21,29,42,.34);
-  --rim: #9eafc9; --shine: rgba(255,255,255,.28); --shadow: rgba(10,21,44,.3); --press-veil: rgba(0,0,0,.12);
-  --glow: rgba(113,176,255,.48); --focus-halo: rgba(178,222,255,.3);
-  --glass: rgba(69,88,122,.55); --glass-rim: rgba(238,247,255,.28); --glass-top: rgba(241,247,255,.16); --nested: #435673;
-  --depth-sheen: rgba(255,255,255,.25);
-  --field-glass: rgba(212,227,255,.16); --backdrop-tint: rgba(192,199,218,.25);
-  --glass-glow: 0 1px 0 rgba(255,255,255,.28) inset, 1px 0 0 rgba(240,249,255,.12) inset, 0 12px 28px -18px rgba(12,28,56,.46);
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; width: 100%; height: 100%; }
@@ -74,13 +58,6 @@ img { max-width: 100%; }
 .sheet-close svg { transition: transform var(--motion-control) var(--ease-liquid); }
 .sheet-close:hover svg { transform: rotate(90deg); }
 .command-trigger-label { display: none; }
-/* The sun and moon share one slot and hand over on a short fade and quarter
-   turn, so the toggle reads as one glyph changing rather than two swapping. */
-.appearance-toggle { position: relative; }
-.appearance-toggle svg { position: absolute; transition: opacity var(--motion-control) var(--ease-liquid), transform var(--motion-control) var(--ease-liquid); }
-.theme-moon { opacity: 0; transform: rotate(-90deg) scale(.7); }
-:root[data-theme="light"] .theme-sun { opacity: 0; transform: rotate(90deg) scale(.7); }
-:root[data-theme="light"] .theme-moon { opacity: 1; transform: none; }
 [role="button"], [role="tab"], [role="menuitem"] { position: relative; cursor: pointer; transition: background-color var(--motion-control) var(--ease-liquid), color var(--motion-control) var(--ease-liquid), border-color var(--motion-control) var(--ease-liquid), box-shadow var(--motion-control) var(--ease-liquid), transform var(--motion-nav) var(--ease-liquid); }
 /* The press compresses quickly and releases slowly on a spring-like curve, so
    it settles rather than snapping. Transform only: no layout is animated. */
@@ -110,6 +87,10 @@ img { max-width: 100%; }
    pointer says why rather than only that. */
 body.is-busy [aria-disabled="true"], body.is-busy input:disabled { cursor: progress; }
 ::selection { background: var(--selected); color: var(--text); }
+/* Status color belongs to indicators; all labels share the text color. */
+.repo-state.ok i, .rail-sync.ok svg { color: var(--success); }
+.repo-state.warning i, .rail-sync.warning svg, .watch-status.warning i { color: var(--warning); }
+.watch-status.error i { color: var(--error); }
 /* Project context and responsive navigation. */
 .repo-project strong { font-size: var(--text-body); }
 .repo-project > span { min-width: 0; }
@@ -119,10 +100,10 @@ body.is-busy [aria-disabled="true"], body.is-busy input:disabled { cursor: progr
 #jump-save:hover span { transform: translateY(2px); }
 .repo-state { display: flex; align-items: center; flex-shrink: 0; margin-right: var(--space-3); font-size: var(--text-small); color: var(--muted); }
 .repo-state i, .watch-status i { width: 5px; height: 5px; border-radius: 50%; background: currentColor; margin-right: 6px; }
-.repo-state.ok { color: var(--success); }
+.repo-state.ok { color: var(--text); }
 /* The dot pops once when the helper comes online. */
 .repo-state.ok i { animation: photogit-pop var(--motion-nav) var(--ease-liquid) backwards; }
-.repo-state.warning { color: var(--warning); }
+.repo-state.warning { color: var(--text); }
 /* Helper online, helper offline: the colour crosses rather than cuts, so a
    reconnect reads as recovery rather than as a different control. */
 .repo-state, .rail-sync { transition: color var(--motion-nav) var(--ease-liquid); }
@@ -161,7 +142,7 @@ body.is-busy [aria-disabled="true"], body.is-busy input:disabled { cursor: progr
   60% { transform: scale(1.12); }
   to { opacity: 1; transform: none; }
 }
-.nav-item.active { background: var(--selected); color: var(--accent); border-color: var(--line); }
+.nav-item.active { background: var(--selected); color: var(--text); border-color: var(--line); }
 .workspace-content { padding: var(--space-4) var(--space-4) var(--space-2); }
 .view-panel { width: 100%; min-width: 0; }
 /* A selected section rises into place. The display change replays it, so
@@ -176,14 +157,14 @@ body.is-busy [aria-disabled="true"], body.is-busy input:disabled { cursor: progr
    the tone eases in so the warning arrives without a flicker on the
    keystroke that crosses the line. */
 #message-count { font-variant-numeric: tabular-nums; transition: color var(--motion-control) var(--ease-liquid), background-color var(--motion-control) var(--ease-liquid); }
-#message-count[data-limit="near"] { color: var(--warning); background: var(--warning-surface); }
-#message-count[data-limit="full"] { color: var(--error); background: var(--error-surface); }
+#message-count[data-limit="near"] { color: var(--text); background: var(--warning-surface); }
+#message-count[data-limit="full"] { color: var(--text); background: var(--error-surface); }
 
 .rail-footer { display: none; }
 .rail-sync { display: flex; align-items: center; min-height: 34px; color: var(--muted); font-size: var(--text-small); }
 .rail-sync svg { width: 15px; height: 15px; margin-right: var(--space-2); }
-.rail-sync.ok { color: var(--success); }
-.rail-sync.warning { color: var(--warning); }
+.rail-sync.ok { color: var(--text); }
+.rail-sync.warning { color: var(--text); }
 
 /* Liquid glass: rim light, top sheen and a soft drop, layered on a translucent
    fill. Blur is applied only where the host supports it; without it the same
@@ -264,16 +245,16 @@ body.is-busy [aria-disabled="true"], body.is-busy input:disabled { cursor: progr
 /* A number that is still settling sits a touch larger, and drops back
    the moment it lands, so a changing total is visibly in motion. */
 .tally-tile dd.is-counting, .nav-item b.is-counting { transform: scale(1.08); }
-.tally-tile:first-child dd { color: var(--accent); }
+.tally-tile:first-child dd { color: var(--text); }
 /* New and deleted layers take the colours the rows already give those
    states, but only once the number is not zero: a red nought draws the
    eye to nothing. */
-.tally-tile:nth-child(2) dd:not([data-value="0"]) { color: var(--success); }
-.tally-tile:nth-child(3) dd:not([data-value="0"]) { color: var(--error); }
+.tally-tile:nth-child(2) dd:not([data-value="0"]) { color: var(--text); }
+.tally-tile:nth-child(3) dd:not([data-value="0"]) { color: var(--text); }
 .tally-tile dt { margin-top: var(--space); color: var(--muted); font-size: var(--text-small); }
 .watch-status.ready, .watch-status.changed { display: none; }
-.watch-status.error { color: var(--error); }
-.watch-status.warning { color: var(--warning); }
+.watch-status.error { color: var(--text); }
+.watch-status.warning { color: var(--text); }
 /* While the panel is reading layers the dot breathes, so "Reading layer 12
    of 40…" is visibly in progress even between updates of the number. It
    stops with the scan; reduced motion never starts it. */
@@ -395,9 +376,9 @@ sp-menu, sp-menu-item { background: var(--overlay); color: var(--text); }
 .change-detail { margin-top: var(--space); }
 .change-domain { flex-shrink: 0; text-align: right; color: var(--muted); font-size: var(--text-small); margin-left: 8px; max-width: 80px; }
 .change-state, .change-kind { display: block; }
-.change-state { color: var(--warning); }
-.change-state.added { color: var(--success); }
-.change-state.removed { color: var(--error); }
+.change-state { color: var(--text); }
+.change-state.added { color: var(--text); }
+.change-state.removed { color: var(--text); }
 /* An empty state replaces a list that just emptied. Easing it up from a few
    pixels below reads as "the list is now this" rather than a flash of new
    text; a display change replays the animation each time it appears. */
@@ -441,15 +422,42 @@ sp-menu, sp-menu-item { background: var(--overlay); color: var(--text); }
 .version-inspector-document-mark { display: inline-block; padding: 6px 8px; border: 1px solid var(--line); border-radius: var(--radius-chip); color: var(--muted); font-size: var(--text-small); }
 .version-inspector-files code, .version-inspector-commit { font-family: var(--mono); font-size: 11px; margin-left: 5px; }
 .version-inspector-section { flex: 1 1 210px; min-width: 0; margin: 6px; padding: var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--surface); }
+.version-inspector > .version-inspector-section { flex: 0 0 auto; }
 .version-inspector-section h3 { margin-bottom: var(--space-3); font-size: var(--text-subhead); }
 .version-inspector-facts { margin: 0; }
 .version-inspector-facts dt { font-size: var(--text-small); color: var(--muted); margin-top: var(--space-2); }
 .version-inspector-facts dd { margin: 2px 0 0; overflow-wrap: anywhere; }
+.version-inspector-information .version-inspector-facts { display: flex; flex-wrap: wrap; margin: 0 -6px; }
+.version-inspector-information .version-inspector-fact { flex: 1 1 95px; min-width: 0; margin: 0 6px var(--space-2); }
 .version-inspector-changes, .version-inspector-files { padding-left: 16px; color: var(--muted); font-size: var(--text-small); overflow-wrap: anywhere; }
 .version-inspector-changes li, .version-inspector-files li { margin: 7px 0; }
 .version-inspector-notice, .version-inspector-fallback { padding: 14px 0; color: var(--muted); font-size: var(--text-small); }
 .version-inspector-preview img { display: block; max-width: 100%; max-height: 520px; object-fit: contain; border-radius: var(--radius); }
 .version-inspector-open { flex: 0 1 auto; margin-top: 4px; }
+.history-thumbnail { flex: 0 0 56px; width: 56px; height: 70px; margin-right: var(--space-3); object-fit: contain; background: var(--input); border: 1px solid var(--glass-rim); border-radius: var(--radius-chip); }
+.history-row.has-thumbnail { align-items: center; flex-wrap: wrap; }
+.history-row.has-thumbnail .history-marker { display: none; }
+.history-row.has-thumbnail .row-copy { flex: 1 1 90px; }
+.history-row.has-thumbnail .commit-id { margin-left: auto; padding-left: var(--space-2); }
+.version-preview-pair { display: flex; flex-wrap: wrap; margin: 0 -4px; }
+.version-preview-pair > .version-inspector-preview, .version-before { flex: 1 1 150px; min-width: 0; margin: 4px; padding: var(--space-2); border: 1px solid var(--glass-rim); border-radius: var(--radius); background: var(--input); }
+.version-preview-pair figure { margin: 0; }
+.version-preview-pair > .version-before { margin: 4px; }
+.version-preview-pair img { display: block; width: 100%; height: 240px; object-fit: contain; border-radius: 6px; }
+.version-preview-label { margin-bottom: var(--space-2); font-size: var(--text-small); color: var(--text); font-weight: 600; }
+.version-change-tally { display: flex; flex-wrap: wrap; margin: 0 -4px var(--space-3); }
+.version-change-stat { flex: 1 1 60px; min-width: 0; margin: 4px; padding: var(--space-2); border: 1px solid var(--line); border-radius: var(--radius-chip); }
+.version-change-stat strong { display: block; font-size: var(--text-heading); font-variant-numeric: tabular-nums; }
+.version-change-stat span { display: block; font-size: var(--text-small); color: var(--muted); }
+.version-change-stat.added, .version-edit-badge.added { color: var(--text); }
+.version-change-stat.removed, .version-edit-badge.removed { color: var(--text); }
+.version-change-stat.modified, .version-edit-badge.modified { color: var(--text); }
+.version-inspector-changes { list-style: none; padding: 0; }
+.version-inspector-changes li { padding: var(--space-3); border: 1px solid var(--line); border-radius: var(--radius); background: var(--input); }
+.version-edit-badge { display: inline-block; margin-right: var(--space-2); margin-bottom: var(--space); font-size: 11px; font-weight: 600; }
+.version-inspector-changes strong { color: var(--text); }
+.version-edit-values { margin-top: var(--space-2); padding-top: var(--space-2); border-top: 1px solid var(--line); }
+.version-edit-values span { display: block; margin-top: var(--space); white-space: pre-wrap; }
 .version-inspector-state { color: var(--muted); padding: 20px 0; }
 /* Branches and reviews separate choices from consequential operations. */
 .branch-layout, .review-layout { min-width: 0; }
@@ -499,11 +507,11 @@ sp-menu, sp-menu-item { background: var(--overlay); color: var(--text); }
 .review-meta { display: flex; flex-wrap: wrap; align-items: center; color: var(--muted); font-size: var(--text-small); margin-top: var(--space-2); }
 .review-meta > span { margin-right: 6px; }
 .review-meta .ready, .review-meta .blocked { padding: 2px var(--space-2); border-radius: 11px; }
-.review-meta .ready { color: var(--success); background: var(--success-surface); }
-.review-meta .blocked { color: var(--warning); background: var(--warning-surface); }
+.review-meta .ready { color: var(--text); background: var(--success-surface); }
+.review-meta .blocked { color: var(--text); background: var(--warning-surface); }
 .review-actions { display: flex; flex-wrap: wrap; margin: var(--space-3) -3px 0; }
 .review-actions > .button { flex: 1 1 90px; margin: 3px; }
-.review-actions > .merge-action[aria-disabled="true"] { flex-basis: 100%; justify-content: flex-start; padding-left: 3px; background: transparent; opacity: 1; border: 0; color: var(--warning); font-weight: 400; }
+.review-actions > .merge-action[aria-disabled="true"] { flex-basis: 100%; justify-content: flex-start; padding-left: 3px; background: transparent; opacity: 1; border: 0; color: var(--text); font-weight: 400; }
 .review-inspector { min-width: 0; color: var(--text); }
 #review-inspector { display: none; }
 .comparison-endpoint { min-width: 0; max-width: 100%; }
@@ -516,8 +524,8 @@ sp-menu, sp-menu-item { background: var(--overlay); color: var(--text); }
 .comparison-change-list, .comparison-file-list, .comparison-conflicts, .comparison-warnings { padding-left: 18px; overflow-wrap: anywhere; font-size: var(--text-small); }
 .comparison-change-list li, .comparison-file-list li, .comparison-conflicts li, .comparison-warnings li { margin: 8px 0; }
 .comparison-file-list code { font: 11px/1.5 var(--mono); margin-left: 6px; }
-.comparison-status .ready { color: var(--success); }
-.comparison-status .blocked { color: var(--warning); }
+.comparison-status .ready { color: var(--text); }
+.comparison-status .blocked { color: var(--text); }
 .comparison-status.merge-blocked { border-color: var(--warning); background: var(--warning-surface); }
 .comparison-status > h3 { margin-top: 14px; font-size: var(--text-subhead); }
 .comparison-status > h3:first-child { margin-top: 0; }
@@ -568,7 +576,7 @@ kbd { font-family: var(--mono); font-size: 11px; padding: 1px var(--space); bord
 .command-copy > span { margin-top: 3px; }
 .command-hint { margin: var(--space-2) 0; }
 .command-row:focus { outline-offset: -2px; background: var(--selected); }
-#command-error { color: var(--error); white-space: normal; margin: var(--space-2) 0; }
+#command-error { color: var(--text); white-space: normal; margin: var(--space-2) 0; }
 /* A command is copied, not read: it stays on one line and scrolls sideways
    in a narrow panel rather than breaking a path in the middle of a word. */
 .setup-command { padding: var(--space-3); margin-top: var(--space-3); background: var(--input); border: 1px solid var(--line); border-radius: var(--radius); font: 11px/1.7 var(--mono); white-space: pre; overflow-x: auto; overflow-wrap: normal; word-break: normal; }
@@ -599,7 +607,7 @@ kbd { font-family: var(--mono); font-size: 11px; padding: 1px var(--space); bord
 .notice { margin: var(--space-3) var(--space-4); padding: var(--space-3); border: 1px solid var(--line); border-radius: var(--radius); background: var(--elevated); color: var(--text); animation: photogit-sheet-in var(--motion-nav) var(--ease-liquid) backwards; }
 /* A calm setup card by default. Only a genuinely lost connection turns it
    into a warning, so first-run choices never read as errors. */
-.notice.is-warning { border-color: var(--warning); background: var(--warning-surface); color: var(--warning); }
+.notice.is-warning { border-color: var(--warning); background: var(--warning-surface); color: var(--text); }
 .notice p { color: var(--text); font-size: var(--text-small); margin: 6px 0 var(--space-2); }
 .notice .text-link { margin-top: var(--space-2); }
 .notice .setup-command { margin-top: var(--space-2); }
@@ -620,8 +628,8 @@ kbd { font-family: var(--mono); font-size: 11px; padding: 1px var(--space); bord
   to { opacity: 1; }
 }
 #result.success, #result.error { padding: var(--space-2) var(--space-3); border-radius: var(--radius); border: 1px solid var(--line); }
-#result.success { color: var(--success); background: var(--success-surface); }
-#result.error { color: var(--error); background: var(--error-surface); border-color: var(--error); }
+#result.success { color: var(--text); background: var(--success-surface); }
+#result.error { color: var(--text); background: var(--error-surface); border-color: var(--error); }
 /* Native fields must not paint through modal surfaces. */
 body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body.has-surface #workspace select { visibility: hidden; }
 .is-initializing #workspace, .is-initializing #onboarding, .is-initializing #connection-notice { display: none !important; }
@@ -839,7 +847,9 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
   box-shadow: 0 1px 0 var(--shine) inset;
 }
 .tally-tile { background-image: linear-gradient(145deg, var(--glass-top), transparent 75%); }
-.app-header { background: transparent; }
+/* A stable reading surface keeps the command field and status legible even
+   over the brightest part of the wallpaper in hosts without backdrop blur. */
+.app-header { background: var(--glass); }
 .nav-item.active {
   background-color: var(--selected);
   background-image: linear-gradient(130deg, var(--glass-top), transparent);
@@ -869,7 +879,6 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
   .app-title > span { display: none; }
   .command-trigger { order: 1; margin-right: var(--space-4); background: var(--field-glass); border-color: var(--glass-rim); box-shadow: 0 1px 0 var(--shine) inset; }
   .repo-state { order: 2; margin: 0 var(--space-2) 0 auto; padding: 6px 10px; border: 1px solid var(--glass-rim); border-radius: 16px; }
-  .appearance-toggle { order: 3; }
   #header-menu { order: 4; }
   .workspace-rail { min-height: 650px; height: calc(100vh - 126px); max-height: 900px; align-self: flex-start; }
   .section-nav { padding: var(--space-2); }
@@ -934,15 +943,10 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
   .command-trigger { min-height: 34px; }
   .command-trigger-label { font-size: 12px; font-style: italic; }
   .repo-state { font-size: 11px; }
-  .appearance-toggle { width: 64px; border: 1px solid var(--glass-rim); background: var(--field-glass); }
-  .appearance-toggle svg { width: 16px; height: 16px; box-sizing: content-box; padding: 5px; border-radius: 13px; transform: none; }
-  .appearance-toggle .theme-sun { left: 2px; opacity: .65; }
-  .appearance-toggle .theme-moon { right: 2px; opacity: 1; background: var(--selected); box-shadow: 0 0 12px var(--glow); }
-  :root[data-theme="light"] .appearance-toggle .theme-sun { opacity: 1; transform: none; background: var(--field-glass); box-shadow: 0 0 12px var(--glow); }
-  :root[data-theme="light"] .appearance-toggle .theme-moon { opacity: .65; transform: none; background: transparent; box-shadow: none; }
 }
 @media (min-width: 900px) {
   .panel-root { border: 1px solid var(--glass-rim); border-radius: 22px; }
+  .app-header { border-radius: 20px 20px 0 0; }
   .workspace-body { padding: 0 14px 14px; }
   .app-header { padding-left: 18px; padding-right: 18px; }
   .workspace-rail { flex-basis: 190px; min-width: 190px; margin-right: 12px; }
@@ -982,6 +986,30 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
 @media (max-width: 899px) { .tally-glyph { display: none; } .tally-tile dd { padding-right: 0; } }
 @media (max-width: 719px) { .nav-item svg { display: none; } }
 
+/* A workspace, rather than one long page: keep navigation and Git actions in
+   reach while the history list and version details scroll independently. */
+@media (min-width: 720px) and (min-height: 600px) {
+  .panel-root { display: flex; flex-direction: column; height: 100vh; min-height: 0; overflow: hidden; }
+  .app-header, .panel-root > .notice, .panel-root > .status-message { flex: 0 0 auto; }
+  .workspace { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; }
+  .workspace > .notice, .shortcut-note { flex: 0 0 auto; }
+  .workspace-body { flex: 1; min-height: 0; padding-bottom: 8px; }
+  .workspace-rail { align-self: stretch; height: auto; min-height: 0; max-height: none; overflow: auto; }
+  .workspace-content { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+  .view-panel { flex: 1; min-height: 0; overflow: auto; padding-right: 4px; }
+  .sync-panel { flex: 0 0 auto; width: 100%; max-width: none; margin-top: 8px; padding: 8px 0; }
+  .shortcut-note { margin: 0 0 8px; font-size: 11px; }
+}
+@media (min-width: 900px) and (min-height: 600px) {
+  #history-view { display: flex; overflow: hidden; }
+  .history-layout { flex: 1; min-height: 0; align-items: stretch; margin-bottom: 0; overflow: hidden; }
+  .history-list-panel { display: flex; flex-direction: column; flex: 0 0 28%; min-width: 210px; max-width: 280px; min-height: 0; }
+  .history-list-panel > .view-heading, .history-list-panel > .field-shell { flex: 0 0 auto; }
+  #history { flex: 1; min-height: 0; overflow: auto; padding-right: 4px; }
+  #history-inspector { min-height: 0; overflow: auto; padding-right: 4px; }
+  .version-inspector-header, .version-inspector-grid { flex: 0 0 auto; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   :root { --motion-enabled: 0; }
   * { transition: none !important; animation: none !important; }
@@ -1011,13 +1039,19 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
   /* Separators and rims are deliberately quieter than the interactive
      boundary. When the host asks for more contrast, bring them up to it. */
   :root { --line: #5c6169; --glass-rim: rgba(255,255,255,.55); --shine: rgba(255,255,255,.1); }
-  :root[data-theme="light"] { --line: #98a1ac; --glass-rim: rgba(60,80,120,.5); }
   .panel-root { background-image: none; }
 }
+/* Keep the wallpaper visible behind reading cards and every text field. */
+.field-shell, .command-trigger, .setup-command, input, textarea { background-color: transparent; background-image: none; }
+.review-card, .branch-row, .version-inspector-section, .version-inspector-changes li,
+.version-preview-pair > .version-inspector-preview, .version-before,
+.comparison-section, .comparison-status, .task-card, .branch-create-card,
+.startup-card, .onboarding, .inspector-empty, .document-facts { background-color: var(--glass); }
+
 @media (prefers-reduced-transparency: reduce) {
   /* Take the glass back to an opaque tonal surface: no translucent fill, no
      blur behind it, and no sheen gradient over it. */
-  :root, :root[data-theme="light"] { --glass: var(--surface); --glass-top: transparent; }
+  :root { --glass: var(--surface); --glass-top: transparent; }
   .panel-root { background-image: none; }
   .view-panel > .liquid-card, .capture-panel, .scan-card.liquid-card, .content-card.liquid-card,
   .onboarding.liquid-card, .repo-context, .section-nav, .tools-menu, .tool-sheet, .app-header {
@@ -1026,7 +1060,6 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
   .app-header, .tools-menu, .tool-sheet { box-shadow: none; }
   .nav-item.active, .list-row.selected { background-image: none; }
 }
-
 @media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
   .history-layout, .view-panel > .content-card, .scan-card.liquid-card,
   .content-card.liquid-card, .capture-panel, .repo-context, .workspace-rail, .workspace-rail .section-nav, .app-header,
@@ -1121,7 +1154,8 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
   from { opacity: .01; transform: translateY(6px); }
   to { opacity: 1; transform: none; }
 }
-.is-revealing { animation: photogit-reveal var(--motion-nav) var(--ease-liquid) var(--reveal-delay, 0ms) backwards; }
+/* Shared JavaScript drives the fade because UXP does not run these keyframes. */
+.is-revealing { animation: none; }
 
 /* The host scrollbar is the one piece of chrome the panel does not control by
    default, and its light track cuts a bright stripe down the glass. */
@@ -1155,9 +1189,9 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
   from { opacity: 1; }
   to { opacity: .01; transform: scale(.985); }
 }
-.tool-sheet:not([hidden]), .tools-menu:not([hidden]) { animation: photogit-sheet-in var(--motion-nav) var(--ease-liquid) backwards; }
-.tool-sheet.is-closing, .tools-menu.is-closing { animation: photogit-surface-out var(--motion-press) var(--ease-liquid) both; pointer-events: none; }
-.surface-backdrop { opacity: 0; transition: opacity var(--motion-press) var(--ease-liquid); }
+.tool-sheet:not([hidden]), .tools-menu:not([hidden]), .view-panel:not([hidden]) { animation: none; }
+.tool-sheet.is-closing, .tools-menu.is-closing { pointer-events: none; }
+.surface-backdrop { opacity: 1; }
 .surface-backdrop.is-open { opacity: 1; }
 
 /* Scan now turns its arrow while a scan is reading layers. Bounded by the
@@ -1198,10 +1232,9 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
    keystroke that nears the limit is felt at the counter. */
 #message-count[data-limit="near"], #message-count[data-limit="full"] { animation: photogit-pop-soft var(--motion-control) var(--ease-liquid) backwards; }
 
-/* The command and tools actions in the header grow their icon a touch on
-   hover. The theme toggle keeps its own sun-to-moon transform. */
-.header-action:not(.appearance-toggle) svg { transition: transform var(--motion-control) var(--ease-liquid); }
-.header-action:not(.appearance-toggle):hover svg { transform: scale(1.1); }
+/* The command and tools actions grow their icon slightly on hover. */
+.header-action svg { transition: transform var(--motion-control) var(--ease-liquid); }
+.header-action:hover svg { transform: scale(1.1); }
 
 /* The helper dot breathes while a reconnect is in flight, and stops
    with the answer. */
@@ -1224,10 +1257,6 @@ body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body
 /* The counter pops when it carries a note, which is the one time it has
    something to say beyond the count. */
 #message-count[aria-live="polite"] { animation: photogit-pop-soft var(--motion-control) var(--ease-liquid) backwards; }
-
-/* The theme toggle carries a halo on hover, matching the glow the other
-   circular controls take. */
-.appearance-toggle:hover { box-shadow: 0 0 18px -6px var(--glow); }
 
 /* A sheet's action arrives a beat after its content, so the question is
    read before the answer is offered. */

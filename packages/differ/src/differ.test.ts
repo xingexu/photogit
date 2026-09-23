@@ -9,6 +9,23 @@ const base = {
 } satisfies ProjectState;
 
 describe("diffStates", () => {
+  it("detects a one-pixel edit even when the thumbnail has not changed", () => {
+    const before = pixelState("pixels-v1:64x64x4:11111111|full-v2:0000000000000001");
+    const after = pixelState("pixels-v1:64x64x4:11111111|full-v2:0000000000000002");
+    expect(diffStates(before, after)).toMatchObject([{ domain: "content", category: "modified", propertyPath: "fingerprint" }]);
+    expect(diffStates(after, before)).toHaveLength(1);
+  });
+
+  it("does not invent edits when adding full-resolution coverage to an old saved version", () => {
+    const legacy = pixelState("pixels-v1:64x64x4:11111111");
+    const current = pixelState("pixels-v1:64x64x4:11111111|full-v2:0000000000000001");
+    expect(diffStates(legacy, current)).toEqual([]);
+    expect(diffStates(current, legacy)).toEqual([]);
+    const edited = pixelState("pixels-v1:64x64x4:22222222|full-v2:0000000000000002");
+    expect(diffStates(legacy, edited)).toHaveLength(1);
+    const samePixels = pixelState("pixels-v1:64x64x4:33333333|full-v2:0000000000000001");
+    expect(diffStates(current, samePixels)).toEqual([]);
+  });
   it("reports a document property with a human summary", () => {
     const current = structuredClone(base);
     current.document.width = 20;

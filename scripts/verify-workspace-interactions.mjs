@@ -14,7 +14,7 @@ const settle = () => run("eval", `new Promise((resolve, reject) => {
   }; check();
 })`);
 try {
-  for (const theme of ["dark", "light"]) {
+  for (const theme of ["dark"]) {
     run("set", "viewport", "420", "800");
     run("open", `http://127.0.0.1:8766/demo.html?panel&theme=${theme}`);
     run("wait", ".simulation-label"); settle();
@@ -88,12 +88,12 @@ try {
     assert.equal(value('document.getElementById("history-count").textContent'), "4");
     click(".history-row");
     assert.equal(value('document.getElementById("detail-sheet").hidden'), false);
-    assert.match(value('document.getElementById("detail-content").textContent'), /Simulated preview only/);
+    assert.match(value('document.getElementById("detail-content").textContent'), /Changes in this version/);
     run("press", "Escape"); settle();
-    click("#appearance-toggle"); settle();
-    assert.equal(value('document.documentElement.getAttribute("data-theme")'), theme === "dark" ? "light" : "dark");
+    assert.equal(value('document.querySelector("#appearance-toggle") === null'), true);
+    assert.equal(value('document.documentElement.getAttribute("data-theme")'), "dark");
     assert.equal(value('document.documentElement.scrollWidth > innerWidth'), false);
     assert.equal(run("errors").trim(), "", "Browser reported an unhandled error");
-    console.log(`PASS ${theme}: responsive docking, draft/focus retention, spacing without gap, filters, reset/focus, branch shortcut, palette keyboard navigation, simulated save with active filter, version inspection, theme change.`);
+    console.log(`PASS ${theme}: responsive docking, draft/focus retention, spacing without gap, filters, reset/focus, branch shortcut, palette keyboard navigation, simulated save with active filter, version inspection, dark-only appearance.`);
   }
 } finally { run("close"); }

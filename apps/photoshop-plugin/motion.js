@@ -1,6 +1,5 @@
-// Shallow, local opacity feedback. Hosts without composited opacity keep the
-// opaque CSS surface; never emulate a fade by repainting descendant colours.
-// Feedback never delays actions or controls visibility, layout, or focus.
+// Timer-driven fades also work in hosts without CSS animation support.
+// Cancellation restores the resting style and never completes a stale dismissal.
 (function () {
   const running = new Map();
   function reduced() {
@@ -19,51 +18,47 @@
   function unavailable(element) {
     return !element || !!element.closest("[hidden]") || element.getAttribute("aria-disabled") === "true";
   }
-  function animate(element, from, duration) {
+  function animate(element, from, duration, leaving = false, complete = () => {}, delay = 0) {
     const previous = running.get(element);
     const current = previous ? Number(element.style.opacity) : null;
     cancel(element);
-    if (unavailable(element) || reduced()) return;
+    if (unavailable(element) || reduced()) { complete(); return; }
     for (const other of [...running.keys()]) {
-      if (other.contains(element)) return;
+      if (other.contains(element)) { if (!leaving) return; cancel(other); }
       if (element.contains(other)) cancel(other);
     }
     const state = { original: element.style.opacity || "", timer: null };
-    const target = state.original === "" ? 1 : Number(state.original);
-    const initial = current ?? from * target;
-    const start = Date.now();
+    const resting = state.original === "" ? 1 : Number(state.original);
+    const target = leaving ? 0 : resting;
+    const initial = current ?? from * resting;
+    let lastFrame = Date.now(), elapsed = -delay;
     running.set(element, state);
     const step = () => {
       if (running.get(element) !== state) return;
       if (unavailable(element) || reduced()) {
-        cancel(element); return;
+        cancel(element); complete(); return;
       }
-      const progress = Math.min(1, (Date.now() - start) / duration);
+      const now = Date.now();
+      // A native layout or artwork scan can hold the UI thread for a whole
+      // fade. Preserve intermediate frames instead of jumping to the end.
+      elapsed += Math.min(48, Math.max(0, now - lastFrame));
+      lastFrame = now;
+      const progress = Math.max(0, Math.min(1, elapsed / duration));
       // Smootherstep has zero velocity and acceleration at both ends.
       const eased = progress * progress * progress * (progress * (progress * 6 - 15) + 10);
       element.style.opacity = String(initial + (target - initial) * eased);
-      if (progress === 1) cancel(element);
+      if (progress === 1) { cancel(element); complete(); }
       else state.timer = setTimeout(step, 16);
     };
     step();
   }
-  // A view should settle into place, never flash or obscure the Photoshop work.
-  // This is intentionally a gentle opacity cue only; colour and layout are CSS.
-  function enter(element) { animate(element, 0.94, 288); }
-  function theme(change) {
-    // Commit preference and theme immediately, even during rapid repeated input.
-    // Only the foreground surface settles; header and navigation never fade.
-    change();
-    const selectors = [".tool-sheet", ".tools-menu", ".view-panel", "#onboarding", "#startup-state"];
-    for (const selector of selectors) {
-      const surface = [...document.querySelectorAll(selector)].find(element => !unavailable(element));
-      if (surface) { animate(surface, 0.97, 280); return; }
-    }
-  }
+  function enter(element) { animate(element, 0, 768); }
+  function reveal(element, delay = 0) { animate(element, 0, 768, false, undefined, delay); }
+  function exit(element, complete) { animate(element, 1, 384, true, complete); }
   document.addEventListener("click", event => {
     const control = event.target.closest?.('[role="button"], [role="tab"], [role="menuitem"]');
     if (unavailable(control)) return;
-    animate(control, 0.96, 200);
+    animate(control, 0.84, 240);
   });
-  globalThis.PhotoGitMotion = { enter, theme, cancel, reduced };
+  globalThis.PhotoGitMotion = { enter, reveal, exit, cancel, reduced };
 })();

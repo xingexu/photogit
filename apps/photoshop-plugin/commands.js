@@ -2,7 +2,7 @@
 const commands = [
   ["changes", "Show changes", "Go to detected edits", "changes"],
   ["history", "Find a version", "Search saved versions", "history"],
-  ["branches", "Show branches", "Switch design directions", "branches"],
+  ["branches", "Show branches", "Switch branches", "branches"],
   ["reviews", "Show reviews", "Compare branches and combine them safely", "reviews"],
   ["activity", "Show activity", "See what PhotoGit has done this session", "activity"],
   ["docs", "Commands & docs", "Open this directory", "docs"],

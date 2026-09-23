@@ -26,7 +26,7 @@ PhotoGit serializes your Photoshop document into a domain-split JSON tree under 
 
 Splitting layer data into one JSON file per layer, by domain, means Git can merge edits to different layers — or different properties of the same layer — without conflicting. Edits to the same property of the same layer still need a manual merge decision, same as any other Git conflict.
 
-Change detection uses sampled renderings and supported metadata, so it can miss small or unsupported edits. Merging uses ordinary Git with PSD conflict checks — not automatic Photoshop layer blending.
+Change detection checks full-resolution rendered pixels and supported metadata, including brush and eraser edits. Older saved versions retain thumbnail-based comparison until you save a new version to establish the full-resolution baseline. Unsupported layer internals can still require manual review. History shows saved previews, before/after comparisons, and added, deleted, or edited layers. Merging uses ordinary Git with PSD conflict checks — not automatic Photoshop layer blending.
 
 ## Installation
 

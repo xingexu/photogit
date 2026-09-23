@@ -24,7 +24,7 @@ async function panel() {
   let timerId = 0;
   let modalDepth = 0;
   const executionContext = { isCancelled: false };
-  const pixels = { width: 2, height: 2, components: 4, getData: vi.fn(async () => new Uint8Array([0, 1, 2, 255])), dispose: vi.fn() };
+  const pixels = { width: 2, height: 2, components: 4, getData: vi.fn(async () => new Uint8Array([0, 1, 2, 255, 0, 1, 2, 255, 0, 1, 2, 255, 0, 1, 2, 255])), dispose: vi.fn() };
   const app: { documents: unknown[]; activeDocument: any; open: ReturnType<typeof vi.fn> } = { documents: [], activeDocument: null, open: vi.fn() };
   const core = { executeAsModal: vi.fn(async (work: (context: { isCancelled: boolean }) => unknown) => {
     modalDepth++;
@@ -119,6 +119,70 @@ async function bridgePanel(body?: unknown) {
   }
   return { ...p, requests, responses };
 }
+
+describe("PhotoGit automatic workspace updates", () => {
+  it("resumes a pending artwork scan after inspecting a version", async () => {
+    const p = await panel(); p.connect();
+    p.evaluate('queueAutomaticScan("brush-edit")');
+    const resume = vi.fn(); p.context.queueAutomaticScan = resume;
+    await p.evaluate('run("Loading version…", async () => {})');
+    expect(resume).toHaveBeenCalledWith("operation-finished", 250);
+    expect(p.id("watch-status").textContent).not.toContain("Scan paused");
+    p.evaluate('cancelScan()');
+    expect(p.id("watch-status").textContent).toContain("Scan paused");
+  });
+  it("restores the project draft and history search after a plugin reload", async () => {
+    const p = await panel(); p.connect();
+    const saved = new Map<string, string>();
+    p.context.localStorage = { getItem: (key: string) => saved.get(key), setItem: (key: string, value: string) => saved.set(key, value) };
+    p.id<HTMLInputElement>("message").value = "Drawing in progress";
+    p.id<HTMLInputElement>("history-search").value = "poster";
+    p.evaluate('selectedVersionId = "abc123"; savePanelState()');
+    p.id<HTMLInputElement>("message").value = "";
+    p.id<HTMLInputElement>("history-search").value = "";
+    await p.evaluate('restorePanelState()');
+    expect(p.id<HTMLInputElement>("message").value).toBe("Drawing in progress");
+    expect(p.id<HTMLInputElement>("history-search").value).toBe("poster");
+    expect([...saved.keys()]).toEqual(["photogit.workspace:/synthetic-project"]);
+  });
+  it("restores the selected preview without opening a Photoshop document", async () => {
+    const p = await panel(); p.connect();
+    p.id("history-view").hidden = false;
+    p.context.wideWorkspace = () => true;
+    p.context.localStorage.getItem = () => JSON.stringify({ selectedVersionId: "second" });
+    p.evaluate('historyEntries = [{ id: "first" }, { id: "second" }]');
+    const inspect = vi.fn(async () => undefined); p.context.inspectVersion = inspect;
+    await p.evaluate('restorePanelState()');
+    expect(inspect).toHaveBeenCalledWith({ id: "second" });
+    expect(p.core.executeAsModal).not.toHaveBeenCalled();
+  });
+  it("does not redraw unchanged history and skips polling during a user operation", async () => {
+    const p = await panel(); p.connect();
+    p.evaluate('historyEntries = [{ id: "first" }]');
+    const read = vi.fn(async () => ({ versions: [{ id: "first" }] })); p.context.callHelper = read;
+    const load = vi.fn(async () => undefined); p.context.loadHistory = load;
+    await p.evaluate('refreshHistoryInBackground()');
+    expect(load).not.toHaveBeenCalled();
+    read.mockResolvedValue({ versions: [{ id: "second" }] });
+    await p.evaluate('refreshHistoryInBackground()');
+    expect(load).toHaveBeenCalledWith({ versions: [{ id: "second" }] });
+    p.evaluate('busyNow = true');
+    await p.evaluate('refreshHistoryInBackground()');
+    expect(read).toHaveBeenCalledTimes(2);
+  });
+  it("keeps one history read in flight and discards a result from the previous project", async () => {
+    const p = await panel(); p.connect();
+    const pending = deferred<unknown>();
+    const read = vi.fn(() => pending.promise); p.context.callHelper = read;
+    const load = vi.fn(); p.context.loadHistory = load;
+    const first = p.evaluate('refreshHistoryInBackground()');
+    await p.evaluate('refreshHistoryInBackground()');
+    p.evaluate('projectFolder = { name: "Other", nativePath: "/other" }');
+    pending.resolve({ versions: [{ id: "old-project" }] });
+    await first;
+    expect(read).toHaveBeenCalledOnce(); expect(load).not.toHaveBeenCalled();
+  });
+});
 
 describe("PhotoGit command palette — production behavior with mocked host", () => {
   it("opens setup documentation before a project has been connected", async () => {
@@ -936,7 +1000,7 @@ describe("PhotoGit production panel behavior — host mocked", () => {
     const helper = vi.fn(async () => ({ changes: [], changeCount: 0, baselineMissing: false }));
     p.context.callHelper = helper;
     await p.evaluate("scanChanges()");
-    expect(modalChecks).toEqual([true, true]);
+    expect(modalChecks).toEqual([true, true, true, true]);
     expect(p.core.executeAsModal).toHaveBeenCalledOnce();
     expect(helper).toHaveBeenCalledOnce();
     expect(p.id("change-summary").textContent).toBe("No detected changes");
@@ -967,8 +1031,8 @@ describe("PhotoGit production panel behavior — host mocked", () => {
     expect(captured.layers[0].content.fingerprint).toBeNull();
     expect(captured.layers[1].content.fingerprint).toMatch(/^pixels-v1:/);
     expect(captured.document.renderedFingerprint).toMatch(/^pixels-v1:/);
-    expect(p.imaging.getPixels.mock.calls.map(([options]) => options?.layerID)).toEqual([11, undefined]);
-    expect(p.imaging.getPixels.mock.calls[1]![0]).toMatchObject({ documentID: doc.id, sourceBounds: { left: 0, top: 0, right: 256, bottom: 256 } });
+    expect(p.imaging.getPixels.mock.calls.map(([options]) => options?.layerID)).toEqual([11, 11, undefined, undefined]);
+    expect(p.imaging.getPixels.mock.calls[2]![0]).toMatchObject({ documentID: doc.id, sourceBounds: { left: 0, top: 0, right: 256, bottom: 256 } });
     expect(p.imaging.getPixels.mock.calls.every(([options]) => options?.applyAlpha === false)).toBe(true);
     expect(captured.layers[1].parentPhotoshopId).toBe(10);
   });
@@ -986,8 +1050,8 @@ describe("PhotoGit production panel behavior — host mocked", () => {
     expect(captured.layers[0].content.opaque).toBe(true);
     expect(captured.layers[0].content.reason).toContain("compared at document level");
     expect(captured.document.renderedFingerprint).toMatch(/^pixels-v1:/);
-    expect(p.imaging.getPixels.mock.calls.map(([options]) => options?.layerID)).toEqual([20, undefined]);
-    expect(p.pixels.dispose).toHaveBeenCalledOnce();
+    expect(p.imaging.getPixels.mock.calls.map(([options]) => options?.layerID)).toEqual([20, undefined, undefined]);
+    expect(p.pixels.dispose).toHaveBeenCalledTimes(2);
   });
 
   it.each([
@@ -1016,7 +1080,7 @@ describe("PhotoGit production panel behavior — host mocked", () => {
     p.evaluate("renderChanges([])");
     await p.evaluate("scanChanges()");
     expect(helper).not.toHaveBeenCalled();
-    expect(p.pixels.dispose).toHaveBeenCalledOnce();
+    expect(p.pixels.dispose).toHaveBeenCalledTimes(2);
     expect(p.id("change-summary").textContent).toBe("Scan needs attention");
     expect(p.id("watch-status").textContent).toContain("Scan incomplete");
     expect(p.id("result").textContent).toContain("Composite image unavailable");
@@ -1044,13 +1108,17 @@ describe("PhotoGit production panel behavior — host mocked", () => {
     } };
     p.connect(doc);
     p.imaging.getPixels.mockImplementation(async () => { expect(p.inModal()).toBe(true); events.push("pixels"); return { imageData: p.pixels }; });
-    p.context.ensureFolder = async () => memoryFolder();
+    const incoming = memoryFolder();
+    p.context.ensureFolder = async () => incoming;
     p.context.callHelper = vi.fn(async () => { expect(p.inModal()).toBe(false); events.push("version"); return { versionId: "a".repeat(40), shortId: "aaaaaaaa", warningCount: 0 }; });
     for (const name of ["loadStatus", "loadBranches", "loadHistory", "loadReviews"]) p.context[name] = vi.fn(async () => undefined);
     p.id<HTMLInputElement>("message").value = "Save modal regression";
     p.id<HTMLInputElement>("history-search").value = "cover";
     await p.evaluate("saveVersion()");
-    expect(events).toEqual(["pixels", "pixels", "psd", "png", "version"]);
+    expect(events).toEqual(["pixels", "pixels", "pixels", "pixels", "psd", "pixels", "version"]);
+    expect(Array.from(new Uint8Array(incoming.entries.get("document.png").content).slice(0, 8))).toEqual([137, 80, 78, 71, 13, 10, 26, 10]);
+    expect(p.imaging.getPixels.mock.calls.at(-1)?.[0]).toMatchObject({ targetSize: { width: 256 }, componentSize: 8, colorSpace: "RGB", applyAlpha: false });
+    expect(doc.saveAs.png).not.toHaveBeenCalled();
     expect(p.core.executeAsModal).toHaveBeenCalledOnce();
     expect(p.id("changes-count").textContent).toBe("0");
     expect(p.evaluate("suppressNotifications")).toBe(false);
@@ -1103,8 +1171,8 @@ describe("PhotoGit production panel behavior — host mocked", () => {
     expect(result.layers).toHaveLength(9);
     expect(result.layers.every((layer: any) => layer.content.fingerprint.startsWith("pixels-v1:"))).toBe(true);
     expect(result.document.renderedFingerprint).toMatch(/^pixels-v1:/);
-    expect(p.imaging.getPixels).toHaveBeenCalledTimes(10);
-    expect(p.pixels.dispose).toHaveBeenCalledTimes(10);
+    expect(p.imaging.getPixels).toHaveBeenCalledTimes(20);
+    expect(p.pixels.dispose).toHaveBeenCalledTimes(20);
     expect(progress.mock.calls).toEqual([[4, 9], [8, 9], [9, 9]]);
   });
 
@@ -1152,7 +1220,8 @@ describe("PhotoGit production startup — mocked host and filesystem", () => {
     expect(p.document.body.classList.contains("is-initializing")).toBe(false);
     expect(p.id("workspace").getAttribute("aria-busy")).toBe("false");
     expect(p.id("onboarding").hidden).toBe(false);
-    expect(p.context.window.setInterval).toHaveBeenCalledOnce();
+    expect(p.context.window.setInterval).toHaveBeenCalledTimes(2);
+    expect(p.context.window.setInterval.mock.calls.map((call: unknown[]) => call[1])).toEqual([1000, 10000]);
     expect(p.action.addNotificationListener).toHaveBeenCalledOnce();
     p.id("global-search").click();
     expect(p.id("detail-sheet").hidden).toBe(false);
@@ -1324,7 +1393,7 @@ describe("PhotoGit rounded design and label clarity", () => {
     expect(p.id("changes").textContent).not.toContain("Whole document");
     expect(p.id("changes").querySelector('[role="button"]')!.getAttribute("aria-label")).toContain("Photoshop layer 12");
   });
-  it("keeps text and interactive boundaries high contrast on both themes' main surfaces", async () => {
+  it("keeps uniform text and interactive boundaries high contrast on dark surfaces", async () => {
     const css = await readFile(resolve(pluginRoot, "styles.css"), "utf8");
     const luminance = (hex: string) => {
       const channels = hex.match(/[a-f\d]{2}/gi)!.map(channel => parseInt(channel, 16) / 255).map(value => value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4);
@@ -1332,7 +1401,7 @@ describe("PhotoGit rounded design and label clarity", () => {
     };
     const contrast = (a: string, b: string) => { const values = [luminance(a), luminance(b)].sort((x, y) => y - x); return (values[0]! + 0.05) / (values[1]! + 0.05); };
     const themes = css.match(/^:root(?:\[data-theme="light"\])? \{[^}]+}/gm)!;
-    expect(themes).toHaveLength(2);
+    expect(themes).toHaveLength(1);
     for (const block of themes) {
       const colors = Object.fromEntries([...block.matchAll(/--([\w-]+):\s*(#[a-f\d]{6})/gi)].map(match => [match[1], match[2]]));
       for (const surface of ["bg", "surface", "elevated", "input", "overlay", "selected", "hover", "pressed"]) {
@@ -1351,55 +1420,21 @@ describe("PhotoGit rounded design and label clarity", () => {
   });
 });
 
-describe("PhotoGit appearance — shared startup and preference behavior", () => {
-  async function appearance(saved: string | null = null, fails = false) {
-    const { document, window } = parseHTML(await readFile(resolve(pluginRoot, "index.html"), "utf8"));
-    const localStorage = { getItem: () => { if (fails) throw new Error("Unavailable"); return saved; }, setItem: vi.fn((_key: string, value: string) => { if (fails) throw new Error("Unavailable"); saved = value; }) };
-    const source = await readFile(resolve(pluginRoot, "appearance.js"), "utf8");
-    const context = createContext({ document, localStorage });
-    runInContext(source, context);
-    return { document, window, localStorage, reload: () => runInContext(source, context) };
-  }
-  it.each([null, "invalid", "dark"])("defaults safely from %s", async saved => {
-    const p = await appearance(saved);
-    expect(p.document.documentElement.getAttribute("data-theme")).toBe("dark");
+describe("PhotoGit dark-only appearance", () => {
+  it.each([null, "light", "dark", "invalid"])("uses dark appearance with saved preference %s", async saved => {
+    const { document } = parseHTML(await readFile(resolve(pluginRoot, "index.html"), "utf8"));
+    const localStorage = { getItem: () => saved, removeItem: vi.fn() };
+    runInContext(await readFile(resolve(pluginRoot, "appearance.js"), "utf8"), createContext({ document, localStorage }));
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+    expect(document.getElementById("appearance-toggle")).toBeNull();
+    expect(document.getElementById("appearance-note")).toBeNull();
+    expect(localStorage.removeItem).toHaveBeenCalledWith("photogit.appearance");
   });
-  it("applies light synchronously, changes via keyboard, and persists after reload", async () => {
-    const p = await appearance("light");
-    expect(p.document.documentElement.getAttribute("data-theme")).toBe("light");
-    const toggle = p.document.getElementById("appearance-toggle")!;
-    expect(toggle.getAttribute("aria-label")).toBe("Switch to Dark mode");
-    const event = new p.window.Event("keydown", { bubbles: true, cancelable: true });
-    Object.assign(event, { key: "Enter" }); toggle.dispatchEvent(event);
-    expect(p.localStorage.setItem).toHaveBeenCalledWith("photogit.appearance", "dark");
-    p.reload();
-    expect(p.document.documentElement.getAttribute("data-theme")).toBe("dark");
-    expect(toggle.getAttribute("aria-label")).toBe("Switch to Light mode");
-    expect(p.document.querySelector(".appearance-group")).toBeNull();
-  });
-  it("survives unavailable preference storage and explains session-only appearance", async () => {
-    const p = await appearance(null, true);
-    (p.document.getElementById("appearance-toggle") as HTMLElement).click();
-    expect(p.document.documentElement.getAttribute("data-theme")).toBe("light");
-    expect(p.document.getElementById("appearance-note")!.textContent).toContain("storage is unavailable");
-    expect(p.document.getElementById("appearance-note")!.hidden).toBe(false);
-  });
-  it("toggles when the icon is clicked, updates its action name and keeps success quiet", async () => {
-    const p = await appearance("dark");
-    p.document.querySelector(".theme-sun path")!.dispatchEvent(new p.window.Event("click", { bubbles: true }));
-    expect(p.document.documentElement.getAttribute("data-theme")).toBe("light");
-    expect(p.document.getElementById("appearance-toggle")!.getAttribute("title")).toBe("Switch to Dark mode");
-    expect(p.document.getElementById("appearance-note")!.hidden).toBe(true);
-  });
-  it("supports Space without repeating the toggle when the key is held", async () => {
-    const p = await appearance("dark");
-    const toggle = p.document.getElementById("appearance-toggle")!;
-    for (const repeat of [false, true]) {
-      const event = new p.window.Event("keydown", { bubbles: true, cancelable: true });
-      Object.assign(event, { key: " ", repeat }); toggle.dispatchEvent(event);
-    }
-    expect(p.document.documentElement.getAttribute("data-theme")).toBe("light");
-    expect(p.localStorage.setItem).toHaveBeenCalledTimes(1);
+  it("does not depend on preference storage", async () => {
+    const { document } = parseHTML(await readFile(resolve(pluginRoot, "index.html"), "utf8"));
+    const localStorage = { removeItem() { throw new Error("Unavailable"); } };
+    runInContext(await readFile(resolve(pluginRoot, "appearance.js"), "utf8"), createContext({ document, localStorage }));
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
   });
 });
 
@@ -1563,5 +1598,64 @@ describe("PhotoGit production scan coordinator — host independent", () => {
     expect(model.sameDocument({ documentId: "1", sourcePath: "/a.psd" }, { documentId: "1", sourcePath: "/b.psd" })).toBe(false);
     expect(model.sameDocument({ documentId: "1", sourcePath: null }, { documentId: "2", sourcePath: null })).toBe(false);
     expect(model.sameDocument({ documentId: "1", sourcePath: null }, { documentId: "1", sourcePath: null })).toBe(true);
+  });
+});
+
+describe("full-resolution drawing detection", () => {
+  it("detects a tiny edit missed by the thumbnail and reads every tile at native depth", async () => {
+    const p = await panel();
+    const layer = { ...syntheticLayer(), bounds: { left: 0, top: 0, right: 1025, bottom: 513 } };
+    const doc = syntheticDocument(1, [layer]);
+    let painted = false;
+    const disposed = vi.fn();
+    p.imaging.getPixels.mockImplementation(async (options: any) => {
+      if (options.targetSize) return { imageData: p.pixels };
+      const stroke = painted && options.sourceBounds.left === 1024 && options.sourceBounds.top === 512;
+      return { level: 0, sourceBounds: options.sourceBounds, imageData: {
+        width: options.sourceBounds.right - options.sourceBounds.left,
+        height: options.sourceBounds.bottom - options.sourceBounds.top, components: 4, componentSize: 16,
+        getData: vi.fn(async () => new Uint8Array([0, stroke ? 1 : 0, 0, 255])), dispose: disposed
+      } };
+    });
+    const read = () => p.evaluate("core.executeAsModal(() => fingerprintLayerPixels(doc, layer))", { doc, layer });
+    const before = await read(); painted = true; const after = await read(); painted = false; const erased = await read();
+    expect(before.split("|full-v2:")[0]).toBe(after.split("|full-v2:")[0]);
+    expect(before.split("|full-v2:")[1]).not.toBe(after.split("|full-v2:")[1]);
+    expect(erased).toBe(before);
+    const tiles = p.imaging.getPixels.mock.calls.map(([options]) => options as any).filter(options => !options.targetSize);
+    expect(tiles.slice(0, 6).map(options => options.sourceBounds)).toEqual([
+      { left: 0, top: 0, right: 512, bottom: 512 }, { left: 512, top: 0, right: 1024, bottom: 512 }, { left: 1024, top: 0, right: 1025, bottom: 512 },
+      { left: 0, top: 512, right: 512, bottom: 513 }, { left: 512, top: 512, right: 1024, bottom: 513 }, { left: 1024, top: 512, right: 1025, bottom: 513 }
+    ]);
+    expect(tiles.every(options => options.componentSize === -1 && options.applyAlpha === false)).toBe(true);
+    expect(disposed).toHaveBeenCalledTimes(18);
+  });
+
+  it("cancels between imaging calls, disposes the tile and preserves cancellation semantics", async () => {
+    const p = await panel(); let cancelled = false;
+    const layer = syntheticLayer(); const doc = syntheticDocument();
+    p.imaging.getPixels.mockImplementation(async (options: any) => {
+      if (!options.targetSize) cancelled = true;
+      return { imageData: p.pixels };
+    });
+    const check = () => { if (cancelled) { const error = new Error("Cancelled"); error.name = "StaleScanError"; throw error; } };
+    await expect(p.evaluate("core.executeAsModal(() => fingerprintLayerPixels(doc, layer, check))", { doc, layer, check })).rejects.toMatchObject({ name: "StaleScanError" });
+    expect(p.pixels.dispose).toHaveBeenCalledTimes(2);
+    expect(p.imaging.getPixels).toHaveBeenCalledTimes(2);
+  });
+
+  it("loads the actual parent preview even when history is filtered or ordered differently", async () => {
+    const p = await panel(); p.connect();
+    p.evaluate('window.innerWidth = 1200');
+    const selected = { id: "a".repeat(40), shortId: "aaaaaaa", message: "Brush work", author: "You", date: "2026-09-22" };
+    const parent = "b".repeat(40);
+    const helper = vi.fn(async (operation: string, payload: any) => operation === "versionDetails"
+      ? { version: selected, parentVersionId: parent, changes: [], files: [], warnings: [], snapshotAvailable: true }
+      : { available: true, contentType: "image/png", png: payload.version === parent ? "YmVmb3Jl" : "YWZ0ZXI=" });
+    p.context.callHelper = helper;
+    await p.evaluate("inspectVersion(selected)", { selected });
+    expect(helper).toHaveBeenCalledWith("versionPreview", { version: parent });
+    expect([...p.id("history-inspector").querySelectorAll(".version-preview-pair img")].map(image => image.getAttribute("src"))).toEqual(["data:image/png;base64,YmVmb3Jl", "data:image/png;base64,YWZ0ZXI="]);
+    expect(p.app.open).not.toHaveBeenCalled();
   });
 });

@@ -1,7 +1,7 @@
 // PhotoGit reveal · staggers a freshly rendered list into view.
 //
-// The stagger is expressed as one custom property per row and consumed by the
-// stylesheet. Rows are never hidden by this module: they are in the DOM, in
+// The stagger uses the shared timer-driven fade in browsers and Photoshop.
+// Rows are never hidden by this module: they are in the DOM, in
 // order, readable by assistive technology and clickable from the first frame,
 // whatever the animation is doing. A capped stagger keeps a long list from
 // taking longer to settle than it takes to read.
@@ -20,18 +20,18 @@
     return position * STEP;
   }
 
-  // Marks rows for the stylesheet. Returns the number of rows it marked so a
-  // caller can tell a no-op from a run.
+  // Returns the number of rows animated so a caller can tell a no-op from a run.
   function stagger(rows) {
     const list = rows ? [...rows] : [];
     if (!list.length) return 0;
     if (reduced()) {
-      for (const row of list) { row.style.removeProperty("--reveal-delay"); row.classList.remove("is-revealing"); }
+      for (const row of list) { globalThis.PhotoGitMotion?.cancel(row); row.style.removeProperty("--reveal-delay"); row.classList.remove("is-revealing"); }
       return 0;
     }
     list.forEach((row, index) => {
       row.style.setProperty("--reveal-delay", `${delayFor(index)}ms`);
       row.classList.add("is-revealing");
+      globalThis.PhotoGitMotion?.reveal(row, delayFor(index));
     });
     return list.length;
   }

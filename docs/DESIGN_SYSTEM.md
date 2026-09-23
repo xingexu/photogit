@@ -18,40 +18,34 @@ These concepts define composition, not new capabilities. Existing project pairin
 
 ## Tokens and typography
 
-`apps/photoshop-plugin/styles.css` owns the base theme and one light-theme override. Reuse semantic tokens instead of introducing local color palettes.
+`apps/photoshop-plugin/styles.css` owns the single dark appearance. There is no theme switch. Legacy light preferences are ignored and removed at startup. All text uses the same soft white (`#f4f7ff`), including metadata, buttons, placeholders and status messages. Size, weight and spacing provide hierarchy; status color belongs to icons, borders and backgrounds.
 
-| Token | Graphite | Silver |
-| --- | --- | --- |
-| `--bg` / canvas | `#191a1b` | `#f3f4f6` |
-| `--surface` / content | `#202224` | `#ffffff` |
-| `--elevated` | `#2b2d30` | `#eaedf1` |
-| `--input` | `#191b1d` | `#f6f7f9` |
-| `--overlay` | `#27292c` | `#ffffff` |
-| `--text` | `#f2f3f4` | `#1c2330` |
-| `--muted` | `#b4b7bd` | `#505966` |
-| `--disabled` | `#8c9199` | `#6f7781` |
-| `--line` / decorative separator | `#383b3f` | `#dde1e7` |
-| `--border` / interactive boundary | `#828891` | `#78818d` |
-| `--hover` | `#30343a` | `#e8ecf2` |
-| `--pressed` | `#383e47` | `#dce3ed` |
-| `--selected` | `#293849` | `#e0eafb` |
-| `--focus` | `#9ac6ff` | `#245bb6` |
-| `--accent` | `#7ea9ff` | `#245bb6` |
-| `--primary` / `--primary-text` | `#2a62d2` / `#ffffff` | `#2d60b5` / `#ffffff` |
-| `--primary-hover` / `--primary-pressed` | `#2f6fed` / `#2456bd` | `#234e98` / `#1c4080` |
-| `--success` / `--success-surface` | `#a6d6ad` / `#26382d` | `#2b653b` / `#e8f2eb` |
-| `--warning` / `--warning-surface` | `#efce8a` / `#3d3220` | `#765006` / `#fbf1db` |
-| `--error` / `--error-surface` | `#ffb2ac` / `#432a29` | `#a12e29` / `#fceceb` |
-| `--rim` | `#494d52` | `#c5cbd3` |
-| `--shine` | `rgba(255,255,255,.055)` | `rgba(255,255,255,.65)` |
-| `--shadow` | `rgba(0,0,0,.28)` | `rgba(27,35,48,.11)` |
-| `--backdrop` | `rgba(0,0,0,.5)` | `rgba(21,29,42,.24)` |
-| `--press-veil` | `rgba(0,0,0,.12)` | `rgba(0,0,0,.12)` |
-| `--glow` / `--focus-halo` | `rgba(150,190,255,.5)` / `rgba(154,198,255,.22)` | `rgba(45,96,181,.32)` / `rgba(36,91,182,.22)` |
-| `--glass` / `--glass-rim` / `--glass-top` | `rgba(50,55,63,.70)` / `rgba(255,255,255,.30)` / `rgba(255,255,255,.12)` | `rgba(255,255,255,.56)` / `rgba(90,120,180,.34)` / `rgba(255,255,255,.95)` |
-| `--nested` | `#31353c` | `#ffffff` |
-| `--depth-sheen` | `rgba(255,255,255,.16)` | `rgba(255,255,255,.7)` |
-| `--bubble-1` / `--bubble-2` / `--bubble-3` | `rgba(84,132,255,.36)` / `rgba(156,112,255,.30)` / `rgba(72,202,190,.24)` | `rgba(90,140,255,.55)` / `rgba(175,130,255,.48)` / `rgba(70,200,185,.42)` |
+| Token | Dark appearance |
+| --- | --- |
+| `--bg` | `#080e19` |
+| `--surface` | `#111b29` |
+| `--elevated` | `#1d2a3d` |
+| `--input` | `#152235` |
+| `--overlay` | `#172236` |
+| `--text` | `#f4f7ff` |
+| `--muted` | `#f4f7ff` |
+| `--disabled` | `#f4f7ff` |
+| `--line` | `#34435a` |
+| `--border` | `#94aac8` |
+| `--hover` | `#263c5b` |
+| `--pressed` | `#2b4569` |
+| `--selected` | `#194b87` |
+| `--focus` | `#adddff` |
+| `--accent` | `#7fcfff` |
+| `--primary` | `#075ce5` |
+| `--primary-text` | `#f4f7ff` |
+| `--success` | `#99eba9` |
+| `--warning` | `#f7da9a` |
+| `--error` | `#ffb2ac` |
+| `--glass` | `rgba(12,20,33,.32)` |
+| `--glass-rim` | `rgba(187,213,255,.20)` |
+| `--glass-top` | `rgba(198,220,255,.05)` |
+| `--nested` | `#172437` |
 
 - UI family: `-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`. Inputs, placeholders and Spectrum controls request the same family and upright style. Photoshop may retain host-owned italic placeholders; native inspection confirmed this fallback without replacing the actual input with decorative text.
 - `--text-body: 13px`, `--text-small: 12px`, `--text-title: 18px`. Body line-height is 1.5; heading weight 600. Compact section headings use 15–16px; count facts 17px. Only identifiers, syntax, keycaps and minor badges use 11px. Minimum-width navigation also uses 11px to retain every label.
@@ -102,7 +96,7 @@ Custom controls retain roles, names, Enter/Space activation and explicit disable
 ## Keyboard rows, announcements and preferences
 
 - **Rows of related controls** — the filter chips, the message suggestions and the footer actions — are toolbars: Left and Right move between neighbours, Home and End to the ends, and every control stays a Tab stop. A section tab is named by its content, so its count is part of its name.
-- **Search fields** clear on Escape when they hold text and pass the key on when empty, so Escape still closes a sheet or menu from inside a search. Enter or Down moves from a search into the first result it left showing; the rows answer Enter themselves. A refusal for a missing message, branch or tag name moves focus into the empty field. The chosen section is remembered with the theme and restored at startup.
+- **Search fields** clear on Escape when they hold text and pass the key on when empty, so Escape still closes a sheet or menu from inside a search. Enter or Down moves from a search into the first result it left showing; the rows answer Enter themselves. A refusal for a missing message, branch or tag name moves focus into the empty field. The chosen section is remembered and restored at startup.
 - **Announcements.** The helper status, the watch status (read whole), the empty states and the document notice are polite status regions; the helper-offline notice and an error in the status line are alerts. The rail's status mirror, the brand mark and the sheet backdrop are hidden from assistive technology. Times in history rows, activity rows and the inspector are `time` elements carrying the recorded timestamp, with the full date as a tooltip.
 - **Preferences.** `prefers-contrast: more` raises `--line` and `--glass-rim` toward the interactive boundary. `forced-colors: active` draws selection as an outline, gives chips and pills a border, fills the busy track with the system highlight and colours a disabled control with `GrayText`. Reduced motion also holds the hover displacements: the row slide, the preview zoom and the primary button's lift.
 
@@ -110,7 +104,9 @@ Custom controls retain roles, names, Enter/Space activation and explicit disable
 
 The [Adobe UXP styles reference](https://developer.adobe.com/photoshop/uxp/2022/uxp-api/reference-css/styles/) is the baseline for supported flex layout, colors, borders, radii and typography. Shadows, CSS transitions and selector/media enhancements are optional decoration; losing them must not remove hierarchy or functionality. Nothing depends on backdrop blur: it is applied only behind an `@supports` guard, and the rim, gradient and shadow carry the material without it. Spectrum styling is explicitly themed, but host-owned internals require native inspection.
 
-The timing vocabulary lives in the tokens described above. `motion.js` applies only shallow local opacity: view entry 94%→100% over 288ms, clicked control 96%→100% over 200ms, and the foreground surface after a theme change 97%→100% over 280ms. Theme preference changes immediately. Header/navigation do not fade, no layout dimensions animate, no descendant colors are repainted frame by frame, and no action waits for animation. Overlapping effects cancel cleanly and restore original opacity. If native compositing differs, retain the opaque tonal feedback instead of claiming browser animation proves native behavior.
+The timing vocabulary lives in the tokens described above. `motion.js` applies local opacity: view entry 0%→100% over 768ms, clicked control 84%→100% over 240ms. User-dismissed sheets and menus fade out over 384ms before hiding; command navigation closes them immediately. Header/navigation do not fade, no layout dimensions animate, and no descendant colors are repainted frame by frame. Overlapping effects cancel cleanly and restore original opacity. Reduced motion skips the fades. Each timer tick advances at most 48ms of animation time, so a busy Photoshop layout cannot skip an entire fade. Native Photoshop rendering was checked separately from browser verification.
+
+History rows and inspector sections use the same timer-driven 768ms fade in the demo and Photoshop, staggered by 26ms per row up to 208ms. They no longer depend on CSS keyframes. Text fields, command search and setup commands use transparent backgrounds. Cards use translucent glass fills so the panel background remains visible behind text. Reduced-transparency preferences retain solid surface fills.
 
 ## Saved previews
 
@@ -142,7 +138,7 @@ For the simulated preview, serve `apps/photoshop-plugin` on loopback port 8766, 
 - [ ] Inspect narrow dark Changes and wide dark Changes at the declared minimum and representative 400/420px, 900px and 1200px+ widths.
 - [ ] Inspect dark/light History selection, Branches, Reviews, Activity and Docs.
 - [ ] Inspect command palette, one dialog, empty, disabled, error and loading states.
-- [ ] Verify wrapping, scroll access, focus return, command navigation, theme persistence, filtering and immediate action dispatch.
+- [ ] Verify wrapping, scroll access, focus return, command navigation, dark-only appearance, filtering and immediate action dispatch.
 - [ ] Verify the actual Photoshop panel independently, including narrow/wide layout, Spectrum controls and keyboard delivery. Do not change or close user artwork for visual testing.
 
 The final implementation report should state which checks actually ran, link actual screenshots with demo/native labels, and list outstanding native verification. Keep private artwork/screenshots local. No push, publish or deploy step is part of this redesign.
@@ -152,9 +148,9 @@ The final implementation report should state which checks actually ran, link act
 Depth is decoration layered over a panel that is complete without it. Three
 rules hold everywhere:
 
-- **Nothing waits on it.** No animation gates a click, delays a handler, moves
-  focus, or changes layout. Every effect is a transform, an opacity, or a
-  custom property the stylesheet reads.
+- **Actions stay immediate.** No decorative animation delays a command or
+  changes layout. Dismissed overlays finish their brief fade before hiding.
+  Every effect is a transform, an opacity, or a custom property the stylesheet reads.
 - **Nothing depends on it.** `depth.js`, `counter.js` and `reveal.js` are each
   optional at the call site. When a module is absent — as it is in the contract
   tests, which execute the panel script alone — the panel renders the same
@@ -179,7 +175,7 @@ or a value changes. Both use the same four motions and nothing else.
 
 | Motion | Keyframes | Used for |
 | --- | --- | --- |
-| reveal | rise 6px, fade in | rows, cards, tally tiles, document facts, inspector sections, activity rows, empty states, unfolded details; staggered through `reveal.js` where there are several |
+| reveal | fade in; shared timer-driven opacity for staggered rows | rows, cards, tally tiles, document facts, inspector sections, activity rows, empty states, unfolded details; staggered through `reveal.js` where there are several |
 | fade-in | fade only | status line, scan verdict, saved preview, filter count, Cancel scan, the workspace and first-run card after startup |
 | sheet-in | rise 10px, fade in | tool sheets, the tools menu, notices |
 | pop / rule-in | scale in and settle | a count pill going from zero; the active section's rule; the icon of the section that becomes active; the helper dot coming online; a failure mark in the activity feed |
@@ -213,4 +209,3 @@ Rules that hold for all of them:
 - **Reduced motion cuts.** Every animation is removed by the reduced-motion
   block; nothing starts from `opacity: 0` in its own rule, so a host that
   strips animations still shows every element at full opacity.
-
