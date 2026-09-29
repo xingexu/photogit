@@ -302,6 +302,9 @@ sp-dropdown, select, label[for="branch-picker"] { display: none; }
 .change-state { font-weight: 600; }
 .change-kind { color: var(--muted); }
 .list-limit-note { padding: var(--space-2); }
+/* Changes previews its first rows; the rest wait behind "See all". */
+.change-row.is-beyond, #changes[data-expanded="false"] .list-limit-note { display: none; }
+#changes-toggle { margin-top: var(--space-2); }
 
 /* History. */
 .history-list-panel .view-heading { margin-bottom: var(--space-2); }

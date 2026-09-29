@@ -1,4 +1,8 @@
 // Shared presentation controls only: never writes PSDs, stages files or calls Git.
+// The Changes card previews the first few edits instead of becoming a long
+// scrolling list. The rest stay in the document, one press away, and every
+// edit is saved with a version whether or not it is showing.
+const PREVIEW_CHANGES = 3;
 function refreshChanges(document) {
   updateMessageCount(document);
   const rows = Array.from(document.querySelectorAll("#changes .change-row"));
@@ -19,6 +23,11 @@ function refreshChanges(document) {
     count.textContent = String(rows.filter(row => typeMatches(row.dataset.domain, chip.dataset.changeFilter) && row.textContent.toLowerCase().includes(query)).length);
     count.hidden = rows.length === 0;
   }
+  const list = document.getElementById("changes");
+  const toggle = document.getElementById("changes-toggle");
+  // A cleared list starts collapsed again the next time it fills.
+  if (list && !rows.length) list.dataset.expanded = "false";
+  const expanded = Boolean(list) && list.dataset.expanded === "true";
   let visible = 0;
   const changed = [];
   for (const row of rows) {
@@ -28,6 +37,14 @@ function refreshChanges(document) {
     if (row.hidden !== hide) changed.push(row);
     row.hidden = hide;
     if (!row.hidden) visible++;
+    // Beyond the preview is a class, not `hidden`: `hidden` means the filter
+    // excluded the row, and the counts above depend on that meaning.
+    row.classList.toggle("is-beyond", Boolean(toggle) && !expanded && !row.hidden && visible > PREVIEW_CHANGES);
+  }
+  if (toggle) {
+    toggle.hidden = visible <= PREVIEW_CHANGES;
+    toggle.setAttribute("aria-expanded", String(expanded));
+    toggle.textContent = expanded ? `Show only the first ${PREVIEW_CHANGES}` : `See all ${visible} edits`;
   }
   // When a filter changes which rows are shown, the rows now showing step in
   // on the stagger; rows already showing hold still. Filtering never hides a
@@ -142,6 +159,14 @@ function setup(document, { navigate, openCommands }) {
   for (const chip of document.querySelectorAll("[data-change-filter]")) {
     activate(chip, () => {
       for (const other of document.querySelectorAll("[data-change-filter]")) other.setAttribute("aria-pressed", String(other === chip));
+      refreshChanges(document);
+    });
+  }
+  const toggle = document.getElementById("changes-toggle");
+  if (toggle) {
+    activate(toggle, () => {
+      const list = document.getElementById("changes");
+      list.dataset.expanded = String(list.dataset.expanded !== "true");
       refreshChanges(document);
     });
   }

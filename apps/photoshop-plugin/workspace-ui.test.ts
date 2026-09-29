@@ -34,6 +34,48 @@ async function fixture() {
 }
 
 describe("Studio workspace interactions", () => {
+  it("previews the first three edits and reveals the rest only on request", async () => {
+    const p = await fixture();
+    const toggle = p.id("changes-toggle");
+    const beyond = () => p.rows.filter(row => row.classList.contains("is-beyond"));
+    expect(beyond()).toEqual([p.rows[3], p.rows[4]]);
+    // Previewing is not filtering: every row still counts as listed.
+    expect(p.visible()).toHaveLength(5);
+    expect(toggle.hidden).toBe(false);
+    expect(toggle.textContent).toBe("See all 5 edits");
+    expect(toggle.getAttribute("aria-expanded")).toBe("false");
+    toggle.click();
+    expect(beyond()).toHaveLength(0);
+    expect(toggle.textContent).toBe("Show only the first 3");
+    expect(toggle.getAttribute("aria-expanded")).toBe("true");
+    p.key(toggle, "Enter");
+    expect(beyond()).toEqual([p.rows[3], p.rows[4]]);
+  });
+
+  it("counts the preview within the current filter and hides the control when everything fits", async () => {
+    const p = await fixture();
+    const toggle = p.id("changes-toggle");
+    p.chip("visual").click();
+    expect(p.visible()).toEqual([p.rows[1], p.rows[3], p.rows[4]]);
+    expect(p.rows.some(row => row.classList.contains("is-beyond"))).toBe(false);
+    expect(toggle.hidden).toBe(true);
+    p.chip("all").click();
+    p.search("artwork");
+    expect(p.visible()).toHaveLength(4);
+    expect(p.rows[4]!.classList.contains("is-beyond")).toBe(true);
+    expect(toggle.textContent).toBe("See all 4 edits");
+  });
+
+  it("collapses again after the list has been cleared", async () => {
+    const p = await fixture();
+    p.id("changes-toggle").click();
+    expect(p.id("changes").dataset.expanded).toBe("true");
+    for (const row of p.rows) row.remove();
+    p.controls.refreshChanges();
+    expect(p.id("changes").dataset.expanded).toBe("false");
+    expect(p.id("changes-toggle").hidden).toBe(true);
+  });
+
   it("moves live scan and preview nodes on resize without losing focus or a draft", async () => {
     const p = await fixture();
     const viewport = p.document.documentElement;
