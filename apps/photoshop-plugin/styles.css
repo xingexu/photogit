@@ -81,9 +81,10 @@ img { max-width: 100%; }
 .repo-state i { display: block; width: 6px; height: 6px; border-radius: 3px; border: 1px solid currentColor; }
 .repo-state span { display: none; margin-left: 6px; }
 .repo-state.ok i { background: var(--success); border-color: var(--success); }
-/* Connected needs no words: the dot says it, and its title carries the time.
-   A lost connection keeps its label. */
-.repo-state.ok span { display: none; }
+/* A working connection is not announced; only a lost one shows here. The
+   command search and the Status action are not shown either: commands open
+   with the / key, and project status lives in the tools menu. */
+.repo-state.ok, #global-search, #show-status { display: none; }
 .repo-state.warning i { background: transparent; border-color: var(--warning); }
 .header-action, .sheet-close { display: flex; align-items: center; justify-content: center; flex: none; width: var(--control); height: var(--control); border-radius: var(--radius-capsule); color: var(--text); }
 .header-action + .header-action { margin-left: var(--space); }
