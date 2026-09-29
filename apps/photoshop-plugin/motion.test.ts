@@ -41,34 +41,38 @@ describe("Shared native-compatible PhotoGit motion", () => {
     view.getBoundingClientRect = () => ({ left: 20, top: 40, right: 320, bottom: 440, width: 300, height: 400 } as DOMRect);
     return { ...p, view, veil: () => p.document.querySelector<HTMLElement>(".native-fade-veil") };
   }
-  it("composites native content with alpha instead of unsupported container opacity", async () => {
+  const alpha = (veil: HTMLElement | null) => Number(/rgba\(11, 18, 32, ([\d.]+)\)/.exec(veil!.style.backgroundColor)![1]);
+  it("composites native content with a partial navy veil instead of unsupported container opacity", async () => {
     const p = await nativeFixture();
     p.context.PhotoGitMotion.enter(p.view);
     expect(p.view.style.opacity || "").toBe("");
-    expect(p.veil()!.style.backgroundColor).toBe("rgba(6, 15, 31, 1)");
+    // Content is already half visible in the first frame: never a blank start.
+    expect(alpha(p.veil())).toBe(0.5);
     expect(p.veil()!.getAttribute("aria-hidden")).toBe("true");
     expect(p.veil()!.style.pointerEvents).toBe("none");
-    p.advance(384);
-    expect(p.veil()!.style.backgroundColor).toBe("rgba(6, 15, 31, 0.5)");
-    p.advance(384);
+    p.advance(48);
+    expect(alpha(p.veil())).toBeGreaterThan(0);
+    expect(alpha(p.veil())).toBeLessThan(0.5);
+    p.advance(160);
     expect(p.veil()).toBeNull();
   });
   it("removes native veils and completes a dismissal on scroll", async () => {
     const p = await nativeFixture(), finish = vi.fn();
     p.context.PhotoGitMotion.exit(p.view, finish);
-    p.advance(192);
-    expect(p.veil()!.style.backgroundColor).toBe("rgba(6, 15, 31, 0.5)");
+    p.advance(48);
+    expect(alpha(p.veil())).toBeGreaterThan(0);
     p.document.dispatchEvent(new p.window.Event("scroll"));
     expect(p.veil()).toBeNull(); expect(finish).toHaveBeenCalledOnce();
     p.advance(800); expect(finish).toHaveBeenCalledOnce();
   });
   it("reverses a native dismissal from its rendered alpha and discards stale completion", async () => {
     const p = await nativeFixture(), finish = vi.fn();
-    p.context.PhotoGitMotion.exit(p.view, finish); p.advance(192);
+    p.context.PhotoGitMotion.exit(p.view, finish); p.advance(48);
+    const shown = alpha(p.veil());
     p.context.PhotoGitMotion.enter(p.view);
-    expect(p.veil()!.style.backgroundColor).toBe("rgba(6, 15, 31, 0.5)");
+    expect(alpha(p.veil())).toBe(shown);
     expect(p.document.querySelectorAll(".native-fade-veil")).toHaveLength(1);
-    p.advance(768); expect(p.veil()).toBeNull(); expect(finish).not.toHaveBeenCalled();
+    p.advance(200); expect(p.veil()).toBeNull(); expect(finish).not.toHaveBeenCalled();
   });
   it("uses paint frames when available and cancels scheduled frames", async () => {
     const p = await fixture();
@@ -79,14 +83,15 @@ describe("Shared native-compatible PhotoGit motion", () => {
     p.context.PhotoGitMotion.cancel(p.id("changes-view"));
     expect(p.context.cancelAnimationFrame).toHaveBeenCalled(); expect(p.timers.size).toBe(0);
   });
-  it("visibly fades entrances and restores their final frame", async () => {
+  it("starts entrances immediately at half strength and restores their final frame", async () => {
     const p = await fixture();
     const view = p.id("changes-view");
     p.context.PhotoGitMotion.enter(view);
-    expect(Number(view.style.opacity)).toBe(0);
-    p.advance(384);
-    expect(Number(view.style.opacity)).toBeCloseTo(0.5, 3);
-    p.advance(384);
+    expect(Number(view.style.opacity)).toBe(0.5);
+    p.advance(48);
+    expect(Number(view.style.opacity)).toBeGreaterThan(0.5);
+    expect(Number(view.style.opacity)).toBeLessThan(1);
+    p.advance(160);
     expect(view.style.opacity || "").toBe("");
     expect(p.timers.size).toBe(0);
   });
@@ -104,7 +109,7 @@ describe("Shared native-compatible PhotoGit motion", () => {
     p.context.PhotoGitMotion.enter(button);
     p.context.PhotoGitMotion.enter(view);
     expect(button.style.opacity || "").toBe("");
-    p.advance(768);
+    p.advance(200);
     expect(descendants).not.toHaveBeenCalled();
     expect(p.context.getComputedStyle).not.toHaveBeenCalled();
     expect(button.style.color).toBe("#cccccc");
@@ -120,13 +125,14 @@ describe("Shared native-compatible PhotoGit motion", () => {
     expect(p.timers.size).toBe(0);
     expect(p.panel.style.opacity || "").toBe("");
   });
-  it("button feedback never delays or duplicates an action and skips disabled controls", async () => {
+  it("clicks run once, immediately, with no scripted fade on the control", async () => {
     const p = await fixture(); const button = p.id("global-search");
     button.setAttribute("aria-disabled", "false");
     const action = vi.fn(); button.addEventListener("click", action);
     button.querySelector("svg")!.dispatchEvent(new p.window.Event("click", { bubbles: true }));
     expect(action).toHaveBeenCalledOnce();
-    expect(Number(button.style.opacity)).toBeLessThan(1);
+    expect(button.style.opacity || "").toBe("");
+    expect(p.timers.size).toBe(0);
     p.advance(300); expect(action).toHaveBeenCalledOnce();
     button.setAttribute("aria-disabled", "true");
     button.click();
@@ -160,11 +166,11 @@ describe("Shared native-compatible PhotoGit motion", () => {
     const p = await fixture(); const view = p.id("changes-view");
     view.style.opacity = "0.8";
     p.context.PhotoGitMotion.enter(view);
-    expect(Number(view.style.opacity)).toBeCloseTo(0.8 * 0);
+    expect(Number(view.style.opacity)).toBeCloseTo(0.8 * 0.5);
     p.context.PhotoGitMotion.cancel(view);
     expect(view.style.opacity).toBe("0.8");
     p.context.PhotoGitMotion.enter(view);
-    p.advance(768);
+    p.advance(200);
     expect(view.style.opacity).toBe("0.8");
     expect(p.timers.size).toBe(0);
   });
@@ -177,28 +183,29 @@ describe("Shared native-compatible PhotoGit motion", () => {
     expect(action).toHaveBeenCalledOnce();
     expect(button.style.opacity || "").toBe("");
     expect(p.timers.size).toBe(1);
-    p.advance(768);
+    p.advance(200);
     expect(p.timers.size).toBe(0);
   });
   it("fades out before dismissal and completes exactly once", async () => {
     const p = await fixture(); const view = p.id("changes-view");
     const finish = vi.fn(() => { view.hidden = true; });
     p.context.PhotoGitMotion.exit(view, finish);
-    p.advance(192);
-    expect(Number(view.style.opacity)).toBeCloseTo(0.5, 3);
+    p.advance(48);
+    expect(Number(view.style.opacity)).toBeGreaterThan(0);
+    expect(Number(view.style.opacity)).toBeLessThan(1);
     expect(view.hidden).toBe(false); expect(finish).not.toHaveBeenCalled();
-    p.advance(192);
+    p.advance(100);
     expect(view.hidden).toBe(true); expect(finish).toHaveBeenCalledOnce();
     expect(view.style.opacity || "").toBe(""); expect(p.timers.size).toBe(0);
   });
   it("reopening a fading surface cancels its old dismissal", async () => {
     const p = await fixture(); const view = p.id("changes-view");
     const finish = vi.fn();
-    p.context.PhotoGitMotion.exit(view, finish); p.advance(64);
+    p.context.PhotoGitMotion.exit(view, finish); p.advance(48);
     const midway = view.style.opacity;
     p.context.PhotoGitMotion.enter(view);
     expect(view.style.opacity).toBe(midway);
-    p.advance(800);
+    p.advance(200);
     expect(finish).not.toHaveBeenCalled(); expect(view.hidden).toBe(false);
     expect(view.style.opacity || "").toBe(""); expect(p.timers.size).toBe(0);
   });
@@ -207,29 +214,23 @@ describe("Shared native-compatible PhotoGit motion", () => {
     p.context.PhotoGitMotion.exit(p.id("changes-view"), finish);
     expect(finish).toHaveBeenCalledOnce(); expect(p.timers.size).toBe(0);
   });
-  it("staggers history content without CSS animation support", async () => {
+  it("never delays a second element: reveal starts at once and ignores a legacy delay", async () => {
     const p = await fixture();
     const first = p.document.createElement("div"), second = p.document.createElement("div");
     p.id("changes-view").append(first, second);
     p.context.PhotoGitMotion.reveal(first, 0);
     p.context.PhotoGitMotion.reveal(second, 208);
-    p.advance(160);
-    expect(Number(first.style.opacity)).toBeGreaterThan(0);
-    expect(Number(second.style.opacity)).toBe(0);
-    p.advance(240);
-    expect(Number(first.style.opacity)).toBeGreaterThan(Number(second.style.opacity));
-    p.advance(640);
+    expect(Number(first.style.opacity)).toBe(0.5);
+    expect(Number(second.style.opacity)).toBe(0.5);
+    p.advance(200);
     expect(first.style.opacity || "").toBe("");
     expect(second.style.opacity || "").toBe("");
     expect(p.timers.size).toBe(0);
   });
-  it("preserves visible fade frames after a busy Photoshop render", async () => {
+  it("lands on the final frame after a busy Photoshop render instead of stretching the fade", async () => {
     const p = await fixture(); const view = p.id("changes-view");
     p.context.PhotoGitMotion.enter(view);
-    p.stall(900); p.advance(0);
-    expect(Number(view.style.opacity)).toBeGreaterThan(0);
-    expect(Number(view.style.opacity)).toBeLessThan(0.2);
-    p.advance(768);
+    p.stall(900); p.advance(16);
     expect(view.style.opacity || "").toBe("");
     expect(p.timers.size).toBe(0);
   });

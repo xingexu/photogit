@@ -244,3 +244,10 @@
   .panel-only .plugin-panel .panel-root { flex: 1; height: auto; min-height: 0; }
 }
 .demo-select { color: var(--text); background: var(--input); border: 1px solid var(--border); border-radius: var(--radius); }
+
+/* The production panel owns its scrolling: a fixed header and repository bar
+   with one scrolling view. The demo frame only gives it a full-height box. */
+.plugin-panel, .panel-only .plugin-panel { display: flex; flex-direction: column; height: 100%; overflow: hidden; }
+.panel-only .plugin-panel { height: 100vh; min-height: 0; }
+.plugin-panel .panel-root, .panel-only .plugin-panel .panel-root { flex: 1; height: auto; min-height: 0; }
+.plugin-panel .app-header { position: static; }

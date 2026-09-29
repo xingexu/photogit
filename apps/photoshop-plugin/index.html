@@ -4,13 +4,13 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>PhotoGit</title>
-    <script src="motion.js?v=121"></script>
-    <script src="appearance.js?v=121"></script>
-    <script src="depth.js?v=121"></script>
-    <script src="counter.js?v=121"></script>
-    <script src="reveal.js?v=121"></script>
-    <link rel="stylesheet" href="styles.css?v=121">
-    <script src="index.js?v=121"></script>
+    <script src="motion.js?v=122"></script>
+    <script src="appearance.js?v=122"></script>
+    <script src="depth.js?v=122"></script>
+    <script src="counter.js?v=122"></script>
+    <script src="reveal.js?v=122"></script>
+    <link rel="stylesheet" href="styles.css?v=122">
+    <script src="index.js?v=122"></script>
   </head>
   <body class="is-initializing">
     <main class="panel-root">
@@ -41,26 +41,24 @@
         <div class="onboarding-symbol" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 7v5l3 2"/><circle cx="12" cy="12" r="8"/></svg></div>
         <h2>Connect a project</h2>
 
-        <ol class="onboarding-steps"><li><b>01</b> Connect your project folder</li><li><b>02</b> Make edits in Photoshop</li><li><b>03</b> Save a version worth keeping</li></ol>
         <div id="choose-project" class="button button-primary button-wide" role="button" tabindex="0">Connect a project</div>
         <div id="setup-toggle" class="text-link" role="button" tabindex="0" aria-expanded="false" aria-controls="setup-instructions">First-time setup<svg class="disclosure-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></div>
         <section id="setup-instructions" hidden>
-        <p id="pairing-help" class="fine-print">Run these commands from the PhotoGit folder in Terminal. Replace the project path and leave the service running.</p>
+        <p id="pairing-help" class="fine-print">Run in Terminal from the PhotoGit folder, with your project path. Keep the helper running.</p>
         <p class="setup-command" tabindex="0">npm run photogit -- init "/path/to/project"<br>npm run helper -- --approve-root "/path/to/project"</p>
-        <p class="fine-print">Drag the PhotoGit tab to dock it.</p>
         </section>
       </section>
 
       <section id="connection-notice" class="notice" role="alert" hidden>
         <strong>Connection lost</strong>
-        <p id="connection-message">PhotoGit’s background service isn’t responding. Your saved versions are safe. Start the service, then choose Reconnect.</p>
+        <p id="connection-message">The PhotoGit helper isn’t responding. Saved versions are safe. Start the helper, then Reconnect.</p>
         <div id="setup-command-toggle" class="text-link" role="button" tabindex="0" aria-expanded="false" aria-controls="setup-command-live">Show setup command<svg class="disclosure-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></div>
         <p id="setup-command-live" class="setup-command" tabindex="0" hidden>npm run helper -- --approve-root "/path/to/project"</p>
         <div id="reconnect-helper" class="button button-quiet" role="button" tabindex="0">Reconnect</div>
       </section>
       <p id="result" class="status-message" role="status" aria-live="polite"></p>
 
-      <section id="workspace" class="workspace" hidden>
+      <section id="workspace" class="workspace" data-view="changes" hidden>
         <section id="document-connection" class="notice" role="status" hidden>
           <strong>Which document belongs to this project?</strong>
           <p id="document-connection-message"></p>
@@ -70,7 +68,7 @@
 
         <div class="workspace-body">
         <div class="workspace-rail">
-        <section class="repo-context liquid-card" data-depth aria-label="Current repository">
+        <section class="repo-context liquid-card" aria-label="Current repository">
             <div class="repo-project">
               <span class="context-badge" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 7h6l2 2h10v10H3z"/></svg></span>
               <div class="context-copy"><span class="context-label">Project</span><strong id="project-status">No project selected</strong>
@@ -107,9 +105,10 @@
           </div>
         </div>
         <div class="workspace-content">
+        <div id="view-scroll" class="view-scroll">
         <section id="changes-view" class="view-panel" role="tabpanel" aria-labelledby="changes-tab">
           <div class="scan-panel">
-          <section class="liquid-card scan-card" data-depth>
+          <section class="liquid-card scan-card">
             <div class="scan-copy">
               <h2 class="scan-title">Changes</h2>
               <p id="change-summary">Waiting for a scan</p>
@@ -122,9 +121,9 @@
               <span>Scan now</span>
             </div>
             <dl id="change-tally" class="change-tally" hidden>
-              <div class="tally-tile" data-depth><dt>Changed layers</dt><dd id="tally-changed">0</dd><span class="tally-glyph" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m4 8 8-4 8 4-8 4zM4 12l8 4 8-4M4 16l8 4 8-4"/></svg></span></div>
-              <div class="tally-tile" data-depth><dt>New layers</dt><dd id="tally-added">0</dd><span class="tally-glyph" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span></div>
-              <div class="tally-tile" data-depth><dt>Deleted layers</dt><dd id="tally-removed">0</dd><span class="tally-glyph" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12h14"/></svg></span></div>
+              <div class="tally-tile added"><dt><span class="tally-glyph" aria-hidden="true">+</span>Added</dt><dd id="tally-added">0</dd></div>
+              <div class="tally-tile removed"><dt><span class="tally-glyph" aria-hidden="true">−</span>Deleted</dt><dd id="tally-removed">0</dd></div>
+              <div class="tally-tile modified"><dt><span class="tally-glyph" aria-hidden="true">~</span>Edited</dt><dd id="tally-changed">0</dd></div>
             </dl>
           </section>
           <div id="cancel-scan" class="button button-quiet" role="button" tabindex="0" hidden>Cancel scan</div>
@@ -137,7 +136,7 @@
               <h3 class="preview-title">Preview</h3>
               <figure id="document-preview-figure" class="preview-figure" hidden>
                 <img id="document-preview-image" alt="Preview saved with the latest version">
-                <figcaption class="fine-print">Saved preview · excludes unsaved edits</figcaption>
+                <figcaption class="fine-print">Latest saved version · not unsaved edits</figcaption>
               </figure>
               <dl id="document-facts" class="document-facts"></dl>
             </section>
@@ -221,7 +220,7 @@
             </div>
             </section>
             </div>
-            <p id="branch-help" class="fine-print">Save your edits before switching. The branch opens in a separate document.</p>
+            <p id="branch-help" class="fine-print">Save before switching. The branch opens as a separate document.</p>
           </section>
         </section>
 
@@ -251,21 +250,22 @@
 
         <section id="docs-view" class="view-panel" role="tabpanel" aria-labelledby="docs-tab" hidden>
           <section class="liquid-card content-card">
-            <div class="section-heading"><h2>Command directory</h2><span class="meta-chip">Quick access</span></div>
-            <p class="docs-intro">Search or pick a command. Shortcut: press <kbd>/</kbd> (or <kbd>Ctrl</kbd>+<kbd>K</kbd>, <kbd>⌘</kbd><kbd>K</kbd> on a Mac) while the panel is focused. If a shortcut doesn’t respond, use the Commands box above.</p>
+            <div class="section-heading"><h2>Commands</h2></div>
+            <p class="docs-intro">Open anywhere in the panel with <kbd>/</kbd> or <kbd>⌘</kbd><kbd>K</kbd>.</p>
             <div class="field-shell search-field"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 4.5 4.5"/></svg><input id="docs-search" type="search" maxlength="200" placeholder="Search save, merge, history…" aria-label="Search command directory" spellcheck="false" uxp-quiet="true"></div>
             <div id="command-directory"></div>
           </section>
           <section class="content-card">
             <h2>First-time setup</h2>
-            <p class="fine-print">Run these once in Terminal, from the PhotoGit folder — not in the Commands box. Replace the path with your project folder. The last line checks that everything is set up correctly.</p>
+            <p class="fine-print">Run once in Terminal from the PhotoGit folder. <code>doctor</code> checks the setup.</p>
             <p class="setup-command" tabindex="0">npm run photogit -- init "/path/to/project"<br>npm run helper -- --approve-root "/path/to/project"<br>npm run photogit -- doctor "/path/to/project"</p>
             <p class="fine-print">Saved versions include the full PSD. Opening a version creates a separate copy. Combining branches doesn’t blend layers; review the result in Photoshop.</p>
-            <p class="fine-print">For the technically curious: each saved version is a Git commit, and /commit works as a shortcut for /save.</p>
+            <p class="fine-print">Each saved version is a Git commit; <code>/commit</code> is an alias for <code>/save</code>.</p>
           </section>
         </section>
 
-        <footer class="sync-panel liquid-card" data-depth role="toolbar" aria-label="Repository sync">
+        </div>
+        <footer class="sync-panel liquid-card" role="toolbar" aria-label="Repository sync">
           <div id="pull" class="footer-action" role="button" tabindex="0" aria-label="Pull shared changes" title="Pull shared changes"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m-4-4 4 4 4-4"/><path d="M5 19h14"/></svg><span>Pull</span></div>
           <div id="push" class="footer-action" role="button" tabindex="0" aria-label="Push saved versions" title="Push saved versions"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V5m-4 4 4-4 4 4"/><path d="M5 19h14"/></svg><span>Push</span></div>
           <div id="show-status" class="footer-action" role="button" tabindex="0" aria-label="Check project status" title="Check project status"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6v5h-5"/><path d="M18.2 15.4A7 7 0 1 1 18.5 8L20 11"/></svg><span id="sync-status">Status</span></div>

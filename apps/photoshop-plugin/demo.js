@@ -64,10 +64,10 @@ function setupDemoPanel() {
   byId("branch-name").textContent = "live-option-b";
   byId("branch-name-detail").textContent = "live-option-b";
   byId("helper-status").className = "repo-state ok";
-  byId("helper-status").setAttribute("title", "Synced");
-  byId("repo-sync-status").textContent = "Synced";
+  byId("helper-status").setAttribute("title", "Simulated project data");
+  byId("repo-sync-status").textContent = "Updated just now";
   const railLabel = byId("rail-sync-label");
-  if (railLabel) { railLabel.textContent = "Synced"; byId("rail-sync").className = "rail-sync ok"; }
+  if (railLabel) { railLabel.textContent = "Updated just now"; byId("rail-sync").className = "rail-sync ok"; }
   renderDemoDocumentPreview();
   byId("sync-status").textContent = "Status";
   replaceDemoDropdown();
@@ -435,7 +435,7 @@ function renderChanges() {
     row.setAttribute("role", "button");
     row.setAttribute("aria-pressed", "false");
     row.setAttribute("aria-label", `Select changed layer ${change.layerName}, Photoshop layer ${change.photoshopId}. ${change.summary}`);
-    row.innerHTML = `<span class="row-glyph" aria-hidden="true">${domainIcon(change.domain)}</span><span class="row-copy"><strong>${escapeHtml(change.layerName)}</strong><span class="layer-identity">Layer #${escapeHtml(change.photoshopId)}</span><span class="change-detail">${escapeHtml(change.summary)}</span></span><span class="change-domain"><span class="change-state">Modified</span><span class="change-kind">${escapeHtml(change.domain)}</span></span>`;
+    row.innerHTML = `<span class="row-glyph" aria-hidden="true">${domainIcon(change.domain)}</span><span class="row-copy"><strong>${escapeHtml(change.layerName)}</strong><span class="layer-identity">Layer #${escapeHtml(change.photoshopId)}</span><span class="change-detail">${escapeHtml(change.summary)}</span></span><span class="change-domain"><span class="change-state modified">Edited</span><span class="change-kind">${escapeHtml(change.domain)}</span></span>`;
     const select = () => {
       document.querySelectorAll(".layer").forEach((layer) => layer.classList.remove("active"));
       document.querySelectorAll(".layer")[index]?.classList.add("active");
@@ -762,6 +762,9 @@ function selectTab(name) {
     byId(`${section}-tab`).setAttribute("aria-selected", active ? "true" : "false");
     byId(`${section}-tab`).tabIndex = active ? 0 : -1;
   });
+  byId("workspace").dataset.view = name;
+  const scroller = byId("view-scroll");
+  if (scroller) scroller.scrollTop = 0;
   globalThis.PhotoGitMotion?.enter(byId(`${name}-view`));
 }
 

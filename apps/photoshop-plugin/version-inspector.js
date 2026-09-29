@@ -176,17 +176,37 @@ function render(container, options = {}) {
   const visual = append(document, grid, "div", "version-inspector-visual");
   const pair = append(document, visual, "div", "version-preview-pair");
   const comparing = safeVersionPreview(options.previousPreview) || safeDemoPreview(options.demoPreviousPreview);
+  const shortId = text(version.shortId, id.slice(0, 7));
   if (comparing) {
     pair.classList.add("has-before");
+    // One image at a time where two would be too small to judge; the
+    // stylesheet shows both side by side once the panel is wide enough and
+    // hides this switch. After is shown first: it is the version selected.
+    pair.dataset.show = "after";
+    const toggle = document.createElement("div");
+    toggle.className = "version-compare-toggle";
+    toggle.setAttribute("role", "group");
+    toggle.setAttribute("aria-label", "Preview");
+    visual.insertBefore(toggle, pair);
+    const choices = [["before", "Before"], ["after", "After"]].map(([value, label]) => {
+      const choice = action(document, toggle, label, "button-quiet button-small", () => {
+        pair.dataset.show = value;
+        for (const [other, name] of choices) other.setAttribute("aria-pressed", String(name === value));
+      });
+      return [choice, value];
+    });
+    for (const [choice, value] of choices) choice.setAttribute("aria-pressed", String(value === "after"));
     const before = append(document, pair, "figure", "version-before");
-    append(document, before, "figcaption", "version-preview-label", "Before");
+    append(document, before, "figcaption", "version-preview-label", "Before · previous version");
     const image = append(document, before, "img", "");
     image.alt = "Previous saved version";
     image.addEventListener("error", () => { before.textContent = "Previous preview unavailable"; });
-    image.src = safeVersionPreview(options.previousPreview) ? options.previousPreview.src : options.demoPreviousPreview.src;
+    const realBefore = safeVersionPreview(options.previousPreview);
+    image.src = realBefore ? options.previousPreview.src : options.demoPreviousPreview.src;
+    if (!realBefore) append(document, before, "p", "fine-print version-demo-note", "Demo artwork");
   }
   const preview = append(document, pair, "div", "version-inspector-preview");
-  if (comparing) append(document, preview, "p", "version-preview-label", "After");
+  if (comparing) append(document, preview, "p", "version-preview-label", shortId ? `After · ${shortId}` : "After");
   function fallback() {
     grid.classList.add("metadata-only");
     preview.textContent = "";
@@ -221,10 +241,10 @@ function render(container, options = {}) {
     ["Version ID", id || text(version.shortId, "Not recorded")],
     ["Saved file", snapshotAvailable ? "On this computer" : "Not on this computer"]
   ]);
-  const summary = section(document, information, "Changes in this version");
+  const summary = section(document, information, "Layer changes");
   const totals = changeTotals(changes);
   const tally = append(document, summary, "div", "version-change-tally");
-  for (const [key, label] of [["added", "Added layers"], ["removed", "Deleted layers"], ["modified", "Edited layers"]]) {
+  for (const [key, label] of [["added", "Added"], ["removed", "Deleted"], ["modified", "Edited"]]) {
     const tile = append(document, tally, "div", `version-change-stat ${key}`);
     append(document, tile, "strong", "", String(totals[key]));
     append(document, tile, "span", "", label);

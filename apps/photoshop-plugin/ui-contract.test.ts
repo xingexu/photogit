@@ -1257,7 +1257,8 @@ describe("PhotoGit production startup — mocked host and filesystem", () => {
     expect(p.id("startup-state").hidden).toBe(true);
     expect(helper.mock.calls.map(call => call[0])).toEqual(["status", "branches", "history", "reviews"]);
     for (const call of helper.mock.calls as unknown[][]) expect(call[2]).toBe(5000);
-    expect(p.id("repo-sync-status").textContent).toBe("Synced");
+    expect(p.id("repo-sync-status").textContent).toMatch(/^Updated \d/);
+    expect(p.id("repo-sync-status").textContent).not.toContain("Synced");
   });
   it.each(["token", "pairing", "preferences"])("recovers from %s failure and keeps setup usable", async failure => {
     const p = await panel();

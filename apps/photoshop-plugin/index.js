@@ -428,11 +428,16 @@ async function refreshWorkspace(announceErrors = false, readTimeoutMs = HELPER_T
   try {
     const status = await callHelper("status", {}, HELPER_HEALTH_TIMEOUT_MS);
     if (!current()) return;
-    setHelper("Synced", true);
+    // The helper answering is not the same as fresh data, and neither says
+    // anything about a remote. The label names what is known: the project
+    // data on screen was read at this time.
+    setHelper("Updating…", true);
     await loadStatus(status);
     const [branches, history, reviews] = await Promise.all([callHelper("branches", {}, readTimeoutMs), callHelper("history", {}, readTimeoutMs), callHelper("reviews", {}, readTimeoutMs)]);
     if (!current()) return;
     await Promise.all([loadBranches(branches), loadHistory(history), loadReviews(reviews)]);
+    if (!current()) return;
+    setHelper(`Updated ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`, true);
   } catch (error) {
     if (!current() || error.name === "StaleScanError") return;
     setHelper("Not connected", false);
@@ -1603,7 +1608,7 @@ function renderChanges(changes, { baselineMissing = false, changeCount = changes
     // values that land in markup are constants by inspection and not merely
     // constants in practice.
     const category = change.category === "added" ? "added" : change.category === "removed" ? "removed" : "modified";
-    const status = category === "added" ? "Added" : category === "removed" ? "Removed" : "Modified";
+    const status = category === "added" ? "Added" : category === "removed" ? "Deleted" : "Edited";
     row.innerHTML = `<span class="row-glyph ${domainClass(change.domain)}" aria-hidden="true">${domainIcon(change.domain)}</span><span class="row-copy"><strong>${escapeHtml(change.layerName)}</strong><span class="layer-identity">${escapeHtml(identityLabel)}</span><span class="change-detail">${escapeHtml(changeSummary(change))}</span></span><span class="change-domain"><span class="change-state ${category}">${status}</span><span class="change-kind">${escapeHtml(change.domain)}</span></span>`;
     const select = () => {
       if (!selectable) return;
@@ -1794,8 +1799,11 @@ function selectTab(name, animate = true) {
     tab.tabIndex = active ? 0 : -1;
   }
   try { localStorage.setItem("photogit.section", name); } catch { /* Session only. */ }
+  // The stylesheet uses the active section to decide which pane scrolls.
+  document.getElementById("workspace").dataset.view = name;
   if (!animate || !target) return;
-  document.body.scrollTop = 0;
+  const scroller = document.getElementById("view-scroll");
+  if (scroller) scroller.scrollTop = 0;
   globalThis.PhotoGitMotion?.enter(target);
 }
 

@@ -192,7 +192,7 @@ describe("visual version history", () => {
     ];
     const p = fixture(); p.render({ details: details({ changes }) });
     expect(inspector.changeTotals(changes)).toEqual({ added: 1, removed: 1, modified: 1, documentEdits: 1 });
-    expect(p.container.querySelector(".version-change-stat.modified")!.textContent).toBe("1Edited layers");
+    expect(p.container.querySelector(".version-change-stat.modified")!.textContent).toBe("1Edited");
     expect(p.container.querySelector(".version-edit-badge.removed")!.textContent).toBe("Deleted");
     expect(p.container.querySelector(".version-edit-values")!.textContent).toContain("Before: Old <b>title</b>");
     expect(p.container.querySelector(".version-edit-values b")).toBeNull();
