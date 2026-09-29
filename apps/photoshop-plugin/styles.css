@@ -5,8 +5,12 @@
    sky glows. A Photoshop panel cannot show what is behind it, so the gradient
    is opaque and the translucency is painted on top; legibility never depends
    on the host. Every container is translucent white glass with fully rounded
-   ends. Groups inside a container are a lighter glass with no halo, so halos
-   never stack. Text is one deep navy family; status colour lives only in
+   ends. Depth is drawn the way the home page pill draws it: a gloss that is
+   brightest at the top and pools again at the bottom, a bevelled rim that is
+   white above and blue below, a solid lip under each raised surface, and sky
+   light gathered inside the lower edge. Those survive in Photoshop, which
+   draws soft blurred shadows faintly or not at all. Fields are carved in
+   rather than raised. Text is one deep navy family; status colour lives only in
    glyphs, dots and accents. Glass is built from backgrounds, borders and
    shadows, never element opacity or backdrop-filter, because Photoshop
    composites neither reliably.
@@ -24,17 +28,20 @@
   --sky-top: #ffffff; --sky-bottom: #c4e2ff;
   --glass: rgba(255,255,255,.45); --glass-strong: rgba(255,255,255,.62);
   --group: rgba(255,255,255,.42); --hairline: rgba(20,80,140,.16); --lens: rgba(63,169,245,.22);
-  --glass-top: rgba(255,255,255,.80); --glass-bottom: rgba(255,255,255,.44);
-  --glass-rim: rgba(255,255,255,.75); --rim-top: rgba(255,255,255,.98); --specular: rgba(255,255,255,.95);
-  --control-top: rgba(255,255,255,.92); --control-bottom: rgba(255,255,255,.58); --control-specular: rgba(255,255,255,1);
-  --primary-sheen: rgba(255,255,255,.06); --primary-specular: rgba(255,255,255,.45);
+  --glass-top: rgba(255,255,255,.92); --glass-mid: rgba(255,255,255,.52); --glass-bottom: rgba(255,255,255,.42); --glass-pool: rgba(255,255,255,.68);
+  --glass-rim: rgba(255,255,255,.75); --rim-top: rgba(255,255,255,.98); --rim-bottom: rgba(60,130,205,.40); --specular: rgba(255,255,255,.95);
+  --control-top: rgba(255,255,255,.97); --control-bottom: rgba(255,255,255,.60); --control-pool: rgba(255,255,255,.84); --control-specular: rgba(255,255,255,1);
+  --primary-sheen: rgba(255,255,255,.06); --primary-shade: rgba(6,40,100,.30); --primary-specular: rgba(255,255,255,.50);
   --overlay-glass: rgba(255,255,255,.94);
   --glow-a: rgba(63,169,245,.20); --glow-b: rgba(63,169,245,.16); --glow-c: rgba(120,190,255,.14);
-  --field: rgba(255,255,255,.58); --field-specular: rgba(255,255,255,.95); --scrim: rgba(18,52,92,.32);
-  /* Each shadow starts with a 1px ring: a white rim alone disappears on white. */
-  --shadow-glass: 0 0 0 1px rgba(20,80,140,.10), 0 10px 26px -12px rgba(12,56,91,.38); --shadow-control: 0 0 0 1px rgba(20,80,140,.14), 0 2px 6px -3px rgba(12,56,91,.35);
-  --shadow-edge: 0 -14px 16px -6px rgba(205,230,255,.92);
-  --halo: 0 0 26px -8px rgba(63,169,245,.60); --halo-soft: 0 0 16px -8px rgba(63,169,245,.45);
+  --field: rgba(255,255,255,.58); --field-specular: rgba(255,255,255,.95); --field-shade: rgba(12,56,91,.16); --scrim: rgba(18,52,92,.32);
+  /* Each raised shadow is a 1px ring (a white rim alone disappears on white),
+     a solid lip that gives the surface thickness, then a soft cast shadow. */
+  --shadow-glass: 0 0 0 1px rgba(20,80,140,.10), 0 3px 0 rgba(40,107,151,.16), 0 12px 26px -12px rgba(12,56,91,.38);
+  --shadow-control: 0 0 0 1px rgba(20,80,140,.14), 0 2px 0 rgba(40,107,151,.20), 0 4px 8px -4px rgba(12,56,91,.35);
+  --shadow-primary: 0 0 0 1px rgba(14,82,173,.40), 0 3px 0 rgba(14,82,173,.55), 0 8px 18px -8px rgba(22,104,214,.65);
+  /* Halo: sky light gathered inside the lower edge, and a glow outside it. */
+  --halo: inset 0 -12px 18px -12px rgba(63,169,245,.32), 0 0 26px -8px rgba(63,169,245,.55); --halo-soft: inset 0 -8px 12px -8px rgba(63,169,245,.30), 0 0 14px -8px rgba(63,169,245,.42);
   --checker-a: #ffffff; --checker-b: #dfe8f2;
   --space: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
   --text-meta: 11px; --text-body: 12px; --text-title: 13px; --text-heading: 15px;
@@ -124,7 +131,7 @@ img { max-width: 100%; }
 .nav-item span { display: none; margin-left: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .nav-item b { position: absolute; top: 1px; left: 50%; margin-left: 6px; min-width: 15px; height: 15px; padding: 0 4px; border-radius: 8px; background: var(--elevated); border: 1px solid var(--hairline); color: var(--text); font-size: 10px; line-height: 13px; text-align: center; white-space: nowrap; overflow-wrap: normal; font-variant-numeric: tabular-nums; }
 .nav-item b[data-empty="true"] { display: none; }
-.nav-item.active { color: var(--text); border-color: var(--hairline); background-color: var(--lens); box-shadow: inset 0 1px 0 var(--control-specular); }
+.nav-item.active { color: var(--text); border-color: var(--glass-rim); border-top-color: var(--rim-top); background-color: var(--lens); background-image: linear-gradient(180deg, var(--control-bottom), rgba(255,255,255,0) 60%); box-shadow: inset 0 1px 0 var(--control-specular), var(--shadow-control); }
 .nav-item.active svg { color: var(--accent); }
 .rail-footer { display: none; }
 .rail-sync { display: flex; align-items: center; color: var(--muted); font-size: var(--text-meta); }
@@ -141,25 +148,23 @@ img { max-width: 100%; }
 /* Containers: translucent glass with fully rounded ends and a halo. */
 .liquid-card, .content-card, .version-inspector, .review-inspector, .task-card, .branch-create-card {
   border: 1px solid var(--glass-rim); border-top-color: var(--rim-top); border-radius: var(--radius-panel);
-  background-color: transparent; background-image: linear-gradient(180deg, var(--glass-top), var(--glass-bottom));
+  background-color: transparent; background-image: linear-gradient(180deg, var(--glass-top), var(--glass-mid) 38%, var(--glass-bottom) 82%, var(--glass-pool));
   box-shadow: inset 0 1px 0 var(--specular), var(--shadow-glass), var(--halo);
 }
 .content-card, .liquid-card { padding: 14px; min-width: 0; }
 /* A group inside a container is lighter glass with a concentric radius and
    no halo, so light never piles up. */
 .content-card .content-card, .content-card .liquid-card, .content-card .task-card, .content-card .branch-create-card, .content-card .review-inspector {
-  border-color: var(--hairline); border-radius: var(--radius); background-color: var(--group); background-image: none; box-shadow: none;
+  border-color: var(--glass-rim); border-top-color: var(--rim-top); border-radius: var(--radius); background-color: var(--group); background-image: none; box-shadow: inset 0 1px 0 var(--specular), var(--shadow-control);
 }
 /* Bars: floating glass capsules with the same rim and halo. */
 .section-nav.liquid-card, .sync-panel.liquid-card {
   border: 1px solid var(--glass-rim); border-top-color: var(--rim-top); border-radius: var(--radius-bar);
-  background-color: transparent; background-image: linear-gradient(180deg, var(--glass-top), var(--glass-bottom));
+  background-color: transparent; background-image: linear-gradient(180deg, var(--glass-top), var(--glass-mid) 38%, var(--glass-bottom) 82%, var(--glass-pool));
   box-shadow: inset 0 1px 0 var(--specular), var(--shadow-glass), var(--halo-soft);
 }
 .section-nav.liquid-card { padding: 3px; }
-/* Scroll edge: content dims into the background as it nears the bar, so rows
-   are never cut off hard. It is a shadow, so it cannot intercept a click. */
-.sync-panel.liquid-card { position: relative; padding: 0 6px; box-shadow: inset 0 1px 0 var(--specular), var(--shadow-edge), var(--halo-soft); }
+.sync-panel.liquid-card { padding: 0 6px; }
 .repo-context.liquid-card { border: 0; border-radius: 0; background-color: transparent; background-image: none; box-shadow: none; }
 .detail-content.version-inspector, .detail-content.review-inspector { padding: 0; border: 0; border-radius: 0; background: transparent; background-image: none; box-shadow: none; }
 .repo-context .project-switch { display: none; }
@@ -178,13 +183,13 @@ img { max-width: 100%; }
 [role="button"], [role="tab"], [role="menuitem"] { cursor: pointer; }
 .button {
   display: inline-flex; align-items: center; justify-content: center; min-height: var(--control); padding: 0 14px; border: 1px solid var(--glass-rim); border-top-color: var(--rim-top); border-radius: var(--radius-capsule);
-  background-color: transparent; background-image: linear-gradient(180deg, var(--control-top), var(--control-bottom));
+  background-color: transparent; background-image: linear-gradient(180deg, var(--control-top), var(--control-bottom) 60%, var(--control-pool));
   box-shadow: inset 0 1px 0 var(--control-specular), var(--shadow-control), var(--halo-soft); color: var(--text); font-weight: 600; white-space: nowrap;
 }
 .button svg { margin-right: 6px; }
 /* The sheen stops above the label, so the label sits on the solid primary. */
-.button-primary { border-color: var(--primary); background-color: var(--primary); background-image: linear-gradient(180deg, var(--primary-sheen), rgba(255,255,255,0) 45%); box-shadow: inset 0 1px 0 var(--primary-specular), var(--shadow-control), var(--halo); color: var(--primary-text); }
-.button-quiet { border-color: var(--hairline); background-image: none; box-shadow: none; }
+.button-primary { border-color: var(--primary); background-color: var(--primary); background-image: linear-gradient(180deg, var(--primary-sheen), rgba(255,255,255,0) 45%, var(--primary-shade)); box-shadow: inset 0 1px 0 var(--primary-specular), var(--shadow-primary); color: var(--primary-text); }
+.button-quiet { background-image: linear-gradient(180deg, var(--control-bottom), rgba(255,255,255,0) 70%); box-shadow: inset 0 1px 0 var(--control-specular), var(--shadow-control); }
 .button-small { min-height: 24px; padding: 0 10px; font-size: var(--text-meta); }
 .button-wide { display: flex; width: 100%; }
 .text-link { display: inline-flex; align-items: center; padding: 2px; border-radius: var(--radius-small); color: var(--text); font-size: var(--text-meta); text-decoration: underline; text-underline-offset: 2px; }
@@ -206,14 +211,15 @@ body.is-busy [aria-disabled="true"], body.is-busy input:disabled { cursor: progr
   transition: background-color var(--motion-fast) var(--ease-out), border-color var(--motion-fast) var(--ease-out), color var(--motion-fast) var(--ease-out), box-shadow var(--motion-fast) var(--ease-out), transform var(--motion-fast) var(--ease-out);
 }
 @supports (transform: scale(.97)) {
-  .button:not([aria-disabled="true"]):active, .footer-action:not([aria-disabled="true"]):active, .header-action:not([aria-disabled="true"]):active, .filter-chip:active, .preset:active { transform: scale(.97); }
+  /* A pressed control sinks onto its lip. */
+  .button:not([aria-disabled="true"]):active, .footer-action:not([aria-disabled="true"]):active, .header-action:not([aria-disabled="true"]):active, .filter-chip:active, .preset:active { transform: translateY(2px) scale(.98); }
 }
 
 /* Fields: transparent over the glass, readable border, visible focus. */
 /* Photoshop draws its own dark text box wherever an input has no opaque
    background or border of its own, so the input is given both, in the same
    colour as its shell, and reads as plain text inside one rounded field. */
-.field-shell { display: flex; align-items: center; min-width: 0; min-height: var(--control-tall); padding: 0 var(--space-3); border: 1px solid var(--border); border-radius: var(--radius-capsule); background: var(--input); box-shadow: inset 0 1px 0 var(--field-specular); }
+.field-shell { display: flex; align-items: center; min-width: 0; min-height: var(--control-tall); padding: 0 var(--space-3); border: 1px solid var(--border); border-radius: var(--radius-capsule); background: var(--input); box-shadow: inset 0 2px 3px -1px var(--field-shade), 0 1px 0 var(--field-specular); }
 .field-shell:focus-within { border-color: var(--focus); outline: 2px solid var(--focus); outline-offset: 1px; }
 .field-shell > svg, .search-glyph { margin-right: 6px; color: var(--muted); }
 .search-glyph { display: flex; }
@@ -264,8 +270,8 @@ sp-dropdown, select, label[for="branch-picker"] { display: none; }
 #message-count[data-limit="near"] { border-color: var(--warning); }
 #message-count[data-limit="full"] { border-color: var(--error); }
 .message-presets { display: flex; flex-wrap: wrap; margin-top: var(--space-2); }
-.preset, .filter-chip { display: inline-flex; align-items: center; min-height: 24px; margin: 0 4px 4px 0; padding: 0 var(--space-2); border: 1px solid var(--hairline); border-radius: 12px; background-color: var(--glass); color: var(--text); font-size: var(--text-meta); }
-.filter-chip[aria-pressed="true"] { border-color: var(--accent); background: var(--selected); }
+.preset, .filter-chip { display: inline-flex; align-items: center; min-height: 24px; margin: 0 4px 4px 0; padding: 0 var(--space-2); border: 1px solid var(--glass-rim); border-top-color: var(--rim-top); border-radius: 12px; background-color: var(--glass); background-image: linear-gradient(180deg, var(--control-top), var(--control-bottom) 60%, var(--control-pool)); box-shadow: var(--shadow-control); color: var(--text); font-size: var(--text-meta); }
+.filter-chip[aria-pressed="true"] { border-color: var(--accent); background: var(--selected); box-shadow: inset 0 2px 3px -1px var(--field-shade); }
 .chip-count { margin-left: 4px; color: var(--muted); font-weight: 400; font-variant-numeric: tabular-nums; }
 .capture-actions { margin-top: var(--space-2); }
 .capture-actions .button { width: 100%; }
@@ -289,8 +295,8 @@ sp-dropdown, select, label[for="branch-picker"] { display: none; }
 /* Rows shared by changes and history. */
 .list > * + * { margin-top: 2px; }
 .list-row { display: flex; align-items: center; min-width: 0; padding: 6px var(--space-2); border-radius: var(--radius-capsule); }
-.list-row.selected, .list-row[aria-pressed="true"] { background: var(--selected); }
-.row-glyph, .history-marker { display: flex; align-items: center; justify-content: center; flex: none; width: 24px; height: 24px; margin-right: var(--space-2); border-radius: 12px; background: var(--glass-strong); color: var(--muted); }
+.list-row.selected, .list-row[aria-pressed="true"] { background: var(--selected); box-shadow: inset 0 1px 0 var(--specular), var(--shadow-control); }
+.row-glyph, .history-marker { display: flex; align-items: center; justify-content: center; flex: none; width: 24px; height: 24px; margin-right: var(--space-2); border: 1px solid var(--glass-rim); border-top-color: var(--rim-top); border-radius: 12px; background-color: var(--glass-strong); background-image: linear-gradient(180deg, var(--control-top), var(--control-bottom) 60%, var(--control-pool)); box-shadow: var(--shadow-control); color: var(--muted); }
 .row-glyph svg, .history-marker svg { width: 14px; height: 14px; }
 .row-copy { display: flex; flex-direction: column; flex: 1; min-width: 0; }
 .row-copy strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -309,7 +315,7 @@ sp-dropdown, select, label[for="branch-picker"] { display: none; }
 .history-group-heading strong { color: var(--text); font-weight: 600; }
 .history-group-entries > * + * { margin-top: 2px; }
 .history-row { min-height: 52px; }
-.history-thumbnail { flex: none; width: 48px; height: 36px; margin-right: var(--space-2); border: 1px solid var(--hairline); border-radius: 9px; object-fit: contain; background-color: var(--checker-a); background-image: linear-gradient(45deg, var(--checker-b) 25%, rgba(0,0,0,0) 25%, rgba(0,0,0,0) 75%, var(--checker-b) 75%), linear-gradient(45deg, var(--checker-b) 25%, rgba(0,0,0,0) 25%, rgba(0,0,0,0) 75%, var(--checker-b) 75%); background-size: 8px 8px; background-position: 0 0, 4px 4px; }
+.history-thumbnail { flex: none; width: 48px; height: 36px; margin-right: var(--space-2); border: 1px solid var(--hairline); border-radius: 9px; object-fit: contain; box-shadow: var(--shadow-control); background-color: var(--checker-a); background-image: linear-gradient(45deg, var(--checker-b) 25%, rgba(0,0,0,0) 25%, rgba(0,0,0,0) 75%, var(--checker-b) 75%), linear-gradient(45deg, var(--checker-b) 25%, rgba(0,0,0,0) 25%, rgba(0,0,0,0) 75%, var(--checker-b) 75%); background-size: 8px 8px; background-position: 0 0, 4px 4px; }
 .history-row.has-thumbnail .history-marker { display: none; }
 .commit-id { display: none; flex: none; margin-left: var(--space-2); color: var(--muted); font-family: var(--mono); font-size: var(--text-meta); }
 .history-inspector-placeholder, .inspector-empty { padding: var(--space-4); color: var(--muted); }
@@ -363,7 +369,7 @@ sp-dropdown, select, label[for="branch-picker"] { display: none; }
 .branch-layout > * + * { margin-top: var(--space-3); }
 .branch-list > * + * { margin-top: 2px; }
 .branch-row { display: flex; align-items: center; min-width: 0; padding: 6px var(--space-2); border-radius: var(--radius-capsule); }
-.branch-row.current { background: var(--selected); }
+.branch-row.current { background: var(--selected); box-shadow: inset 0 1px 0 var(--specular), var(--shadow-control); }
 .branch-row-preview { flex: none; width: 48px; height: 36px; margin-right: var(--space-2); }
 .branch-row-preview img { width: 48px; height: 36px; border: 1px solid var(--hairline); border-radius: 9px; }
 .branch-row-icon { display: flex; flex: none; margin-right: var(--space-2); color: var(--muted); }
@@ -382,7 +388,7 @@ sp-dropdown, select, label[for="branch-picker"] { display: none; }
 .provider-note { margin-bottom: var(--space-2); }
 .review-layout > * + * { margin-top: var(--space-3); }
 .review-list > * + * { margin-top: var(--space-2); }
-.review-card { padding: var(--space-3); border: 1px solid var(--hairline); border-radius: var(--radius); background-color: var(--group); }
+.review-card { padding: var(--space-3); border: 1px solid var(--glass-rim); border-top-color: var(--rim-top); border-radius: var(--radius); background-color: var(--group); box-shadow: inset 0 1px 0 var(--specular), var(--shadow-control); }
 .review-title { display: flex; align-items: baseline; justify-content: space-between; }
 .review-title span, .review-direction, .review-meta { color: var(--muted); font-size: var(--text-meta); }
 .review-meta { display: flex; align-items: center; }
@@ -402,7 +408,7 @@ sp-dropdown, select, label[for="branch-picker"] { display: none; }
 .comparison-artwork-side img { width: 100%; height: 160px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--checker-a); }
 .comparison-layout > * + * { margin-top: var(--space-3); }
 .comparison-summary > * + *, .comparison-status > * + * { margin-top: var(--space-2); }
-.comparison-status { padding: var(--space-3); border: 1px solid var(--hairline); border-radius: var(--radius); background-color: var(--group); }
+.comparison-status { padding: var(--space-3); border: 1px solid var(--glass-rim); border-top-color: var(--rim-top); border-radius: var(--radius); background-color: var(--group); box-shadow: inset 0 1px 0 var(--specular), var(--shadow-control); }
 .comparison-status.merge-blocked { border-color: var(--warning); }
 .conflict-list { font-family: var(--mono); font-size: var(--text-meta); white-space: pre-wrap; }
 
@@ -440,7 +446,7 @@ sp-dropdown, select, label[for="branch-picker"] { display: none; }
 .surface-backdrop { position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 40; background: var(--scrim); }
 .tools-menu, .tool-sheet {
   border: 1px solid var(--glass-rim); border-top-color: var(--rim-top); border-radius: var(--radius-panel);
-  background-color: var(--overlay-glass); background-image: linear-gradient(180deg, var(--glass-top), var(--glass-bottom));
+  background-color: var(--overlay-glass); background-image: linear-gradient(180deg, var(--glass-top), var(--glass-mid) 38%, var(--glass-bottom) 82%, var(--glass-pool));
   box-shadow: inset 0 1px 0 var(--specular), var(--shadow-glass), var(--halo);
 }
 .tools-menu { position: fixed; right: var(--space-2); bottom: 60px; z-index: 50; width: 220px; max-width: calc(100% - 16px); padding: 6px; }
@@ -455,6 +461,10 @@ sp-dropdown, select, label[for="branch-picker"] { display: none; }
 #detail-action { flex: none; margin-top: var(--space-2); }
 #tag-sheet .field-shell { margin-bottom: var(--space-2); }
 #tag-sheet-help { margin-bottom: var(--space-2); }
+
+/* Bevel: every raised surface has a white upper rim and a blue lower one. */
+.liquid-card, .content-card, .version-inspector, .review-inspector, .task-card, .branch-create-card, .tools-menu, .tool-sheet, .button, .preset, .filter-chip, .review-card, .comparison-status, .row-glyph, .history-marker, .nav-item.active, .section-nav.liquid-card, .sync-panel.liquid-card { border-bottom-color: var(--rim-bottom); }
+.button-primary { border-bottom-color: var(--primary-pressed); }
 
 /* The narrowest dock keeps only the count that asks for action. */
 @media (max-width: 299px) {
@@ -488,8 +498,8 @@ sp-dropdown, select, label[for="branch-picker"] { display: none; }
   .workspace-body { flex-direction: row; }
   /* The sidebar is one floating glass panel; the tab capsule dissolves into it. */
   .workspace-rail {
-    width: 196px; margin: var(--space-2) 0 var(--space-2) var(--space-2); border: 1px solid var(--glass-rim); border-top-color: var(--rim-top); border-radius: var(--radius-panel);
-    background-image: linear-gradient(180deg, var(--glass-top), var(--glass-bottom)); box-shadow: inset 0 1px 0 var(--specular), var(--shadow-glass), var(--halo);
+    width: 196px; margin: var(--space-2) 0 var(--space-2) var(--space-2); border: 1px solid var(--glass-rim); border-top-color: var(--rim-top); border-bottom-color: var(--rim-bottom); border-radius: var(--radius-panel);
+    background-image: linear-gradient(180deg, var(--glass-top), var(--glass-mid) 38%, var(--glass-bottom) 82%, var(--glass-pool)); box-shadow: inset 0 1px 0 var(--specular), var(--shadow-glass), var(--halo);
   }
   .section-nav, .section-nav.liquid-card { order: 1; flex-direction: column; margin: 0; padding: var(--space-2); border: 0; border-radius: 0; background-image: none; box-shadow: none; }
   .nav-item { flex: none; justify-content: flex-start; height: 34px; margin-top: 2px; padding: 0 var(--space-2); border-radius: var(--radius-capsule); }
@@ -551,18 +561,20 @@ sp-dropdown, select, label[for="branch-picker"] { display: none; }
   }
   .content-card .content-card, .content-card .liquid-card, .content-card .task-card, .content-card .branch-create-card, .content-card .review-inspector, .review-card, .comparison-status, .setup-command { background-color: var(--input); border-color: var(--line); }
   .comparison-status.merge-blocked { border-color: var(--warning); }
-  .nav-item.active { background-color: var(--selected); border-color: var(--line); box-shadow: none; }
+  .nav-item.active { background-color: var(--selected); background-image: none; border-color: var(--line); box-shadow: none; }
   .meta-chip, .history-thumbnail, .branch-row-preview img { border-color: var(--line); }
   .change-tally, .document-facts > div, .version-inspector-fact, .comparison-fact, .activity-row { border-top-color: var(--line); }
   /* Notices keep their coloured edge, so only the fill changes. */
   .notice, .status-message:not(:empty) { background-color: var(--surface); background-image: none; }
   .repo-context.liquid-card, .history-list-panel, #history-inspector, .detail-content.version-inspector, .detail-content.review-inspector, .button-quiet { background-color: transparent; }
   .button { border-color: var(--border); }
-  .button-primary { border-color: var(--primary); background-color: var(--primary); }
+  .button-primary { border-color: var(--primary); background-color: var(--primary); background-image: none; }
   .tools-menu, .tool-sheet { background-color: var(--overlay); background-image: none; border-color: var(--border); box-shadow: none; }
   .panel-root { background-image: none; }
   .field-shell, .command-trigger { background: var(--input); box-shadow: none; }
-  .preset, .filter-chip { background-color: var(--surface); border-color: var(--line); }
+  .preset, .filter-chip { background-color: var(--surface); background-image: none; border-color: var(--line); box-shadow: none; }
+  .review-card, .comparison-status, .content-card .content-card, .content-card .liquid-card, .content-card .task-card, .content-card .branch-create-card, .content-card .review-inspector, .list-row.selected, .list-row[aria-pressed="true"], .branch-row.current, .history-thumbnail, .button-quiet { background-image: none; box-shadow: none; }
+  .row-glyph, .history-marker { background-image: none; border-color: var(--line); box-shadow: none; }
   .filter-chip[aria-pressed="true"] { background-color: var(--selected); border-color: var(--accent); }
   .startup-skeleton span, .inspector-skeleton span, .onboarding-symbol, .row-glyph, .history-marker { background: var(--elevated); }
   kbd, .nav-item b { border-color: var(--line); }
