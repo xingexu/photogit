@@ -236,21 +236,17 @@ body.is-busy [aria-disabled="true"], body.is-busy input:disabled { cursor: progr
 sp-dropdown, select, label[for="branch-picker"] { display: none; }
 
 /* Changes. */
-.scan-card { display: flex; flex-wrap: wrap; align-items: flex-start; }
-.scan-copy { flex: 1 1 60%; min-width: 0; }
-.scan-title { font-size: var(--text-title); }
-#change-summary { font-size: var(--text-heading); font-weight: 600; }
-.watch-status { display: flex; align-items: center; margin-top: 2px; color: var(--muted); font-size: var(--text-meta); }
+/* The scan summary is not shown: the tab badge and the filter chips already
+   carry the counts, scanning is automatic, and a manual scan stays in the
+   command palette. Its card collapses to nothing, so Changes is one card.
+   Only a scan that needs attention speaks, as a single line above the list. */
+.scan-card, .scan-card.liquid-card { padding: 0; border: 0; border-radius: 0; background-color: transparent; background-image: none; box-shadow: none; }
+.scan-title, #change-summary, .scan-detail, #jump-save, .scan-button, .change-tally, .watch-status { display: none; }
+.watch-status.warning, .watch-status.error { display: flex; align-items: center; padding: 0 var(--space-2) var(--space-2); color: var(--text); font-size: var(--text-meta); }
 .watch-status i { width: 6px; height: 6px; margin-right: 6px; border-radius: 3px; background: var(--success); }
 .watch-status.warning i { background: var(--warning); }
 .watch-status.error i { background: var(--error); }
-.scan-detail { margin-top: 2px; white-space: pre-line; }
-#jump-save { display: none; }
-.scan-button { flex: none; margin-left: var(--space-2); }
-.change-tally { display: flex; flex: 1 1 100%; margin-top: var(--space-3); padding-top: var(--space-2); border-top: 1px solid var(--hairline); }
-.tally-tile { display: flex; flex-direction: column; flex: 1 1 0; min-width: 0; }
-.tally-tile dt { display: flex; align-items: center; color: var(--muted); font-size: var(--text-meta); }
-.tally-tile dd { font-size: var(--text-heading); font-weight: 600; font-variant-numeric: tabular-nums; }
+.scan-panel + .changes-layout, .scan-panel + .changes-card { margin-top: 0; }
 .tally-glyph, .version-change-stat::before, .version-edit-badge::before, .change-state::before { display: inline-block; width: 12px; font-weight: 700; text-align: center; }
 .tally-glyph { margin-right: 4px; }
 .added .tally-glyph, .version-change-stat.added::before, .version-edit-badge.added::before, .change-state.added::before { color: var(--success); }
@@ -259,9 +255,9 @@ sp-dropdown, select, label[for="branch-picker"] { display: none; }
 .version-change-stat.added::before, .version-edit-badge.added::before, .change-state.added::before { content: "+"; }
 .version-change-stat.removed::before, .version-edit-badge.removed::before, .change-state.removed::before { content: "−"; }
 .version-change-stat.modified::before, .version-edit-badge.modified::before, .change-state.modified::before { content: "~"; }
-#cancel-scan { margin-top: var(--space-2); }
+#cancel-scan { margin-bottom: var(--space-2); }
 .changes-layout, .changes-aside, .changes-main { min-width: 0; }
-.changes-layout > * + *, .changes-aside > * + *, .changes-main > * + *, .scan-panel > * + * { margin-top: var(--space-2); }
+.changes-layout > * + *, .changes-aside > * + *, .changes-main > * + * { margin-top: var(--space-2); }
 .capture-title { display: flex; align-items: center; margin-bottom: var(--space-2); }
 .capture-title svg { margin-right: 6px; color: var(--accent); }
 .capture-title h2 { font-size: var(--text-title); }
