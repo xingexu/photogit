@@ -69,13 +69,14 @@ img { max-width: 100%; }
 }
 .app-header { flex: none; display: flex; align-items: center; height: 44px; padding: 0 var(--space-2); border-bottom: 1px solid var(--hairline); background-image: linear-gradient(180deg, var(--glass-strong), var(--glass-bottom)); }
 .app-brand { display: flex; align-items: center; flex: 1; min-width: 0; }
-.pg-mark { display: flex; width: 20px; height: 20px; flex: none; margin-right: var(--space-2); }
-.pg-mark img { width: 20px; height: 20px; border-radius: var(--radius-small); }
 .app-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .repo-state { display: flex; align-items: center; flex: none; margin: 0 var(--space-2); color: var(--muted); font-size: var(--text-meta); white-space: nowrap; }
 .repo-state i { display: block; width: 6px; height: 6px; border-radius: 3px; border: 1px solid currentColor; }
 .repo-state span { display: none; margin-left: 6px; }
 .repo-state.ok i { background: var(--success); border-color: var(--success); }
+/* Connected needs no words: the dot says it, and its title carries the time.
+   A lost connection keeps its label. */
+.repo-state.ok span { display: none; }
 .repo-state.warning i { background: transparent; border-color: var(--warning); }
 .header-action, .sheet-close { display: flex; align-items: center; justify-content: center; flex: none; width: var(--control); height: var(--control); border-radius: var(--radius-capsule); color: var(--text); }
 .header-action + .header-action { margin-left: var(--space); }
@@ -209,18 +210,24 @@ body.is-busy [aria-disabled="true"], body.is-busy input:disabled { cursor: progr
 }
 
 /* Fields: transparent over the glass, readable border, visible focus. */
-.field-shell { display: flex; align-items: center; min-width: 0; min-height: var(--control-tall); padding: 0 var(--space-3); border: 1px solid var(--border); border-radius: var(--radius-capsule); background: var(--field); box-shadow: inset 0 1px 0 var(--field-specular); }
+/* Photoshop draws its own dark text box wherever an input has no opaque
+   background or border of its own, so the input is given both, in the same
+   colour as its shell, and reads as plain text inside one rounded field. */
+.field-shell { display: flex; align-items: center; min-width: 0; min-height: var(--control-tall); padding: 0 var(--space-3); border: 1px solid var(--border); border-radius: var(--radius-capsule); background: var(--input); box-shadow: inset 0 1px 0 var(--field-specular); }
 .field-shell:focus-within { border-color: var(--focus); outline: 2px solid var(--focus); outline-offset: 1px; }
 .field-shell > svg, .search-glyph { margin-right: 6px; color: var(--muted); }
 .search-glyph { display: flex; }
-.field-shell input { flex: 1; min-width: 0; height: 30px; padding: 0; border: 0; background: transparent; color: var(--text); font: inherit; outline: none; }
+.field-shell input { flex: 1; min-width: 0; height: 28px; margin: 0; padding: 0; border: 1px solid var(--input); border-radius: var(--radius-capsule); background-color: var(--input); color: var(--text); font: inherit; font-style: normal; outline: none; -webkit-appearance: none; appearance: none; }
 .field-shell input:focus { outline: none; }
-.field-shell input::placeholder { color: var(--muted); }
+.field-shell input::placeholder { color: var(--muted); font-style: normal; }
 .field-shell.is-updated { border-color: var(--accent); }
 .field-label, .version-label { display: block; margin-bottom: 4px; font-weight: 600; }
 .inline-form { display: flex; align-items: center; }
 .inline-form .field-shell { flex: 1; margin-right: var(--space-2); }
-sp-dropdown { width: 100%; }
+/* The host draws the dropdown in its own dark theme and nothing here can
+   restyle it. Every branch row already has a Switch button, so the picker
+   and its label are not shown. */
+sp-dropdown, select, label[for="branch-picker"] { display: none; }
 
 /* Changes. */
 .scan-card { display: flex; flex-wrap: wrap; align-items: flex-start; }
