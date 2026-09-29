@@ -7,7 +7,7 @@
 // a stretched fade.
 //
 // Photoshop 27.10 accepts fractional opacity without compositing the pixels,
-// so in the native host a navy veil (the panel's --bg colour) fades out over
+// so in the native host a sky veil (the panel's --bg colour) fades out over
 // the element instead. It never starts fully opaque, never takes pointer
 // events, is clipped to the element's scroll viewport, and is removed on
 // completion, cancellation, scroll and resize.
@@ -17,9 +17,9 @@
   const ENTER_MS = 160;
   const EXIT_MS = 110;
   const ENTER_FROM = 0.5;
-  // Mirrors --bg in styles.css (#0b1220). Read as a constant so the browser
+  // Mirrors --bg in styles.css (#e8f3ff). Read as a constant so the browser
   // path never calls getComputedStyle.
-  const VEIL_RGB = "11, 18, 32";
+  const VEIL_RGB = "232, 243, 255";
   const running = new Map();
 
   function nativeHost() {

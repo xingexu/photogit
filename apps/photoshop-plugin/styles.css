@@ -1,41 +1,41 @@
-/* PhotoGit · liquid glass on deep navy.
-   One dark appearance. The panel itself is a sheet of glass: a sheen and three
-   static blue glows over a navy base. A Photoshop panel cannot show what is
-   behind it, so the base stays solid and the translucency is painted on top;
-   legibility never depends on the host. Every container on the sheet is
-   translucent glass with fully rounded ends and a soft glow: a top-to-bottom
-   fill, a 1px rim that is brightest along the top edge, an inset specular
-   line and an outer halo. Groups inside a container are a lighter glass with
-   no halo, so halos never stack. Glass is built from backgrounds, borders and
+/* PhotoGit · liquid glass on a sky of white to light blue.
+   One light appearance, matching the PhotoGit home page: white glass with
+   bright rims, a top highlight, soft blue shadows and a sky-blue halo. The
+   panel is a vertical gradient from white to light blue with three static
+   sky glows. A Photoshop panel cannot show what is behind it, so the gradient
+   is opaque and the translucency is painted on top; legibility never depends
+   on the host. Every container is translucent white glass with fully rounded
+   ends. Groups inside a container are a lighter glass with no halo, so halos
+   never stack. Text is one deep navy family; status colour lives only in
+   glyphs, dots and accents. Glass is built from backgrounds, borders and
    shadows, never element opacity or backdrop-filter, because Photoshop
    composites neither reliably.
-   Hierarchy comes from size, weight, spacing and dividers. Text is one
-   off-white family; status colour lives only in glyphs, dots and accents.
    UXP has no CSS grid: layout is flexbox. Breakpoints: 300 (comfortable
    docked), 560 (tab labels), 900 (wide: rail + panes, matches index.js),
    1100 (side-by-side previews). */
 :root {
-  color-scheme: dark;
-  --bg: #0b1220; --surface: #111a2b; --elevated: #172237; --input: #0f1828; --overlay: #141e32;
-  --selected: #1b2c4a; --hover: #16223a; --pressed: #1c2b47;
-  --text: #e8ecf4; --muted: #c2c9d7; --line: #223049; --border: #a0adc6; --focus: #8fb4ff; --accent: #8fb4ff;
-  --primary: #2055d0; --primary-hover: #245bdb; --primary-pressed: #1c49b4; --primary-text: #f4f7ff;
-  --success: #6fd49a; --success-surface: #13281f; --warning: #f2c46b; --warning-surface: #2e2513;
-  --error: #ff9a9a; --error-surface: #33191c;
-  --glass: rgba(255,255,255,.035); --glass-strong: rgba(255,255,255,.055);
-  --group: rgba(255,255,255,.04); --hairline: rgba(255,255,255,.1); --lens: rgba(255,255,255,.09);
-  --sheen-top: rgba(255,255,255,.04); --sheen-mid: rgba(255,255,255,.01); --sheen-bottom: rgba(255,255,255,.03);
-  --halo: 0 0 26px -8px rgba(110,165,255,.55); --halo-soft: 0 0 16px -8px rgba(110,165,255,.4);
-  --glass-top: rgba(255,255,255,.07); --glass-bottom: rgba(255,255,255,.02);
-  --glass-rim: rgba(190,215,255,.12); --rim-top: rgba(190,215,255,.28); --specular: rgba(255,255,255,.12);
-  --control-top: rgba(255,255,255,.08); --control-bottom: rgba(255,255,255,.03); --control-specular: rgba(255,255,255,.08);
-  --primary-sheen: rgba(255,255,255,.06); --primary-specular: rgba(255,255,255,.26);
-  --overlay-glass: rgba(20,30,50,.94);
-  --glow-a: rgba(64,120,255,.20); --glow-b: rgba(80,160,255,.16); --glow-c: rgba(110,140,255,.12);
-  --field: rgba(255,255,255,.03); --field-specular: rgba(255,255,255,.05); --scrim: rgba(5,9,18,.62);
-  --shadow-glass: 0 8px 24px -12px rgba(0,0,0,.6); --shadow-control: 0 2px 6px -3px rgba(0,0,0,.5);
-  --shadow-edge: 0 -14px 16px -6px rgba(11,18,32,.92);
-  --checker-a: #1a2233; --checker-b: #222b3d;
+  color-scheme: light;
+  --bg: #e8f3ff; --surface: #f4f9ff; --elevated: #ffffff; --input: #ffffff; --overlay: #f7fbff;
+  --selected: #d3e8ff; --hover: #e0efff; --pressed: #c9e2ff;
+  --text: #0b2545; --muted: #364e6c; --line: #c5dbf2; --border: #56718f; --focus: #0f5bb5; --accent: #0f5bb5;
+  --primary: #1668d6; --primary-hover: #125fc6; --primary-pressed: #0e52ad; --primary-text: #ffffff;
+  --success: #12743b; --success-surface: #e3f6ea; --warning: #8a5a00; --warning-surface: #fff3d6;
+  --error: #b3261e; --error-surface: #fde8e6;
+  --sky-top: #ffffff; --sky-bottom: #c4e2ff;
+  --glass: rgba(255,255,255,.45); --glass-strong: rgba(255,255,255,.62);
+  --group: rgba(255,255,255,.42); --hairline: rgba(20,80,140,.16); --lens: rgba(63,169,245,.22);
+  --glass-top: rgba(255,255,255,.80); --glass-bottom: rgba(255,255,255,.44);
+  --glass-rim: rgba(255,255,255,.75); --rim-top: rgba(255,255,255,.98); --specular: rgba(255,255,255,.95);
+  --control-top: rgba(255,255,255,.92); --control-bottom: rgba(255,255,255,.58); --control-specular: rgba(255,255,255,1);
+  --primary-sheen: rgba(255,255,255,.06); --primary-specular: rgba(255,255,255,.45);
+  --overlay-glass: rgba(255,255,255,.94);
+  --glow-a: rgba(63,169,245,.20); --glow-b: rgba(63,169,245,.16); --glow-c: rgba(120,190,255,.14);
+  --field: rgba(255,255,255,.58); --field-specular: rgba(255,255,255,.95); --scrim: rgba(18,52,92,.32);
+  /* Each shadow starts with a 1px ring: a white rim alone disappears on white. */
+  --shadow-glass: 0 0 0 1px rgba(20,80,140,.10), 0 10px 26px -12px rgba(12,56,91,.38); --shadow-control: 0 0 0 1px rgba(20,80,140,.14), 0 2px 6px -3px rgba(12,56,91,.35);
+  --shadow-edge: 0 -14px 16px -6px rgba(205,230,255,.92);
+  --halo: 0 0 26px -8px rgba(63,169,245,.60); --halo-soft: 0 0 16px -8px rgba(63,169,245,.45);
+  --checker-a: #ffffff; --checker-b: #dfe8f2;
   --space: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
   --text-meta: 11px; --text-body: 12px; --text-title: 13px; --text-heading: 15px;
   --control: 28px; --control-tall: 32px;
@@ -56,7 +56,7 @@ h3 { font-size: var(--text-title); font-weight: 600; line-height: 1.35; }
 strong, b { font-weight: 600; }
 p, strong, span, b, code, dd, dt, li, h1, h2, h3, label { min-width: 0; overflow-wrap: anywhere; }
 code, kbd { font-family: var(--mono); font-size: var(--text-meta); }
-kbd { padding: 0 4px; border: 1px solid var(--glass-rim); border-radius: var(--radius-small); }
+kbd { padding: 0 4px; border: 1px solid var(--hairline); border-radius: var(--radius-small); }
 svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
 img { max-width: 100%; }
 ::selection { background: var(--selected); color: var(--text); }
@@ -65,9 +65,9 @@ img { max-width: 100%; }
 .panel-root {
   position: relative; display: flex; flex-direction: column; width: 100%; height: 100%; min-height: 0; overflow: hidden;
   background-color: var(--bg);
-  background-image: linear-gradient(180deg, var(--sheen-top), var(--sheen-mid) 45%, var(--sheen-bottom)), radial-gradient(ellipse at 0% 0%, var(--glow-a), rgba(11,18,32,0) 60%), radial-gradient(ellipse at 100% 100%, var(--glow-b), rgba(11,18,32,0) 60%), radial-gradient(ellipse at 85% 30%, var(--glow-c), rgba(11,18,32,0) 50%);
+  background-image: radial-gradient(ellipse at 0% 100%, var(--glow-a), rgba(255,255,255,0) 60%), radial-gradient(ellipse at 100% 100%, var(--glow-b), rgba(255,255,255,0) 60%), radial-gradient(ellipse at 85% 35%, var(--glow-c), rgba(255,255,255,0) 50%), linear-gradient(180deg, var(--sky-top), var(--sky-bottom));
 }
-.app-header { flex: none; display: flex; align-items: center; height: 44px; padding: 0 var(--space-2); border-bottom: 1px solid var(--glass-rim); background-image: linear-gradient(180deg, var(--glass-strong), var(--glass-bottom)); }
+.app-header { flex: none; display: flex; align-items: center; height: 44px; padding: 0 var(--space-2); border-bottom: 1px solid var(--hairline); background-image: linear-gradient(180deg, var(--glass-strong), var(--glass-bottom)); }
 .app-brand { display: flex; align-items: center; flex: 1; min-width: 0; }
 .pg-mark { display: flex; width: 20px; height: 20px; flex: none; margin-right: var(--space-2); }
 .pg-mark img { width: 20px; height: 20px; border-radius: var(--radius-small); }
@@ -121,9 +121,9 @@ img { max-width: 100%; }
 .section-nav { display: flex; margin: var(--space-2) var(--space-2) var(--space); padding: 3px; }
 .nav-item { position: relative; display: flex; align-items: center; justify-content: center; flex: 1 1 0; min-width: 0; height: 32px; border: 1px solid transparent; border-radius: var(--radius-capsule); color: var(--muted); }
 .nav-item span { display: none; margin-left: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.nav-item b { position: absolute; top: 1px; left: 50%; margin-left: 6px; min-width: 15px; height: 15px; padding: 0 4px; border-radius: 8px; background: var(--elevated); border: 1px solid var(--glass-rim); color: var(--text); font-size: 10px; line-height: 13px; text-align: center; white-space: nowrap; overflow-wrap: normal; font-variant-numeric: tabular-nums; }
+.nav-item b { position: absolute; top: 1px; left: 50%; margin-left: 6px; min-width: 15px; height: 15px; padding: 0 4px; border-radius: 8px; background: var(--elevated); border: 1px solid var(--hairline); color: var(--text); font-size: 10px; line-height: 13px; text-align: center; white-space: nowrap; overflow-wrap: normal; font-variant-numeric: tabular-nums; }
 .nav-item b[data-empty="true"] { display: none; }
-.nav-item.active { color: var(--text); border-color: var(--glass-rim); border-top-color: var(--rim-top); background-color: var(--lens); box-shadow: inset 0 1px 0 var(--control-specular); }
+.nav-item.active { color: var(--text); border-color: var(--hairline); background-color: var(--lens); box-shadow: inset 0 1px 0 var(--control-specular); }
 .nav-item.active svg { color: var(--accent); }
 .rail-footer { display: none; }
 .rail-sync { display: flex; align-items: center; color: var(--muted); font-size: var(--text-meta); }
@@ -183,7 +183,7 @@ img { max-width: 100%; }
 .button svg { margin-right: 6px; }
 /* The sheen stops above the label, so the label sits on the solid primary. */
 .button-primary { border-color: var(--primary); background-color: var(--primary); background-image: linear-gradient(180deg, var(--primary-sheen), rgba(255,255,255,0) 45%); box-shadow: inset 0 1px 0 var(--primary-specular), var(--shadow-control), var(--halo); color: var(--primary-text); }
-.button-quiet { background-image: none; box-shadow: none; }
+.button-quiet { border-color: var(--hairline); background-image: none; box-shadow: none; }
 .button-small { min-height: 24px; padding: 0 10px; font-size: var(--text-meta); }
 .button-wide { display: flex; width: 100%; }
 .text-link { display: inline-flex; align-items: center; padding: 2px; border-radius: var(--radius-small); color: var(--text); font-size: var(--text-meta); text-decoration: underline; text-underline-offset: 2px; }
@@ -257,7 +257,7 @@ sp-dropdown { width: 100%; }
 #message-count[data-limit="near"] { border-color: var(--warning); }
 #message-count[data-limit="full"] { border-color: var(--error); }
 .message-presets { display: flex; flex-wrap: wrap; margin-top: var(--space-2); }
-.preset, .filter-chip { display: inline-flex; align-items: center; min-height: 24px; margin: 0 4px 4px 0; padding: 0 var(--space-2); border: 1px solid var(--glass-rim); border-radius: 12px; background-color: var(--glass); color: var(--text); font-size: var(--text-meta); }
+.preset, .filter-chip { display: inline-flex; align-items: center; min-height: 24px; margin: 0 4px 4px 0; padding: 0 var(--space-2); border: 1px solid var(--hairline); border-radius: 12px; background-color: var(--glass); color: var(--text); font-size: var(--text-meta); }
 .filter-chip[aria-pressed="true"] { border-color: var(--accent); background: var(--selected); }
 .chip-count { margin-left: 4px; color: var(--muted); font-weight: 400; font-variant-numeric: tabular-nums; }
 .capture-actions { margin-top: var(--space-2); }

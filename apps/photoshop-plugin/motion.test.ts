@@ -41,8 +41,8 @@ describe("Shared native-compatible PhotoGit motion", () => {
     view.getBoundingClientRect = () => ({ left: 20, top: 40, right: 320, bottom: 440, width: 300, height: 400 } as DOMRect);
     return { ...p, view, veil: () => p.document.querySelector<HTMLElement>(".native-fade-veil") };
   }
-  const alpha = (veil: HTMLElement | null) => Number(/rgba\(11, 18, 32, ([\d.]+)\)/.exec(veil!.style.backgroundColor)![1]);
-  it("composites native content with a partial navy veil instead of unsupported container opacity", async () => {
+  const alpha = (veil: HTMLElement | null) => Number(/rgba\(232, 243, 255, ([\d.]+)\)/.exec(veil!.style.backgroundColor)![1]);
+  it("composites native content with a partial sky veil instead of unsupported container opacity", async () => {
     const p = await nativeFixture();
     p.context.PhotoGitMotion.enter(p.view);
     expect(p.view.style.opacity || "").toBe("");
