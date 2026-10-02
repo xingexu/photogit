@@ -6,6 +6,12 @@ function text(value, fallback = "") {
   return typeof value === "string" && value.trim() ? value : fallback;
 }
 
+// The layer is named beside the edit, so the edit does not repeat it.
+function editText(change) {
+  const summary = text(change?.summary, "Edit details not recorded");
+  const prefix = `${text(change?.layerName).trim()}:`;
+  return prefix.length > 1 && summary.toLowerCase().startsWith(prefix.toLowerCase()) ? summary.slice(prefix.length).trim() || summary : summary;
+}
 function append(document, parent, tag, className, value) {
   const element = document.createElement(tag);
   if (className) element.className = className;
@@ -273,7 +279,7 @@ function render(container, options = {}) {
       item.classList.add(`version-edit-${kind}`);
       append(document, item, "span", `version-edit-badge ${kind}`, label);
       if (text(change?.layerName)) append(document, item, "strong", "", change.layerName);
-      append(document, item, "p", "", text(change?.summary, "Edit details not recorded"));
+      append(document, item, "p", "", editText(change));
       const readable = value => typeof value === "string" ? value.slice(0, 240) : ["number", "boolean"].includes(typeof value) ? String(value) : null;
       const before = readable(change?.baseValue), after = readable(change?.currentValue);
       if (!/fingerprint/i.test(change?.propertyPath || "") && before !== null && after !== null && before !== after) {

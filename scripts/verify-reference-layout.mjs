@@ -69,17 +69,17 @@ try {
   assert.equal(value('document.querySelectorAll("#branch-list .branch-row.current").length'), 1);
   const currentBranch = value('document.getElementById("branch-name").textContent');
   run("eval", 'document.body.classList.add("is-busy")');
-  click("#branch-list .branch-switch");
+  click("#branch-list .branch-row.is-switchable");
   assert.equal(value('document.getElementById("branch-name").textContent'), currentBranch, "Busy branch control changed the current branch");
   run("eval", 'document.body.classList.remove("is-busy")');
   capture("demo-dark-branches-1280x900");
-  click("#branch-list .branch-switch");
+  click("#branch-list .branch-row.is-switchable");
   assert.equal(value('document.getElementById("detail-sheet").hidden'), false);
   assert.match(value('document.getElementById("detail-title").textContent'), /Switch design direction/);
   assert.equal(value('document.getElementById("branch-name").textContent'), currentBranch, "Branch changed before confirmation");
   closeSheet();
 
-  click("#reviews-tab"); click("#reviews .review-card:first-child .compare-action");
+  click("#reviews-tab"); click("#reviews .review-row:first-child");
   assert.equal(value('document.getElementById("review-inspector").dataset.mergeable'), "true");
   assert.match(value('document.querySelector("#review-inspector .comparison-direction").textContent'), /Sourcecampaign-type-b→Destinationlive-option-b/);
   capture("demo-dark-review-available-1280x900");
@@ -91,7 +91,7 @@ try {
   assert.equal(value('document.getElementById("detail-sheet").hidden'), false);
   assert.match(value('document.getElementById("detail-content").textContent'), /confirmation step only/);
   closeSheet();
-  click("#reviews .review-card:nth-child(2) .compare-action");
+  click("#reviews .review-row:nth-child(2)");
   assert.equal(value('document.getElementById("review-inspector").dataset.mergeable'), "false");
   assert.equal(value('document.querySelector("#review-inspector .comparison-merge") === null'), true);
   assert.match(value('document.getElementById("review-inspector").textContent'), /Sort that out outside PhotoGit/);

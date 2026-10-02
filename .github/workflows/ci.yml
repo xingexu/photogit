@@ -63,6 +63,8 @@ jobs:
           - panel-contract
           - panel-escaping
           - panel-escaping-gate
+          - panel-activity
+          - panel-layer-details
           - panel-branches
           - panel-versions
           - panel-reviews

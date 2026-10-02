@@ -34,81 +34,53 @@ async function fixture() {
 }
 
 describe("Studio workspace interactions", () => {
-  it("previews the first three edits and reveals the rest only on request", async () => {
+  it("shows every edit and keeps a running count beside each section header", async () => {
     const p = await fixture();
-    const toggle = p.id("changes-toggle");
-    const beyond = () => p.rows.filter(row => row.classList.contains("is-beyond"));
-    expect(beyond()).toEqual([p.rows[3], p.rows[4]]);
-    // Previewing is not filtering: every row still counts as listed.
-    expect(p.visible()).toHaveLength(5);
-    expect(toggle.hidden).toBe(false);
-    expect(toggle.textContent).toBe("See all 5 edits");
-    expect(toggle.getAttribute("aria-expanded")).toBe("false");
-    toggle.click();
-    expect(beyond()).toHaveLength(0);
-    expect(toggle.textContent).toBe("Show only the first 3");
-    expect(toggle.getAttribute("aria-expanded")).toBe("true");
-    p.key(toggle, "Enter");
-    expect(beyond()).toEqual([p.rows[3], p.rows[4]]);
-  });
-
-  it("counts the preview within the current filter and hides the control when everything fits", async () => {
-    const p = await fixture();
-    const toggle = p.id("changes-toggle");
-    p.chip("visual").click();
-    expect(p.visible()).toEqual([p.rows[1], p.rows[3], p.rows[4]]);
-    expect(p.rows.some(row => row.classList.contains("is-beyond"))).toBe(false);
-    expect(toggle.hidden).toBe(true);
-    p.chip("all").click();
-    p.search("artwork");
-    expect(p.visible()).toHaveLength(4);
-    expect(p.rows[4]!.classList.contains("is-beyond")).toBe(true);
-    expect(toggle.textContent).toBe("See all 4 edits");
-  });
-
-  it("collapses again after the list has been cleared", async () => {
-    const p = await fixture();
-    p.id("changes-toggle").click();
-    expect(p.id("changes").dataset.expanded).toBe("true");
-    for (const row of p.rows) row.remove();
-    p.controls.refreshChanges();
-    expect(p.id("changes").dataset.expanded).toBe("false");
-    expect(p.id("changes-toggle").hidden).toBe(true);
-  });
-
-  it("moves live scan and preview nodes on resize without losing focus or a draft", async () => {
-    const p = await fixture();
-    const viewport = p.document.documentElement;
-    const scan = p.document.querySelector(".scan-panel")!;
-    const preview = p.id("document-preview");
-    const rescan = p.id("rescan");
-    const message = p.id("message") as HTMLInputElement;
-    const scanHandler = vi.fn();
-    rescan.addEventListener("click", scanHandler);
-    message.value = "Keep this draft while docking";
-    const focus = vi.fn();
-    rescan.focus = focus;
-    Object.defineProperty(p.document, "activeElement", { configurable: true, get: () => rescan });
-    const resize = (width: number) => {
-      Object.defineProperty(viewport, "clientWidth", { configurable: true, value: width });
-      p.window.dispatchEvent(new p.window.Event("resize"));
+    const header = (group: string) => {
+      const node = p.document.createElement("div");
+      node.className = "list-section change-section"; node.dataset.group = group;
+      node.innerHTML = '<span>LABEL</span><span class="section-count"></span>';
+      return node;
     };
-    resize(1180);
-    expect(scan.parentElement).toBe(p.document.querySelector(".changes-main"));
-    expect(preview.parentElement).toBe(p.document.querySelector(".changes-aside"));
-    expect(focus).toHaveBeenCalledTimes(1);
-    rescan.click();
-    expect(scanHandler).toHaveBeenCalledTimes(1);
-    resize(420);
-    expect(scan.parentElement).toBe(p.id("changes-view"));
-    expect(preview.parentElement).toBe(p.id("changes-view"));
-    expect(p.id("changes-view").firstElementChild).toBe(scan);
-    expect(p.id("changes-view").lastElementChild).toBe(preview);
-    expect(focus).toHaveBeenCalledTimes(2);
-    expect(message.value).toBe("Keep this draft while docking");
-    resize(320);
-    expect(focus).toHaveBeenCalledTimes(2);
-    expect(p.document.querySelectorAll("#rescan")).toHaveLength(1);
+    const layers = header("layers"); const documentHeader = header("document");
+    p.id("changes").insertBefore(layers, p.rows[0]!);
+    p.id("changes").insertBefore(documentHeader, p.rows[4]!);
+    p.rows.forEach((row, index) => { row.dataset.group = index === 4 ? "document" : "layers"; });
+    p.controls.refreshChanges();
+    // Nothing is held back behind a "see all" control.
+    expect(p.document.getElementById("changes-toggle")).toBeNull();
+    expect(p.visible()).toHaveLength(5);
+    expect(p.rows.some(row => row.classList.contains("is-beyond"))).toBe(false);
+    expect([layers, documentHeader].map(node => node.querySelector(".section-count")!.textContent)).toEqual(["4", "1"]);
+    p.chip("text").click();
+    expect(layers.querySelector(".section-count")!.textContent).toBe("1");
+    // A section with nothing showing takes its header with it.
+    expect(documentHeader.hidden).toBe(true);
+    p.chip("all").click();
+    expect(documentHeader.hidden).toBe(false);
+  });
+
+  it("does not offer a filter that would show nothing, but keeps the one in use", async () => {
+    const p = await fixture();
+    const offered = () => ["all", "visual", "text", "structure"].filter(type => !p.chip(type).classList.contains("is-empty"));
+    expect(offered()).toEqual(["all", "visual", "text", "structure"]);
+    p.rows[0]!.remove(); p.controls.refreshChanges();
+    expect(offered()).toEqual(["all", "visual", "structure"]);
+    p.chip("structure").click();
+    p.search("no such layer");
+    // The pressed filter stays, so there is always a way back out of it.
+    expect(offered()).toEqual(["all", "structure"]);
+    expect(p.id("change-filter-empty").hidden).toBe(false);
+  });
+
+  it("names a layer once across its consecutive rows", async () => {
+    const p = await fixture();
+    p.rows.forEach((row, index) => { row.dataset.layer = index < 3 ? "7" : "8"; });
+    p.controls.refreshChanges();
+    expect(p.rows.map(row => row.classList.contains("same-layer"))).toEqual([false, true, true, false, true]);
+    // When a filter hides a layer's first row, the next one showing names it.
+    p.chip("visual").click();
+    expect(p.rows[1]!.classList.contains("same-layer")).toBe(false);
   });
 
   it("staggers the rows that survive a filter change and holds still when nothing changed", async () => {
@@ -211,16 +183,14 @@ describe("Studio workspace interactions", () => {
     p.id("changes").innerHTML = ""; p.controls.refreshChanges();
     expect(p.chip("all").querySelector("b")!.hidden).toBe(true);
   });
-  it("moves through the message suggestions and footer actions with arrow keys", async () => {
+  it("moves through the message suggestions with arrow keys", async () => {
     const p = await fixture();
     const presets = [...p.document.querySelectorAll<HTMLElement>("[data-message-preset]")];
     const second = vi.spyOn(presets[1]!, "focus");
     expect(p.key(presets[0]!, "ArrowRight").defaultPrevented).toBe(true);
     expect(second).toHaveBeenCalledOnce();
-    const push = vi.spyOn(p.id("push"), "focus");
-    p.key(p.id("pull"), "ArrowRight"); expect(push).toHaveBeenCalledOnce();
-    const last = vi.spyOn(p.id("tools-toggle"), "focus");
-    p.key(p.id("pull"), "End"); expect(last).toHaveBeenCalledOnce();
+    const last = vi.spyOn(presets[presets.length - 1]!, "focus");
+    p.key(presets[0]!, "End"); expect(last).toHaveBeenCalledOnce();
   });
   it("moves from the search into the first visible selectable row", async () => {
     const p = await fixture();
@@ -289,7 +259,7 @@ describe("Version-message presentation controls", () => {
     const preset = p.document.querySelector<HTMLElement>("[data-message-preset]")!;
     const focus = vi.spyOn(message, "focus"); message.value = "Keep my draft";
     if (state.startsWith("is-")) p.document.body.classList.add(state);
-    else if (state === "hidden") p.id("changes-view").hidden = true;
+    else if (state === "hidden") p.document.querySelector<HTMLElement>(".capture-panel")!.hidden = true;
     else if (state === "disabled") preset.setAttribute("aria-disabled", "true");
     else p.id(state).hidden = false;
     preset.click(); p.key(preset, " ");

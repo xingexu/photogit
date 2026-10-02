@@ -431,11 +431,12 @@ function renderChanges() {
     const row = document.createElement("div");
     row.className = "list-row change-row";
     row.dataset.domain = change.domain;
+    row.dataset.layer = String(change.photoshopId);
     row.tabIndex = 0;
     row.setAttribute("role", "button");
     row.setAttribute("aria-pressed", "false");
     row.setAttribute("aria-label", `Select changed layer ${change.layerName}, Photoshop layer ${change.photoshopId}. ${change.summary}`);
-    row.innerHTML = `<span class="row-glyph" aria-hidden="true">${domainIcon(change.domain)}</span><span class="row-copy"><strong>${escapeHtml(change.layerName)}</strong><span class="layer-identity">Layer #${escapeHtml(change.photoshopId)}</span><span class="change-detail">${escapeHtml(change.summary)}</span></span><span class="change-domain"><span class="change-state modified">Edited</span><span class="change-kind">${escapeHtml(change.domain)}</span></span>`;
+    row.innerHTML = `<span class="row-glyph" aria-hidden="true">${domainIcon(change.domain)}</span><span class="row-copy"><span class="change-layer"><strong>${escapeHtml(change.layerName)}</strong><span class="layer-identity">Layer · #${escapeHtml(change.photoshopId)}</span></span><span class="change-detail">${escapeHtml(change.summary)}</span></span><span class="change-domain"><span class="change-state modified">Edited</span><span class="change-kind">${escapeHtml(change.domain)}</span></span>`;
     const select = () => {
       document.querySelectorAll(".layer").forEach((layer) => layer.classList.remove("active"));
       document.querySelectorAll(".layer")[index]?.classList.add("active");
@@ -584,28 +585,13 @@ function renderReviews() {
   container.innerHTML = "";
   setCount("reviews-count", demoReviews.length);
   byId("review-provider").textContent = `Simulated local reviews · merging into ${byId("branch-name").textContent}`;
-  for (const review of demoReviews) container.appendChild(createDemoReviewCard(review));
-  globalThis.PhotoGitReveal?.stagger(container.querySelectorAll(".review-card"));
+  for (const review of demoReviews) container.appendChild(window.PhotoGitReviewInspector.row(document, { ...review, changeCount: 2 }, { destination: byId("branch-name").textContent, onCompare: () => showDemoComparison(review) }));
+  globalThis.PhotoGitReveal?.stagger(container.querySelectorAll(".review-row"));
   byId("reviews-empty").hidden = demoReviews.length > 0;
 }
 
-function createDemoReviewCard(review) {
-  const card = document.createElement("article");
-  card.className = "review-card";
-  card.innerHTML = `<div class="review-title"><h3>${escapeHtml(review.branch)}</h3><span>${escapeHtml(review.ahead)} ahead</span></div><p class="review-direction">${escapeHtml(review.branch)} → ${escapeHtml(byId("branch-name").textContent)}</p><div class="review-meta"><span class="${review.mergeable ? "ready" : "blocked"}">${review.mergeable ? "Git merge available" : "Git merge blocked"}</span><span aria-hidden="true">·</span><span>2 files</span></div><div class="review-actions"><div class="button button-quiet button-small compare-action" role="button" tabindex="0" aria-label="Compare ${escapeHtml(review.branch)} with the current branch">Compare</div><div class="button ${review.mergeable ? "button-primary" : "button-disabled"} button-small merge-action" role="button" tabindex="${review.mergeable ? "0" : "-1"}" ${review.mergeable ? "" : "aria-disabled=\"true\""}>${review.mergeable ? "Merge" : "Blocked"}</div></div>`;
-  if (!review.mergeable) {
-    const unavailable = card.querySelector(".merge-action");
-    unavailable.textContent = "Resolve conflicts to merge";
-    unavailable.setAttribute("role", "note"); unavailable.removeAttribute("tabindex");
-  }
-  card.querySelector(".compare-action").addEventListener("click", () => showDemoComparison(review));
-  card.querySelector(".compare-action").addEventListener("keydown", activateOnKeyboard);
-  if (review.mergeable) card.querySelector(".merge-action").addEventListener("click", () => confirmDemoMerge(review));
-  card.querySelector(".merge-action").addEventListener("keydown", activateOnKeyboard);
-  return card;
-}
-
 function showDemoComparison(review) {
+  window.PhotoGitReviewInspector.select(byId("reviews"), review.branch);
   let container;
   if (matchMedia("(min-width: 900px)").matches) { selectTab("reviews"); container = byId("review-inspector"); }
   else { openDetail("Compare branches"); container = byId("detail-content"); }
@@ -721,26 +707,15 @@ function flashResult(message, error = false) {
 }
 
 function addActivity(message) {
-  const stamp = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  const feed = byId("activity");
-  if (feed.textContent === "Ready.") feed.textContent = "";
+  const row = window.PhotoGitActivity.log(byId("activity"), message);
   byId("clear-activity").setAttribute("aria-disabled", "false");
-  const row = document.createElement("div"); row.className = "activity-row";
-  const summary = document.createElement("div"); summary.className = "activity-summary";
-  // Same marks as the production feed: a dot for an event, a bang for a failure.
-  const errorEvent = /error|failed|timed out|blocked|unavailable/i.test(message);
-  const icon = document.createElement("span"); icon.className = "activity-icon"; icon.setAttribute("aria-hidden", "true");
-  icon.textContent = errorEvent ? "!" : "·"; icon.classList.toggle("error", errorEvent);
-  const time = document.createElement("time"); time.className = "activity-time"; time.setAttribute("datetime", new Date().toISOString()); time.textContent = stamp;
-  const copy = document.createElement("span"); copy.className = "activity-copy"; copy.textContent = message;
-  summary.append(icon, time, copy); row.appendChild(summary); feed.prepend(row);
   globalThis.PhotoGitReveal?.stagger([row]);
   activityEntries += 1;
   setCount("activity-count", activityEntries);
 }
 
 function clearActivity() {
-  byId("activity").textContent = "Ready.";
+  window.PhotoGitActivity.clear(byId("activity"));
   byId("clear-activity").setAttribute("aria-disabled", "true");
   activityEntries = 0;
   setCount("activity-count", 0);

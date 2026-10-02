@@ -103,7 +103,7 @@ describe("review comparison inspector", () => {
 
   it("supports absent comparison, no semantic data and callback-less read-only use", () => {
     const p = fixture(); p.render({ comparison: undefined });
-    expect(p.container.textContent).toContain("Select Compare on a branch");
+    expect(p.container.textContent).toContain("Select a branch to see what it would bring in");
     p.render({ comparison: comparison({ changes: [], files: [] }), onMerge: undefined });
     expect(p.container.textContent).toContain("Check the changed files and notes");
     expect(p.container.textContent).toContain("No incoming file changes recorded");
@@ -130,5 +130,76 @@ describe("review comparison inspector", () => {
     const p = fixture();
     p.render({ comparison: comparison(), previews: { alternate: src, main: src } });
     expect(p.container.querySelector(".comparison-artwork")).toBeNull();
+  });
+
+  it("shows a branch waiting to merge as a card whose one button opens it", () => {
+    const { document, window } = parseHTML('<html><body><div id="list"></div></body></html>');
+    const list = document.getElementById("list")!;
+    const toggled: string[] = [];
+    const add = (review: Record<string, unknown>, expanded = false) => list.appendChild(view.card(document, review, { expanded, onToggle: (branch: string) => toggled.push(branch) })) as HTMLElement;
+    const ready = add({ branch: "cover-b", ahead: 1, changeCount: 27, mergeable: true });
+    const blocked = add({ branch: '<img src=x onerror="bad()">', ahead: 3, changeCount: 1, mergeable: false });
+    expect(ready.className).toBe("review-card");
+    expect(ready.querySelector("strong")!.textContent).toBe("cover-b");
+    expect(ready.querySelector(".review-facts")!.textContent).toBe("1 version aheadReady to merge");
+    expect(ready.querySelector(".review-toggle")!.textContent).toBe("Review");
+    expect(blocked.querySelector(".review-facts")!.textContent).toBe("3 versions aheadConflicts");
+    // A conflict is an icon and a word, not a colour.
+    expect(blocked.querySelector(".review-state svg")).not.toBeNull();
+    expect(blocked.querySelector(".review-toggle")!.textContent).toBe("Resolve");
+    expect(blocked.querySelector(".review-toggle")!.getAttribute("aria-label")).toBe('Resolve <img src=x onerror="bad()">');
+    expect(list.querySelector("img")).toBeNull();
+    // Only the button acts; the card itself is not a control while closed.
+    ready.click(); expect(toggled).toEqual([]);
+    (ready.querySelector(".review-toggle") as HTMLElement).click();
+    const key = new window.Event("keydown", { bubbles: true, cancelable: true }); Object.assign(key, { key: "Enter" });
+    blocked.querySelector(".review-toggle")!.dispatchEvent(key);
+    expect(toggled).toEqual(["cover-b", '<img src=x onerror="bad()">']);
+    document.body.classList.add("is-busy"); (ready.querySelector(".review-toggle") as HTMLElement).click(); document.body.classList.remove("is-busy");
+    expect(toggled).toHaveLength(2);
+    // Open, the heading closes the card and the state sits in the corner.
+    const open = add({ branch: "live-poster", ahead: 3, mergeable: false }, true);
+    expect(open.classList.contains("expanded")).toBe(true);
+    expect(open.querySelector(".review-toggle")).toBeNull();
+    expect(open.querySelector(".review-head")!.getAttribute("aria-expanded")).toBe("true");
+    expect(open.querySelector(".review-body")!.textContent).toBe("Reading both branches…");
+    (open.querySelector(".review-head") as HTMLElement).click();
+    expect(toggled[2]).toBe("live-poster");
+  });
+
+  it("lists each conflict by layer and what changed, and keeps Merge unavailable until there are none", () => {
+    const { document } = parseHTML('<html><body><div id="body"></div></body></html>');
+    const body = document.getElementById("body")!;
+    const merge = vi.fn(); const details = vi.fn();
+    const blocked = comparison({
+      incomingBranch: "live-poster", baseBranch: "film-final", gitMergeable: false,
+      changes: [{ layerName: "Headline", layerUuid: "uuid-1", summary: "Headline: Text changed" }, { layerName: "Background", layerUuid: "uuid-2", summary: "Background: Pixels changed" }],
+      conflicts: [".photogit/text/uuid-1.json", ".photogit/appearance/uuid-1.json", ".photogit/content/uuid-2.json", ".photogit/content/unknown.json", ".photogit/structure/layers.json", ".photogit/document.json", "snapshot/document.psd", ".photogit/previews/document.png", ".photogit/identities.json"]
+    });
+    expect(view.resolution(body, blocked, { onMerge: merge, onDetails: details })).toBe(6);
+    expect([...body.querySelectorAll(".review-conflict-head")].map(row => [row.querySelector("strong")!.textContent, row.querySelector("span")!.textContent])).toEqual([
+      ["Headline", "Text and appearance changed on both"], ["Background", "Pixels changed on both"], ["A layer", "Pixels changed on both"],
+      ["Layer stack", "Layer order changed on both"], ["Document", "Canvas settings changed on both"], ["Saved PSD", "The Photoshop file changed on both"]
+    ]);
+    const button = body.querySelector(".comparison-merge") as HTMLElement;
+    expect(button.textContent).toBe("Merge live-poster");
+    expect(button.getAttribute("aria-disabled")).toBe("true");
+    expect(button.classList.contains("button-primary")).toBe(false);
+    button.click(); expect(merge).not.toHaveBeenCalled();
+    expect(body.querySelector(".review-note")!.textContent).toContain("6 conflicts to resolve");
+    // PhotoGit cannot apply a chosen side, so it offers no control that pretends to.
+    expect(body.textContent).not.toMatch(/Keep |Take /);
+    (body.querySelector(".review-details") as HTMLElement).click();
+    expect(details).toHaveBeenCalledExactlyOnceWith("live-poster");
+
+    expect(view.resolution(body, comparison({ incomingBranch: "tidy", baseBranch: "main", conflicts: [], gitMergeable: true }), { onMerge: merge })).toBe(0);
+    const ready = body.querySelector(".comparison-merge") as HTMLElement;
+    expect(ready.getAttribute("aria-disabled")).toBe("false");
+    expect(ready.classList.contains("button-primary")).toBe(true);
+    expect(body.querySelector(".review-note")!.textContent).toContain("No conflicts");
+    ready.click(); expect(merge).toHaveBeenCalledExactlyOnceWith("tidy");
+    // A contradictory payload cannot make a known conflict mergeable.
+    view.resolution(body, comparison({ conflicts: ["snapshot/document.psd"], gitMergeable: true }), { onMerge: merge });
+    expect((body.querySelector(".comparison-merge") as HTMLElement).getAttribute("aria-disabled")).toBe("true");
   });
 });
