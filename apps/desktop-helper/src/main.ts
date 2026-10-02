@@ -8,7 +8,7 @@ import { GitRepository, isWithinRealRoot } from "@photogit/git-engine";
 import { DEFAULT_HELPER_PORT, MAX_REQUEST_BYTES, parseHelperRequest, PROTOCOL_VERSION, validateDocumentIdentity, type BranchOperationResult, type SaveVersionResult, type DocumentIdentity, type HelperRequest, type HelperResponse } from "@photogit/protocol";
 import { validateProjectMetadata, type DocumentCapture, type ProjectMetadata, type ProjectState } from "@photogit/schema";
 import { canonicalJson, stateFromCapture } from "@photogit/serializer";
-import { diffStates, type SemanticChange } from "@photogit/differ";
+import { diffStates, layerKindLabel, type SemanticChange } from "@photogit/differ";
 import { assertHelperArguments, isLoopbackHost, parseHelperConfig, publicRepositoryInfo, safeErrorText, secureWrite, type HelperConfig } from "./security.js";
 import { acquireConfigLock } from "./config-lock.js";
 import { drainBridgeRoot, ensureBridgeFolders, readBoundedText, tokensMatch } from "./bridge.js";
@@ -204,10 +204,11 @@ function firstCheckpointChanges(state: ProjectState): SemanticChange[] {
       layerUuid: layer.uuid,
       photoshopId: layer.photoshopId,
       layerName,
+      layerKind: layerKindLabel(layer.kind),
       propertyPath: "layer",
       baseValue: null,
       currentValue: { name: layerName, kind: layer.kind },
-      summary: inlineText(`Ready to track ${JSON.stringify(layerName)}`, 1_000),
+      summary: inlineText(`Ready to track this ${layerKindLabel(layer.kind)}`, 1_000),
       mergeability: "automatic",
       confidence: 1,
       warnings: []

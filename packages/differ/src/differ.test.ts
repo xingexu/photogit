@@ -48,8 +48,9 @@ describe("diffStates", () => {
     const after = structuredClone(before); after.document.renderedFingerprint = "rendered-v1:after";
     expect(diffStates(before, after)).toMatchObject([{
       domain: "document", propertyPath: "renderedFingerprint", layerUuid: null, photoshopId: null,
-      baseValue: "rendered-v1:before", currentValue: "rendered-v1:after", summary: "Document rendered appearance changed", mergeability: "unsupported"
+      baseValue: "rendered-v1:before", currentValue: "rendered-v1:after", mergeability: "unsupported"
     }]);
+    expect(diffStates(before, after)[0]!.summary).toMatch(/no tracked layer setting changed/);
     expect(diffStates(before, structuredClone(before))).toEqual([]);
   });
 
@@ -81,7 +82,7 @@ describe("diffStates", () => {
       photoshopId: 42,
       propertyPath: "fingerprint"
     }));
-    expect(diffStates(before, after)[0]?.summary).toBe("New Layer: Rendered appearance changed");
+    expect(diffStates(before, after)[0]?.summary).toBe("New Layer: Pixels changed (painted, erased, filled, transformed or filtered)");
   });
 
   it("makes bidi controls in Photoshop layer names harmless to the panel", () => {
@@ -130,14 +131,14 @@ describe("diffStates", () => {
     const saved = pixelState("same-render"); saved.appearance["layer-1"]!.opacity = 63.137255;
     const scanned = structuredClone(saved); scanned.appearance["layer-1"]!.opacity = 50.19607843137255;
     const changes = diffStates(saved, scanned);
-    expect(changes).toMatchObject([{ domain: "appearance", propertyPath: "opacity", baseValue: 63.137255, currentValue: 50.19607843137255, summary: "New Layer: opacity changed from 63.137 to 50.196" }]);
+    expect(changes).toMatchObject([{ domain: "appearance", propertyPath: "opacity", baseValue: 63.137255, currentValue: 50.19607843137255, summary: "New Layer: Opacity changed from 63% to 50%" }]);
     expect(scanned.appearance["layer-1"]!.opacity).toBe(50.19607843137255);
   });
 
   it("preserves changes at the saved precision while avoiding identical rounded values in user copy", () => {
     const saved = pixelState("same-render"); saved.appearance["layer-1"]!.opacity = 63.137255;
     const scanned = structuredClone(saved); scanned.appearance["layer-1"]!.opacity = 63.137256;
-    expect(diffStates(saved, scanned)).toMatchObject([{ baseValue: 63.137255, currentValue: 63.137256, summary: "New Layer: opacity changed by less than 0.001" }]);
+    expect(diffStates(saved, scanned)).toMatchObject([{ baseValue: 63.137255, currentValue: 63.137256, summary: "New Layer: Opacity changed by less than 0.001%" }]);
   });
 
   it("detects transform bounds and text contents independently of rendered fingerprints", () => {
@@ -146,10 +147,11 @@ describe("diffStates", () => {
     before.text["layer-1"] = { schemaVersion: 1, layerUuid: "layer-1", contents: "Before", styleFingerprint: "font-1" };
     const after = structuredClone(before);
     after.text["layer-1"]!.contents = "After";
-    after.appearance["layer-1"]!.bounds.left = 5;
+    // Same size, new place: a move is its own edit even beside a text edit.
+    for (const box of [after.appearance["layer-1"]!.bounds, after.appearance["layer-1"]!.boundsWithoutEffects]) { box.left = 5; box.right = 15; }
     const changes = diffStates(before, after);
     expect(changes).toHaveLength(2);
-    expect(changes).toContainEqual(expect.objectContaining({ domain: "appearance", propertyPath: "bounds.left", baseValue: 0, currentValue: 5 }));
+    expect(changes).toContainEqual(expect.objectContaining({ domain: "appearance", propertyPath: "bounds", summary: "New Layer: Moved 5 px right" }));
     expect(changes).toContainEqual(expect.objectContaining({ domain: "text", propertyPath: "contents", baseValue: "Before", currentValue: "After" }));
   });
 
@@ -163,13 +165,186 @@ describe("diffStates", () => {
     const after = structuredClone(before);
     after.structure.layers[0]!.order = 1; after.structure.layers[1]!.order = 0;
     after.structure.layers.reverse(); after.structure.roots.reverse();
-    expect(diffStates(before, after)).toMatchObject([{ category: "reordered", propertyPath: "order" }, { category: "reordered", propertyPath: "order" }]);
+    // Swapping two layers moves one of them; the other only changed index.
+    expect(diffStates(before, after)).toMatchObject([{ category: "reordered", propertyPath: "order" }]);
+    expect(diffStates(before, after)[0]!.summary).toMatch(/in the layer stack, now (at the top|below “)/);
   });
 
-  it.each(["shape", "smartObject", "pixel", "text"])("describes %s fingerprints as appearance changes without inventing a paint operation", (kind) => {
+  it.each([
+    ["curves", "Rendered appearance changed"], ["smartobject", "Smart object contents changed"], ["solidcolor", "Fill or shape changed"],
+    ["pixel", "Pixels changed (painted, erased, filled, transformed or filtered)"]
+  ])("describes a %s fingerprint change by what could have caused it, without naming one operation", (kind, detail) => {
     const before = pixelState("rendered-before"); before.structure.layers[0]!.kind = kind;
     const after = structuredClone(before); after.content["layer-1"]!.fingerprint = "rendered-after";
-    expect(diffStates(before, after)[0]).toMatchObject({ domain: "content", summary: "New Layer: Rendered appearance changed", mergeability: "unsupported" });
+    expect(diffStates(before, after)[0]).toMatchObject({ domain: "content", summary: `New Layer: ${detail}`, mergeability: "unsupported" });
+  });
+
+  it("states a move in pixels and does not also call it a pixel edit", () => {
+    const before = pixelState("pixels-v1:64x64x4:11111111|full-v2:00000000000000a1|rel-v1:00000000000000ff");
+    const after = structuredClone(before);
+    for (const box of [after.appearance["layer-1"]!.bounds, after.appearance["layer-1"]!.boundsWithoutEffects]) { box.left += 12; box.right += 12; box.top -= 9; box.bottom -= 9; }
+    after.content["layer-1"]!.fingerprint = "pixels-v1:64x64x4:11111111|full-v2:00000000000000b2|rel-v1:00000000000000ff";
+    expect(diffStates(before, after).map((change) => change.summary)).toEqual(["New Layer: Moved 12 px right and 9 px up"]);
+  });
+
+  it("reports one geometry edit for a layer rather than one per edge", () => {
+    const before = pixelState("same-render");
+    const after = structuredClone(before);
+    after.appearance["layer-1"]!.bounds = { left: 2, top: 3, right: 22, bottom: 33 };
+    after.appearance["layer-1"]!.boundsWithoutEffects = { left: 2, top: 3, right: 22, bottom: 33 };
+    expect(diffStates(before, after).map((change) => change.summary)).toEqual(["New Layer: Size changed from 10 × 10 px to 20 × 30 px, now at x 2, y 3"]);
+  });
+
+  it("does not report the siblings a new layer pushed down as reordered", () => {
+    const before = pixelState("same-render");
+    const after = structuredClone(before);
+    after.structure.layers[0]!.order = 1;
+    after.structure.layers.unshift({ uuid: "layer-new", photoshopId: 77, parentUuid: null, name: "Fresh", kind: "text", order: 0, children: [] });
+    after.structure.roots = ["layer-new", "layer-1"];
+    after.identities.records.push({ uuid: "layer-new", photoshopId: 77, parentUuid: null, signature: "text|Fresh|root|0|0|10|10", confidence: "confirmed" });
+    after.appearance["layer-new"] = { ...after.appearance["layer-1"]!, layerUuid: "layer-new" };
+    after.content["layer-new"] = { ...after.content["layer-1"]!, layerUuid: "layer-new" };
+    expect(diffStates(before, after).map((change) => change.summary)).toEqual(["Added text layer “Fresh”"]);
+  });
+
+  it("names the group a layer moved into or out of", () => {
+    const before = pixelState("same-render");
+    before.structure.layers.push({ uuid: "group-1", photoshopId: 50, parentUuid: null, name: "Header", kind: "group", order: 1, children: [] });
+    before.structure.roots.push("group-1");
+    before.identities.records.push({ uuid: "group-1", photoshopId: 50, parentUuid: null, signature: "group|Header|root|0|0|10|10", confidence: "exact" });
+    before.appearance["group-1"] = { ...before.appearance["layer-1"]!, layerUuid: "group-1" };
+    before.content["group-1"] = { ...before.content["layer-1"]!, layerUuid: "group-1" };
+    const after = structuredClone(before);
+    after.structure.roots = ["group-1"];
+    after.structure.layers = [{ ...after.structure.layers[1]!, order: 0, children: ["layer-1"] }, { ...after.structure.layers[0]!, parentUuid: "group-1" }];
+    after.identities.records[0]!.parentUuid = "group-1";
+    expect(diffStates(before, after).map((change) => change.summary)).toContain("New Layer: Moved into group “Header”");
+    expect(diffStates(after, before).map((change) => change.summary)).toContain("New Layer: Moved out of group “Header” to the top level");
+  });
+
+  it.each([
+    ["visible", false, "Hidden (was visible)"], ["blendMode", "colordodge", "Blend mode changed from Normal to Color Dodge"],
+    ["clipped", true, "Clipped to the layer below"], ["fillOpacity", 25, "Fill changed from 100% to 25%"]
+  ] as const)("words a %s edit the way Photoshop names it", (property, value, detail) => {
+    const before = pixelState("same-render");
+    const after = structuredClone(before);
+    Object.assign(after.appearance["layer-1"]!, { [property]: value });
+    expect(diffStates(before, after).map((change) => change.summary)).toEqual([`New Layer: ${detail}`]);
+  });
+
+  it("lists each text style property that changed instead of two opaque fingerprints", () => {
+    const style = (size: number, red: number) => JSON.stringify({ character: { font: "helvetica", size, color: { red, green: 0, blue: 0 } }, paragraph: { alignment: "left" }, warp: { style: "none" } });
+    const before = pixelState("render-a"); before.structure.layers[0]!.kind = "text";
+    before.text["layer-1"] = { schemaVersion: 1, layerUuid: "layer-1", contents: "Hello", styleFingerprint: style(24, 0) };
+    const after = structuredClone(before);
+    after.text["layer-1"]!.styleFingerprint = style(32, 255);
+    after.content["layer-1"]!.fingerprint = "render-b";
+    // The re-rendered pixels follow from the style edit and are not a second edit.
+    expect(diffStates(before, after).map((change) => change.summary)).toEqual([
+      "New Layer: Text color changed from #000000 to #FF0000",
+      "New Layer: Font size changed from 24 to 32"
+    ]);
+  });
+
+  it("names layer effects, masks and adjustment settings from captured details", () => {
+    const before = pixelState("same-render");
+    before.content["layer-1"]!.details = { "mask.present": false, "effects.dropShadow.enabled": true, "effects.dropShadow.opacity": "35%", "adjustment.type": "curves", "label.color": "none" };
+    const after = structuredClone(before);
+    after.content["layer-1"]!.details = { "mask.present": true, "mask.enabled": true, "mask.density": "100%", "effects.dropShadow.enabled": false, "effects.dropShadow.opacity": "50%", "effects.innerGlow.enabled": true, "adjustment.type": "curves", "label.color": "red" };
+    expect(diffStates(before, after).map((change) => change.summary)).toEqual([
+      "New Layer: Drop shadow turned off",
+      "New Layer: Inner glow added",
+      "New Layer: Label color changed from none to red",
+      "New Layer: Layer mask added"
+    ]);
+    expect(diffStates(after, before).map((change) => change.summary)).toEqual(expect.arrayContaining(["New Layer: Layer mask removed", "New Layer: Drop shadow turned on", "New Layer: Inner glow removed"]));
+    const edited = structuredClone(before);
+    edited.content["layer-1"]!.details = { ...before.content["layer-1"]!.details, "effects.dropShadow.opacity": "50%", "adjustment.brightness": 40, "adjustment.type": "brightnessEvent" };
+    before.content["layer-1"]!.details!["adjustment.type"] = "brightnessEvent"; before.content["layer-1"]!.details!["adjustment.brightness"] = 0;
+    expect(diffStates(before, edited).map((change) => change.summary)).toEqual([
+      "New Layer: Brightness changed from 0 to 40",
+      "New Layer: Drop shadow opacity changed from 35% to 50%"
+    ]);
+  });
+
+  it("does not report the switched-off effects Photoshop lists beside a new one, or a painted mask that merely moved", () => {
+    const before = pixelState("same-render");
+    before.content["layer-1"]!.details = { "mask.present": true, "mask.enabled": true, "mask.pixels": "aaaa" };
+    const after = structuredClone(before);
+    after.content["layer-1"]!.details = { "mask.present": true, "mask.enabled": true, "mask.pixels": "bbbb", "effects.visible": true, "effects.dropShadow.enabled": true, "effects.dropShadow.opacity": "35%", "effects.frameFX.enabled": false, "effects.solidFill.enabled": false };
+    expect(diffStates(before, after).map((change) => change.summary)).toEqual(["New Layer: Drop shadow added", "New Layer: Layer mask was repainted"]);
+    for (const box of [after.appearance["layer-1"]!.bounds, after.appearance["layer-1"]!.boundsWithoutEffects]) { box.left += 5; box.right += 5; }
+    expect(diffStates(before, after).map((change) => change.summary)).toEqual(["New Layer: Moved 5 px right", "New Layer: Drop shadow added"]);
+  });
+
+  it("reports a canvas resize once, not as a move of every layer it shifted", () => {
+    const before = pixelState("pixels-v1:64x64x4:11111111|full-v2:00000000000000a1|rel-v1:00000000000000ff");
+    before.structure.layers.push({ uuid: "layer-2", photoshopId: 43, parentUuid: null, name: "Backdrop", kind: "solidcolor", order: 1, children: [] });
+    before.structure.roots.push("layer-2");
+    before.identities.records.push({ uuid: "layer-2", photoshopId: 43, parentUuid: null, signature: "solidcolor|Backdrop|root|0|0|10|10", confidence: "exact" });
+    before.appearance["layer-2"] = { ...structuredClone(before.appearance["layer-1"]!), layerUuid: "layer-2" };
+    before.content["layer-2"] = { schemaVersion: 1, layerUuid: "layer-2", fingerprint: "fill-a", opaque: true, reason: null };
+    before.appearance["layer-1"]!.bounds = { left: 2, top: 2, right: 6, bottom: 6 }; before.appearance["layer-1"]!.boundsWithoutEffects = { left: 2, top: 2, right: 6, bottom: 6 };
+    const after = structuredClone(before);
+    after.document.width = 20; after.document.height = 14;
+    after.appearance["layer-1"]!.bounds = { left: 7, top: 4, right: 11, bottom: 8 }; after.appearance["layer-1"]!.boundsWithoutEffects = { left: 7, top: 4, right: 11, bottom: 8 };
+    after.content["layer-1"]!.fingerprint = "pixels-v1:64x64x4:11111111|full-v2:00000000000000b2|rel-v1:00000000000000ff";
+    after.appearance["layer-2"]!.bounds = { left: 0, top: 0, right: 20, bottom: 14 }; after.appearance["layer-2"]!.boundsWithoutEffects = { left: 0, top: 0, right: 20, bottom: 14 };
+    after.content["layer-2"]!.fingerprint = "fill-b";
+    expect(diffStates(before, after).map((change) => change.summary)).toEqual(["Canvas width changed from 10 px to 20 px", "Canvas height changed from 10 px to 14 px"]);
+  });
+
+  it("mentions the area effects cover only when the effects themselves cannot be named", () => {
+    const before = pixelState("same-render");
+    const after = structuredClone(before);
+    after.appearance["layer-1"]!.bounds = { left: -4, top: -4, right: 14, bottom: 14 };
+    expect(diffStates(before, after).map((change) => change.summary)).toEqual(["New Layer: Layer effects now cover 18 × 18 px (was 10 × 10 px)"]);
+    before.content["layer-1"]!.details = { "mask.present": false };
+    after.content["layer-1"]!.details = { "mask.present": false, "effects.dropShadow.enabled": true };
+    expect(diffStates(before, after).map((change) => change.summary)).toEqual(["New Layer: Drop shadow added"]);
+  });
+
+  it("reports a layer Photoshop replaced in place as a conversion, not a deletion and an addition", () => {
+    const before = pixelState("same-render");
+    const after = structuredClone(before);
+    after.structure.layers[0] = { ...after.structure.layers[0]!, uuid: "layer-so", photoshopId: 99, kind: "smartobject" };
+    after.structure.roots = ["layer-so"];
+    after.identities.records = [{ uuid: "layer-so", photoshopId: 99, parentUuid: null, signature: "smartobject|New Layer|root|0|0|10|10", confidence: "confirmed" }];
+    after.appearance = { "layer-so": { ...before.appearance["layer-1"]!, layerUuid: "layer-so" } };
+    after.content = { "layer-so": { ...before.content["layer-1"]!, layerUuid: "layer-so" } };
+    expect(diffStates(before, after).map((change) => change.summary)).toEqual(["New Layer: Converted from a pixel layer to a smart object"]);
+  });
+
+  it("treats the new size of retyped text as part of the text edit and ignores settings Photoshop could not read", () => {
+    const style = (alignment: string | null, indent: number | null) => JSON.stringify({ character: { size: 24 }, paragraph: { alignment, leftIndent: indent }, warp: {} });
+    const before = pixelState("render-a"); before.structure.layers[0]!.kind = "text";
+    before.text["layer-1"] = { schemaVersion: 1, layerUuid: "layer-1", contents: "Hello", styleFingerprint: style(null, 0) };
+    const after = structuredClone(before);
+    after.text["layer-1"] = { ...after.text["layer-1"]!, contents: "Hello there", styleFingerprint: style("center", null) };
+    after.appearance["layer-1"]!.bounds.right = 30; after.appearance["layer-1"]!.boundsWithoutEffects.right = 30;
+    expect(diffStates(before, after).map((change) => change.summary)).toEqual(["New Layer: Text changed from “Hello” to “Hello there”"]);
+    after.text["layer-1"]!.styleFingerprint = style("center", 0);
+    before.text["layer-1"]!.styleFingerprint = style("left", 0);
+    expect(diffStates(before, after).map((change) => change.summary)).toContain("New Layer: Alignment changed from “left” to “center”");
+  });
+
+  it("does not invent edits when a version saved before details were captured is compared", () => {
+    const before = pixelState("same-render");
+    const after = structuredClone(before);
+    after.content["layer-1"]!.details = { "mask.present": true, "effects.dropShadow.enabled": true };
+    expect(diffStates(before, after)).toEqual([]);
+    expect(diffStates(after, before)).toEqual([]);
+  });
+
+  it("keeps the document composite as a fallback only when no layer edit explains it", () => {
+    const before = pixelState("same-render"); before.document.renderedFingerprint = "rendered-v1:before";
+    const after = structuredClone(before); after.document.renderedFingerprint = "rendered-v1:after";
+    expect(diffStates(before, after)).toMatchObject([{ domain: "document", propertyPath: "renderedFingerprint" }]);
+    after.appearance["layer-1"]!.opacity = 40;
+    expect(diffStates(before, after).map((change) => change.propertyPath)).toEqual(["opacity"]);
+    // A rename does not change the picture, so it explains nothing.
+    after.appearance["layer-1"]!.opacity = 100; after.structure.layers[0]!.name = "Renamed";
+    expect(diffStates(before, after).map((change) => change.propertyPath)).toEqual(["renderedFingerprint", "name"]);
   });
 });
 

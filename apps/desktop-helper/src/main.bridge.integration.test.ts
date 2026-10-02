@@ -118,7 +118,7 @@ describe("real helper process filesystem bridge", () => {
     upgraded.document.renderedFingerprint = "pixels-v1:64x64x4:bbbbbbbb";
     const edited = await f.request("refresh", { capture: upgraded, documentIdentity: f.identity });
     expect(edited).toMatchObject({ ok: true, result: { changeCount: 1, comparisonWarnings: [] } });
-    expect(edited.result.changes).toEqual([expect.objectContaining({ domain: "document", propertyPath: "renderedFingerprint", summary: "Document rendered appearance changed" })]);
+    expect(edited.result.changes).toEqual([expect.objectContaining({ domain: "document", propertyPath: "renderedFingerprint", summary: expect.stringContaining("no tracked layer setting changed") })]);
   }, 15_000);
 
   it("tracks first version, layer edits, saved baseline reset, immutable HEAD, and project-document identity", async () => {
@@ -281,14 +281,15 @@ describe("full-resolution history through the filesystem bridge", () => {
     painted.document.renderedFingerprint = sampled + "|full-v2:0000000000000002";
     painted.layers[0]!.content.fingerprint = sampled + "|full-v2:0000000000000002";
     const scan = await f.request("refresh", { capture: painted, documentIdentity: f.identity });
-    expect(scan).toMatchObject({ ok: true, result: { changeCount: 2, comparisonWarnings: [] } });
+    // The layer's pixel edit explains the different composite: one edit, not two.
+    expect(scan).toMatchObject({ ok: true, result: { changeCount: 1, comparisonWarnings: [] } });
     expect(scan.result.changes).toEqual(expect.arrayContaining([expect.objectContaining({ domain: "content", category: "modified", photoshopId: painted.layers[0]!.photoshopId })]));
     const saved = await f.request("capture", { capture: painted, documentIdentity: f.identity, message: "Small brush stroke" });
     const version = await f.request("versionDetails", { version: saved.result.versionId });
     expect(version).toMatchObject({ ok: true, result: { parentVersionId: baseline.result.versionId, version: { message: "Small brush stroke" } } });
-    expect(version.result.changes).toHaveLength(2);
+    expect(version.result.changes).toHaveLength(1);
     expect(await f.request("refresh", { capture: painted, documentIdentity: f.identity })).toMatchObject({ ok: true, result: { changeCount: 0 } });
     // Erasing back to the prior artwork is also an edit relative to the saved stroke.
-    expect(await f.request("refresh", { capture: upgraded, documentIdentity: f.identity })).toMatchObject({ ok: true, result: { changeCount: 2 } });
+    expect(await f.request("refresh", { capture: upgraded, documentIdentity: f.identity })).toMatchObject({ ok: true, result: { changeCount: 1 } });
   });
 });
