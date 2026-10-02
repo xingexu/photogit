@@ -1,40 +1,18 @@
-// PhotoGit reveal · staggers a freshly rendered list into view.
+// PhotoGit reveal · lists appear at once.
 //
-// The stagger is expressed as one custom property per row and consumed by the
-// stylesheet. Rows are never hidden by this module: they are in the DOM, in
-// order, readable by assistive technology and clickable from the first frame,
-// whatever the animation is doing. A capped stagger keeps a long list from
-// taking longer to settle than it takes to read.
+// Rows used to step in on a 26ms stagger. A stagger only adds delay before a
+// row is readable, and it replayed on every re-render, so it is gone: rows are
+// in the DOM, visible and clickable in the frame they are rendered. The
+// function stays so callers keep one hook if a future list needs an entrance,
+// and it clears any marker a previous build left on a row.
 (function () {
-  const STEP = 26;   // milliseconds between rows
-  const CAP = 8;     // rows after which every row shares the last delay
-
-  function reduced() {
-    const motion = globalThis.PhotoGitMotion;
-    if (motion && typeof motion.reduced === "function") return motion.reduced();
-    return true;
-  }
-
-  function delayFor(index) {
-    const position = Math.min(Math.max(0, Math.floor(index)), CAP);
-    return position * STEP;
-  }
-
-  // Marks rows for the stylesheet. Returns the number of rows it marked so a
-  // caller can tell a no-op from a run.
   function stagger(rows) {
     const list = rows ? [...rows] : [];
-    if (!list.length) return 0;
-    if (reduced()) {
-      for (const row of list) { row.style.removeProperty("--reveal-delay"); row.classList.remove("is-revealing"); }
-      return 0;
+    for (const row of list) {
+      row.classList?.remove("is-revealing");
+      row.style?.removeProperty("--reveal-delay");
     }
-    list.forEach((row, index) => {
-      row.style.setProperty("--reveal-delay", `${delayFor(index)}ms`);
-      row.classList.add("is-revealing");
-    });
-    return list.length;
+    return 0;
   }
-
-  globalThis.PhotoGitReveal = { stagger, delayFor, STEP, CAP };
+  globalThis.PhotoGitReveal = { stagger };
 })();

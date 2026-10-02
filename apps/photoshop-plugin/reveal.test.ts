@@ -26,34 +26,24 @@ async function revealFixture(reduce = false) {
 }
 
 describe("PhotoGit reveal", () => {
-  it("gives each row a later delay than the one above it", async () => {
-    const { reveal } = await revealFixture();
-    expect(reveal.delayFor(0)).toBe(0);
-    expect(reveal.delayFor(1)).toBe(reveal.STEP);
-    expect(reveal.delayFor(3)).toBe(reveal.STEP * 3);
-  });
-
-  it("caps the delay so a long list still settles promptly", async () => {
-    const { reveal } = await revealFixture();
-    const ceiling = reveal.STEP * reveal.CAP;
-    expect(reveal.delayFor(reveal.CAP)).toBe(ceiling);
-    expect(reveal.delayFor(500)).toBe(ceiling);
-  });
-
-  it("marks every row it is given", async () => {
+  it("renders every row at once: no per-row delay and no scheduled work", async () => {
     const { reveal, rows } = await revealFixture();
     const list = rows(4);
-    expect(reveal.stagger(list)).toBe(4);
-    expect(list.every((row: any) => row.classList.contains("is-revealing"))).toBe(true);
-    expect(list[2].style.getPropertyValue("--reveal-delay")).toBe(`${reveal.STEP * 2}ms`);
+    expect(reveal.stagger(list)).toBe(0);
+    for (const row of list) {
+      expect(row.classList.contains("is-revealing")).toBe(false);
+      expect(row.style.getPropertyValue("--reveal-delay")).toBe("");
+      expect(row.style.opacity || "").toBe("");
+    }
   });
 
-  it("leaves rows untouched and unmarked under reduced motion", async () => {
-    const { reveal, rows } = await revealFixture(true);
-    const list = rows(3);
-    expect(reveal.stagger(list)).toBe(0);
-    expect(list.some((row: any) => row.classList.contains("is-revealing"))).toBe(false);
-    expect(list[1].style.getPropertyValue("--reveal-delay")).toBe("");
+  it("clears a marker left by a previous build", async () => {
+    const { reveal, rows } = await revealFixture();
+    const [row] = rows(1);
+    row.classList.add("is-revealing"); row.style.setProperty("--reveal-delay", "52ms");
+    reveal.stagger([row]);
+    expect(row.classList.contains("is-revealing")).toBe(false);
+    expect(row.style.getPropertyValue("--reveal-delay")).toBe("");
   });
 
   it("never hides a row or removes it from the document", async () => {

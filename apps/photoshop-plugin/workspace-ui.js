@@ -1,6 +1,10 @@
 // Shared presentation controls only: never writes PSDs, stages files or calls Git.
+// The Changes list shows every edit, grouped under "Document" and "Layers".
+// Search and the filter pills only decide which rows are showing; every edit
+// is saved with a version whether or not it is.
 function refreshChanges(document) {
   updateMessageCount(document);
+  const list = document.getElementById("changes");
   const rows = Array.from(document.querySelectorAll("#changes .change-row"));
   const search = document.getElementById("changes-search");
   const chips = Array.from(document.querySelectorAll("[data-change-filter]"));
@@ -9,29 +13,42 @@ function refreshChanges(document) {
     for (const chip of chips) chip.setAttribute("aria-pressed", String(chip.dataset.changeFilter === "all"));
   }
   const query = String(search.value || "").trim().toLowerCase();
-  const type = chips.find(chip => chip.getAttribute("aria-pressed") === "true")?.dataset.changeFilter || "all";
   const typeMatches = (domain, wanted) => wanted === "all" || (wanted === "visual" ? !["text", "structure"].includes(domain) : domain === wanted);
-  // Each chip counts the rows it would show, within the current search, so
-  // the row of chips reads as a breakdown before any of them is chosen.
+  // Each pill counts the rows it would show, within the current search, so
+  // the row of pills reads as a breakdown before any of them is chosen. A
+  // pill that would show nothing is not offered.
   for (const chip of chips) {
     const count = chip.querySelector(".chip-count");
-    if (!count) continue;
-    count.textContent = String(rows.filter(row => typeMatches(row.dataset.domain, chip.dataset.changeFilter) && row.textContent.toLowerCase().includes(query)).length);
-    count.hidden = rows.length === 0;
+    const total = rows.filter(row => typeMatches(row.dataset.domain, chip.dataset.changeFilter) && row.textContent.toLowerCase().includes(query)).length;
+    if (count) { count.textContent = String(total); count.hidden = rows.length === 0; }
+    chip.classList.toggle("is-empty", chip.dataset.changeFilter !== "all" && total === 0 && chip.getAttribute("aria-pressed") !== "true");
   }
+  const type = chips.find(chip => chip.getAttribute("aria-pressed") === "true")?.dataset.changeFilter || "all";
   let visible = 0;
+  let previousLayer = null;
   const changed = [];
+  const showing = {};
   for (const row of rows) {
-    const domain = row.dataset.domain;
-    const matchesType = typeMatches(domain, type);
-    const hide = !matchesType || !row.textContent.toLowerCase().includes(query);
+    const hide = !typeMatches(row.dataset.domain, type) || !row.textContent.toLowerCase().includes(query);
     if (row.hidden !== hide) changed.push(row);
     row.hidden = hide;
-    if (!row.hidden) visible++;
+    if (row.hidden) continue;
+    visible++;
+    showing[row.dataset.group] = (showing[row.dataset.group] || 0) + 1;
+    // The layer is named once, on the first of its rows that is showing.
+    row.classList.toggle("same-layer", Boolean(row.dataset.layer) && row.dataset.layer === previousLayer);
+    previousLayer = row.dataset.layer || null;
+  }
+  // A section header carries the number of its rows that are showing, and
+  // goes away with the last of them.
+  for (const header of list ? list.querySelectorAll(".change-section") : []) {
+    const count = showing[header.dataset.group] || 0;
+    header.hidden = count === 0;
+    const label = header.querySelector(".section-count");
+    if (label) label.textContent = String(count);
   }
   // When a filter changes which rows are shown, the rows now showing step in
-  // on the stagger; rows already showing hold still. Filtering never hides a
-  // row the stagger is decorating, so this is decoration over a settled list.
+  // on the stagger; rows already showing hold still.
   const reveal = globalThis.PhotoGitReveal;
   if (changed.length && reveal && typeof reveal.stagger === "function") reveal.stagger(rows.filter(row => !row.hidden));
   document.getElementById("change-filters").hidden = rows.length === 0;
@@ -90,12 +107,6 @@ function setup(document, { navigate, openCommands }) {
   }
   const message = document.getElementById("message");
   message.addEventListener("input", () => updateMessageCount(document));
-  activate(document.getElementById("jump-save"), () => {
-    message.focus(); message.scrollIntoView?.({ block: "center" });
-    // The field flashes once so the eye finds it after the scroll.
-    const shell = message.closest(".field-shell");
-    if (shell) { shell.classList.remove("is-updated"); void shell.offsetWidth; shell.classList.add("is-updated"); }
-  });
   for (const preset of document.querySelectorAll("[data-message-preset]")) {
     activate(preset, () => {
       const draft = message.value;
@@ -114,7 +125,11 @@ function setup(document, { navigate, openCommands }) {
   }
   for (const chip of document.querySelectorAll("[data-change-filter]")) {
     activate(chip, () => {
-      for (const other of document.querySelectorAll("[data-change-filter]")) other.setAttribute("aria-pressed", String(other === chip));
+      const chips = document.querySelectorAll("[data-change-filter]");
+      const press = () => { for (const other of chips) other.setAttribute("aria-pressed", String(other === chip)); };
+      // The pills ease between pressed and not; the list is filtered at once.
+      const motion = globalThis.PhotoGitMotion;
+      if (motion && typeof motion.recolour === "function") motion.recolour(chips, press); else press();
       refreshChanges(document);
     });
   }
@@ -128,7 +143,6 @@ function setup(document, { navigate, openCommands }) {
     event.preventDefault(); first.focus();
   });
   arrowRow(document.querySelector(".message-presets"));
-  arrowRow(document.querySelector(".sync-panel"));
   const search = document.getElementById("changes-search");
   search.addEventListener("input", () => refreshChanges(document));
   // Escape in a search field that has text clears it and re-runs the

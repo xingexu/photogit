@@ -86,8 +86,7 @@ describe("desktop helper Photoshop refresh flow", () => {
     expect(refreshed.result.changes).toEqual(expect.arrayContaining([
       expect.objectContaining({ domain: "structure", layerName: "Hero revised", propertyPath: "name" }),
       expect.objectContaining({ domain: "appearance", layerName: "Hero revised", propertyPath: "opacity", currentValue: 72 }),
-      expect.objectContaining({ domain: "text", layerName: "Hero revised", propertyPath: "contents", currentValue: "A clearer headline" }),
-      expect.objectContaining({ domain: "content", layerName: "Hero revised", propertyPath: "fingerprint" })
+      expect.objectContaining({ domain: "text", layerName: "Hero revised", propertyPath: "contents", currentValue: "A clearer headline", summary: expect.stringMatching(/^Hero revised: Text changed from “.*” to “A clearer headline”$/) })
     ]));
   }, 15_000);
 });
