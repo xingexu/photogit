@@ -37,6 +37,7 @@ let projectFolder = null;
 let helperToken = null;
 let busyNow = false;
 let historyEntries = [];
+let branchTips = {};
 let historyPreviews = {};
 let historyPreviewGeneration = 0;
 let selectedVersionId = null;
@@ -120,6 +121,15 @@ function bindPanelEvents() {
   bind("history-search", "input", filterHistory);
   moveIntoList("history-search", "#history .history-row");
   bind("clear-activity", "click", clearActivity);
+  // Every empty state names its way out.
+  bind("empty-scan", "click", () => scanChanges({ automatic: false }));
+  bind("reviews-empty-action", "click", openNewBranch);
+  bind("history-empty-action", "click", () => {
+    const search = document.getElementById("history-search");
+    if (search.value.trim() && historyEntries.length) { search.value = ""; filterHistory(); return search.focus(); }
+    selectTab("changes");
+    document.getElementById("message").focus();
+  });
   bind("new-pull-request", "click", openPullRequest);
   bind("tool-new-branch", "click", openNewBranch);
   bind("tool-new-pr", "click", openPullRequest);
@@ -261,7 +271,13 @@ function setStartup(active) {
 function bind(id, event, handler) {
   const element = document.getElementById(id);
   const invoke = (inputEvent) => {
-    if (startupPending || element.getAttribute("aria-disabled") === "true") return;
+    if (startupPending) return;
+    // An unavailable control still answers a press: it says why.
+    if (element.getAttribute("aria-disabled") === "true") {
+      if (busyNow || !element.dataset.unavailable) return;
+      if (element.getAttribute("role") === "menuitem") closeToolsMenu();
+      return show(element.dataset.unavailable, false);
+    }
     return handler(inputEvent);
   };
   element.addEventListener(event, invoke);
@@ -477,13 +493,38 @@ async function refreshAndScan() {
   show("Project refreshed. Open a Photoshop document to scan edits.", false);
 }
 
+// Push says how many saved versions it would send, and is unavailable when
+// there is nothing to send or nowhere to send it.
+function renderPushState() {
+  const push = document.getElementById("push");
+  const remote = projectStatus?.remoteConfigured === true;
+  const count = Number.isSafeInteger(projectStatus?.unpushed) ? projectStatus.unpushed : null;
+  const known = projectStatus && typeof projectStatus.remoteConfigured === "boolean";
+  push.querySelector("span").textContent = count ? `Push ${count}` : "Push";
+  const unavailable = busyNow || (known && (!remote || count === 0));
+  push.setAttribute("aria-disabled", String(unavailable));
+  push.tabIndex = unavailable ? -1 : 0;
+  const reason = !known ? "Push saved versions" : !remote ? "No shared remote is set up for this project" : count ? `Push ${count} saved ${count === 1 ? "version" : "versions"} to the shared remote` : "Every saved version is already shared";
+  push.setAttribute("title", reason);
+  push.setAttribute("aria-label", reason);
+  const noRemote = "This project has no shared remote yet. Add one in Terminal with “git remote add origin <url>”, then choose Refresh project.";
+  if (known && !remote) push.dataset.unavailable = noRemote;
+  else if (known && count === 0) push.dataset.unavailable = "Every saved version is already shared. Save a new version and Push will send it.";
+  else delete push.dataset.unavailable;
+  // Pull needs somewhere to pull from, and says so when there is nowhere.
+  const pull = document.getElementById("pull");
+  pull.setAttribute("aria-disabled", String(busyNow || (known && !remote)));
+  if (known && !remote) pull.dataset.unavailable = noRemote; else delete pull.dataset.unavailable;
+}
+
 async function loadStatus(existingResult) {
   const result = existingResult || await callHelper("status");
   projectStatus = result;
   setTextWithFlash(document.getElementById("branch-name"), result.branch);
   setSyncStatus(result.changeCount ? "Project files changed" : "Project files clean");
+  renderPushState();
   renderDocumentBinding();
-  if (result.changeCount) log(`${result.changeCount} project ${result.changeCount === 1 ? "file has" : "files have"} changed since the last saved version.`);
+  if (result.changeCount) log(`${result.changeCount} project ${result.changeCount === 1 ? "file has" : "files have"} changed on disk since the last saved version. This is separate from unsaved Photoshop edits.`);
 }
 
 async function loadBranches(existingResult) {
@@ -491,12 +532,13 @@ async function loadBranches(existingResult) {
   const result = existingResult || await callHelper("branches");
   if (folder !== projectFolder) return;
   setTextWithFlash(document.getElementById("branch-name"), result.current);
+  branchTips = Object.fromEntries(result.branches.filter(branch => branch.tip).map(branch => [branch.name, branch.tip]));
   setCount("branches-count", result.branches.length);
   const onSwitch = branch => {
     if (folder !== projectFolder) return show("The project changed. Refresh the branch list before switching.", true);
     return executeCommand(`switch ${branch}`);
   };
-  branchView.render(document.getElementById("branch-list"), { branches: result.branches, current: result.current, previews: branchPreviews, onSwitch });
+  branchView.render(document.getElementById("branch-list"), { branches: result.branches, current: result.current, previews: branchPreviews, onSwitch, dateLabel: historyDateLabel });
   // Previews are decorative. Load them in the background so the branch list stays
   // immediately usable and a slow or missing preview never delays switching.
   void loadBranchPreviews(folder, result, onSwitch);
@@ -513,7 +555,7 @@ async function loadBranchPreviews(folder, result, onSwitch) {
     if (preview) loaded += 1;
   }
   if (!loaded || folder !== projectFolder) return;
-  branchView.render(document.getElementById("branch-list"), { branches: result.branches, current: result.current, previews: branchPreviews, onSwitch });
+  branchView.render(document.getElementById("branch-list"), { branches: result.branches, current: result.current, previews: branchPreviews, onSwitch, dateLabel: historyDateLabel });
 }
 
 async function loadHistory(existingResult) {
@@ -597,6 +639,7 @@ function toggleReview(branch) {
     if (!open) return;
     const conflicts = reviewInspector.resolution(open.querySelector(".review-body"), comparison, {
       onMerge: incoming => folder !== projectFolder ? show("The project changed. Review this branch again.", true) : mergeReview(incoming),
+      onOpen: branchTips[branch] ? incoming => openBranchCopy(incoming, folder) : undefined,
       onDetails: compareBranch
     });
     const label = open.querySelector(".review-state-label");
@@ -610,14 +653,16 @@ function renderHistory(versions) {
   const empty = document.getElementById("history-empty");
   container.innerHTML = "";
   empty.hidden = versions.length > 0;
-  // The panel is not told who the current user is, so the author is shown
-  // only where it carries information: when the history has more than one.
+  // An author is named only where it carries information: when it is not
+  // you. Without a known Git user, only when the history has several.
+  const currentUser = typeof projectStatus?.currentUser === "string" ? projectStatus.currentUser : null;
   const severalAuthors = new Set(historyEntries.map(version => version.author)).size > 1;
+  const named = author => currentUser ? author !== currentUser : severalAuthors;
   const latestId = historyEntries.length ? historyEntries[0].id : null;
   for (const group of groupHistory(versions)) {
     const section = document.createElement("section");
     section.className = "history-group";
-    section.innerHTML = `<h3 class="list-section"><span>${escapeHtml(String(group.label).toUpperCase())}</span><span class="history-author">${severalAuthors ? escapeHtml(group.author) : ""}</span></h3><div class="history-group-entries"></div>`;
+    section.innerHTML = `<h3 class="list-section"><span>${escapeHtml(String(group.label).toUpperCase())}</span><span class="history-author">${named(group.author) ? escapeHtml(group.author) : ""}</span></h3><div class="history-group-entries"></div>`;
     const entries = section.querySelector(".history-group-entries");
     for (const version of group.entries) {
       const selected = version.id === selectedVersionId;
@@ -664,10 +709,22 @@ function historyActions(version) {
     activateOnKeyboard(control, invoke);
     actions.appendChild(control);
   };
-  button("View changes", "button-primary", `View what version ${version.shortId} changed`, () => inspectVersion(version));
   const folder = projectFolder;
+  button("Compare", "button-primary", `Compare version ${version.shortId} with the open document`, () => compareWithCurrent(version, folder));
   button("Restore", "", `Restore version ${version.shortId} as a separate copy`, () => restoreVersion(version, folder));
-  return actions;
+  const wrap = document.createElement("div");
+  wrap.className = "history-card-actions";
+  wrap.appendChild(actions);
+  const details = document.createElement("div");
+  details.className = "text-link history-details";
+  details.textContent = "What this version changed";
+  details.setAttribute("role", "button");
+  details.tabIndex = 0;
+  const open = () => { if (!busyNow) inspectVersion(version); };
+  details.addEventListener("click", open);
+  activateOnKeyboard(details, open);
+  wrap.appendChild(details);
+  return wrap;
 }
 
 function groupHistory(versions) {
@@ -695,6 +752,7 @@ function filterHistory() {
   document.getElementById("history-empty-copy").textContent = filtering
     ? "Search by message, author, date, or version ID, or clear the search."
     : "Save your first version to start this document’s history.";
+  document.getElementById("history-empty-action").textContent = filtering ? "Clear search" : "Go to Changes";
   if (!query) return renderHistory(historyEntries);
   renderHistory(historyEntries.filter((version) => [version.message, version.shortId, version.author, version.date].some((value) => String(value).toLowerCase().includes(query))));
 }
@@ -947,9 +1005,10 @@ async function push() {
   return working("push", () => run("Sharing versions…", async () => {
     const result = await callHelper("push");
     log(`Shared branch ${result.branch}.`);
+    // Status first, so Push stops offering versions that have just been sent.
+    await Promise.all([loadStatus(), loadReviews()]);
     setSyncStatus("Pushed saved versions");
-    await loadReviews();
-    show("Changes shared successfully.", false);
+    show(`Pushed ${result.branch}. Every saved version is shared.`, false);
   }));
 }
 
@@ -972,7 +1031,7 @@ async function createBranch() {
     await callHelper("createBranch", { branch: name });
     input.value = "";
     log(`Created and switched to ${name}.`);
-    await Promise.all([loadBranches(), loadReviews()]);
+    await Promise.all([loadStatus(), loadBranches(), loadReviews()]);
     show(`Created branch ${name}.`, false);
   });
 }
@@ -1229,13 +1288,47 @@ function restoreVersion(version, folder) {
   });
 }
 
+// A conflicted branch is settled by eye: its latest version opens beside the
+// document being worked on, which stays open and connected to nothing new.
+function openBranchCopy(branch, folder) {
+  return run(`Opening ${branch}…`, async () => {
+    if (folder !== projectFolder || !branchTips[branch]) throw new Error("The project changed. Review this branch again.");
+    await openSnapshot(branchTips[branch], false);
+    show(`Opened ${branch} as a separate copy. Bring what you want to keep into your document, then save a version.`, false);
+  });
+}
+
+// Reads the open document now and lists every difference from the chosen
+// version, so "what would Restore change?" has an answer before restoring.
+function compareWithCurrent(version, folder) {
+  return run("Comparing with the open document…", async () => {
+    if (folder !== projectFolder) throw new Error("The project changed. Select this version again.");
+    if (!app.documents.length || !documentAllowed()) throw new Error("Open the project’s document to compare it with a saved version.");
+    const doc = app.activeDocument;
+    const identity = panelModel.documentIdentity(doc);
+    let capture;
+    suppressNotifications = true;
+    try {
+      capture = await core.executeAsModal(async (executionContext) => captureDocument(doc, {
+        check: () => { if (executionContext?.isCancelled) throw new Error("Comparison cancelled."); },
+        progress: (done, total) => setWatchStatus(`Reading layer ${done} of ${total}…`, "scanning")
+      }), { commandName: "Compare PhotoGit version with the open document" });
+    } finally { suppressNotifications = false; }
+    const result = await callHelper("compareVersion", { version: version.id, capture, documentIdentity: identity });
+    if (folder !== projectFolder) return;
+    openDetail(`Compare with ${version.shortId || version.id.slice(0, 8)}`, "");
+    versionInspector.renderCurrentComparison(document.getElementById("detail-content"), { version, changes: result.changes, changeCount: result.changeCount });
+    show(result.changeCount ? `${result.changeCount} ${result.changeCount === 1 ? "difference" : "differences"} from ${version.shortId}.` : `The open document matches ${version.shortId}.`, false);
+  });
+}
+
 function selectVersion(versionId) {
   if (selectedVersionId === versionId) return;
   selectedVersionId = versionId;
   savePanelState();
   filterHistory();
   // The selected card's actions ease into place; its height is not animated.
-  const actions = document.querySelector("#history .history-entry.selected .history-actions");
+  const actions = document.querySelector("#history .history-entry.selected .history-card-actions");
   if (actions) globalThis.PhotoGitMotion?.expand(actions);
 }
 
@@ -1337,6 +1430,17 @@ function validateHelperResult(operation, value) {
   if (operation === "status") {
     requireHelperText(result.branch, "status.branch", 200);
     requireHelperCount(result.changeCount, "status.changeCount");
+    if (result.unpushed !== undefined) requireHelperCount(result.unpushed, "status.unpushed");
+    if (result.remoteConfigured !== undefined && typeof result.remoteConfigured !== "boolean") throw invalidHelperData("status.remoteConfigured");
+    if (result.currentUser !== undefined && result.currentUser !== null) requireHelperText(result.currentUser, "status.currentUser", 1_024);
+  } else if (operation === "compareVersion") {
+    requireHelperCount(result.changeCount, "compareVersion.changeCount");
+    requireHelperArray(result.changes, "compareVersion.changes", 50_000).forEach((change, index) => {
+      const entry = requireHelperRecord(change, `compareVersion.changes[${index}]`);
+      if (!["document", "structure", "appearance", "text", "content"].includes(entry.domain)) throw invalidHelperData(`compareVersion.changes[${index}].domain`);
+      requireHelperText(entry.layerName, `compareVersion.changes[${index}].layerName`, 1_024, true);
+      requireHelperText(entry.summary, `compareVersion.changes[${index}].summary`, 1_000, true);
+    });
   } else if (operation === "history") {
     requireHelperArray(result.versions, "history.versions", 100).forEach((version, index) => {
       const entry = requireHelperRecord(version, `history.versions[${index}]`);
@@ -1353,6 +1457,8 @@ function validateHelperResult(operation, value) {
       requireHelperText(entry.name, `branches.branches[${index}].name`, 200);
       if (typeof entry.current !== "boolean") throw invalidHelperData(`branches.branches[${index}].current`);
       if (entry.tip !== undefined && (typeof entry.tip !== "string" || (entry.tip !== "" && !/^[a-f0-9]{40,64}$/.test(entry.tip)))) throw invalidHelperData(`branches.branches[${index}].tip`);
+      if (entry.subject !== undefined) requireHelperText(entry.subject, `branches.branches[${index}].subject`, 500, true);
+      if (entry.date !== undefined) requireHelperText(entry.date, `branches.branches[${index}].date`, 64, true);
     });
   } else if (operation === "refresh") {
     if (result.baselineMissing !== undefined && typeof result.baselineMissing !== "boolean") throw invalidHelperData("refresh.baselineMissing");
@@ -1621,6 +1727,7 @@ function renderChanges(changes, { baselineMissing = false, changeCount = changes
       : warnings.length ? "No layer changes · Review scan limits" : "No detected changes";
   restartAnimation(document.getElementById("last-scan"));
   document.getElementById("last-scan").textContent = `Scanned ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} · Updates automatically${warnings.length ? `\n${warnings.join("\n")}` : ""}`;
+  document.querySelector("#save-version span").textContent = changeCount && !baselineMissing ? `Save version · ${changeCount} ${changeCount === 1 ? "edit" : "edits"}` : baselineMissing ? "Save first version" : "Save version";
   empty.hidden = changes.length > 0;
   setChangesEmpty(baselineMissing ? "Nothing saved yet" : "No unsaved edits", baselineMissing ? "Save a first version to start tracking edits." : "This document matches the last saved version. Edits appear here as you make them.");
   // Document-wide edits come first under their own header, then the layers,
@@ -2151,13 +2258,14 @@ function busy(active) {
   // what identifies the control.
   const origin = active && pressedControl && Date.now() - pressedAt < 1500 && pressedControl.isConnected !== false ? pressedControl : null;
   if (origin) { origin.classList.add("is-working"); origin.setAttribute("aria-busy", "true"); }
-  for (const id of ["save-version", "push", "new-branch", "new-pull-request", "create-tag", "header-menu"]) {
+  for (const id of ["save-version", "new-branch", "new-pull-request", "create-tag", "header-menu"]) {
     const control = document.getElementById(id);
     control.setAttribute("aria-disabled", active ? "true" : "false");
     control.tabIndex = active ? -1 : 0;
   }
   // A menu item keeps its roving tabindex; only its availability changes.
-  for (const id of ["refresh", "rescan", "pull", "show-status"]) document.getElementById(id).setAttribute("aria-disabled", active ? "true" : "false");
+  renderPushState();
+  for (const id of ["refresh", "rescan", "show-status"]) document.getElementById(id).setAttribute("aria-disabled", active ? "true" : "false");
   for (const id of ["message", "new-branch-name", "tag-name"]) document.getElementById(id).disabled = active;
   for (const control of document.querySelectorAll("[data-message-preset],.branch-row.is-switchable,.history-actions .button,.review-toggle")) {
     control.setAttribute("aria-disabled", String(active)); control.tabIndex = active ? -1 : 0;

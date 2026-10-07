@@ -302,6 +302,34 @@ function render(container, options = {}) {
   return container;
 }
 
-if (typeof module !== "undefined") module.exports = { render, formatDate, historyPreview, changeTotals };
-else window.PhotoGitVersionInspector = { render, formatDate, historyPreview, changeTotals };
+// The open document against a saved version: every difference, worded the
+// way the Changes list words an edit, read from the version towards now.
+function renderCurrentComparison(container, { version = {}, changes = [], changeCount } = {}) {
+  const document = container.ownerDocument;
+  container.textContent = "";
+  container.classList.add("version-inspector");
+  const list = Array.isArray(changes) ? changes : [];
+  const total = Number.isSafeInteger(changeCount) ? changeCount : list.length;
+  const header = append(document, container, "div", "version-inspector-title");
+  append(document, header, "h2", "version-inspector-heading", total ? `${total} ${total === 1 ? "difference" : "differences"} since this version` : "No differences");
+  append(document, header, "p", "version-inspector-meta", [text(version.shortId), text(version.message)].filter(Boolean).join(" · "));
+  if (!list.length) {
+    append(document, container, "p", "fine-print", "The open document matches this saved version.");
+    return container;
+  }
+  append(document, container, "p", "fine-print", "Read from the saved version to the open document. Restore opens the saved version as a separate copy; it does not undo these.");
+  const items = append(document, container, "ul", "version-inspector-changes");
+  for (const change of list.slice(0, 500)) {
+    const [kind, label] = changeKind(change);
+    const item = append(document, items, "li", `version-edit-${kind}`);
+    append(document, item, "span", `version-edit-badge ${kind}`, label);
+    if (text(change?.layerName)) append(document, item, "strong", "", change.layerName);
+    append(document, item, "p", "", editText(change));
+  }
+  if (total > Math.min(list.length, 500)) append(document, container, "p", "fine-print", `Showing ${Math.min(list.length, 500)} of ${total} differences.`);
+  return container;
+}
+
+if (typeof module !== "undefined") module.exports = { render, renderCurrentComparison, formatDate, historyPreview, changeTotals };
+else window.PhotoGitVersionInspector = { render, renderCurrentComparison, formatDate, historyPreview, changeTotals };
 })();

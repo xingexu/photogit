@@ -51,6 +51,22 @@ describe("branch design directions", () => {
     expect(p.onSwitch).not.toHaveBeenCalled();
   });
 
+  it("says what each branch last holds when the record carries it, and nothing invented when it does not", () => {
+    const p = fixture();
+    const dateLabel = vi.fn(() => "October 1");
+    p.render({ dateLabel, branches: [
+      { name: "main", current: true, subject: "new scribbles", date: "2026-10-01T17:08:00-04:00" },
+      { name: "alternate", current: false, subject: "  ", date: "not a date" },
+      { name: "typography", current: false, subject: "Tighter headline" }
+    ] });
+    const meta = [...p.container.querySelectorAll(".branch-row-copy span")].map(span => span.textContent);
+    expect(meta).toEqual(["new scribbles · October 1", "Local branch", "Tighter headline"]);
+    expect(dateLabel).toHaveBeenCalledTimes(1);
+    // Without a date formatter the message still stands alone.
+    p.render({ branches: [{ name: "main", current: true, subject: "new scribbles", date: "2026-10-01T17:08:00-04:00" }] });
+    expect(p.container.querySelector(".branch-row-copy span")!.textContent).toBe("new scribbles");
+  });
+
   it("uses explicit current context rather than stale branch flags", () => {
     const p = fixture(); p.render({ current: "typography" });
     expect(p.container.querySelector(".current strong")!.textContent).toBe("typography");

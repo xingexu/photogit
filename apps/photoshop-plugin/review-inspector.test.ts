@@ -198,6 +198,15 @@ describe("review comparison inspector", () => {
     expect(ready.classList.contains("button-primary")).toBe(true);
     expect(body.querySelector(".review-note")!.textContent).toContain("No conflicts");
     ready.click(); expect(merge).toHaveBeenCalledExactlyOnceWith("tidy");
+    // With conflicts and a way to open the branch, the card leads with that step; without conflicts it is not offered.
+    const open = vi.fn();
+    view.resolution(body, blocked, { onMerge: merge, onOpen: open });
+    const opener = body.querySelector(".review-open") as HTMLElement;
+    expect(opener.textContent).toBe("Open live-poster as a copy");
+    expect(body.querySelector(".review-note")!.textContent).toContain("open live-poster beside your document");
+    opener.click(); expect(open).toHaveBeenCalledExactlyOnceWith("live-poster");
+    view.resolution(body, comparison({ incomingBranch: "tidy", baseBranch: "main", conflicts: [], gitMergeable: true }), { onMerge: merge, onOpen: open });
+    expect(body.querySelector(".review-open")).toBeNull();
     // A contradictory payload cannot make a known conflict mergeable.
     view.resolution(body, comparison({ conflicts: ["snapshot/document.psd"], gitMergeable: true }), { onMerge: merge });
     expect((body.querySelector(".comparison-merge") as HTMLElement).getAttribute("aria-disabled")).toBe("true");

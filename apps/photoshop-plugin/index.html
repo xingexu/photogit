@@ -4,12 +4,12 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>PhotoGit</title>
-    <script src="motion.js?v=149"></script>
-    <script src="appearance.js?v=149"></script>
-    <script src="counter.js?v=149"></script>
-    <script src="reveal.js?v=149"></script>
-    <link rel="stylesheet" href="styles.css?v=149">
-    <script src="index.js?v=149"></script>
+    <script src="motion.js?v=153"></script>
+    <script src="appearance.js?v=153"></script>
+    <script src="counter.js?v=153"></script>
+    <script src="reveal.js?v=153"></script>
+    <link rel="stylesheet" href="styles.css?v=153">
+    <script src="index.js?v=153"></script>
   </head>
   <body class="is-initializing">
     <main class="panel-root">
@@ -122,6 +122,7 @@
           <section id="changes-empty" class="empty-state" role="status">
             <strong>No unsaved edits</strong>
             <p>This document matches the last saved version. Edits appear here as you make them.</p>
+            <div id="empty-scan" class="text-link" role="button" tabindex="0">Scan now</div>
           </section>
         </section>
 
@@ -131,7 +132,7 @@
             <input id="history-search" type="search" maxlength="200" placeholder="Search versions" aria-label="Search version history" spellcheck="false" uxp-quiet="true">
           </div>
           <div id="history" class="list history-list"></div>
-          <section id="history-empty" class="empty-state" role="status" hidden><strong id="history-empty-title">No saved versions yet</strong><p id="history-empty-copy">Save a version from Changes.</p></section>
+          <section id="history-empty" class="empty-state" role="status" hidden><strong id="history-empty-title">No saved versions yet</strong><p id="history-empty-copy">Save a version from Changes.</p><div id="history-empty-action" class="text-link" role="button" tabindex="0">Go to Changes</div></section>
         </section>
 
         <section id="branches-view" class="view-panel" role="tabpanel" aria-labelledby="branches-tab" hidden>
@@ -155,7 +156,7 @@
             <div id="new-pull-request" class="button button-outline button-small" role="button" tabindex="0" hidden>Open GitHub comparison</div>
           </div>
           <div id="reviews" class="review-list"></div>
-          <section id="reviews-empty" class="empty-state" role="status" hidden><strong>No branches to review</strong><p>Create a branch or fetch a shared branch to begin a review.</p></section>
+          <section id="reviews-empty" class="empty-state" role="status" hidden><strong>No branches to review</strong><p>Create a branch or fetch a shared branch to begin a review.</p><div id="reviews-empty-action" class="text-link" role="button" tabindex="0">New branch</div></section>
           <section id="conflict-panel" class="card conflict-panel" hidden>
             <h3>Merge in progress</h3>
             <div id="conflicts" class="conflict-list"></div>

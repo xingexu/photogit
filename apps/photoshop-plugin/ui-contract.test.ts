@@ -407,6 +407,117 @@ describe("PhotoGit production panel behavior — host mocked", () => {
     expect(p.id("changes-empty").hidden).toBe(true);
   });
 
+  it("shows how many saved versions Push would send, and is unavailable with nothing to send or nowhere to send it", async () => {
+    const p = await panel(); p.connect();
+    const push = p.id("push");
+    const status = (extra: Record<string, unknown>) => p.evaluate("loadStatus(result)", { result: { branch: "main", changeCount: 0, documentBinding: null, baselineMissing: false, ...extra } });
+    await status({ remoteConfigured: true, unpushed: 3, currentUser: "Designer" });
+    expect(push.textContent).toBe("Push 3");
+    expect(push.getAttribute("aria-disabled")).toBe("false");
+    expect(push.getAttribute("aria-label")).toBe("Push 3 saved versions to the shared remote");
+    await status({ remoteConfigured: true, unpushed: 0 });
+    expect(push.textContent).toBe("Push");
+    expect(push.getAttribute("aria-disabled")).toBe("true");
+    expect(push.getAttribute("title")).toBe("Every saved version is already shared");
+    await status({ remoteConfigured: false, unpushed: 0 });
+    expect(push.getAttribute("title")).toBe("No shared remote is set up for this project");
+    // Work in progress does not leave Push looking available afterwards.
+    await status({ remoteConfigured: true, unpushed: 1 });
+    p.evaluate("busy(true)"); expect(push.getAttribute("aria-disabled")).toBe("true");
+    p.evaluate("busy(false)"); expect(push.getAttribute("aria-disabled")).toBe("false");
+    await status({ remoteConfigured: true, unpushed: 0 });
+    p.evaluate("busy(true); busy(false)"); expect(push.getAttribute("aria-disabled")).toBe("true");
+    // An older helper that reports neither field leaves Push as it was.
+    await status({});
+    expect(push.textContent).toBe("Push"); expect(push.getAttribute("aria-disabled")).toBe("false");
+  });
+
+  it("answers a press on an unavailable Push or Pull with the reason instead of doing nothing", async () => {
+    const p = await panel(); p.connect(); p.evaluate("bindPanelEvents()");
+    const pushed = vi.fn(); p.context.push = pushed;
+    const status = (extra: Record<string, unknown>) => p.evaluate("loadStatus(result)", { result: { branch: "main", changeCount: 0, documentBinding: null, baselineMissing: false, ...extra } });
+    await status({ remoteConfigured: true, unpushed: 0 });
+    p.id("push").click();
+    expect(p.id("result").textContent).toContain("Every saved version is already shared");
+    expect(p.id("pull").getAttribute("aria-disabled")).toBe("false");
+    await status({ remoteConfigured: false, unpushed: 0 });
+    p.id("push").click();
+    expect(p.id("result").textContent).toContain("no shared remote");
+    expect(p.id("pull").getAttribute("aria-disabled")).toBe("true");
+    p.evaluate('show("cleared", false)'); p.id("pull").click();
+    expect(p.id("result").textContent).toContain("git remote add origin");
+    expect(pushed).not.toHaveBeenCalled();
+    // While work is in progress a press stays silent rather than replacing the progress message.
+    p.evaluate('busy(true); show("Working…", false)'); p.id("push").click();
+    expect(p.id("result").textContent).toBe("Working…");
+    p.evaluate("busy(false)");
+    await status({ remoteConfigured: true, unpushed: 2 });
+    expect(p.id("push").dataset.unavailable).toBeUndefined();
+    expect(p.id("pull").getAttribute("aria-disabled")).toBe("false");
+  });
+
+  it("gives every empty state a way forward and says what Save version will save", async () => {
+    const p = await panel(); p.connect(); p.evaluate("bindPanelEvents()");
+    const label = () => p.document.querySelector("#save-version span")!.textContent;
+    p.evaluate("renderChanges([], {})");
+    expect(label()).toBe("Save version");
+    expect(p.id("changes-empty").querySelector("#empty-scan")!.textContent).toBe("Scan now");
+    p.evaluate("renderChanges([], { changeCount: 3 })"); expect(label()).toBe("Save version · 3 edits");
+    p.evaluate("renderChanges([], { changeCount: 1 })"); expect(label()).toBe("Save version · 1 edit");
+    p.evaluate("renderChanges([], { baselineMissing: true })"); expect(label()).toBe("Save first version");
+    expect(p.id("reviews-empty-action").textContent).toBe("New branch");
+    p.id("reviews-empty-action").click();
+    expect(p.id("workspace").dataset.view).toBe("branches");
+    p.evaluate("historyEntries = []; filterHistory()");
+    expect(p.id("history-empty-action").textContent).toBe("Go to Changes");
+    p.id("history-empty-action").click();
+    expect(p.id("workspace").dataset.view).toBe("changes");
+    p.evaluate('historyEntries = [{ id: "a".repeat(40), shortId: "aaaaaaa", message: "One", author: "A", date: "2026-10-01T10:00:00Z" }]');
+    p.id<HTMLInputElement>("history-search").value = "nothing like it";
+    p.evaluate("filterHistory()");
+    expect(p.id("history-empty-action").textContent).toBe("Clear search");
+    p.id("history-empty-action").click();
+    expect(p.id<HTMLInputElement>("history-search").value).toBe("");
+    expect(p.document.querySelectorAll(".history-row")).toHaveLength(1);
+  });
+
+  it("names a history author only when it is not the current Git user", async () => {
+    const p = await panel(); p.connect();
+    const versions = ["Designer", "Reviewer", "Designer"].map((author, index) => ({ id: String(index + 1).repeat(40), shortId: String(index + 1).repeat(7), author, date: "2026-09-04T12:00:00Z", message: `Design ${index + 1}` }));
+    p.evaluate('projectStatus = { currentUser: "Designer" }; historyEntries = versions; renderHistory(versions)', { versions });
+    expect([...p.document.querySelectorAll(".history-author")].map(node => node.textContent)).toEqual(["", "Reviewer", ""]);
+  });
+
+  it("compares a saved version with the open document and lists every difference without changing anything", async () => {
+    const p = await panel(); const doc = p.connect(); p.evaluate("bindPanelEvents()");
+    p.document.body.classList.remove("is-initializing"); p.id("workspace").hidden = false;
+    p.evaluate('projectStatus = { branch: "main", baselineMissing: false, documentBinding: null }');
+    const version = { id: "a".repeat(40), shortId: "aaaaaaa", author: "Designer", date: "2026-09-04T12:00:00Z", message: "Cover <b>one</b>" };
+    const helper = vi.fn(async (operation: string, payload: any) => operation === "compareVersion"
+      ? { version: payload.version, changeCount: 2, changes: [change(4, { summary: "Layer 4: Opacity changed from 100% to 63%" }), change(5, { category: "added", summary: "Added pixel layer “Fresh”" })] }
+      : {});
+    p.context.callHelper = helper; p.context.documentAllowed = () => true;
+    p.context.captureDocument = vi.fn(async () => ({ document: { documentId: String(doc.id), name: doc.name }, layers: [] }));
+    p.evaluate("historyEntries = [version]; selectedVersionId = version.id; renderHistory(historyEntries)", { version });
+    p.document.querySelector<HTMLElement>(".history-actions .button-primary")!.click();
+    await settle(); await settle();
+    expect(helper).toHaveBeenCalledWith("compareVersion", expect.objectContaining({ version: version.id, capture: expect.any(Object), documentIdentity: expect.objectContaining({ documentId: String(doc.id) }) }));
+    expect(p.id("detail-sheet").hidden).toBe(false);
+    expect(p.id("detail-title").textContent).toBe("Compare with aaaaaaa");
+    const content = p.id("detail-content");
+    expect(content.querySelector(".version-inspector-heading")!.textContent).toBe("2 differences since this version");
+    expect([...content.querySelectorAll(".version-inspector-changes p")].map(node => node.textContent)).toEqual(["Opacity changed from 100% to 63%", "Added pixel layer “Fresh”"]);
+    expect(content.textContent).toContain("Cover <b>one</b>");
+    expect(content.querySelector("b")).toBeNull();
+    expect(p.app.open).not.toHaveBeenCalled();
+    expect(p.id("result").textContent).toBe("2 differences from aaaaaaa.");
+    // A document that is not the project's is not compared at all.
+    helper.mockClear(); p.context.documentAllowed = () => false; p.evaluate("closeDetail()");
+    p.document.querySelector<HTMLElement>(".history-actions .button-primary")!.click(); await settle();
+    expect(helper).not.toHaveBeenCalled();
+    expect(p.id("result").textContent).toContain("Open the project’s document");
+  });
+
   it("shows work on the control that started it, and one line under the tabs, from the click until the result", async () => {
     const p = await panel(); p.connect(); p.evaluate("bindPanelEvents()");
     p.document.body.classList.remove("is-initializing"); p.id("workspace").hidden = false;
@@ -548,8 +659,8 @@ describe("PhotoGit production panel behavior — host mocked", () => {
     const card = p.document.querySelector<HTMLElement>(".history-entry.selected")!;
     expect(card.querySelector<HTMLElement>(".history-row")!.dataset.version).toBe(versions[0]!.id);
     expect(card.querySelector(".pill")!.textContent).toBe("Latest");
-    expect([...card.querySelectorAll(".history-actions .button")].map(button => button.textContent)).toEqual(["View changes", "Restore"]);
-    card.querySelector<HTMLElement>(".history-actions .button-primary")!.click();
+    expect([...card.querySelectorAll(".history-actions .button")].map(button => button.textContent)).toEqual(["Compare", "Restore"]);
+    card.querySelector<HTMLElement>(".history-details")!.click();
     await settle();
     expect(helper).toHaveBeenCalledWith("versionDetails", { version: versions[0]!.id });
     expect(p.id("detail-title").textContent).toBe(`Version ${versions[0]!.shortId}`);

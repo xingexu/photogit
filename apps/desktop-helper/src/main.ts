@@ -88,8 +88,8 @@ async function executeRequest(payload: HelperRequest, helperConfig: HelperConfig
   if (!approved.some(Boolean)) throw coded("ROOT_NOT_APPROVED", "This project folder has not been approved in the PhotoGit helper.");
   const repository = new GitRepository(projectRoot);
   if (payload.operation === "status") {
-    const [branch, changes] = await Promise.all([repository.currentBranch(), repository.status()]);
-    return { branch, changeCount: changes.length, documentBinding: await readDocumentBinding(projectRoot), baselineMissing: await repository.readStateAt() === null };
+    const [branch, changes, sync] = await Promise.all([repository.currentBranch(), repository.status(), repository.syncState()]);
+    return { branch, changeCount: changes.length, documentBinding: await readDocumentBinding(projectRoot), baselineMissing: await repository.readStateAt() === null, ...sync };
   }
   if (payload.operation === "history") return { versions: await repository.history(40) };
   if (payload.operation === "versionDetails") return boundedComparison(await repository.versionDetails(payload.version!));
@@ -109,6 +109,18 @@ async function executeRequest(payload: HelperRequest, helperConfig: HelperConfig
     if (!payload.adopt && !binding && baseline && baseline.document.name !== identity.name && resolve(identity.sourcePath ?? "") !== join(projectRoot, "snapshot", "document.psd")) throw coded("DOCUMENT_MISMATCH", `This project contains ${baseline.document.name}. Explicitly adopt this document to change its connection.`);
     await saveDocumentBinding(projectRoot, identity);
     return { outcome: "success", documentBinding: identity, binding: identity };
+  }
+  // The open document against any saved version, not only the latest: what
+  // would change if that version were restored, stated edit by edit.
+  if (payload.operation === "compareVersion") {
+    const head = await repository.readStateAt();
+    const version = await repository.readStateAt(payload.version!);
+    if (!version) throw coded("VERSION_NOT_FOUND", "That saved version has no PhotoGit state to compare with.");
+    await assertDocumentConnection(projectRoot, payload.documentIdentity, payload.capture!.document, head, false);
+    const current = stateFromCapture(projectCapture(payload.capture!, payload.documentIdentity, head, projectRoot), version.project, randomUUID, head?.identities.records ?? version.identities.records);
+    const changes = diffStates(version, current);
+    log("info", { event: "compare_version_complete", requestId: payload.requestId, changeCount: changes.length });
+    return { ...boundedChanges(changes), version: payload.version };
   }
   if (payload.operation === "refresh") {
     const base = await repository.readStateAt();

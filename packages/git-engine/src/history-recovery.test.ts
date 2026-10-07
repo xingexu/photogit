@@ -163,6 +163,22 @@ describe("immutable history, recovery, and Git comparison", () => {
     await expect(repo.validateSnapshotAt("HEAD")).rejects.toThrow(/integrity check/);
   });
 
+  it("lists each branch with the message and time of its latest saved version", async () => {
+    const repository = await fixture();
+    await repository.run(["commit", "--allow-empty", "-m", "Poster\tbaseline"]);
+    const base = await repository.currentBranch();
+    await repository.run(["checkout", "-b", "option-b"]);
+    await repository.run(["commit", "--allow-empty", "-m", "Warmer palette", "-m", "A body line that is not the summary."]);
+    const branches = await repository.branches();
+    expect(branches.map(branch => [branch.name, branch.current, branch.subject])).toEqual(
+      [[base, false, "Poster baseline"], ["option-b", true, "Warmer palette"]].sort((first, second) => String(first[0]).localeCompare(String(second[0])))
+    );
+    for (const branch of branches) {
+      expect(branch.tip).toMatch(/^[a-f0-9]{40,64}$/);
+      expect(Number.isFinite(new Date(branch.date).getTime())).toBe(true);
+    }
+  });
+
   it("reviews remote-only branches against the current base and honors configured default bases", async () => {
     const repo = await fixture();
     await repo.saveVersion(state(), "Initial version");

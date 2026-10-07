@@ -102,7 +102,7 @@ img { max-width: 100%; }
 .empty-state { padding: var(--space-4) var(--space-2); text-align: center; }
 .empty-state strong { color: var(--text-strong); }
 .empty-state p { margin-top: 2px; color: var(--text-muted); font-size: var(--text-secondary); }
-.empty-state .text-link { margin-top: var(--space-2); }
+.empty-state .text-link { display: flex; justify-content: center; margin-top: var(--space-2); }
 .card { padding: var(--space-3); border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-raised); }
 .card > * + * { margin-top: var(--space-2); }
 /* Uppercase section labels: list groups, date groups, small captions. */
@@ -224,6 +224,7 @@ body.has-toast .search-field input { display: none; }
 .history-entry.selected .history-row .row-copy > span { color: var(--text-2); }
 .history-row .pill { margin-left: var(--space-2); }
 .history-actions { display: flex; }
+.history-details { margin-top: var(--space-2); }
 .history-actions .button { flex: 1 1 0; min-width: 0; }
 .history-actions .button + .button { margin-left: var(--space-2); }
 
@@ -237,7 +238,7 @@ body.has-toast .search-field input { display: none; }
 .branch-row.has-preview .branch-row-icon { display: none; }
 .branch-row-copy { display: flex; flex-direction: column; flex: 1; min-width: 0; }
 .branch-row-copy strong { overflow: hidden; color: var(--text-strong); text-overflow: ellipsis; white-space: nowrap; }
-.branch-row-copy span { color: var(--text-muted); font-size: var(--text-secondary); }
+.branch-row-copy span { overflow: hidden; color: var(--text-muted); font-size: var(--text-secondary); text-overflow: ellipsis; white-space: nowrap; }
 .branch-row.current .branch-row-copy span { color: var(--text-2); }
 .branch-list-empty { padding: var(--space-3) 0; }
 

@@ -83,4 +83,15 @@ describe("helper protocol", () => {
     };
     expect(() => parseHelperRequest({ protocolVersion: PROTOCOL_VERSION, operation: "refresh", requestId: "request-123", projectRoot: "/tmp/project", capture })).toThrow(/opacity/);
   });
+
+  it("accepts a version comparison only with a saved version ID and a valid capture", () => {
+    const capture = { document: { documentId: "1", name: "a.psd", width: 10, height: 10, resolution: 72, mode: "rgb", bitDepth: 8, colorProfile: null }, layers: [] };
+    const base = { protocolVersion: 1, operation: "compareVersion", requestId: "request-123", projectRoot: "/tmp/project" };
+    expect(() => parseHelperRequest({ ...base, version: "abc1234", capture })).not.toThrow();
+    expect(() => parseHelperRequest({ ...base, version: "HEAD", capture })).not.toThrow();
+    expect(() => parseHelperRequest({ ...base, capture })).toThrow(/saved version/);
+    expect(() => parseHelperRequest({ ...base, version: "HEAD~1", capture })).toThrow(/saved version/);
+    expect(() => parseHelperRequest({ ...base, version: "abc1234" })).toThrow();
+    expect(() => parseHelperRequest({ ...base, version: "abc1234", capture, branch: "main" })).toThrow();
+  });
 });

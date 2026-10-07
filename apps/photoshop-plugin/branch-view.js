@@ -14,7 +14,15 @@ function safeDemoPreview(src) {
     /^(?:\.\/)?assets\/(?:[A-Za-z0-9_-]+\/)*[A-Za-z0-9_-]+\.(?:png|jpe?g|webp)$/i.test(src);
 }
 
-function render(container, { branches = [], current, onSwitch, previews, demoPreviews } = {}) {
+// What a branch last holds, in the words it was saved with: the latest
+// version's message and day. A record without either says only what is known.
+function latestVersion(branch, dateLabel) {
+  const subject = typeof branch.subject === "string" ? branch.subject.trim() : "";
+  const day = typeof dateLabel === "function" && typeof branch.date === "string" && /^\d{4}-\d{2}-\d{2}T/.test(branch.date) ? String(dateLabel(branch.date)) : "";
+  return [subject, day].filter(Boolean).join(" · ") || "Local branch";
+}
+
+function render(container, { branches = [], current, onSwitch, previews, demoPreviews, dateLabel } = {}) {
   const document = container.ownerDocument;
   container.textContent = "";
   container.classList.add("branch-list");
@@ -73,7 +81,8 @@ function render(container, { branches = [], current, onSwitch, previews, demoPre
     name.textContent = branch.name;
     copy.appendChild(name);
     const meta = document.createElement("span");
-    meta.textContent = "Local branch";
+    meta.textContent = latestVersion(branch, dateLabel);
+    meta.title = meta.textContent;
     copy.appendChild(meta);
     row.appendChild(copy);
     if (switchable) {

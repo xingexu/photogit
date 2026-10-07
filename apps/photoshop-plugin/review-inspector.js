@@ -236,7 +236,7 @@ function conflictEntries(comparison) {
 }
 
 // Fills an open card. Returns how many conflicts it listed.
-function resolution(body, comparison, { onMerge, onDetails } = {}) {
+function resolution(body, comparison, { onMerge, onOpen, onDetails } = {}) {
   const document = body.ownerDocument;
   body.textContent = "";
   const incoming = text(comparison?.incomingBranch, "this branch");
@@ -250,6 +250,19 @@ function resolution(body, comparison, { onMerge, onDetails } = {}) {
     append(document, head, "span", "", entry.what);
   }
   if (entries.length > 50) append(document, body, "p", "review-note", `Showing the first 50 of ${entries.length} conflicts.`);
+  // With conflicts Merge is unavailable, so the card leads with what can be
+  // done: look at the incoming branch beside the open document.
+  if (entries.length && typeof onOpen === "function") {
+    const open = append(document, body, "div", "button button-primary button-wide review-open", `Open ${incoming} as a copy`);
+    open.setAttribute("role", "button");
+    open.tabIndex = 0;
+    const view = () => { if (!open.closest("[hidden]") && !document.body.classList.contains("is-busy") && !document.body.classList.contains("is-initializing")) onOpen(incoming); };
+    open.addEventListener("click", view);
+    open.addEventListener("keydown", event => {
+      if (!["Enter", " "].includes(event.key) || event.repeat || event.isComposing) return;
+      event.preventDefault(); event.stopPropagation(); view();
+    });
+  }
   const button = append(document, body, "div", `button button-wide comparison-merge ${mergeable ? "button-primary" : "button-disabled"}`, `Merge ${incoming}`);
   button.setAttribute("role", "button");
   button.setAttribute("aria-disabled", String(!mergeable));
@@ -269,7 +282,7 @@ function resolution(body, comparison, { onMerge, onDetails } = {}) {
   append(document, body, "p", "review-note", mergeable
     ? `No conflicts. ${changes} recorded ${changes === 1 ? "edit" : "edits"} would come into ${destination}; you confirm before anything is combined.`
     : entries.length
-      ? `${entries.length} ${entries.length === 1 ? "conflict" : "conflicts"} to resolve. PhotoGit can’t pick a side for you: open both branches in Photoshop, save the result you want to keep, then refresh.`
+      ? `${entries.length} ${entries.length === 1 ? "conflict" : "conflicts"} to resolve. PhotoGit can’t pick a side for you${typeof onOpen === "function" ? `: open ${incoming} beside your document, bring across what you want to keep, then save a version` : ": open both branches in Photoshop, save the result you want to keep, then refresh"}.`
       : "This branch can’t be combined yet. Refresh the project, then review it again.");
   if (typeof onDetails === "function") {
     const link = append(document, body, "div", "text-link review-details", "See every incoming change");
