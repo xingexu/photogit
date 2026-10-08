@@ -1,222 +1,145 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>PhotoGit</title>
-    <script src="motion.js?v=96"></script>
-    <script src="appearance.js?v=96"></script>
-    <script src="depth.js?v=96"></script>
-    <script src="counter.js?v=96"></script>
-    <script src="reveal.js?v=96"></script>
-    <link rel="stylesheet" href="styles.css?v=96">
-    <script src="index.js?v=96"></script>
+    <script src="motion.js?v=153"></script>
+    <script src="appearance.js?v=153"></script>
+    <script src="counter.js?v=153"></script>
+    <script src="reveal.js?v=153"></script>
+    <link rel="stylesheet" href="styles.css?v=153">
+    <script src="index.js?v=153"></script>
   </head>
   <body class="is-initializing">
     <main class="panel-root">
-      <div class="panel-aurora" aria-hidden="true"><i></i><i></i><i></i></div>
-      <header class="app-header">
-        <div class="app-brand">
-          <div class="pg-mark" aria-hidden="true"><img src="icons/photogit.png" alt=""></div>
-          <div class="app-title">
-            <h1>PhotoGit</h1>
-            <span>Your creative history</span>
-          </div>
-        </div>
-        <div id="helper-status" class="repo-state warning" role="status"><i></i><span id="repo-sync-status">Not connected</span></div>
-        <div id="global-search" class="header-action command-trigger" role="button" tabindex="0" aria-disabled="true" aria-label="Open commands" aria-keyshortcuts="/ Control+K Meta+K" title="Open the searchable command palette">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 4.5 4.5"/></svg>
-          <span class="command-trigger-label">Commands</span>
-        </div>
-        <div id="appearance-toggle" class="header-action appearance-toggle" role="button" tabindex="0" aria-label="Switch to Light mode" title="Switch to Light mode">
-          <svg class="theme-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg>
-          <svg class="theme-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14A8.5 8.5 0 0 1 10 4a8.5 8.5 0 1 0 10 10Z"/></svg>
-        </div>
-        <div id="header-menu" class="header-action" role="button" tabindex="0" aria-disabled="true" aria-label="More PhotoGit tools" aria-haspopup="menu" aria-controls="tools-menu" aria-expanded="false" title="More PhotoGit tools">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
-        </div>
-      </header>
-      <p id="appearance-note" class="status-message" role="status" hidden></p>
-
       <section id="startup-state" class="startup-card" role="status" aria-live="polite">
         <h2>Opening PhotoGit…</h2>
         <p id="startup-message">Restoring your project.</p>
         <div class="startup-skeleton" aria-hidden="true"><span></span><span></span><span></span></div>
       </section>
 
-      <section id="onboarding" class="onboarding liquid-card" hidden>
-        <div class="onboarding-symbol" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 7v5l3 2"/><circle cx="12" cy="12" r="8"/></svg></div>
-        <h2>A history for your artwork.</h2>
-        <p>Track readable layer edits, save exact PSD versions, and explore branches.</p>
-        <ol class="onboarding-steps"><li><b>01</b> Connect your project folder</li><li><b>02</b> Make edits in Photoshop</li><li><b>03</b> Save a version worth keeping</li></ol>
+      <section id="onboarding" class="onboarding" hidden>
+        <div class="state-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 7h6l2 2h10v10H3z"/></svg></div>
+        <h2>Connect a project</h2>
+        <p class="state-copy">Choose the folder PhotoGit should keep versions in.</p>
         <div id="choose-project" class="button button-primary button-wide" role="button" tabindex="0">Connect a project</div>
         <div id="setup-toggle" class="text-link" role="button" tabindex="0" aria-expanded="false" aria-controls="setup-instructions">First-time setup<svg class="disclosure-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></div>
         <section id="setup-instructions" hidden>
-        <p id="pairing-help" class="fine-print">PhotoGit runs a small background service that keeps your versions safe. To set it up once, open Terminal in the PhotoGit folder and run these two lines, replacing the path with your project folder. Leave that window open while you work, then choose the same folder here.</p>
+        <p id="pairing-help" class="fine-print">Run in Terminal from the PhotoGit folder, with your project path. Keep the helper running.</p>
         <p class="setup-command" tabindex="0">npm run photogit -- init "/path/to/project"<br>npm run helper -- --approve-root "/path/to/project"</p>
-        <p class="fine-print">To keep PhotoGit docked, drag its panel tab next to Photoshop’s toolbar and let go when a highlight appears.</p>
         </section>
       </section>
 
       <section id="connection-notice" class="notice" role="alert" hidden>
         <strong>Connection lost</strong>
-        <p id="connection-message">PhotoGit’s background service isn’t responding. Your saved versions are safe. Start the service, then choose Reconnect.</p>
+        <p id="connection-message">The PhotoGit helper isn’t responding. Saved versions are safe. Start the helper, then Reconnect.</p>
         <div id="setup-command-toggle" class="text-link" role="button" tabindex="0" aria-expanded="false" aria-controls="setup-command-live">Show setup command<svg class="disclosure-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></div>
         <p id="setup-command-live" class="setup-command" tabindex="0" hidden>npm run helper -- --approve-root "/path/to/project"</p>
-        <div id="reconnect-helper" class="button button-quiet" role="button" tabindex="0">Reconnect</div>
+        <div id="reconnect-helper" class="button button-outline" role="button" tabindex="0">Reconnect</div>
       </section>
-      <p id="result" class="status-message" role="status" aria-live="polite"></p>
 
-      <section id="workspace" class="workspace" hidden>
-        <section id="document-connection" class="notice" role="status" hidden>
-          <strong>Which document belongs to this project?</strong>
-          <p id="document-connection-message"></p>
-          <div id="connect-document" class="button button-quiet" role="button" tabindex="0">Connect active document</div>
-          <div id="open-project-document" class="button button-quiet" role="button" tabindex="0">Open saved project version</div>
-        </section>
+      <p id="result" class="status-message" role="status" aria-live="polite" title="Dismiss"></p>
 
-        <section class="repo-context liquid-card" data-depth aria-label="Current repository">
-          <div class="repo-topline">
-            <div class="repo-project">
-              <span class="context-badge" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 7h6l2 2h10v10H3z"/></svg></span>
-              <div class="context-copy"><span class="context-label">Project</span><strong id="project-status">No project selected</strong>
-              <div id="change-project" class="text-link project-switch" role="button" tabindex="0">Change project</div></div>
-            </div>
+      <section id="workspace" class="workspace" data-view="changes" hidden>
+        <header class="top-bar" aria-label="Current repository">
+          <div class="repo-branch branch-switcher" data-destination="branches" role="button" tabindex="0" title="Switch or create a branch" aria-label="Branches">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="5" r="2"/><circle cx="18" cy="7" r="2"/><circle cx="6" cy="19" r="2"/><path d="M6 7v10m2-2c6 0 8-2 8-6"/></svg>
+            <strong id="branch-name">—</strong>
+            <svg class="branch-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
           </div>
-          <div class="repo-meta">
-            <div class="repo-branch" data-destination="branches" role="button" tabindex="0" title="Manage branches"><span class="context-badge" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="6" cy="5" r="2"/><circle cx="18" cy="7" r="2"/><circle cx="6" cy="19" r="2"/><path d="M6 7v10m2-2c6 0 8-2 8-6"/></svg></span><span class="context-copy"><span class="context-label">Branch</span><span class="context-value"><strong id="branch-name">—</strong><svg class="branch-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></span></span></div>
-            <span class="repo-document"><span class="context-badge" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 3.5h8l4 4V20H6z"/><path d="M14 3.5V8h4"/></svg></span><span class="context-copy"><span class="context-label">Document</span><span id="document-name">None open</span></span></span>
+          <span id="project-status" class="top-project">No project selected</span>
+          <div id="helper-status" class="repo-state warning" role="status"><i></i><span id="repo-sync-status">Not connected</span></div>
+          <div id="push" class="button button-outline push-button" role="button" tabindex="0" aria-label="Push saved versions" title="Push saved versions"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V6m-5 5 5-5 5 5"/></svg><span>Push</span></div>
+          <div id="header-menu" class="icon-button" role="button" tabindex="0" aria-disabled="true" aria-label="More PhotoGit tools" aria-haspopup="menu" aria-controls="tools-menu" aria-expanded="false" title="More PhotoGit tools">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
           </div>
-        </section>
-        <div class="workspace-body">
-        <div class="workspace-rail">
-        <nav id="section-nav" class="section-nav liquid-card" role="tablist" aria-label="PhotoGit sections">
+        </header>
+
+        <nav id="section-nav" class="tab-strip" role="tablist" aria-label="PhotoGit sections">
           <div id="changes-tab" class="nav-item active" role="tab" tabindex="0" aria-controls="changes-view" aria-selected="true">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3.5h8l4 4V20H6z"/><path d="M14 3.5V8h4"/></svg>
-            <span>Changes</span><b id="changes-count" data-empty="true">0</b>
+            <span class="tab-mark"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3.5h8l4 4V20H6z"/><path d="M14 3.5V8h4"/></svg><b id="changes-count" data-empty="true">0</b></span>
+            <span class="tab-label">Changes</span>
           </div>
           <div id="history-tab" class="nav-item" role="tab" tabindex="-1" aria-controls="history-view" aria-selected="false">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 7v5l3 2"/><circle cx="12" cy="12" r="8"/></svg>
-            <span>History</span><b id="history-count" data-empty="true">0</b>
+            <span class="tab-mark"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 7v5l3 2"/><circle cx="12" cy="12" r="8"/></svg><b id="history-count" data-empty="true" hidden>0</b></span>
+            <span class="tab-label">History</span>
           </div>
           <div id="branches-tab" class="nav-item" role="tab" tabindex="-1" aria-controls="branches-view" aria-selected="false">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="5" r="2"/><circle cx="18" cy="7" r="2"/><circle cx="6" cy="19" r="2"/><path d="M6 7v10m2-2c6 0 8-2 8-6"/></svg>
-            <span>Branches</span><b id="branches-count" data-empty="true">0</b>
+            <span class="tab-mark"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="5" r="2"/><circle cx="18" cy="7" r="2"/><circle cx="6" cy="19" r="2"/><path d="M6 7v10m2-2c6 0 8-2 8-6"/></svg><b id="branches-count" data-empty="true" hidden>0</b></span>
+            <span class="tab-label">Branches</span>
           </div>
           <div id="reviews-tab" class="nav-item" role="tab" tabindex="-1" aria-controls="reviews-view" aria-selected="false">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8m-8 3h5"/></svg>
-            <span>Reviews</span><b id="reviews-count" data-empty="true">0</b>
+            <span class="tab-mark"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg><b id="reviews-count" data-empty="true">0</b></span>
+            <span class="tab-label">Reviews</span>
           </div>
           <div id="activity-tab" class="nav-item" role="tab" tabindex="-1" aria-controls="activity-view" aria-selected="false">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l2-6 4 12 2-6h6"/></svg>
-            <span>Activity</span><b id="activity-count" data-empty="true">0</b>
+            <span class="tab-mark"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l2-6 4 12 2-6h6"/></svg><b id="activity-count" data-empty="true" hidden>0</b></span>
+            <span class="tab-label">Activity</span>
           </div>
-          <div id="docs-tab" class="nav-item" role="tab" tabindex="-1" aria-controls="docs-view" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v15M3 4h5c2 0 4 1 4 3 0-2 2-3 4-3h5v14h-5c-2 0-4 1-4 2 0-1-2-2-4-2H3z"/></svg><span>Docs</span></div>
+          <div id="docs-tab" class="nav-item" role="tab" tabindex="-1" aria-controls="docs-view" aria-selected="false" hidden><span class="tab-label">Docs</span></div>
+          <span id="tab-indicator" class="tab-indicator" aria-hidden="true" hidden></span>
         </nav>
-          <div class="rail-footer">
-            <div id="rail-sync" class="rail-sync" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6v5h-5"/><path d="M18.2 15.4A7 7 0 1 1 18.5 8L20 11"/></svg><span id="rail-sync-label">Not connected</span></div>
-          </div>
-        </div>
-        <div class="workspace-content">
-        <section id="changes-view" class="view-panel" role="tabpanel" aria-labelledby="changes-tab">
-          <div class="view-heading changes-heading"><h2>Changes</h2></div>
-          <section class="liquid-card scan-card" data-depth>
-            <div class="scan-copy">
-              <h2 id="change-summary">Waiting for a scan</h2>
-              <div id="watch-status" class="watch-status ready" role="status" aria-live="polite" aria-atomic="true"><i aria-hidden="true"></i><span>Watching Photoshop</span></div>
-              <p id="last-scan" class="scan-detail">Scanning this document automatically.</p>
-              <div id="jump-save" class="text-link" role="button" tabindex="0">Write a version message <span aria-hidden="true">↓</span></div>
-            </div>
-            <div id="rescan" class="button button-quiet scan-button" role="button" tabindex="0" title="Scan Photoshop now">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6v5h-5"/><path d="M18.2 15.4A7 7 0 1 1 18.5 8L20 11"/></svg>
-              <span>Scan now</span>
-            </div>
-            <dl id="change-tally" class="change-tally" hidden>
-              <div class="tally-tile" data-depth><dt>Changed layers</dt><dd id="tally-changed">0</dd></div>
-              <div class="tally-tile" data-depth><dt>New layers</dt><dd id="tally-added">0</dd></div>
-              <div class="tally-tile" data-depth><dt>Deleted layers</dt><dd id="tally-removed">0</dd></div>
+
+        <div id="progress" class="progress-track" role="progressbar" aria-label="PhotoGit operation in progress" hidden></div>
+
+        <section id="document-connection" class="unlinked-state" role="status" hidden>
+          <div class="unlinked-body">
+            <div class="state-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9.5 14.5 8 16a3 3 0 0 1-4.2-4.2L6 9.6M14.5 9.5 16 8a3 3 0 0 1 4.2 4.2L18 14.4M4 4l16 16"/></svg></div>
+            <h2 id="document-connection-title">This document isn’t linked to this project</h2>
+            <p id="document-connection-message" class="state-copy"></p>
+            <dl class="unlinked-files">
+              <div><dt>PROJECT DOCUMENT</dt><dd id="project-document-name">Not saved yet</dd></div>
+              <div><dt>OPEN NOW</dt><dd id="document-name">None open</dd></div>
             </dl>
-          </section>
-          <div id="cancel-scan" class="button button-quiet" role="button" tabindex="0" hidden>Cancel scan</div>
-
-          <div class="changes-layout">
-          <section class="liquid-card content-card changes-card">
-            <div class="section-heading"><h2>Changed layers</h2></div>
-            <div id="change-filters">
-              <div class="field-shell search-field"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 4.5 4.5"/></svg><input id="changes-search" type="search" maxlength="200" placeholder="Find a layer or an edit…" aria-label="Search changed layers" spellcheck="false" uxp-quiet="true"></div>
-              <div class="filter-bar" role="toolbar" aria-label="Filter changes by type">
-                <div class="filter-chip" role="button" tabindex="0" data-change-filter="all" aria-pressed="true">All edits<b class="chip-count" hidden>0</b></div>
-                <div class="filter-chip" role="button" tabindex="0" data-change-filter="visual" aria-pressed="false">Visual<b class="chip-count" hidden>0</b></div>
-                <div class="filter-chip" role="button" tabindex="0" data-change-filter="text" aria-pressed="false">Text<b class="chip-count" hidden>0</b></div>
-                <div class="filter-chip" role="button" tabindex="0" data-change-filter="structure" aria-pressed="false">Structure<b class="chip-count" hidden>0</b></div>
-              </div>
-            </div>
-            <p id="change-filter-count" class="filter-note" role="status" hidden></p>
-            <section id="change-filter-empty" class="empty-state" role="status" hidden><strong>No matching edits</strong><p>Try another layer name or change type.</p><div id="reset-change-filters" class="text-link" role="button" tabindex="0">Clear filters</div></section>
-            <div id="changes" class="list change-list"></div>
-            <section id="changes-empty" class="empty-state" role="status">
-              <strong>No detected layer edits</strong>
-              <p>Edit in Photoshop, then scan. Very small edits can slip past the quick scan — a saved version always keeps your complete file.</p>
-            </section>
-          </section>
-
-          <section class="liquid-card content-card capture-panel">
-            <div class="capture-title"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10v16l-5-4-5 4z"/></svg><div><h2>Save version</h2><small>A message and an exact copy of the PSD</small></div></div>
-            <div class="capture-heading"><label class="version-label" for="message">What changed?</label><span id="message-count" class="meta-chip" aria-live="off">0/500</span></div>
-            <div class="field-shell">
-              <input id="message" type="text" maxlength="500" placeholder="Describe this version" autocomplete="off" aria-describedby="message-count" uxp-quiet="true">
-            </div>
-            <div class="message-presets" role="toolbar" aria-label="Version message suggestions"><div class="preset" role="button" tabindex="0" data-message-preset="Minor refinement">Minor refinement</div><div class="preset" role="button" tabindex="0" data-message-preset="Color grade update">Color grade</div><div class="preset" role="button" tabindex="0" data-message-preset="Retouching details">Retouch</div></div>
-            <div class="capture-actions">
-              <div id="save-version" class="button button-primary" role="button" tabindex="0">Save version</div>
-            </div>
-            <div id="progress" class="progress-track" role="progressbar" aria-label="PhotoGit operation in progress" hidden><span></span></div>
-            <p class="capture-hint">Saves the whole PSD, including edits hidden by filters.</p>
-            <section id="document-preview" class="document-preview" hidden>
-              <h3 class="preview-title">Preview</h3>
-              <figure id="document-preview-figure" class="preview-figure" hidden>
-                <img id="document-preview-image" alt="Preview saved with the latest version">
-                <figcaption class="fine-print">Latest saved version. Unsaved edits are not shown.</figcaption>
-              </figure>
-              <dl id="document-facts" class="document-facts"></dl>
-            </section>
-          </section>
-
+            <div id="open-project-document" class="button button-primary button-wide" role="button" tabindex="0">Open project document</div>
+            <div id="connect-document" class="button button-outline button-wide" role="button" tabindex="0">Track this document instead</div>
           </div>
+          <footer class="view-footer unlinked-footer"><span>Wrong project?</span><div id="change-project" class="text-link" role="button" tabindex="0">Change project</div></footer>
+        </section>
 
+        <div class="workspace-content">
+        <div id="view-scroll" class="view-scroll">
+        <section id="changes-view" class="view-panel" role="tabpanel" aria-labelledby="changes-tab">
+          <div class="scan-panel">
+            <div id="watch-status" class="watch-status ready" role="status" aria-live="polite" aria-atomic="true"><i aria-hidden="true"></i><span>Watching Photoshop</span></div>
+            <p id="change-summary" class="scan-state">Waiting for a scan</p>
+            <p id="last-scan" class="scan-state">Scanning this document automatically.</p>
+            <div id="cancel-scan" class="button button-outline button-small" role="button" tabindex="0" hidden>Cancel scan</div>
+          </div>
+          <div id="change-filters">
+            <div class="field-shell search-field"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 4.5 4.5"/></svg><input id="changes-search" type="search" maxlength="200" placeholder="Find a layer or an edit" aria-label="Search changed layers" spellcheck="false" uxp-quiet="true"></div>
+            <div class="filter-bar" role="toolbar" aria-label="Filter changes by type">
+              <div class="filter-chip" role="button" tabindex="0" data-change-filter="all" aria-pressed="true">All<b class="chip-count" hidden>0</b></div>
+              <div class="filter-chip" role="button" tabindex="0" data-change-filter="visual" aria-pressed="false">Visual<b class="chip-count" hidden>0</b></div>
+              <div class="filter-chip" role="button" tabindex="0" data-change-filter="text" aria-pressed="false">Text<b class="chip-count" hidden>0</b></div>
+              <div class="filter-chip" role="button" tabindex="0" data-change-filter="structure" aria-pressed="false">Structure<b class="chip-count" hidden>0</b></div>
+            </div>
+          </div>
+          <p id="change-filter-count" class="filter-note" role="status" hidden></p>
+          <section id="change-filter-empty" class="empty-state" role="status" hidden><strong>No matching edits</strong><p>Try another layer name or change type.</p><div id="reset-change-filters" class="text-link" role="button" tabindex="0">Clear filters</div></section>
+          <div id="changes" class="list change-list"></div>
+          <section id="changes-empty" class="empty-state" role="status">
+            <strong>No unsaved edits</strong>
+            <p>This document matches the last saved version. Edits appear here as you make them.</p>
+            <div id="empty-scan" class="text-link" role="button" tabindex="0">Scan now</div>
+          </section>
         </section>
 
         <section id="history-view" class="view-panel" role="tabpanel" aria-labelledby="history-tab" hidden>
-          <div class="history-layout">
-          <section class="content-card history-list-panel">
-            <div class="view-heading">
-              <h2>History</h2>
-              <span class="meta-chip" id="history-total">0 versions</span>
-            </div>
-            <p class="page-description">Every saved version, ready to revisit. Select one to inspect it.</p>
-            <div class="field-shell search-field">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 4.5 4.5"/></svg>
-              <input id="history-search" type="search" maxlength="200" placeholder="Search messages, authors, or IDs" aria-label="Search version history" spellcheck="false" uxp-quiet="true">
-            </div>
-            <div id="history" class="list history-list"></div>
-            <section id="history-empty" class="empty-state" role="status" hidden><strong id="history-empty-title">No saved versions yet</strong><p id="history-empty-copy">Save your first version to start this document’s history.</p></section>
-          </section>
-          <section id="history-inspector" class="version-inspector" role="region" aria-label="Selected version details"><div class="inspector-empty"><h2>Version details</h2><p>Select a saved version to see what changed and open a copy of it.</p></div></section>
+          <div class="field-shell search-field">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 4.5 4.5"/></svg>
+            <input id="history-search" type="search" maxlength="200" placeholder="Search versions" aria-label="Search version history" spellcheck="false" uxp-quiet="true">
           </div>
+          <div id="history" class="list history-list"></div>
+          <section id="history-empty" class="empty-state" role="status" hidden><strong id="history-empty-title">No saved versions yet</strong><p id="history-empty-copy">Save a version from Changes.</p><div id="history-empty-action" class="text-link" role="button" tabindex="0">Go to Changes</div></section>
         </section>
 
         <section id="branches-view" class="view-panel" role="tabpanel" aria-labelledby="branches-tab" hidden>
-          <section class="liquid-card content-card">
-            <div class="view-heading"><h2>Design directions</h2><span class="meta-chip">Branches</span></div>
-            <p class="page-description">Try a new direction. Keep your original intact.</p>
-            <div class="branch-layout"><section class="branch-list-panel"><div id="branch-list" class="branch-list"></div><section class="task-card">
-            <h3>Working branch</h3>
-            <div class="current-branch"><strong id="branch-name-detail">—</strong><span class="meta-chip">Current</span></div>
-            <label class="field-label" for="branch-picker">Switch branch</label>
-            <sp-dropdown id="branch-picker" placeholder="Choose a branch" aria-label="Switch branch"><sp-menu id="branch-menu" slot="options"></sp-menu></sp-dropdown>
-            </section>
-            </section><section class="branch-create-card">
-            <h3>Explore another direction</h3>
+          <h2 class="view-title">Branches</h2>
+          <p id="branch-help" class="view-subtitle">Save before switching. A branch opens as a separate document.</p>
+          <div id="branch-list" class="branch-list"></div>
+          <section class="branch-create-card">
             <label class="field-label" for="new-branch-name">New branch</label>
             <div class="inline-form">
               <div class="field-shell">
@@ -224,83 +147,82 @@
               </div>
               <div id="new-branch" class="button button-primary" role="button" tabindex="0">Create</div>
             </div>
-            </section>
-            </div>
-            <p id="branch-help" class="fine-print">Switching opens an independent copy of the branch’s saved PSD. Your current document stays open. Save your edits before switching to keep them in history.</p>
           </section>
         </section>
 
         <section id="reviews-view" class="view-panel" role="tabpanel" aria-labelledby="reviews-tab" hidden>
-          <section class="liquid-card content-card">
-            <div class="view-heading">
-              <h2>Reviews</h2>
-              <div id="new-pull-request" class="button button-primary button-small" role="button" tabindex="0" hidden>Open GitHub comparison</div>
-            </div>
-            <p class="page-description">Compare branches before bringing their work together.</p>
-            <div id="review-provider" class="provider-note">Reviewing local branches</div>
-            <div class="review-layout"><div class="review-list-panel"><div id="reviews" class="review-list"></div>
-            <section id="reviews-empty" class="empty-state" role="status" hidden><strong>No branches to review</strong><p>Create a branch or fetch a shared branch to begin a review.</p></section></div><section id="review-inspector" class="review-inspector" role="region" aria-label="Branch comparison"><div class="inspector-empty"><h2>Compare before combining</h2><p>Choose Compare to see what each branch changed and whether they can be combined safely.</p><p>Combining branches doesn’t blend layers together — review the result in Photoshop.</p></div></section></div>
-          </section>
-          <section id="conflict-panel" class="liquid-card content-card conflict-panel" hidden>
-            <div class="section-heading"><h2>Conflicts</h2></div>
+          <div class="view-heading">
+            <div><h2 id="reviews-heading" class="view-title">Reviews</h2><p id="review-provider" class="view-subtitle">Reviewing local branches</p></div>
+            <div id="new-pull-request" class="button button-outline button-small" role="button" tabindex="0" hidden>Open GitHub comparison</div>
+          </div>
+          <div id="reviews" class="review-list"></div>
+          <section id="reviews-empty" class="empty-state" role="status" hidden><strong>No branches to review</strong><p>Create a branch or fetch a shared branch to begin a review.</p><div id="reviews-empty-action" class="text-link" role="button" tabindex="0">New branch</div></section>
+          <section id="conflict-panel" class="card conflict-panel" hidden>
+            <h3>Merge in progress</h3>
             <div id="conflicts" class="conflict-list"></div>
             <p class="fine-print">Two branches changed the same file, and PhotoGit can’t combine them automatically. Save your open work under a new name first, sort out the conflict outside Photoshop, then refresh this project.</p>
           </section>
         </section>
 
         <section id="activity-view" class="view-panel" role="tabpanel" aria-labelledby="activity-tab" hidden>
-          <section class="liquid-card content-card">
-            <div class="view-heading"><h2>Activity</h2><div id="clear-activity" class="button button-quiet button-small" role="button" tabindex="0" aria-disabled="true">Clear</div></div>
-            <p class="page-description">Scans, saves, and connection updates from this session.</p>
-            <div id="activity" class="activity" role="log" aria-live="polite">Ready.</div>
-          </section>
+          <div class="view-heading"><h2 class="view-title">Activity</h2><div id="clear-activity" class="button button-outline button-small" role="button" tabindex="0" aria-disabled="true">Clear</div></div>
+          <div id="activity" class="list activity" role="log" aria-live="polite"><section class="empty-state activity-empty"><strong>No activity yet</strong><p>Scans, saved versions and branch changes appear here.</p></section></div>
         </section>
 
         <section id="docs-view" class="view-panel" role="tabpanel" aria-labelledby="docs-tab" hidden>
-          <section class="liquid-card content-card">
-            <div class="section-heading"><h2>Command directory</h2><span class="meta-chip">Quick access</span></div>
-            <p class="docs-intro">Search or pick a command. Shortcut: press <kbd>/</kbd> (or <kbd>Ctrl</kbd>+<kbd>K</kbd>, <kbd>⌘</kbd><kbd>K</kbd> on a Mac) while the panel is focused. If a shortcut doesn’t respond, use the Commands box above.</p>
-            <div class="field-shell search-field"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 4.5 4.5"/></svg><input id="docs-search" type="search" maxlength="200" placeholder="Search save, merge, history…" aria-label="Search command directory" spellcheck="false" uxp-quiet="true"></div>
-            <div id="command-directory"></div>
-          </section>
-          <section class="content-card">
-            <h2>First-time setup</h2>
-            <p class="fine-print">Run these once in Terminal, from the PhotoGit folder — not in the Commands box. Replace the path with your project folder. The last line checks that everything is set up correctly.</p>
+          <h2 class="view-title">Commands</h2>
+          <p class="view-subtitle">Open anywhere in the panel with <kbd>/</kbd> or <kbd>⌘</kbd><kbd>K</kbd>.</p>
+          <div class="field-shell search-field"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 4.5 4.5"/></svg><input id="docs-search" type="search" maxlength="200" placeholder="Search save, merge, history" aria-label="Search command directory" spellcheck="false" uxp-quiet="true"></div>
+          <div id="command-directory"></div>
+          <section class="card docs-setup">
+            <h3>First-time setup</h3>
+            <p class="fine-print">Run once in Terminal from the PhotoGit folder. <code>doctor</code> checks the setup.</p>
             <p class="setup-command" tabindex="0">npm run photogit -- init "/path/to/project"<br>npm run helper -- --approve-root "/path/to/project"<br>npm run photogit -- doctor "/path/to/project"</p>
-            <p class="fine-print">Every saved version keeps a complete copy of your PSD. Opening an earlier version opens it as a separate copy, so nothing is overwritten. Combining branches doesn’t blend layers — review the result in Photoshop. Very small edits can slip past the quick scan; a saved version always has the full file.</p>
-            <p class="fine-print">For the technically curious: each saved version is a Git commit, and /commit works as a shortcut for /save.</p>
+            <p class="fine-print">Saved versions include the full PSD. Opening a version creates a separate copy. Combining branches doesn’t blend layers; review the result in Photoshop.</p>
+            <p class="fine-print">Each saved version is a Git commit; <code>/commit</code> is an alias for <code>/save</code>.</p>
           </section>
         </section>
+        </div>
 
-        <footer class="sync-panel liquid-card" data-depth role="toolbar" aria-label="Repository sync">
-          <div id="pull" class="footer-action" role="button" tabindex="0" aria-label="Pull shared changes" title="Pull shared changes"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m-4-4 4 4 4-4"/><path d="M5 19h14"/></svg><span>Pull</span></div>
-          <div id="push" class="footer-action" role="button" tabindex="0" aria-label="Push saved versions" title="Push saved versions"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V5m-4 4 4-4 4 4"/><path d="M5 19h14"/></svg><span>Push</span></div>
-          <div id="show-status" class="footer-action" role="button" tabindex="0" aria-label="Check project status" title="Check project status"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6v5h-5"/><path d="M18.2 15.4A7 7 0 1 1 18.5 8L20 11"/></svg><span id="sync-status">Status</span></div>
-          <div id="tools-toggle" class="footer-action tools-toggle" role="button" tabindex="0" aria-haspopup="menu" aria-controls="tools-menu" aria-expanded="false" aria-label="More repository tools" title="More repository tools"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg></div>
-        </footer>
+        <section class="capture-panel composer" aria-label="Save version">
+          <div class="capture-heading"><label class="version-label" for="message">What changed?</label><span id="message-count" class="composer-count" aria-live="off">0/500</span></div>
+          <div class="field-shell">
+            <input id="message" type="text" maxlength="500" placeholder="Describe this version" autocomplete="off" aria-describedby="message-count" uxp-quiet="true">
+          </div>
+          <div class="message-presets" role="toolbar" aria-label="Version message suggestions"><div class="preset" role="button" tabindex="0" data-message-preset="Minor refinement">Minor refinement</div><div class="preset" role="button" tabindex="0" data-message-preset="Color grade update">Color grade</div><div class="preset" role="button" tabindex="0" data-message-preset="Retouching details">Retouch</div></div>
+          <div id="save-version" class="button button-primary button-wide" role="button" tabindex="0"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10v16l-5-4-5 4z"/></svg><span>Save version</span></div>
+        </section>
+        <footer id="history-total" class="view-footer history-footer">0 versions</footer>
         </div>
-        </div>
-        <p class="shortcut-note"><kbd>/</kbd> Open commands · <kbd>Esc</kbd> Close a dialog or clear a search</p>
       </section>
 
-      <section id="tools-menu" class="tools-menu liquid-card" role="menu" hidden aria-label="Repository tools">
+      <section id="tools-menu" class="tools-menu" role="menu" hidden aria-label="PhotoGit tools">
+        <div id="pull" class="tool-item" role="menuitem" tabindex="-1"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v13m-5-5 5 5 5-5"/></svg><span>Pull shared changes</span></div>
+        <div id="rescan" class="tool-item" role="menuitem" tabindex="-1"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 4.5 4.5"/></svg><span>Scan now</span></div>
         <div id="refresh" class="tool-item" role="menuitem" tabindex="-1"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6v5h-5"/><path d="M18.2 15.4A7 7 0 1 1 18.5 8L20 11"/></svg><span>Refresh project</span></div>
+        <div class="menu-rule" role="separator"></div>
         <div id="tool-new-branch" class="tool-item" role="menuitem" tabindex="-1"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="5" r="2"/><circle cx="18" cy="7" r="2"/><circle cx="6" cy="19" r="2"/><path d="M6 7v10m2-2c6 0 8-2 8-6"/></svg><span>New branch</span></div>
-        <div id="tool-new-pr" class="tool-item" role="menuitem" tabindex="-1" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8m-8 3h5"/></svg><span>Open GitHub comparison</span></div>
-        <div id="tool-conflicts" class="tool-item" role="menuitem" tabindex="-1"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 5v.01"/><path d="m4 20 8-17 8 17z"/></svg><span>View conflicts</span></div>
         <div id="tool-create-tag" class="tool-item" role="menuitem" tabindex="-1"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7l9 9-7 7-9-9z"/><circle cx="8" cy="8" r="1"/></svg><span>Create tag</span></div>
-        <div id="tool-settings" class="tool-item" role="menuitem" tabindex="-1"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1l2-1.5-2-3.4-2.4 1A7 7 0 0 0 15 6l-.3-2.6h-4L10.4 6a7 7 0 0 0-1.6 1.1l-2.4-1-2 3.4 2 1.5a7 7 0 0 0 0 2l-2 1.5 2 3.4 2.4-1A7 7 0 0 0 10.4 18l.3 2.6h4L15 18a7 7 0 0 0 1.6-1.1l2.4 1 2-3.4-2-1.5a7 7 0 0 0 0-1z"/></svg><span>Project information</span></div>
+        <div id="tool-new-pr" class="tool-item" role="menuitem" tabindex="-1" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg><span>Open GitHub comparison</span></div>
+        <div id="tool-conflicts" class="tool-item" role="menuitem" tabindex="-1"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 9v5m0 3v.01"/><path d="m3.5 20 8.5-16 8.5 16z"/></svg><span>View conflicts</span></div>
+        <div class="menu-rule" role="separator"></div>
+        <div id="show-status" class="tool-item" role="menuitem" tabindex="-1" title="Check project status"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l2-6 4 12 2-6h6"/></svg><span id="sync-status">Status</span></div>
+        <div id="tool-settings" class="tool-item" role="menuitem" tabindex="-1"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 11v5m0-8v.01"/></svg><span>Project information</span></div>
+        <div id="tool-change-project" class="tool-item" role="menuitem" tabindex="-1"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h6l2 2h10v10H3z"/></svg><span>Change project</span></div>
+        <div class="menu-rule" role="separator"></div>
+        <div id="global-search" class="tool-item" role="menuitem" tabindex="-1" aria-keyshortcuts="/ Control+K Meta+K"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 8 4 4-4 4m7 0h7"/></svg><span>Commands</span></div>
+        <div id="tool-docs" class="tool-item" role="menuitem" tabindex="-1"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v15M3 4h5c2 0 4 1 4 3 0-2 2-3 4-3h5v14h-5c-2 0-4 1-4 2 0-1-2-2-4-2H3z"/></svg><span>Docs</span></div>
       </section>
 
       <div id="surface-backdrop" class="surface-backdrop" aria-hidden="true" hidden></div>
       <section id="detail-sheet" class="tool-sheet" role="dialog" aria-modal="true" aria-labelledby="detail-title" aria-describedby="detail-content" hidden>
-        <div class="section-heading"><h2 id="detail-title"></h2><div id="close-detail" class="sheet-close" role="button" tabindex="0" aria-label="Close" title="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6.5 6.5 11 11m0-11-11 11"/></svg></div></div>
+        <div class="section-heading"><h2 id="detail-title"></h2><div id="close-detail" class="icon-button sheet-close" role="button" tabindex="0" aria-label="Close" title="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6.5 6.5 11 11m0-11-11 11"/></svg></div></div>
         <div id="detail-content" class="detail-content"></div>
         <div id="detail-action" class="button button-primary button-wide" role="button" tabindex="0" hidden></div>
       </section>
       <section id="tag-sheet" class="tool-sheet" role="dialog" aria-modal="true" aria-labelledby="tag-sheet-title" aria-describedby="tag-sheet-help" hidden>
-        <div class="section-heading"><h2 id="tag-sheet-title">Create tag</h2><div id="close-tag-sheet" class="sheet-close" role="button" tabindex="0" aria-label="Close" title="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6.5 6.5 11 11m0-11-11 11"/></svg></div></div>
-        <p id="tag-sheet-help" class="fine-print">A tag is a fixed name for the current version — a release, a client round — that stays easy to find as history grows.</p>
+        <div class="section-heading"><h2 id="tag-sheet-title">Create tag</h2><div id="close-tag-sheet" class="icon-button sheet-close" role="button" tabindex="0" aria-label="Close" title="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6.5 6.5 11 11m0-11-11 11"/></svg></div></div>
+        <p id="tag-sheet-help" class="fine-print">Name the current version.</p>
         <label class="field-label" for="tag-name">Tag name</label>
         <div class="field-shell">
           <input id="tag-name" type="text" maxlength="100" placeholder="e.g. v1.0.0" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" uxp-quiet="true">

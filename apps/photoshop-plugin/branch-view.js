@@ -14,12 +14,20 @@ function safeDemoPreview(src) {
     /^(?:\.\/)?assets\/(?:[A-Za-z0-9_-]+\/)*[A-Za-z0-9_-]+\.(?:png|jpe?g|webp)$/i.test(src);
 }
 
-function render(container, { branches = [], current, onSwitch, previews, demoPreviews } = {}) {
+// What a branch last holds, in the words it was saved with: the latest
+// version's message and day. A record without either says only what is known.
+function latestVersion(branch, dateLabel) {
+  const subject = typeof branch.subject === "string" ? branch.subject.trim() : "";
+  const day = typeof dateLabel === "function" && typeof branch.date === "string" && /^\d{4}-\d{2}-\d{2}T/.test(branch.date) ? String(dateLabel(branch.date)) : "";
+  return [subject, day].filter(Boolean).join(" · ") || "Local branch";
+}
+
+function render(container, { branches = [], current, onSwitch, previews, demoPreviews, dateLabel } = {}) {
   const document = container.ownerDocument;
   container.textContent = "";
   container.classList.add("branch-list");
   container.setAttribute("role", "list");
-  container.setAttribute("aria-label", "Design directions");
+  container.setAttribute("aria-label", "Branches");
   const entries = Array.isArray(branches) ? branches.filter(branch => typeof branch?.name === "string" && branch.name.trim()) : [];
   const currentName = typeof current === "string" && current ? current : entries.find(branch => branch.current === true)?.name;
   const ordered = [...entries.filter(branch => branch.name === currentName), ...entries.filter(branch => branch.name !== currentName)];
@@ -34,16 +42,22 @@ function render(container, { branches = [], current, onSwitch, previews, demoPre
     const empty = document.createElement("p");
     empty.className = "branch-list-empty fine-print";
     empty.setAttribute("role", "status");
-    empty.textContent = "No saved branches yet. Save your first version to start a design direction.";
+    empty.textContent = "Save a version to create your first branch.";
     container.appendChild(empty);
     return container;
   }
+  // The row is the control: pressing a branch switches to it, and the current
+  // branch is the highlighted row. There is no separate button or badge.
   for (const branch of ordered) {
     const isCurrent = branch.name === currentName;
     const row = document.createElement("div");
     row.className = `branch-row${isCurrent ? " current" : ""}`;
     row.setAttribute("role", "listitem");
-    if (isCurrent) row.setAttribute("aria-current", "true");
+    const switchable = !isCurrent && typeof onSwitch === "function";
+    if (isCurrent) {
+      row.setAttribute("aria-current", "true");
+      row.setAttribute("aria-label", `${branch.name}, current branch`);
+    }
     const previewSrc = previewFor(branch.name);
     if (previewSrc) {
       row.classList.add("has-preview");
@@ -67,32 +81,26 @@ function render(container, { branches = [], current, onSwitch, previews, demoPre
     name.textContent = branch.name;
     copy.appendChild(name);
     const meta = document.createElement("span");
-    meta.textContent = "Local branch";
+    meta.textContent = latestVersion(branch, dateLabel);
+    meta.title = meta.textContent;
     copy.appendChild(meta);
     row.appendChild(copy);
-    if (isCurrent) {
-      const badge = document.createElement("span");
-      badge.className = "meta-chip branch-current-label";
-      badge.textContent = "Current";
-      row.appendChild(badge);
-    } else if (typeof onSwitch === "function") {
-      const button = document.createElement("div");
-      button.className = "button button-quiet button-small branch-switch";
-      button.setAttribute("role", "button");
-      button.setAttribute("aria-label", `Switch to ${branch.name}`);
-      button.tabIndex = 0;
-      button.textContent = "Switch";
+    if (switchable) {
+      row.classList.add("is-switchable");
+      row.setAttribute("role", "button");
+      row.setAttribute("aria-label", `Switch to ${branch.name}`);
+      row.setAttribute("aria-pressed", "false");
+      row.tabIndex = 0;
       const activate = () => {
-        if (button.getAttribute("aria-disabled") === "true" || button.closest("[hidden]") ||
+        if (row.getAttribute("aria-disabled") === "true" || row.closest("[hidden]") ||
           document.body.classList.contains("is-busy") || document.body.classList.contains("is-initializing")) return;
         onSwitch(branch.name);
       };
-      button.addEventListener("click", activate);
-      button.addEventListener("keydown", event => {
+      row.addEventListener("click", activate);
+      row.addEventListener("keydown", event => {
         if (!["Enter", " "].includes(event.key) || event.repeat || event.isComposing) return;
         event.preventDefault(); event.stopPropagation(); activate();
       });
-      row.appendChild(button);
     }
     container.appendChild(row);
   }

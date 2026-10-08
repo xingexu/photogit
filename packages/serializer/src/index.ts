@@ -99,7 +99,8 @@ export function stateFromCapture(
   }
 
   const warnings: string[] = [];
-  const supported = capture.document.mode.toLowerCase() === "rgb" && capture.document.bitDepth === 8;
+  // Photoshop reports the mode as "rgbColorMode"; fixtures and the CLI say "rgb".
+  const supported = ["rgb", "rgbcolormode"].includes(capture.document.mode.toLowerCase()) && capture.document.bitDepth === 8;
   if (!supported) warnings.push("Only RGB 8-bit documents are fully supported; this snapshot will merge conservatively.");
 
   const orderedLayers = orderLayers(layers);

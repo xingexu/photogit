@@ -16,7 +16,7 @@ describe("Photoshop plugin manifest", () => {
       type: "panel",
       minimumSize: { width: 230, height: 200 },
       preferredDockedSize: { width: 400, height: 760 },
-      preferredFloatingSize: { width: 420, height: 800 }
+      preferredFloatingSize: { width: 1100, height: 780 }
     });
     expect(manifest.main).toBe("index.html");
   });

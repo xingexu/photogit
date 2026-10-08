@@ -5,7 +5,11 @@
 // skipped entirely under reduced motion. Nothing here can report a wrong total
 // to the user for longer than the animation, and no caller waits on it.
 (function () {
-  const DURATION = 520;
+  // The panel has one set of motion tokens, in motion.js; a count uses the
+  // base duration and the shared easing, and is instant without them.
+  const motion = globalThis.PhotoGitMotion || {};
+  const DURATION = Number(motion.BASE_MS) || 0;
+  const ease = typeof motion.ease === "function" ? motion.ease : progress => progress;
   const running = new Map();
 
   function reduced() {
@@ -38,8 +42,8 @@
     const start = Date.now();
     element.classList.add("is-counting");
     const step = () => {
-      const progress = Math.min(1, (Date.now() - start) / DURATION);
-      const eased = 1 - Math.pow(1 - progress, 3);
+      const progress = DURATION ? Math.min(1, (Date.now() - start) / DURATION) : 1;
+      const eased = ease(progress);
       const shown = Math.round(from + (whole - from) * eased);
       element.textContent = String(shown);
       element.dataset.shown = String(shown);

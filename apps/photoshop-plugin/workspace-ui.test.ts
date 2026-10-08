@@ -34,6 +34,55 @@ async function fixture() {
 }
 
 describe("Studio workspace interactions", () => {
+  it("shows every edit and keeps a running count beside each section header", async () => {
+    const p = await fixture();
+    const header = (group: string) => {
+      const node = p.document.createElement("div");
+      node.className = "list-section change-section"; node.dataset.group = group;
+      node.innerHTML = '<span>LABEL</span><span class="section-count"></span>';
+      return node;
+    };
+    const layers = header("layers"); const documentHeader = header("document");
+    p.id("changes").insertBefore(layers, p.rows[0]!);
+    p.id("changes").insertBefore(documentHeader, p.rows[4]!);
+    p.rows.forEach((row, index) => { row.dataset.group = index === 4 ? "document" : "layers"; });
+    p.controls.refreshChanges();
+    // Nothing is held back behind a "see all" control.
+    expect(p.document.getElementById("changes-toggle")).toBeNull();
+    expect(p.visible()).toHaveLength(5);
+    expect(p.rows.some(row => row.classList.contains("is-beyond"))).toBe(false);
+    expect([layers, documentHeader].map(node => node.querySelector(".section-count")!.textContent)).toEqual(["4", "1"]);
+    p.chip("text").click();
+    expect(layers.querySelector(".section-count")!.textContent).toBe("1");
+    // A section with nothing showing takes its header with it.
+    expect(documentHeader.hidden).toBe(true);
+    p.chip("all").click();
+    expect(documentHeader.hidden).toBe(false);
+  });
+
+  it("does not offer a filter that would show nothing, but keeps the one in use", async () => {
+    const p = await fixture();
+    const offered = () => ["all", "visual", "text", "structure"].filter(type => !p.chip(type).classList.contains("is-empty"));
+    expect(offered()).toEqual(["all", "visual", "text", "structure"]);
+    p.rows[0]!.remove(); p.controls.refreshChanges();
+    expect(offered()).toEqual(["all", "visual", "structure"]);
+    p.chip("structure").click();
+    p.search("no such layer");
+    // The pressed filter stays, so there is always a way back out of it.
+    expect(offered()).toEqual(["all", "structure"]);
+    expect(p.id("change-filter-empty").hidden).toBe(false);
+  });
+
+  it("names a layer once across its consecutive rows", async () => {
+    const p = await fixture();
+    p.rows.forEach((row, index) => { row.dataset.layer = index < 3 ? "7" : "8"; });
+    p.controls.refreshChanges();
+    expect(p.rows.map(row => row.classList.contains("same-layer"))).toEqual([false, true, true, false, true]);
+    // When a filter hides a layer's first row, the next one showing names it.
+    p.chip("visual").click();
+    expect(p.rows[1]!.classList.contains("same-layer")).toBe(false);
+  });
+
   it("staggers the rows that survive a filter change and holds still when nothing changed", async () => {
     const stagger = vi.fn();
     (globalThis as any).PhotoGitReveal = { stagger };
@@ -134,16 +183,14 @@ describe("Studio workspace interactions", () => {
     p.id("changes").innerHTML = ""; p.controls.refreshChanges();
     expect(p.chip("all").querySelector("b")!.hidden).toBe(true);
   });
-  it("moves through the message suggestions and footer actions with arrow keys", async () => {
+  it("moves through the message suggestions with arrow keys", async () => {
     const p = await fixture();
     const presets = [...p.document.querySelectorAll<HTMLElement>("[data-message-preset]")];
     const second = vi.spyOn(presets[1]!, "focus");
     expect(p.key(presets[0]!, "ArrowRight").defaultPrevented).toBe(true);
     expect(second).toHaveBeenCalledOnce();
-    const push = vi.spyOn(p.id("push"), "focus");
-    p.key(p.id("pull"), "ArrowRight"); expect(push).toHaveBeenCalledOnce();
-    const last = vi.spyOn(p.id("tools-toggle"), "focus");
-    p.key(p.id("pull"), "End"); expect(last).toHaveBeenCalledOnce();
+    const last = vi.spyOn(presets[presets.length - 1]!, "focus");
+    p.key(presets[0]!, "End"); expect(last).toHaveBeenCalledOnce();
   });
   it("moves from the search into the first visible selectable row", async () => {
     const p = await fixture();
@@ -212,7 +259,7 @@ describe("Version-message presentation controls", () => {
     const preset = p.document.querySelector<HTMLElement>("[data-message-preset]")!;
     const focus = vi.spyOn(message, "focus"); message.value = "Keep my draft";
     if (state.startsWith("is-")) p.document.body.classList.add(state);
-    else if (state === "hidden") p.id("changes-view").hidden = true;
+    else if (state === "hidden") p.document.querySelector<HTMLElement>(".capture-panel")!.hidden = true;
     else if (state === "disabled") preset.setAttribute("aria-disabled", "true");
     else p.id(state).hidden = false;
     preset.click(); p.key(preset, " ");

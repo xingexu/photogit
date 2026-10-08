@@ -72,7 +72,12 @@ export type ContentDomain = {
   fingerprint: string | null;
   opaque: boolean;
   reason: string | null;
+  // Named, scalar facts Photoshop reports about the layer (effects, masks,
+  // adjustment settings). Absent in versions saved before they were captured.
+  details?: LayerDetails;
 };
+
+export type LayerDetails = Record<string, string | number | boolean>;
 
 export type IdentityRecord = {
   uuid: LayerUuid;
@@ -133,6 +138,8 @@ export class SchemaValidationError extends Error {
 const SAFE_LAYER_UUID = /^[A-Za-z0-9][A-Za-z0-9._-]{0,199}$/;
 const MAX_CAPTURE_LAYERS = 50_000;
 const MAX_TEXT_LENGTH = 1_000_000;
+const MAX_LAYER_DETAILS = 400;
+const SAFE_DETAIL_KEY = /^[A-Za-z][A-Za-z0-9]*(?:\.[A-Za-z0-9]+){0,7}$/;
 
 class ValidationIssues extends Array<string> {
   omitted = 0;
@@ -600,7 +607,7 @@ function checkContent(value: unknown, path: string, issues: string[], versioned:
     issues.push(`${path} must be an object`);
     return;
   }
-  checkAllowedKeys(value, path, versioned ? ["schemaVersion", "layerUuid", "fingerprint", "opaque", "reason"] : ["fingerprint", "opaque", "reason"], issues);
+  checkAllowedKeys(value, path, versioned ? ["schemaVersion", "layerUuid", "fingerprint", "opaque", "reason", "details"] : ["fingerprint", "opaque", "reason", "details"], issues);
   if (versioned) {
     checkVersion(value, path, issues);
     checkLayerUuid(value.layerUuid, `${path}.layerUuid`, issues);
@@ -608,6 +615,20 @@ function checkContent(value: unknown, path: string, issues: string[], versioned:
   checkNullableString(value.fingerprint, `${path}.fingerprint`, issues, 10_000);
   checkBoolean(value.opaque, `${path}.opaque`, issues);
   checkNullableString(value.reason, `${path}.reason`, issues, 10_000);
+  if (value.details !== undefined) checkDetails(value.details, `${path}.details`, issues);
+}
+
+function checkDetails(value: unknown, path: string, issues: string[]): void {
+  if (!isRecord(value)) {
+    issues.push(`${path} must be an object`);
+    return;
+  }
+  const entries = Object.entries(value);
+  if (entries.length > MAX_LAYER_DETAILS) issues.push(`${path} must contain at most ${MAX_LAYER_DETAILS} entries`);
+  for (const [key, entry] of entries.slice(0, MAX_LAYER_DETAILS)) {
+    if (!SAFE_DETAIL_KEY.test(key)) issues.push(`${path} contains an unsafe key`);
+    else if (typeof entry === "string" ? entry.length > 500 : typeof entry === "number" ? !Number.isFinite(entry) : typeof entry !== "boolean") issues.push(`${path}.${key} must be a short string, finite number, or boolean`);
+  }
 }
 
 function checkPositive(value: unknown, path: string, issues: string[]): void {

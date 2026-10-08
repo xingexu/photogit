@@ -5,7 +5,10 @@ const commandDirectory = require("./commands.js");
 const workspaceUI = require("./workspace-ui.js");
 const versionInspector = require("./version-inspector.js");
 const branchView = require("./branch-view.js");
+const activityView = require("./activity-view.js");
+const layerDetails = require("./layer-details.js");
 const reviewInspector = require("./review-inspector.js");
+const { encodePreviewPng } = require("./preview-png.js");
 const scans = new panelModel.ScanCoordinator();
 
 entrypoints.setup({
@@ -34,8 +37,15 @@ let projectFolder = null;
 let helperToken = null;
 let busyNow = false;
 let historyEntries = [];
+let branchTips = {};
+let historyPreviews = {};
+let historyPreviewGeneration = 0;
 let selectedVersionId = null;
+let newestVersionId = null;
+let pressedControl = null;
+let pressedAt = 0;
 let reviewEntries = [];
+let expandedReview = null;
 let repositoryDetails = null;
 let activityEntryCount = 0;
 let resultTimer = null;
@@ -54,6 +64,7 @@ let detailAction = null;
 let lastScanCount = null;
 let startupPromise = null;
 let startupPending = false;
+let historyRefreshPending = false;
 const surfaceTimers = new Map();
 
 document.addEventListener("DOMContentLoaded", () => { void initializePanel(); });
@@ -72,57 +83,131 @@ function bindPanelEvents() {
     document.getElementById("setup-command-toggle").setAttribute("aria-expanded", String(!command.hidden));
   });
   bind("change-project", "click", chooseProject);
+  bind("tool-change-project", "click", () => { closeToolsMenu(); return chooseProject(); });
+  bind("tool-docs", "click", () => { closeToolsMenu(); selectTab("docs"); });
   bind("reconnect-helper", "click", reconnectHelper);
   bind("connect-document", "click", connectDocument);
   bind("open-project-document", "click", () => run("Opening project document…", () => openSnapshot()));
   bind("cancel-scan", "click", cancelScan);
-  bind("close-detail", "click", closeDetail);
+  bind("close-detail", "click", () => closeDetail(false));
   bind("detail-action", "click", () => detailAction?.());
   bind("refresh", "click", refreshAndScan);
-  bind("global-search", "click", () => openCommandPalette());
+  bind("global-search", "click", () => { closeToolsMenu(); openCommandPalette(); });
   bind("docs-tab", "click", () => selectTab("docs"));
   bind("docs-search", "input", renderCommandDocs);
   moveIntoList("docs-search", "#command-directory .command-row");
   renderCommandDocs();
   bind("header-menu", "click", toggleToolsMenu);
-  bind("rescan", "click", () => scanChanges({ automatic: false }));
+  bind("rescan", "click", () => { closeToolsMenu(); return scanChanges({ automatic: false }); });
   bind("save-version", "click", saveVersion);
-  bind("pull", "click", pull);
+  bind("pull", "click", () => { closeToolsMenu(); return pull(); });
   bind("push", "click", push);
-  bind("show-status", "click", showProjectStatus);
+  bind("show-status", "click", () => { closeToolsMenu(); return showProjectStatus(); });
   bind("new-branch", "click", createBranch);
-  bind("branch-picker", "change", switchBranch);
   bind("changes-tab", "click", () => selectTab("changes"));
   bind("history-tab", "click", () => selectTab("history"));
   bind("branches-tab", "click", () => selectTab("branches"));
   bind("reviews-tab", "click", () => selectTab("reviews"));
   bind("activity-tab", "click", () => selectTab("activity"));
+  // A tab is selected as soon as it takes focus. The first click on a panel
+  // that Photoshop had taken focus from only focuses what was clicked; with
+  // this it still switches. Keyboard users move focus and selection together.
+  for (const section of ["changes", "history", "branches", "reviews", "activity"]) {
+    document.getElementById(`${section}-tab`).addEventListener("focus", () => {
+      if (!startupPending && document.getElementById("workspace").dataset.view !== section) selectTab(section);
+    });
+  }
+  if (typeof window.addEventListener === "function") window.addEventListener("resize", placeTabIndicator);
   bind("history-search", "input", filterHistory);
   moveIntoList("history-search", "#history .history-row");
   bind("clear-activity", "click", clearActivity);
+  // Every empty state names its way out.
+  bind("empty-scan", "click", () => scanChanges({ automatic: false }));
+  bind("reviews-empty-action", "click", openNewBranch);
+  bind("history-empty-action", "click", () => {
+    const search = document.getElementById("history-search");
+    if (search.value.trim() && historyEntries.length) { search.value = ""; filterHistory(); return search.focus(); }
+    selectTab("changes");
+    document.getElementById("message").focus();
+  });
   bind("new-pull-request", "click", openPullRequest);
-  bind("tools-toggle", "click", toggleToolsMenu);
   bind("tool-new-branch", "click", openNewBranch);
   bind("tool-new-pr", "click", openPullRequest);
   bind("tool-conflicts", "click", openConflicts);
   bind("tool-create-tag", "click", openTagSheet);
   bind("tool-settings", "click", openRepositorySettings);
   bind("close-tag-sheet", "click", () => closeTagSheet(false, true));
-  bind("surface-backdrop", "click", () => { closeTagSheet(false, true); closeDetail(); });
+  bind("surface-backdrop", "click", () => { closeTagSheet(false, true); closeDetail(false); });
   bind("create-tag", "click", createTag);
   bindInputAction("message", saveVersion);
   bindInputAction("new-branch-name", createBranch);
   bindInputAction("tag-name", createTag);
-  document.querySelector(".section-nav").addEventListener("keydown", handleTabKeyboard);
+  document.getElementById("section-nav").addEventListener("keydown", handleTabKeyboard);
   document.getElementById("tools-menu").addEventListener("keydown", handleMenuKeyboard);
   document.addEventListener("keydown", handleGlobalKeyboard);
   document.addEventListener("click", handleOutsideClick);
+  // The status line floats over the screen; a press puts it away.
+  document.getElementById("result").addEventListener("click", () => {
+    clearTimeout(resultTimer);
+    const result = document.getElementById("result");
+    result.textContent = ""; result.className = "status-message";
+    syncToast();
+  });
+  document.addEventListener("click", (event) => {
+    const control = event.target?.closest?.(".button");
+    if (control) { pressedControl = control; pressedAt = Date.now(); }
+  }, true);
   // The panel reopens on the section it was closed on. An unknown name
   // or unreadable preference storage falls back to Changes.
   let lastSection = null;
   try { lastSection = localStorage.getItem("photogit.section"); } catch { /* Default below. */ }
   selectTab(SECTIONS.includes(lastSection) ? lastSection : "changes", false);
   window.setInterval(syncDocumentLabel, 1000);
+  window.setInterval(() => { void refreshHistoryInBackground(); }, 10000);
+  document.addEventListener("input", savePanelState);
+  document.addEventListener("click", savePanelState);
+}
+
+function panelStateKey() {
+  return projectFolder ? `photogit.workspace:${projectFolder.nativePath || projectFolder.name}` : null;
+}
+
+function savePanelState() {
+  const key = panelStateKey();
+  if (!key || startupPending) return;
+  try {
+    localStorage.setItem(key, JSON.stringify({
+      message: document.getElementById("message").value.slice(0, 500),
+      historySearch: document.getElementById("history-search").value.slice(0, 500),
+      selectedVersionId
+    }));
+  } catch { /* Storage is optional; keep the live draft intact. */ }
+}
+
+async function restorePanelState() {
+  const key = panelStateKey();
+  if (!key) return;
+  let saved = {};
+  try { const text = localStorage.getItem(key); if (text && text.length < 4096) saved = JSON.parse(text) || {}; } catch { /* Use current defaults. */ }
+  if (typeof saved.message === "string") document.getElementById("message").value = saved.message.slice(0, 500);
+  if (typeof saved.historySearch === "string") document.getElementById("history-search").value = saved.historySearch.slice(0, 500);
+  workspaceUI.refreshChanges(document);
+  filterHistory();
+  // The selection is restored as the highlighted card; opening its details
+  // stays an explicit press.
+  if (historyEntries.some(entry => entry.id === saved.selectedVersionId)) { selectedVersionId = saved.selectedVersionId; filterHistory(); }
+}
+
+async function refreshHistoryInBackground() {
+  if (historyRefreshPending || startupPending || busyNow || scans.running || !helperOnline || !projectFolder || !helperToken) return;
+  const folder = projectFolder, generation = workspaceGeneration;
+  historyRefreshPending = true;
+  try {
+    const result = await callHelper("history", {}, HELPER_HEALTH_TIMEOUT_MS);
+    if (folder !== projectFolder || generation !== workspaceGeneration || busyNow) return;
+    if (JSON.stringify(result.versions) !== JSON.stringify(historyEntries)) await loadHistory(result);
+  } catch { /* Background reads leave the current history and draft in place. */ }
+  finally { historyRefreshPending = false; }
 }
 
 function initializePanel() {
@@ -162,6 +247,7 @@ async function startPanel() {
     setStartup(false);
   }
   await installPhotoshopChangeDetection();
+  await restorePanelState();
   if (helperOnline) queueAutomaticScan("initial-load", 150);
 }
 
@@ -185,7 +271,13 @@ function setStartup(active) {
 function bind(id, event, handler) {
   const element = document.getElementById(id);
   const invoke = (inputEvent) => {
-    if (startupPending || element.getAttribute("aria-disabled") === "true") return;
+    if (startupPending) return;
+    // An unavailable control still answers a press: it says why.
+    if (element.getAttribute("aria-disabled") === "true") {
+      if (busyNow || !element.dataset.unavailable) return;
+      if (element.getAttribute("role") === "menuitem") closeToolsMenu();
+      return show(element.dataset.unavailable, false);
+    }
     return handler(inputEvent);
   };
   element.addEventListener(event, invoke);
@@ -233,7 +325,7 @@ function handleTabKeyboard(event) {
   // move through it; a rail that answered only Left and Right was a dead end
   // for the keys a vertical list is expected to take.
   if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End"].includes(event.key)) return;
-  const tabs = Array.from(document.querySelectorAll(".nav-item"));
+  const tabs = Array.from(document.querySelectorAll(".nav-item")).filter(tab => !tab.hidden);
   const current = Math.max(0, tabs.indexOf(event.target));
   const forward = event.key === "ArrowRight" || event.key === "ArrowDown";
   const next = event.key === "Home"
@@ -265,7 +357,7 @@ function handleGlobalKeyboard(event) {
   if (!sheet.hidden) {
     event.preventDefault();
     event.stopPropagation();
-    return sheet.id === "detail-sheet" ? closeDetail() : closeTagSheet(false, true);
+    return sheet.id === "detail-sheet" ? closeDetail(false) : closeTagSheet(false, true);
   }
   const menu = document.getElementById("tools-menu");
   if (!menu.hidden) {
@@ -300,7 +392,7 @@ function handleMenuKeyboard(event) {
 function handleOutsideClick(event) {
   const menu = document.getElementById("tools-menu");
   if (menu.hidden || menu.contains(event.target)) return;
-  if (document.getElementById("tools-toggle").contains(event.target) || document.getElementById("header-menu").contains(event.target)) return;
+  if (document.getElementById("header-menu").contains(event.target)) return;
   closeToolsMenu();
 }
 
@@ -308,21 +400,21 @@ async function chooseProject() {
   if (busyNow) return show("PhotoGit is busy. Try again in a moment.", true);
   const folder = await storage.localFileSystem.getFolder();
   if (!folder) return;
+  savePanelState();
   cancelScan();
   workspaceGeneration += 1;
   projectStatus = null;
   lastScanCount = null;
   helperToken = null;
   projectFolder = folder;
+  document.getElementById("message").value = "";
+  document.getElementById("history-search").value = "";
   branchPreviews = {};
-  document.getElementById("document-preview").hidden = true;
-  document.getElementById("document-preview-figure").hidden = true;
+  historyPreviews = {};
+  historyPreviewGeneration++;
   branchView.render(document.getElementById("branch-list"));
-  document.getElementById("branch-menu").textContent = "";
-  document.getElementById("branch-picker").selectedIndex = -1;
   selectedVersionId = null;
-  versionInspector.render(document.getElementById("history-inspector"), { state: "empty" });
-  reviewInspector.render(document.getElementById("review-inspector"));
+  expandedReview = null;
   busy(true);
   try {
   const token = await storage.localFileSystem.createPersistentToken(folder);
@@ -337,6 +429,7 @@ async function chooseProject() {
   await refreshWorkspace();
   queueAutomaticScan("project-connected", 150);
   } finally { busy(false); }
+  await restorePanelState();
 }
 
 async function loadPairing() {
@@ -371,11 +464,16 @@ async function refreshWorkspace(announceErrors = false, readTimeoutMs = HELPER_T
   try {
     const status = await callHelper("status", {}, HELPER_HEALTH_TIMEOUT_MS);
     if (!current()) return;
-    setHelper("Synced", true);
+    // The helper answering is not the same as fresh data, and neither says
+    // anything about a remote. The label names what is known: the project
+    // data on screen was read at this time.
+    setHelper("Updating…", true);
     await loadStatus(status);
     const [branches, history, reviews] = await Promise.all([callHelper("branches", {}, readTimeoutMs), callHelper("history", {}, readTimeoutMs), callHelper("reviews", {}, readTimeoutMs)]);
     if (!current()) return;
     await Promise.all([loadBranches(branches), loadHistory(history), loadReviews(reviews)]);
+    if (!current()) return;
+    setHelper(`Updated ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`, true);
   } catch (error) {
     if (!current() || error.name === "StaleScanError") return;
     setHelper("Not connected", false);
@@ -395,39 +493,52 @@ async function refreshAndScan() {
   show("Project refreshed. Open a Photoshop document to scan edits.", false);
 }
 
+// Push says how many saved versions it would send, and is unavailable when
+// there is nothing to send or nowhere to send it.
+function renderPushState() {
+  const push = document.getElementById("push");
+  const remote = projectStatus?.remoteConfigured === true;
+  const count = Number.isSafeInteger(projectStatus?.unpushed) ? projectStatus.unpushed : null;
+  const known = projectStatus && typeof projectStatus.remoteConfigured === "boolean";
+  push.querySelector("span").textContent = count ? `Push ${count}` : "Push";
+  const unavailable = busyNow || (known && (!remote || count === 0));
+  push.setAttribute("aria-disabled", String(unavailable));
+  push.tabIndex = unavailable ? -1 : 0;
+  const reason = !known ? "Push saved versions" : !remote ? "No shared remote is set up for this project" : count ? `Push ${count} saved ${count === 1 ? "version" : "versions"} to the shared remote` : "Every saved version is already shared";
+  push.setAttribute("title", reason);
+  push.setAttribute("aria-label", reason);
+  const noRemote = "This project has no shared remote yet. Add one in Terminal with “git remote add origin <url>”, then choose Refresh project.";
+  if (known && !remote) push.dataset.unavailable = noRemote;
+  else if (known && count === 0) push.dataset.unavailable = "Every saved version is already shared. Save a new version and Push will send it.";
+  else delete push.dataset.unavailable;
+  // Pull needs somewhere to pull from, and says so when there is nowhere.
+  const pull = document.getElementById("pull");
+  pull.setAttribute("aria-disabled", String(busyNow || (known && !remote)));
+  if (known && !remote) pull.dataset.unavailable = noRemote; else delete pull.dataset.unavailable;
+}
+
 async function loadStatus(existingResult) {
   const result = existingResult || await callHelper("status");
   projectStatus = result;
   setTextWithFlash(document.getElementById("branch-name"), result.branch);
-  document.getElementById("branch-name-detail").textContent = result.branch;
   setSyncStatus(result.changeCount ? "Project files changed" : "Project files clean");
+  renderPushState();
   renderDocumentBinding();
-  if (result.changeCount) log(`${result.changeCount} project file change(s) detected.`);
+  if (result.changeCount) log(`${result.changeCount} project ${result.changeCount === 1 ? "file has" : "files have"} changed on disk since the last saved version. This is separate from unsaved Photoshop edits.`);
 }
 
 async function loadBranches(existingResult) {
   const folder = projectFolder;
   const result = existingResult || await callHelper("branches");
   if (folder !== projectFolder) return;
-  const picker = document.getElementById("branch-picker");
-  const menu = document.getElementById("branch-menu");
-  menu.innerHTML = "";
-  picker.selectedIndex = -1;
-  result.branches.forEach((branch, index) => {
-    const item = document.createElement("sp-menu-item");
-    item.dataset.branch = branch.name;
-    item.textContent = branch.current ? `${branch.name} •` : branch.name;
-    if (branch.current) { item.selected = true; picker.selectedIndex = index; }
-    menu.appendChild(item);
-  });
   setTextWithFlash(document.getElementById("branch-name"), result.current);
-  document.getElementById("branch-name-detail").textContent = result.current;
+  branchTips = Object.fromEntries(result.branches.filter(branch => branch.tip).map(branch => [branch.name, branch.tip]));
   setCount("branches-count", result.branches.length);
   const onSwitch = branch => {
     if (folder !== projectFolder) return show("The project changed. Refresh the branch list before switching.", true);
     return executeCommand(`switch ${branch}`);
   };
-  branchView.render(document.getElementById("branch-list"), { branches: result.branches, current: result.current, previews: branchPreviews, onSwitch });
+  branchView.render(document.getElementById("branch-list"), { branches: result.branches, current: result.current, previews: branchPreviews, onSwitch, dateLabel: historyDateLabel });
   // Previews are decorative. Load them in the background so the branch list stays
   // immediately usable and a slow or missing preview never delays switching.
   void loadBranchPreviews(folder, result, onSwitch);
@@ -441,18 +552,41 @@ async function loadBranchPreviews(folder, result, onSwitch) {
     const preview = await readVersionPreview(branch.tip);
     if (folder !== projectFolder) return;
     branchPreviews[branch.name] = preview ? preview.src : null;
-    if (preview) { loaded += 1; if (branch.current === true) setDocumentPreview(preview.src); }
+    if (preview) loaded += 1;
   }
   if (!loaded || folder !== projectFolder) return;
-  branchView.render(document.getElementById("branch-list"), { branches: result.branches, current: result.current, previews: branchPreviews, onSwitch });
+  branchView.render(document.getElementById("branch-list"), { branches: result.branches, current: result.current, previews: branchPreviews, onSwitch, dateLabel: historyDateLabel });
 }
 
 async function loadHistory(existingResult) {
   const result = existingResult || await callHelper("history");
   historyEntries = result.versions;
   setCount("history-count", historyEntries.length);
-  document.getElementById("history-total").textContent = `${historyEntries.length} ${historyEntries.length === 1 ? "version" : "versions"}`;
+  const branch = safeInlineText(document.getElementById("branch-name").textContent, 200);
+  document.getElementById("history-total").textContent = `${historyEntries.length} ${historyEntries.length === 1 ? "version" : "versions"}${branch && branch !== "—" ? ` on ${branch}` : ""}`;
+  // The newest version is selected until another is chosen, and again
+  // whenever a newer one arrives.
+  const newest = historyEntries.length ? historyEntries[0].id : null;
+  if (newest !== newestVersionId || !historyEntries.some(version => version.id === selectedVersionId)) selectedVersionId = newest;
+  newestVersionId = newest;
   filterHistory();
+  void loadHistoryPreviews(result.versions);
+}
+
+async function loadHistoryPreviews(versions) {
+  const generation = ++historyPreviewGeneration;
+  const folder = projectFolder;
+  historyPreviews = {};
+  // Bound image memory and helper work. Any selected older version still loads
+  // its own preview in the inspector, independently of this thumbnail strip.
+  for (const version of versions.slice(0, 8)) {
+    const preview = await readVersionPreview(version.id);
+    if (folder !== projectFolder || generation !== historyPreviewGeneration) return;
+    historyPreviews[version.id] = preview;
+    for (const row of document.querySelectorAll(".history-row")) {
+      if (row.dataset.version === version.id) versionInspector.historyPreview(row, { preview });
+    }
+  }
 }
 
 async function loadReviews(existingResult) {
@@ -460,10 +594,13 @@ async function loadReviews(existingResult) {
   repositoryDetails = result.repository;
   for (const id of ["new-pull-request", "tool-new-pr"]) document.getElementById(id).hidden = result.repository.provider !== "github";
   reviewEntries = result.reviews.filter((review) => review.ahead > 0 || review.changeCount > 0);
-  setCount("reviews-count", reviewEntries.length);
-  document.getElementById("review-provider").textContent = result.repository.provider === "github"
-    ? `GitHub · ${result.repository.baseBranch} ← ${result.repository.currentBranch}`
-    : `Local reviews · merging into ${result.repository.currentBranch}`;
+  // The tab badge counts what needs action: branches that cannot merge yet.
+  const blocked = reviewEntries.filter(review => review.mergeable !== true).length;
+  setCount("reviews-count", blocked);
+  const waiting = reviewEntries.length;
+  document.getElementById("reviews-heading").textContent = waiting ? `${waiting} ${waiting === 1 ? "branch" : "branches"} waiting to merge` : "Nothing waiting to merge";
+  document.getElementById("review-provider").textContent = `Into ${result.repository.currentBranch}.${!waiting || !blocked ? "" : blocked === waiting ? (waiting === 1 ? " It has conflicts to resolve first." : " Each one has conflicts to resolve first.") : ` ${blocked} ${blocked === 1 ? "has" : "have"} conflicts to resolve first.`}`;
+  if (!reviewEntries.some(review => review.branch === expandedReview)) expandedReview = null;
   renderReviews(reviewEntries, result.conflicts || []);
 }
 
@@ -472,7 +609,7 @@ function renderReviews(reviews, conflicts) {
   const empty = document.getElementById("reviews-empty");
   container.innerHTML = "";
   empty.hidden = reviews.length > 0;
-  for (const review of reviews) container.appendChild(createReviewCard(review));
+  for (const review of reviews) container.appendChild(reviewInspector.card(document, review, { expanded: review.branch === expandedReview, onToggle: toggleReview }));
   const reveal = globalThis.PhotoGitReveal;
   if (reveal && typeof reveal.stagger === "function") reveal.stagger(container.querySelectorAll(".review-card"));
   const conflictPanel = document.getElementById("conflict-panel");
@@ -483,32 +620,32 @@ function renderReviews(reviews, conflicts) {
     : "";
 }
 
-function createReviewCard(review) {
-  const card = document.createElement("article");
-  card.className = "review-card";
-  const statusClass = review.mergeable ? "ready" : "blocked";
-  const statusLabel = review.mergeable ? "Git merge available" : "Git merge blocked";
-  const mergeClass = review.mergeable ? "button-primary" : "button-disabled";
-  const mergeLabel = review.mergeable ? "Merge" : "Resolve conflicts to merge";
-  // The changed-file list belongs to the comparison inspector, which Compare
-  // opens; the card only summarises the count.
-  card.innerHTML = `<div class="review-title"><h3>${escapeHtml(review.branch)}</h3><span>${escapeHtml(review.ahead)} ahead</span></div><div class="review-meta"><span class="${statusClass}">${statusLabel}</span><span aria-hidden="true">·</span><span>${escapeHtml(review.changeCount)} ${review.changeCount === 1 ? "file" : "files"}</span></div><div class="review-actions"><div class="button button-quiet button-small compare-action" role="button" tabindex="0" aria-label="Compare ${escapeHtml(review.branch)} with the current branch">Compare</div><div class="button ${mergeClass} button-small merge-action" role="button" tabindex="${review.mergeable ? "0" : "-1"}" data-mergeable="${review.mergeable ? "true" : "false"}" ${review.mergeable ? "" : "aria-disabled=\"true\""}>${mergeLabel}</div></div>`;
-  const direction = document.createElement("p");
-  direction.className = "review-direction";
-  direction.textContent = `${review.branch} → ${repositoryDetails?.currentBranch || document.getElementById("branch-name").textContent || "working branch"}`;
-  card.insertBefore(direction, card.querySelector(".review-meta"));
-  const compareAction = card.querySelector(".compare-action");
-  const mergeAction = card.querySelector(".merge-action");
-  if (!review.mergeable) { mergeAction.setAttribute("role", "note"); mergeAction.removeAttribute("tabindex"); }
-  const compare = () => compareBranch(review.branch);
-  const merge = () => {
-    if (review.mergeable) mergeReview(review.branch);
-  };
-  compareAction.addEventListener("click", compare);
-  mergeAction.addEventListener("click", merge);
-  activateOnKeyboard(compareAction, compare);
-  activateOnKeyboard(mergeAction, merge);
-  return card;
+// One review is open at a time. Opening reads both branches again, so the
+// card never shows conflicts from an earlier state of either branch.
+function toggleReview(branch) {
+  const folder = projectFolder;
+  expandedReview = expandedReview === branch ? null : branch;
+  renderReviews(reviewEntries, []);
+  const card = [...document.querySelectorAll("#reviews .review-card")].find(entry => entry.dataset.branch === branch);
+  if (!expandedReview) { card?.querySelector(".review-toggle")?.focus(); return; }
+  const body = card?.querySelector(".review-body");
+  if (body) globalThis.PhotoGitMotion?.expand(body);
+  return run("Reading both branches…", async () => {
+    let comparison;
+    try { comparison = await callHelper("compareBranches", { branch }); }
+    catch (error) { if (folder === projectFolder && expandedReview === branch) { expandedReview = null; renderReviews(reviewEntries, []); } throw error; }
+    if (folder !== projectFolder || expandedReview !== branch) return;
+    const open = [...document.querySelectorAll("#reviews .review-card.expanded")].find(entry => entry.dataset.branch === branch);
+    if (!open) return;
+    const conflicts = reviewInspector.resolution(open.querySelector(".review-body"), comparison, {
+      onMerge: incoming => folder !== projectFolder ? show("The project changed. Review this branch again.", true) : mergeReview(incoming),
+      onOpen: branchTips[branch] ? incoming => openBranchCopy(incoming, folder) : undefined,
+      onDetails: compareBranch
+    });
+    const label = open.querySelector(".review-state-label");
+    if (label && conflicts) label.textContent = `${conflicts} ${conflicts === 1 ? "conflict" : "conflicts"}`;
+    show(conflicts ? `${conflicts} ${conflicts === 1 ? "conflict" : "conflicts"} on ${branch}.` : `${branch} has no conflicts.`, false);
+  });
 }
 
 function renderHistory(versions) {
@@ -516,31 +653,78 @@ function renderHistory(versions) {
   const empty = document.getElementById("history-empty");
   container.innerHTML = "";
   empty.hidden = versions.length > 0;
+  // An author is named only where it carries information: when it is not
+  // you. Without a known Git user, only when the history has several.
+  const currentUser = typeof projectStatus?.currentUser === "string" ? projectStatus.currentUser : null;
+  const severalAuthors = new Set(historyEntries.map(version => version.author)).size > 1;
+  const named = author => currentUser ? author !== currentUser : severalAuthors;
+  const latestId = historyEntries.length ? historyEntries[0].id : null;
   for (const group of groupHistory(versions)) {
     const section = document.createElement("section");
     section.className = "history-group";
-    section.innerHTML = `<h3 class="history-group-heading"><strong>${escapeHtml(group.label)}</strong><span>By ${escapeHtml(group.author)}</span></h3><div class="history-group-entries"></div>`;
+    section.innerHTML = `<h3 class="list-section"><span>${escapeHtml(String(group.label).toUpperCase())}</span><span class="history-author">${named(group.author) ? escapeHtml(group.author) : ""}</span></h3><div class="history-group-entries"></div>`;
     const entries = section.querySelector(".history-group-entries");
     for (const version of group.entries) {
+      const selected = version.id === selectedVersionId;
+      const entry = document.createElement("div");
+      entry.className = `history-entry${selected ? " selected" : ""}`;
       const row = document.createElement("div");
       row.className = "list-row history-row";
       row.dataset.version = version.id;
-      row.classList.toggle("selected", version.id === selectedVersionId);
       const message = escapeHtml(version.message);
       const shortId = escapeHtml(version.shortId);
-      row.innerHTML = `<span class="history-marker" aria-hidden="true">${historyIcon()}</span><span class="row-copy"><strong title="${message}">${message}</strong><span>${escapeHtml(version.author)} · <time datetime="${escapeHtml(version.date)}" title="${escapeHtml(versionInspector.formatDate(version.date))}">${escapeHtml(versionInspector.formatDate(version.date, true))}</time></span></span><span class="commit-id" title="Version ${shortId}">${shortId}</span>`;
+      row.innerHTML = `<span class="history-marker" aria-hidden="true">${historyIcon()}</span><span class="row-copy"><strong>${message}</strong><span class="history-meta"><time datetime="${escapeHtml(version.date)}" title="${escapeHtml(versionInspector.formatDate(version.date))}">${escapeHtml(versionInspector.formatDate(version.date, true))}</time>  ${shortId}</span></span>${selected && version.id === latestId ? '<span class="pill">Latest</span>' : ""}`;
+      versionInspector.historyPreview(row, { preview: historyPreviews[version.id] });
       row.setAttribute("role", "button");
-      row.setAttribute("aria-pressed", String(version.id === selectedVersionId));
-      row.setAttribute("aria-label", `Inspect version ${version.shortId}: ${version.message}`);
+      row.setAttribute("aria-pressed", String(selected));
+      row.setAttribute("aria-label", `Select version ${version.shortId}: ${version.message}`);
       row.tabIndex = 0;
-      row.addEventListener("click", () => inspectVersion(version));
-      activateOnKeyboard(row, () => inspectVersion(version));
-      entries.appendChild(row);
+      const choose = () => { selectVersion(version.id); document.querySelector("#history .history-entry.selected .history-row")?.focus(); };
+      row.addEventListener("click", choose);
+      activateOnKeyboard(row, choose);
+      entry.appendChild(row);
+      if (selected) entry.appendChild(historyActions(version));
+      entries.appendChild(entry);
     }
     container.appendChild(section);
   }
   const reveal = globalThis.PhotoGitReveal;
-  if (reveal && typeof reveal.stagger === "function") reveal.stagger(container.querySelectorAll(".history-row"));
+  if (reveal && typeof reveal.stagger === "function") reveal.stagger(container.querySelectorAll(".history-entry"));
+}
+
+// The selected version carries its two actions; no version is acted on
+// without first being the one that is visibly selected.
+function historyActions(version) {
+  const actions = document.createElement("div");
+  actions.className = "history-actions";
+  const button = (label, className, name, handler) => {
+    const control = document.createElement("div");
+    control.className = `button ${className}`;
+    control.textContent = label;
+    control.setAttribute("role", "button");
+    control.setAttribute("aria-label", name);
+    control.tabIndex = 0;
+    const invoke = () => { if (control.getAttribute("aria-disabled") !== "true" && !busyNow) handler(); };
+    control.addEventListener("click", invoke);
+    activateOnKeyboard(control, invoke);
+    actions.appendChild(control);
+  };
+  const folder = projectFolder;
+  button("Compare", "button-primary", `Compare version ${version.shortId} with the open document`, () => compareWithCurrent(version, folder));
+  button("Restore", "", `Restore version ${version.shortId} as a separate copy`, () => restoreVersion(version, folder));
+  const wrap = document.createElement("div");
+  wrap.className = "history-card-actions";
+  wrap.appendChild(actions);
+  const details = document.createElement("div");
+  details.className = "text-link history-details";
+  details.textContent = "What this version changed";
+  details.setAttribute("role", "button");
+  details.tabIndex = 0;
+  const open = () => { if (!busyNow) inspectVersion(version); };
+  details.addEventListener("click", open);
+  activateOnKeyboard(details, open);
+  wrap.appendChild(details);
+  return wrap;
 }
 
 function groupHistory(versions) {
@@ -568,6 +752,7 @@ function filterHistory() {
   document.getElementById("history-empty-copy").textContent = filtering
     ? "Search by message, author, date, or version ID, or clear the search."
     : "Save your first version to start this document’s history.";
+  document.getElementById("history-empty-action").textContent = filtering ? "Clear search" : "Go to Changes";
   if (!query) return renderHistory(historyEntries);
   renderHistory(historyEntries.filter((version) => [version.message, version.shortId, version.author, version.date].some((value) => String(value).toLowerCase().includes(query))));
 }
@@ -601,16 +786,15 @@ async function scanChanges({ automatic = false, eventName = "manual" } = {}) {
         }), { commandName: "Scan PhotoGit document layers" });
       } finally { suppressNotifications = false; }
       check();
-      renderDocumentFacts(capture.document);
       runtimeLog("info", "scan_capture", { source: automatic ? "automatic" : "manual", eventName, layerCount: capture.layers.length });
-      log(`Captured ${capture.layers.length} Photoshop layer(s); comparing with the latest version.`);
+      log(`Read ${capture.layers.length} ${capture.layers.length === 1 ? "layer" : "layers"} and compared them with the last saved version.`);
       setWatchStatus(`Comparing ${capture.layers.length} layers…`, "scanning");
       const result = await callHelper("refresh", { capture, documentIdentity: identity }, 15000);
       check();
       renderChanges(result.changes, { baselineMissing: result.baselineMissing === true, changeCount: result.changeCount, warnings: result.comparisonWarnings || [] });
       const firstCheckpoint = result.baselineMissing === true;
       setWatchStatus(firstCheckpoint ? "Ready for first version" : result.changeCount ? `${result.changeCount} edits found` : "Watching Photoshop", firstCheckpoint || result.changeCount ? "changed" : "ready");
-      log(firstCheckpoint ? "Ready to save the first version." : `${result.changeCount} semantic edits found.`);
+      log(firstCheckpoint ? "Ready to save the first version." : `${result.changeCount} unsaved ${result.changeCount === 1 ? "edit" : "edits"} found.`);
       if (!automatic) show(firstCheckpoint ? "Save the first version to start tracking edits." : `${result.changeCount} Photoshop edits found.`, false);
     } catch (error) {
       if (error.name === "StaleScanError") throw error;
@@ -626,11 +810,11 @@ async function scanChanges({ automatic = false, eventName = "manual" } = {}) {
   });
 }
 
-function cancelScan() {
+function cancelScan(announce = true) {
   clearTimeout(autoScanTimer);
   autoScanTimer = null;
   scans.cancel();
-  setWatchStatus("Scan paused · Scan now to resume", "warning");
+  if (announce) setWatchStatus("Scan paused · Scan now to resume", "warning");
   return scans.running || Promise.resolve();
 }
 
@@ -641,29 +825,71 @@ function documentAllowed() {
   return projectStatus.baselineMissing && !projectStatus.documentBinding || panelModel.sameDocument(projectStatus.documentBinding, panelModel.documentIdentity(app.activeDocument));
 }
 
+// A document that is not the project's takes over the panel below the top
+// bar: there is nothing to list, save or review until that is settled.
 function renderDocumentBinding() {
   const allowed = documentAllowed();
-  const banner = document.getElementById("document-connection");
-  banner.hidden = allowed;
-  document.getElementById("document-connection-message").textContent = !app.documents.length
+  document.getElementById("workspace").classList.toggle("is-unlinked", !allowed);
+  applyShellState();
+  const project = safeInlineText(projectFolder?.name || document.getElementById("project-status").textContent, 200) || "this project";
+  const open = app.documents.length > 0;
+  const binding = projectStatus?.documentBinding;
+  document.getElementById("document-connection-title").textContent = !open
+    ? "No document is open"
+    : `This document isn’t linked to ${project}`;
+  document.getElementById("document-connection-message").textContent = !open
     ? "Open a Photoshop document or open this project’s saved version."
-    : projectStatus?.documentBinding
-      ? `This document is not connected. Project document: ${safeInlineText(projectStatus.documentBinding.name, 200)}. Open it, or explicitly adopt the active document.`
+    : binding
+      ? `This document is not connected. Project document: ${safeInlineText(binding.name, 200)}. PhotoGit only tracks the project’s own document, so changes here won’t be saved as versions.`
       : "Connect this document before comparing it with the project’s saved versions.";
-  document.getElementById("connect-document").hidden = !app.documents.length;
+  document.getElementById("project-document-name").textContent = binding ? safeInlineText(binding.name, 200) : projectStatus && !projectStatus.baselineMissing ? "The saved project version" : "Not chosen yet";
+  document.getElementById("connect-document").hidden = !open;
   document.getElementById("open-project-document").hidden = !projectStatus || projectStatus.baselineMissing;
   if (!allowed) {
     lastScanCount = null;
     document.getElementById("changes").innerHTML = "";
     document.getElementById("change-summary").textContent = "Connect a document";
     document.getElementById("last-scan").textContent = "No scan result for this document.";
-    document.getElementById("changes-empty").hidden = true;
+    // The card says why it is empty rather than standing blank.
+    setChangesEmpty("No document connected", "Connect this document to see its edits here.");
+    document.getElementById("changes-empty").hidden = false;
     setCount("changes-count", 0);
-    // The tally and the filter bar describe the list that was just cleared;
-    // leaving them up reported the previous document's counts against this one.
-    renderChangeTally([]);
+    // The filter bar describes the list that was just cleared; leaving it up
+    // reported the previous document's counts against this one.
     workspaceUI.refreshChanges(document);
   }
+}
+
+// Which parts of the shell are showing follows from two facts: the section
+// in view and whether the open document is the project's. They are set as
+// `hidden` here because the host does not reliably restyle descendants when
+// only an ancestor's attribute changes.
+// The underline belongs to the strip, not to a tab, so it can travel.
+function placeTabIndicator() {
+  const indicator = document.getElementById("tab-indicator");
+  const active = document.querySelector("#section-nav .nav-item.active:not([hidden])");
+  const motion = globalThis.PhotoGitMotion;
+  if (!indicator) return;
+  if (!active || document.getElementById("section-nav").hidden) { indicator.hidden = true; return; }
+  if (motion && typeof motion.slide === "function") motion.slide(indicator, active);
+}
+
+function applyShellState() {
+  const workspace = document.getElementById("workspace");
+  const view = workspace.dataset.view;
+  const unlinked = workspace.classList.contains("is-unlinked");
+  // Docs stay readable from the menu whatever document is open.
+  const takeover = unlinked && view !== "docs";
+  const state = document.getElementById("document-connection");
+  const changed = state.hidden === takeover;
+  state.hidden = !takeover;
+  document.getElementById("section-nav").hidden = takeover;
+  document.querySelector(".workspace-content").hidden = takeover;
+  document.getElementById("push").hidden = unlinked;
+  document.querySelector(".capture-panel").hidden = view !== "changes";
+  document.getElementById("history-total").hidden = view !== "history";
+  // Linked to not linked and back is a change of screen like any other.
+  if (changed && !document.body.classList.contains("is-initializing")) globalThis.PhotoGitMotion?.screen(takeover ? state : document.querySelector(".workspace-content"));
 }
 
 function connectDocument() {
@@ -715,12 +941,14 @@ async function saveVersion() {
     let capture;
     suppressNotifications = true;
     try {
-    await core.executeAsModal(async () => {
+    await core.executeAsModal(async (executionContext) => {
       assertSaveTarget();
+      const check = () => { assertSaveTarget(); if (executionContext?.isCancelled) throw new Error("Version capture cancelled. No version was written."); };
       // Capture and PSD export share the same modal lock: they describe one state.
-      capture = await captureDocument(doc, { progress: (done, total) => setWatchStatus(`Saving · reading ${done} of ${total}…`, "scanning") });
+      capture = await captureDocument(doc, { check, progress: (done, total) => setWatchStatus(`Saving · reading ${done} of ${total}…`, "scanning") });
       await doc.saveAs.psd(snapshot, { embedColorProfile: true }, true);
-      await doc.saveAs.png(preview, {}, true);
+      check();
+      await saveVersionPreview(doc, preview, check);
     }, { commandName: "Save PhotoGit version artifacts" });
     } finally { suppressNotifications = false; }
     if (projectFolder !== folder || app.activeDocument?.id !== doc.id) throw new Error("Document changed before save completed. No version was written.");
@@ -732,6 +960,7 @@ async function saveVersion() {
       documentIdentity: identity
     });
     document.getElementById("message").value = "";
+    savePanelState();
     renderChanges([]);
     setWatchStatus("Watching Photoshop", "ready");
     log(`Saved ${result.shortId}: ${message}`);
@@ -742,6 +971,21 @@ async function saveVersion() {
     document.querySelector("#history .history-row")?.classList.add("is-new");
     selectTab("history");
   });
+}
+
+async function saveVersionPreview(doc, destination, check) {
+  let imageData;
+  try {
+    const width = number(doc.width), height = number(doc.height);
+    const targetSize = width >= height ? { width: Math.min(768, width) } : { height: Math.min(768, height) };
+    const pixels = await imaging.getPixels({ documentID: doc.id, sourceBounds: { left: 0, top: 0, right: width, bottom: height }, targetSize, componentSize: 8, colorSpace: "RGB", colorProfile: "sRGB IEC61966-2.1", applyAlpha: false });
+    imageData = pixels.imageData;
+    check();
+    const data = await imageData.getData({ chunky: true });
+    const png = encodePreviewPng(imageData.width, imageData.height, imageData.components, new Uint8Array(data.buffer, data.byteOffset, data.byteLength));
+    await destination.write(png.buffer, { format: storage.formats.binary });
+    check();
+  } finally { try { imageData?.dispose(); } catch { /* Already released by Photoshop. */ } }
 }
 
 async function pull() {
@@ -761,9 +1005,10 @@ async function push() {
   return working("push", () => run("Sharing versions…", async () => {
     const result = await callHelper("push");
     log(`Shared branch ${result.branch}.`);
+    // Status first, so Push stops offering versions that have just been sent.
+    await Promise.all([loadStatus(), loadReviews()]);
     setSyncStatus("Pushed saved versions");
-    await loadReviews();
-    show("Changes shared successfully.", false);
+    show(`Pushed ${result.branch}. Every saved version is shared.`, false);
   }));
 }
 
@@ -771,7 +1016,7 @@ async function showProjectStatus() {
   if (!ensureReady()) return;
   return working("show-status", () => run("Checking project…", async () => {
     const result = await callHelper("status");
-    log(`${result.branch}: ${result.changeCount ? `${result.changeCount} project file change(s)` : "clean"}.`);
+    log(`${result.branch}: ${result.changeCount ? `${result.changeCount} project ${result.changeCount === 1 ? "file" : "files"} changed since the last saved version` : "nothing changed since the last saved version"}.`);
     setSyncStatus(result.changeCount ? "Project files changed" : "Project files clean");
     show(result.changeCount ? "Project files have unsaved changes." : "Project is clean.", result.changeCount > 0);
   }));
@@ -786,21 +1031,8 @@ async function createBranch() {
     await callHelper("createBranch", { branch: name });
     input.value = "";
     log(`Created and switched to ${name}.`);
-    await Promise.all([loadBranches(), loadReviews()]);
+    await Promise.all([loadStatus(), loadBranches(), loadReviews()]);
     show(`Created branch ${name}.`, false);
-  });
-}
-
-async function switchBranch(event) {
-  const item = document.getElementById("branch-menu").children[event.target.selectedIndex];
-  const branch = item?.dataset?.branch;
-  if (!branch || branch === document.getElementById("branch-name").textContent || busyNow) return;
-  return run(`Switching to ${branch}…`, async () => {
-    await callHelper("switchBranch", { branch });
-    if (!await openAfterGit(`Switched to ${branch}`)) return;
-    log(`Switched to ${branch} and opened its saved PSD version.`);
-    await refreshWorkspace();
-    show(`Switched to ${branch}.`, false);
   });
 }
 
@@ -909,6 +1141,7 @@ function openBackdrop() {
   document.body.classList.add("has-surface");
   const backdrop = document.getElementById("surface-backdrop");
   clearTimeout(surfaceTimers.get(backdrop));
+  globalThis.PhotoGitMotion?.cancel(backdrop);
   backdrop.hidden = false;
   backdrop.classList.remove("is-open");
   void backdrop.offsetWidth;
@@ -919,14 +1152,14 @@ function closeBackdrop(immediate = false) {
   const backdrop = document.getElementById("surface-backdrop");
   clearTimeout(surfaceTimers.get(backdrop));
   backdrop.classList.remove("is-open");
-  if (immediate) { backdrop.hidden = true; document.body.classList.remove("has-surface"); return; }
-  surfaceTimers.set(backdrop, setTimeout(() => { backdrop.hidden = true; document.body.classList.remove("has-surface"); }, 160));
+  globalThis.PhotoGitMotion?.cancel(backdrop);
+  const finish = () => { backdrop.hidden = true; document.body.classList.remove("has-surface"); };
+  if (immediate || !globalThis.PhotoGitMotion?.exit) finish();
+  else globalThis.PhotoGitMotion.exit(backdrop, finish);
 }
 
 function setToolsExpanded(expanded) {
-  const value = expanded ? "true" : "false";
-  document.getElementById("tools-toggle").setAttribute("aria-expanded", value);
-  document.getElementById("header-menu").setAttribute("aria-expanded", value);
+  document.getElementById("header-menu").setAttribute("aria-expanded", expanded ? "true" : "false");
 }
 
 function openSurface(element) {
@@ -949,10 +1182,12 @@ function closeSurface(element, immediate = false) {
     return;
   }
   element.classList.add("is-closing");
-  surfaceTimers.set(element, setTimeout(() => {
+  const finish = () => {
     element.classList.remove("is-closing");
     element.hidden = true;
-  }, 150));
+  };
+  if (globalThis.PhotoGitMotion?.exit) globalThis.PhotoGitMotion.exit(element, finish);
+  else finish();
 }
 
 async function createTag() {
@@ -1014,49 +1249,89 @@ function openDetail(title, content, actionLabel = "", action = null) {
   document.getElementById("close-detail").focus();
 }
 
-function closeDetail() {
-  closeSurface(document.getElementById("detail-sheet"), true);
-  closeBackdrop(true);
+function closeDetail(immediate = true) {
+  closeSurface(document.getElementById("detail-sheet"), immediate);
+  closeBackdrop(immediate);
   detailAction = null;
   surfaceReturnFocus?.focus?.();
 }
 
+// Version details always open in the dialog: the panel is one column, so a
+// version is read on its own rather than beside the list.
 function inspectVersion(version) {
   return run("Loading version…", async () => {
     const folder = projectFolder;
-    const inline = wideWorkspace();
-    const inspector = document.getElementById("history-inspector");
-    if (inline) versionInspector.render(inspector, { state: "loading" });
-    try {
-      const details = await callHelper("versionDetails", { version: version.id });
-      if (folder !== projectFolder) return;
-      // A missing or unreadable preview must never block the version details.
-      const preview = await readVersionPreview(version.id);
-      if (folder !== projectFolder) return;
-      selectedVersionId = version.id;
-      for (const row of document.querySelectorAll(".history-row")) {
-        const active = row.dataset.version === version.id;
-        row.classList.toggle("selected", active); row.setAttribute("aria-pressed", String(active));
-      }
-      const open = () => {
-        if (folder !== projectFolder) return show("The project changed. Select this version again.", true);
-        return run("Opening version copy…", async () => { await openSnapshot(version.id, false); closeDetail(); show("Opened a version copy. Connect it explicitly to save it as a new version.", false); });
-      };
-      if (inline) versionInspector.render(inspector, { details, version, preview, onOpen: open });
-      else {
-        openDetail(`Version ${version.shortId || version.id.slice(0, 8)}`, "", details.snapshotAvailable ? "Open version copy" : "", details.snapshotAvailable ? open : null);
-        versionInspector.render(document.getElementById("detail-content"), { details, version, preview });
-      }
-    } catch (error) {
-      if (inline && folder === projectFolder) versionInspector.render(inspector, { state: "error", error: error.message });
-      throw error;
-    }
+    const details = await callHelper("versionDetails", { version: version.id });
+    if (folder !== projectFolder) return;
+    // A missing or unreadable preview must never block the version details.
+    const [preview, previousPreview] = await Promise.all([
+      readVersionPreview(version.id),
+      details.parentVersionId ? readVersionPreview(details.parentVersionId) : Promise.resolve(null)
+    ]);
+    if (folder !== projectFolder) return;
+    selectVersion(version.id);
+    openDetail(`Version ${version.shortId || version.id.slice(0, 8)}`, "", details.snapshotAvailable ? "Open version copy" : "", details.snapshotAvailable ? () => restoreVersion(version, folder) : null);
+    versionInspector.render(document.getElementById("detail-content"), { details, version, preview, previousPreview });
   });
 }
 
-// UXP host builds do not all implement window.matchMedia, which would strand the
-// wide inspectors behind a sheet while the stylesheet had already switched to the
-// rail layout. Measure the panel first; keep the query for environments without layout.
+// "Restore" never overwrites the open document: it opens the saved PSD as a
+// separate copy, which can then be saved as a new version.
+// `folder` is the project the version was shown for: an action left on screen
+// from one project must not open a file in another.
+function restoreVersion(version, folder) {
+  return run("Opening version copy…", async () => {
+    if (folder !== projectFolder) throw new Error("The project changed. Select this version again.");
+    await openSnapshot(version.id, false);
+    closeDetail();
+    show("Opened a version copy. Connect it explicitly to save it as a new version.", false);
+  });
+}
+
+// A conflicted branch is settled by eye: its latest version opens beside the
+// document being worked on, which stays open and connected to nothing new.
+function openBranchCopy(branch, folder) {
+  return run(`Opening ${branch}…`, async () => {
+    if (folder !== projectFolder || !branchTips[branch]) throw new Error("The project changed. Review this branch again.");
+    await openSnapshot(branchTips[branch], false);
+    show(`Opened ${branch} as a separate copy. Bring what you want to keep into your document, then save a version.`, false);
+  });
+}
+
+// Reads the open document now and lists every difference from the chosen
+// version, so "what would Restore change?" has an answer before restoring.
+function compareWithCurrent(version, folder) {
+  return run("Comparing with the open document…", async () => {
+    if (folder !== projectFolder) throw new Error("The project changed. Select this version again.");
+    if (!app.documents.length || !documentAllowed()) throw new Error("Open the project’s document to compare it with a saved version.");
+    const doc = app.activeDocument;
+    const identity = panelModel.documentIdentity(doc);
+    let capture;
+    suppressNotifications = true;
+    try {
+      capture = await core.executeAsModal(async (executionContext) => captureDocument(doc, {
+        check: () => { if (executionContext?.isCancelled) throw new Error("Comparison cancelled."); },
+        progress: (done, total) => setWatchStatus(`Reading layer ${done} of ${total}…`, "scanning")
+      }), { commandName: "Compare PhotoGit version with the open document" });
+    } finally { suppressNotifications = false; }
+    const result = await callHelper("compareVersion", { version: version.id, capture, documentIdentity: identity });
+    if (folder !== projectFolder) return;
+    openDetail(`Compare with ${version.shortId || version.id.slice(0, 8)}`, "");
+    versionInspector.renderCurrentComparison(document.getElementById("detail-content"), { version, changes: result.changes, changeCount: result.changeCount });
+    show(result.changeCount ? `${result.changeCount} ${result.changeCount === 1 ? "difference" : "differences"} from ${version.shortId}.` : `The open document matches ${version.shortId}.`, false);
+  });
+}
+
+function selectVersion(versionId) {
+  if (selectedVersionId === versionId) return;
+  selectedVersionId = versionId;
+  savePanelState();
+  filterHistory();
+  // The selected card's actions ease into place; its height is not animated.
+  const actions = document.querySelector("#history .history-entry.selected .history-card-actions");
+  if (actions) globalThis.PhotoGitMotion?.expand(actions);
+}
+
 // Saved previews are optional: older versions predate them and a project may not
 // commit one. Any failure degrades to the metadata inspector rather than an error.
 const MAX_BRANCH_PREVIEWS = 12;
@@ -1070,111 +1345,18 @@ async function readVersionPreview(versionId) {
   } catch { return null; }
 }
 
-// Reference 01's preview column. Facts come from the scan PhotoGit already runs;
-// the image is the newest saved version, never a render of unsaved edits.
-// Reference tiles, counted from the same categories the rows already report.
-function renderChangeTally(changes) {
-  const tally = document.getElementById("change-tally");
-  if (!tally) return;
-  const list = Array.isArray(changes) ? changes : [];
-  const count = category => list.filter(change => (["added", "removed"].includes(change?.category) ? change.category : "modified") === category).length;
-  // The counter module is decoration. When it is absent — as it is in the
-  // contract tests, which run this script alone — the totals are written
-  // directly, which is the same value by a shorter path.
-  const counter = globalThis.PhotoGitCounter;
-  const show = (id, value) => {
-    const node = document.getElementById(id);
-    if (!node) return;
-    if (counter && typeof counter.set === "function") counter.set(node, value);
-    else node.textContent = String(value);
-  };
-  show("tally-changed", count("modified"));
-  show("tally-added", count("added"));
-  show("tally-removed", count("removed"));
-  const arriving = tally.hidden && list.length > 0;
-  tally.hidden = list.length === 0;
-  // Tiles that have just appeared step in one after another, like fresh
-  // rows. Tiles that were already up only recount.
-  const reveal = globalThis.PhotoGitReveal;
-  if (arriving && reveal && typeof reveal.stagger === "function") reveal.stagger(tally.querySelectorAll(".tally-tile"));
-}
-
-function renderDocumentFacts(meta) {
-  const section = document.getElementById("document-preview");
-  const list = document.getElementById("document-facts");
-  if (!section || !list) return;
-  list.textContent = "";
-  const facts = [];
-  if (Number(meta?.width) > 0 && Number(meta?.height) > 0) facts.push(["Size", `${Math.round(meta.width)} × ${Math.round(meta.height)} px`]);
-  if (Number(meta?.resolution) > 0) facts.push(["Resolution", `${Math.round(meta.resolution)} ppi`]);
-  if (typeof meta?.mode === "string" && meta.mode) facts.push(["Mode", meta.mode.toUpperCase()]);
-  if (Number(meta?.bitDepth) > 0) facts.push(["Depth", `${Math.round(meta.bitDepth)} bpc`]);
-  if (typeof meta?.name === "string" && meta.name) facts.push(["Document", meta.name]);
-  for (const [label, value] of facts) {
-    const row = document.createElement("div");
-    const term = document.createElement("dt"); term.textContent = label;
-    const detail = document.createElement("dd"); detail.textContent = value;
-    row.append(term, detail); list.appendChild(row);
-  }
-  section.hidden = facts.length === 0;
-  // The facts arrive with the first scan; they step in like the tally tiles.
-  const reveal = globalThis.PhotoGitReveal;
-  if (reveal && typeof reveal.stagger === "function") reveal.stagger(list.children);
-}
-
-// The current branch tip is HEAD, so the inspector preview reuses the branch
-// preview already loaded in the background rather than issuing its own request.
-function setDocumentPreview(src) {
-  const figure = document.getElementById("document-preview-figure");
-  const image = document.getElementById("document-preview-image");
-  if (!figure || !image || !src) return;
-  image.addEventListener("error", () => { figure.hidden = true; }, { once: true });
-  figure.hidden = false;
-  image.src = src;
-}
-
-function wideWorkspace() {
-  const width = Number(document.documentElement && document.documentElement.clientWidth) || Number(window.innerWidth) || 0;
-  if (width > 0) return width >= 900;
-  return typeof matchMedia === "function" && matchMedia("(min-width: 900px)").matches;
-}
-
+// The full comparison (every incoming edit and file) opens in the dialog.
 function compareBranch(branch) {
   return run("Comparing branches…", async () => {
     const folder = projectFolder;
-    const inline = wideWorkspace();
-    const inspector = document.getElementById("review-inspector");
-    if (inline) {
-      selectTab("reviews"); reviewInspector.render(inspector);
-      inspector.setAttribute("aria-busy", "true");
-      inspector.querySelector("h3").textContent = "Comparing branches…";
-      inspector.querySelector("p").textContent = "Checking incoming changes and merge safeguards.";
-      const skeleton = document.createElement("div"); skeleton.className = "inspector-skeleton"; skeleton.setAttribute("aria-hidden", "true");
-      for (let bar = 0; bar < 3; bar += 1) skeleton.appendChild(document.createElement("span"));
-      inspector.appendChild(skeleton);
-    }
-    try {
-      const result = await callHelper("compareBranches", { branch });
-      if (folder !== projectFolder) return;
-      const review = incoming => {
-        if (folder !== projectFolder) return show("The project changed. Compare this branch again.", true);
-        return mergeReview(incoming);
-      };
-      if (inline) reviewInspector.render(inspector, { comparison: result, onMerge: review, previews: branchPreviews });
-      else {
-        openDetail("Compare branches", "");
-        reviewInspector.render(document.getElementById("detail-content"), { comparison: result, onMerge: review, previews: branchPreviews });
-      }
-    } catch (error) {
-      if (inline && folder === projectFolder) {
-        reviewInspector.render(inspector);
-        inspector.querySelector("h3").textContent = "Comparison unavailable";
-        inspector.querySelector("p").textContent = `${safeInlineText(error.message, 500) || "The comparison could not be loaded."} Try Compare again.`;
-      }
-      throw error;
-    } finally {
-      if (inline && folder === projectFolder) inspector.setAttribute("aria-busy", "false");
-    }
+    const result = await callHelper("compareBranches", { branch });
+    if (folder !== projectFolder) return;
+    const review = incoming => {
+      if (folder !== projectFolder) return show("The project changed. Compare this branch again.", true);
+      return mergeReview(incoming);
+    };
+    openDetail("Compare branches", "");
+    reviewInspector.render(document.getElementById("detail-content"), { comparison: result, onMerge: review, previews: branchPreviews });
   });
 }
 
@@ -1248,6 +1430,17 @@ function validateHelperResult(operation, value) {
   if (operation === "status") {
     requireHelperText(result.branch, "status.branch", 200);
     requireHelperCount(result.changeCount, "status.changeCount");
+    if (result.unpushed !== undefined) requireHelperCount(result.unpushed, "status.unpushed");
+    if (result.remoteConfigured !== undefined && typeof result.remoteConfigured !== "boolean") throw invalidHelperData("status.remoteConfigured");
+    if (result.currentUser !== undefined && result.currentUser !== null) requireHelperText(result.currentUser, "status.currentUser", 1_024);
+  } else if (operation === "compareVersion") {
+    requireHelperCount(result.changeCount, "compareVersion.changeCount");
+    requireHelperArray(result.changes, "compareVersion.changes", 50_000).forEach((change, index) => {
+      const entry = requireHelperRecord(change, `compareVersion.changes[${index}]`);
+      if (!["document", "structure", "appearance", "text", "content"].includes(entry.domain)) throw invalidHelperData(`compareVersion.changes[${index}].domain`);
+      requireHelperText(entry.layerName, `compareVersion.changes[${index}].layerName`, 1_024, true);
+      requireHelperText(entry.summary, `compareVersion.changes[${index}].summary`, 1_000, true);
+    });
   } else if (operation === "history") {
     requireHelperArray(result.versions, "history.versions", 100).forEach((version, index) => {
       const entry = requireHelperRecord(version, `history.versions[${index}]`);
@@ -1264,6 +1457,8 @@ function validateHelperResult(operation, value) {
       requireHelperText(entry.name, `branches.branches[${index}].name`, 200);
       if (typeof entry.current !== "boolean") throw invalidHelperData(`branches.branches[${index}].current`);
       if (entry.tip !== undefined && (typeof entry.tip !== "string" || (entry.tip !== "" && !/^[a-f0-9]{40,64}$/.test(entry.tip)))) throw invalidHelperData(`branches.branches[${index}].tip`);
+      if (entry.subject !== undefined) requireHelperText(entry.subject, `branches.branches[${index}].subject`, 500, true);
+      if (entry.date !== undefined) requireHelperText(entry.date, `branches.branches[${index}].date`, 64, true);
     });
   } else if (operation === "refresh") {
     if (result.baselineMissing !== undefined && typeof result.baselineMissing !== "boolean") throw invalidHelperData("refresh.baselineMissing");
@@ -1309,6 +1504,7 @@ function validateHelperResult(operation, value) {
     const path = requireHelperText(result.snapshotPath, "openVersion.snapshotPath", 4096);
     if (!/^\.photogit\/recovered\/[A-Za-z0-9._-]+\.psd$/.test(path)) throw invalidHelperData("version path");
   } else if (["versionDetails", "compareBranches"].includes(operation)) {
+    if (operation === "versionDetails" && result.parentVersionId != null && (typeof result.parentVersionId !== "string" || !/^[a-f0-9]{40,64}$/.test(result.parentVersionId))) throw invalidHelperData("parent version ID");
     requireHelperArray(result.files, "version files", 10000).forEach(file => {
       requireHelperRecord(file, "version file");
       requireHelperText(file.path, "version file path", 4096);
@@ -1362,6 +1558,7 @@ function invalidHelperData(label) { return new Error(`The PhotoGit helper return
 async function captureDocument(doc, { check = () => {}, progress = () => {} } = {}) {
   const layers = [];
   const fingerprintTargets = [];
+  const detailTargets = [];
   const pending = Array.from(doc.layers).map((layer, order) => ({ layer, order, parentPhotoshopId: null })).reverse();
   while (pending.length) {
     check();
@@ -1386,22 +1583,56 @@ async function captureDocument(doc, { check = () => {}, progress = () => {} } = 
     // Photoshop refuses direct imaging reads of groups. The document composite
     // below detects their rendered masks/effects without inventing per-layer data.
     if (!kind.includes("group")) fingerprintTargets.push({ layer, capturedLayer });
+    detailTargets.push({ layer, capturedLayer });
     for (let childIndex = children.length - 1; childIndex >= 0; childIndex -= 1) pending.push({ layer: children[childIndex], order: childIndex, parentPhotoshopId: layer.id });
   }
   await panelModel.inBatches(fingerprintTargets, async target => {
-    try { target.capturedLayer.content.fingerprint = await fingerprintLayerPixels(doc, target.layer); }
+    try { target.capturedLayer.content.fingerprint = await fingerprintLayerPixels(doc, target.layer, check); }
     catch (error) {
       if (!target.capturedLayer.content.opaque || !/unsupported layer type/i.test(error.message)) throw error;
       target.capturedLayer.content.reason = "Rendered changes are compared at document level; exact layer data is preserved in the PSD.";
     }
   }, { check, progress, batchSize: 4, yieldTask: () => delay(0) });
   check();
-  const renderedFingerprint = await fingerprintLayerPixels(doc);
+  await captureLayerDetails(doc, detailTargets, check);
+  check();
+  const renderedFingerprint = await fingerprintLayerPixels(doc, undefined, check);
   check();
   return { document: { documentId: String(doc.id), name: doc.name, width: number(doc.width), height: number(doc.height), resolution: number(doc.resolution), mode: normalizeEnum(doc.mode), bitDepth: number(doc.bitsPerChannel, 8), colorProfile: doc.colorProfileName || null, renderedFingerprint }, layers };
 }
 
-async function fingerprintLayerPixels(doc, layer) {
+// Effects, masks, adjustment settings and smart filters are read from each
+// layer's descriptor so an edit to them can be named. This is optional detail:
+// when Photoshop refuses the read, the scan still compares everything else.
+async function captureLayerDetails(doc, targets, check) {
+  for (let offset = 0; offset < targets.length; offset += 200) {
+    check();
+    const batch = targets.slice(offset, offset + 200);
+    let descriptors;
+    try {
+      descriptors = await action.batchPlay(batch.map(target => ({ _obj: "get", _target: [{ _ref: "layer", _id: target.layer.id }, { _ref: "document", _id: doc.id }], _options: { dialogOptions: "dontDisplay" } })), {});
+    } catch (error) {
+      runtimeLog("warn", "layer_details_skipped", { message: error.message || String(error) });
+      return;
+    }
+    for (let index = 0; index < batch.length; index += 1) {
+      const descriptor = descriptors[index];
+      if (!descriptor || typeof descriptor !== "object" || descriptor._obj === "error") continue;
+      const details = layerDetails.extract(descriptor);
+      if (details["mask.present"] === true) {
+        check();
+        try { details["mask.pixels"] = (await fullResolutionFingerprint(doc, batch[index].layer, { left: 0, top: 0, right: number(doc.width), bottom: number(doc.height) }, check, "mask")).absolute; }
+        catch (error) {
+          if (error.name === "StaleScanError") throw error;
+          runtimeLog("warn", "mask_fingerprint_skipped", { layerId: batch[index].layer.id, message: error.message || String(error) });
+        }
+      }
+      batch[index].capturedLayer.content.details = details;
+    }
+  }
+}
+
+async function fingerprintLayerPixels(doc, layer, check = () => {}) {
   const pixelBounds = layer ? bounds(layer.boundsNoEffects || layer.bounds) : { left: 0, top: 0, right: number(doc.width), bottom: number(doc.height) };
   if (pixelBounds.right <= pixelBounds.left || pixelBounds.bottom <= pixelBounds.top) return "pixels-v1:empty";
   let imageData = null;
@@ -1421,13 +1652,64 @@ async function fingerprintLayerPixels(doc, layer) {
     let hash = 0x811c9dc5;
     for (const byte of bytes) hash = Math.imul(hash ^ byte, 0x01000193) >>> 0;
     const dimensions = `${number(imageData.width)}x${number(imageData.height)}x${number(imageData.components)}`;
-    return `pixels-v1:${dimensions}:${hash.toString(16).padStart(8, "0")}`;
+    const sampled = `pixels-v1:${dimensions}:${hash.toString(16).padStart(8, "0")}`;
+    imageData.dispose(); imageData = null;
+    // Keep the old thumbnail digest for comparisons with older saved versions.
+    // New versions also compare every source pixel, without thumbnail scaling.
+    const full = await fullResolutionFingerprint(doc, layer, pixelBounds, check);
+    // The document composite has no position of its own to leave out.
+    return layer ? `${sampled}|full-v2:${full.absolute}|rel-v1:${full.relative}` : `${sampled}|full-v2:${full.absolute}`;
   } catch (error) {
+    if (error.name === "StaleScanError") throw error;
     runtimeLog("warn", "content_fingerprint_skipped", { layerId: layer?.id || null, kind: layer ? normalizeEnum(layer.kind) : "document", message: error.message || String(error) });
     throw new Error(`Could not read pixels for “${layer?.name || doc.name}”. Scan incomplete: ${error.message || String(error)}`);
   } finally {
     try { imageData?.dispose(); } catch { /* Photoshop already released this thumbnail. */ }
   }
+}
+
+// Hashes every source pixel in 512-pixel tiles. "absolute" is the hash older
+// versions saved. "relative" leaves the layer's position out, so a layer that
+// only moved still matches and a move is not mistaken for a pixel edit.
+async function fullResolutionFingerprint(doc, layer, source, check, channel = "pixels") {
+  const region = { left: Math.floor(source.left), top: Math.floor(source.top), right: Math.ceil(source.right), bottom: Math.ceil(source.bottom) };
+  const tileSize = 512;
+  const tiles = Math.ceil((region.right - region.left) / tileSize) * Math.ceil((region.bottom - region.top) / tileSize);
+  if (tiles > 16384) throw new Error("This layer is too large for a full-resolution scan.");
+  let first = 0x811c9dc5, second = 0x9e3779b9, third = 0x811c9dc5, fourth = 0x9e3779b9, completed = 0;
+  const absolute = value => { for (const char of JSON.stringify(value)) { const code = char.charCodeAt(0); first = Math.imul(first ^ code, 0x01000193) >>> 0; second = Math.imul(second ^ code, 0x85ebca6b) >>> 0; } };
+  const relative = value => { for (const char of JSON.stringify(value)) { const code = char.charCodeAt(0); third = Math.imul(third ^ code, 0x01000193) >>> 0; fourth = Math.imul(fourth ^ code, 0x85ebca6b) >>> 0; } };
+  const shifted = box => ({ left: box.left - region.left, top: box.top - region.top, right: box.right - region.left, bottom: box.bottom - region.top });
+  absolute(region);
+  relative(shifted(region));
+  for (let top = region.top; top < region.bottom; top += tileSize) {
+    for (let left = region.left; left < region.right; left += tileSize) {
+      check();
+      const sourceBounds = { left, top, right: Math.min(left + tileSize, region.right), bottom: Math.min(top + tileSize, region.bottom) };
+      let imageData;
+      try {
+        const pixels = channel === "mask"
+          ? await imaging.getLayerMask({ documentID: doc.id, layerID: layer.id, kind: "user", sourceBounds })
+          : await imaging.getPixels({ documentID: doc.id, ...(layer ? { layerID: layer.id } : {}), sourceBounds, componentSize: -1, applyAlpha: false });
+        imageData = pixels.imageData;
+        check();
+        if (pixels.level != null && pixels.level !== 0) throw new Error("Photoshop returned a reduced-resolution pixel buffer.");
+        const data = await imageData.getData({ chunky: true });
+        check();
+        const returned = pixels.sourceBounds || sourceBounds;
+        const shape = [imageData.width, imageData.height, imageData.components, imageData.componentSize];
+        absolute([sourceBounds, returned, ...shape]);
+        relative([shifted(sourceBounds), shifted(returned), ...shape]);
+        for (const byte of new Uint8Array(data.buffer, data.byteOffset, data.byteLength)) {
+          first = Math.imul(first ^ byte, 0x01000193) >>> 0; second = Math.imul(second ^ byte, 0x85ebca6b) >>> 0;
+          third = Math.imul(third ^ byte, 0x01000193) >>> 0; fourth = Math.imul(fourth ^ byte, 0x85ebca6b) >>> 0;
+        }
+      } finally { try { imageData?.dispose(); } catch { /* Already released by Photoshop. */ } }
+      if (++completed % 4 === 0) { await delay(0); check(); }
+    }
+  }
+  const hex = (high, low) => high.toString(16).padStart(8, "0") + low.toString(16).padStart(8, "0");
+  return { absolute: hex(first, second), relative: hex(third, fourth) };
 }
 
 function renderChanges(changes, { baselineMissing = false, changeCount = changes.length, warnings = [] } = {}) {
@@ -1445,44 +1727,22 @@ function renderChanges(changes, { baselineMissing = false, changeCount = changes
       : warnings.length ? "No layer changes · Review scan limits" : "No detected changes";
   restartAnimation(document.getElementById("last-scan"));
   document.getElementById("last-scan").textContent = `Scanned ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} · Updates automatically${warnings.length ? `\n${warnings.join("\n")}` : ""}`;
+  document.querySelector("#save-version span").textContent = changeCount && !baselineMissing ? `Save version · ${changeCount} ${changeCount === 1 ? "edit" : "edits"}` : baselineMissing ? "Save first version" : "Save version";
   empty.hidden = changes.length > 0;
-  renderChangeTally(changes);
-  for (const change of changes.slice(0, MAX_VISIBLE_CHANGES)) {
-    const row = document.createElement("div");
-    row.className = "list-row change-row";
-    row.dataset.domain = change.domain;
-    const selectable = Boolean(change.photoshopId) && change.domain !== "document" && change.category !== "removed";
-    if (selectable) {
-      row.tabIndex = 0;
-      row.setAttribute("role", "button");
-      row.setAttribute("aria-pressed", "false");
-      row.setAttribute("aria-label", `Select changed layer ${change.layerName}, Photoshop layer ${change.photoshopId}. ${changeSummary(change)}`);
-    }
-    const identityLabel = change.domain === "document" ? "" : `Layer ${change.photoshopId ? `#${change.photoshopId}` : "ID unavailable"}`;
-    // Written as ternaries over literals rather than a lookup, so the two
-    // values that land in markup are constants by inspection and not merely
-    // constants in practice.
-    const category = change.category === "added" ? "added" : change.category === "removed" ? "removed" : "modified";
-    const status = category === "added" ? "Added" : category === "removed" ? "Removed" : "Modified";
-    row.innerHTML = `<span class="row-glyph ${domainClass(change.domain)}" aria-hidden="true">${domainIcon(change.domain)}</span><span class="row-copy"><strong>${escapeHtml(change.layerName)}</strong><span class="layer-identity">${escapeHtml(identityLabel)}</span><span class="change-detail">${escapeHtml(changeSummary(change))}</span></span><span class="change-domain"><span class="change-state ${category}">${status}</span><span class="change-kind">${escapeHtml(change.domain)}</span></span>`;
-    const select = () => {
-      if (!selectable) return;
-      if (!app.documents.length || app.activeDocument.id !== changesDocumentId) return show("The active document changed. Scan it before selecting a layer.", true);
-      container.querySelectorAll(".change-row.selected").forEach((entry) => {
-        entry.classList.remove("selected");
-        entry.setAttribute("aria-pressed", "false");
-      });
-      row.classList.add("selected");
-      row.setAttribute("aria-pressed", "true");
-      selectPhotoshopLayer(change.photoshopId);
-    };
-    row.addEventListener("click", select);
-    row.addEventListener("keydown", (event) => {
-      if (event.key !== "Enter" && event.key !== " ") return;
-      event.preventDefault();
-      select();
-    });
-    container.appendChild(row);
+  setChangesEmpty(baselineMissing ? "Nothing saved yet" : "No unsaved edits", baselineMissing ? "Save a first version to start tracking edits." : "This document matches the last saved version. Edits appear here as you make them.");
+  // Document-wide edits come first under their own header, then the layers,
+  // top of the stack first. The counts beside the headers are filled in by
+  // the filter, which knows how many rows are showing.
+  const listed = changes.slice(0, MAX_VISIBLE_CHANGES);
+  for (const group of ["document", "layers"]) {
+    const rows = listed.filter(change => (change.domain === "document") === (group === "document"));
+    if (!rows.length) continue;
+    const header = document.createElement("div");
+    header.className = "list-section change-section";
+    header.dataset.group = group;
+    header.innerHTML = group === "document" ? '<span>DOCUMENT</span><span class="section-count"></span>' : '<span>LAYERS</span><span class="section-count"></span>';
+    container.appendChild(header);
+    for (const change of rows) container.appendChild(changeRow(change, group, changesDocumentId));
   }
   // Decoration over a list that is already complete and already interactive.
   // Absent module, absent stagger, identical list.
@@ -1495,6 +1755,85 @@ function renderChanges(changes, { baselineMissing = false, changeCount = changes
     container.appendChild(note);
   }
   workspaceUI.refreshChanges(document);
+}
+
+// One edit: a marker tile, the layer (or document setting), what changed,
+// and either the before → after value or the kind of edit.
+function changeRow(change, group, changesDocumentId) {
+  const container = document.getElementById("changes");
+  const row = document.createElement("div");
+  row.dataset.domain = change.domain;
+  row.dataset.group = group;
+  // Rows for one layer follow each other; the layer is named on the first
+  // and the rows after it read as that layer's list of edits.
+  row.dataset.layer = group === "document" ? `document:${change.propertyPath || ""}` : String(change.photoshopId || change.layerName);
+  const selectable = Boolean(change.photoshopId) && group !== "document" && change.category !== "removed";
+  // Written as ternaries over literals rather than a lookup, so the values
+  // that land in markup are constants by inspection and not merely
+  // constants in practice.
+  const category = change.category === "added" ? "added" : change.category === "removed" ? "removed" : "edited";
+  const sign = category === "added" ? "+" : category === "removed" ? "−" : "~";
+  const area = change.domain === "structure" ? "Structure" : change.domain === "text" ? "Text" : "Visual";
+  row.className = `list-row change-row${category === "removed" ? " is-removed" : ""}`;
+  const fact = documentFact(change);
+  const kind = safeInlineText(change.layerKind || "layer", 80);
+  const name = fact ? fact.name : change.layerName;
+  const detail = fact ? "" : category === "added" ? `${kind.charAt(0).toUpperCase()}${kind.slice(1)} added` : category === "removed" ? `${kind.charAt(0).toUpperCase()}${kind.slice(1)} removed` : changeSummary(change);
+  row.innerHTML = `<span class="marker ${category}" aria-hidden="true">${sign}</span><span class="row-copy"><strong class="change-name">${escapeHtml(name)}</strong><span class="change-detail">${escapeHtml(detail)}</span></span>${fact ? `<span class="change-value">${escapeHtml(fact.value)}</span>` : `<span class="change-kind">${area}</span>`}`;
+  if (!detail) row.querySelector(".change-detail").remove();
+  const identity = group === "document" ? "" : `${kind.charAt(0).toUpperCase()}${kind.slice(1)}${change.photoshopId ? ` #${change.photoshopId}` : ""}`;
+  if (identity) row.setAttribute("title", identity);
+  if (selectable) {
+    row.tabIndex = 0;
+    row.setAttribute("role", "button");
+    row.setAttribute("aria-pressed", "false");
+    row.setAttribute("aria-label", `Select changed layer ${change.layerName}, Photoshop layer ${change.photoshopId}. ${changeSummary(change)}`);
+  }
+  const select = () => {
+    if (!selectable) return;
+    if (!app.documents.length || app.activeDocument.id !== changesDocumentId) return show("The active document changed. Scan it before selecting a layer.", true);
+    container.querySelectorAll(".change-row.selected").forEach((entry) => {
+      entry.classList.remove("selected");
+      entry.setAttribute("aria-pressed", "false");
+    });
+    row.classList.add("selected");
+    row.setAttribute("aria-pressed", "true");
+    selectPhotoshopLayer(change.photoshopId);
+  };
+  row.addEventListener("click", select);
+  row.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    select();
+  });
+  return row;
+}
+
+// A document setting reads as its name and a before → after value.
+function documentFact(change) {
+  if (change.domain !== "document") return null;
+  const pair = (before, after, unit) => `${before} → ${after}${unit}`;
+  const whole = value => Number.isFinite(Number(value)) ? String(Number(Number(value).toFixed(2))) : safeInlineText(value ?? "none", 60);
+  if (change.propertyPath === "width") return { name: "Canvas width", value: pair(whole(change.baseValue), whole(change.currentValue), " px") };
+  if (change.propertyPath === "height") return { name: "Canvas height", value: pair(whole(change.baseValue), whole(change.currentValue), " px") };
+  if (change.propertyPath === "resolution") return { name: "Resolution", value: pair(whole(change.baseValue), whole(change.currentValue), " ppi") };
+  if (change.propertyPath === "bitDepth") return { name: "Bit depth", value: pair(whole(change.baseValue), whole(change.currentValue), "-bit") };
+  if (change.propertyPath === "mode") return { name: "Color mode", value: pair(colorModeLabel(change.baseValue), colorModeLabel(change.currentValue), "") };
+  if (change.propertyPath === "colorProfile") return { name: "Color profile", value: pair(whole(change.baseValue), whole(change.currentValue), "") };
+  return null;
+}
+
+// Photoshop names the mode "rgbColorMode"; a designer calls it RGB.
+function colorModeLabel(mode) {
+  const key = String(mode ?? "").toLowerCase().replace(/(?:color)?mode$/, "");
+  const known = { rgb: "RGB", cmyk: "CMYK", lab: "Lab", grayscale: "Grayscale", bitmap: "Bitmap", indexedcolor: "Indexed Color", multichannel: "Multichannel", duotone: "Duotone" };
+  return known[key] || safeInlineText(mode, 40);
+}
+
+function setChangesEmpty(title, copy) {
+  const empty = document.getElementById("changes-empty");
+  empty.querySelector("strong").textContent = title;
+  empty.querySelector("p").textContent = copy;
 }
 
 function changeSummary(change) {
@@ -1638,33 +1977,48 @@ async function executeCommand(input) {
 
 function selectTab(name, animate = true) {
   closeToolsMenu();
+  // A press both focuses a tab and clicks it; the screen it is already
+  // showing does not arrive a second time.
+  if (animate && document.getElementById("workspace").dataset.view === name && !document.getElementById(`${name}-view`)?.hidden) animate = false;
   if (!projectFolder || !helperToken) {
     document.getElementById("workspace").hidden = name !== "docs";
     document.getElementById("onboarding").hidden = name === "docs";
   }
   let target = null;
-  for (const section of SECTIONS) {
-    const active = section === name;
-    const view = document.getElementById(`${section}-view`);
-    view.hidden = !active;
-    if (active) target = view;
-    const tab = document.getElementById(`${section}-tab`);
-    tab.classList.toggle("active", active);
-    tab.setAttribute("aria-selected", active ? "true" : "false");
-    tab.tabIndex = active ? 0 : -1;
-  }
+  const motion = animate ? globalThis.PhotoGitMotion : null;
+  const choose = () => {
+    for (const section of SECTIONS) {
+      const active = section === name;
+      const view = document.getElementById(`${section}-view`);
+      view.hidden = !active;
+      if (active) target = view;
+      const tab = document.getElementById(`${section}-tab`);
+      tab.classList.toggle("active", active);
+      tab.setAttribute("aria-selected", active ? "true" : "false");
+      tab.tabIndex = active ? 0 : -1;
+    }
+  };
+  // The old screen goes at once; the tabs ease between their two states.
+  if (motion && typeof motion.recolour === "function") motion.recolour(document.querySelectorAll("#section-nav .nav-item:not([hidden])"), choose);
+  else choose();
   try { localStorage.setItem("photogit.section", name); } catch { /* Session only. */ }
+  // The stylesheet uses the active section to decide which pane scrolls.
+  document.getElementById("workspace").dataset.view = name;
+  applyShellState();
+  placeTabIndicator();
   if (!animate || !target) return;
-  document.body.scrollTop = 0;
-  globalThis.PhotoGitMotion?.enter(target);
+  const scroller = document.getElementById("view-scroll");
+  if (scroller && scroller.scrollTop) scroller.scrollTop = 0;
+  globalThis.PhotoGitMotion?.screen(target);
 }
 
 async function run(label, action) {
   if (busyNow) return show("PhotoGit is busy. Try again in a moment.", false);
+  const resumeScanning = Boolean(scans.running || autoScanTimer);
   busy(true);
   workspaceGeneration += 1;
   try {
-    await cancelScan();
+    await cancelScan(false);
     show(label, false);
     await action();
   }
@@ -1676,7 +2030,10 @@ async function run(label, action) {
       openDetail("Repository recovery needed", `${error.message}\n${error.details.outcomeUnknown ? "The final state is not confirmed." : "The Git operation changed the repository."} Check project information and history before retrying.`, "View history", () => { closeDetail(); selectTab("history"); });
     }
   }
-  finally { busy(false); }
+  finally {
+    busy(false);
+    if (resumeScanning) queueAutomaticScan("operation-finished", 250);
+  }
 }
 
 function ensureReady() {
@@ -1835,7 +2192,7 @@ function textStyleFingerprint(textItem) {
         color
       },
       paragraph: {
-        alignment: readStyleValue(paragraph, "alignment"),
+        alignment: readStyleValue(paragraph, "justification"),
         direction: readStyleValue(paragraph, "direction"),
         firstLineIndent: readStyleNumber(paragraph, "firstLineIndent"),
         leftIndent: readStyleNumber(paragraph, "leftIndent"),
@@ -1877,7 +2234,7 @@ function setHelper(label, ok) {
   // it clears here rather than waiting for the next message to replace it.
   if (ok) {
     const result = document.getElementById("result");
-    if (result.classList.contains("error") && /helper|background service|not responding|connection lost/i.test(result.textContent)) { result.textContent = ""; result.className = "status-message"; }
+    if (result.classList.contains("error") && /helper|background service|not responding|connection lost/i.test(result.textContent)) { result.textContent = ""; result.className = "status-message"; syncToast(); }
   }
   const notice = document.getElementById("connection-notice");
   notice.hidden = ok || !projectFolder;
@@ -1888,12 +2245,6 @@ function setHelper(label, ok) {
   // Below 360px only the dot is visible; the title carries the label there.
   element.setAttribute("title", label);
   document.getElementById("repo-sync-status").textContent = label;
-  // The rail footer mirrors the same real state; it never reports its own.
-  const railLabel = document.getElementById("rail-sync-label");
-  if (railLabel) {
-    railLabel.textContent = label;
-    document.getElementById("rail-sync").className = `rail-sync ${ok ? "ok" : "warning"}`;
-  }
 }
 function busy(active) {
   busyNow = active;
@@ -1901,22 +2252,36 @@ function busy(active) {
   document.getElementById("workspace").setAttribute("aria-busy", active ? "true" : "false");
   document.getElementById("progress").hidden = !active;
   document.querySelector(".capture-panel").classList.toggle("is-busy", active);
-  for (const id of ["save-version", "jump-save", "rescan", "pull", "push", "show-status", "new-branch", "new-pull-request", "create-tag", "tools-toggle", "header-menu"]) {
+  // The control that started the work shows it at once, and until it ends.
+  for (const control of document.querySelectorAll(".is-working")) { control.classList.remove("is-working"); control.removeAttribute("aria-busy"); }
+  // The host moves focus a moment after the press, so the press itself is
+  // what identifies the control.
+  const origin = active && pressedControl && Date.now() - pressedAt < 1500 && pressedControl.isConnected !== false ? pressedControl : null;
+  if (origin) { origin.classList.add("is-working"); origin.setAttribute("aria-busy", "true"); }
+  for (const id of ["save-version", "new-branch", "new-pull-request", "create-tag", "header-menu"]) {
     const control = document.getElementById(id);
     control.setAttribute("aria-disabled", active ? "true" : "false");
     control.tabIndex = active ? -1 : 0;
   }
   // A menu item keeps its roving tabindex; only its availability changes.
-  document.getElementById("refresh").setAttribute("aria-disabled", active ? "true" : "false");
-  for (const id of ["message", "new-branch-name", "tag-name", "branch-picker"]) document.getElementById(id).disabled = active;
-  for (const control of document.querySelectorAll("[data-message-preset],.branch-switch,.version-inspector-open,.comparison-merge")) {
+  renderPushState();
+  for (const id of ["refresh", "rescan", "show-status"]) document.getElementById(id).setAttribute("aria-disabled", active ? "true" : "false");
+  for (const id of ["message", "new-branch-name", "tag-name"]) document.getElementById(id).disabled = active;
+  for (const control of document.querySelectorAll("[data-message-preset],.branch-row.is-switchable,.history-actions .button,.review-toggle")) {
     control.setAttribute("aria-disabled", String(active)); control.tabIndex = active ? -1 : 0;
   }
-  for (const control of document.querySelectorAll(".merge-action")) {
-    const disabled = active || control.dataset.mergeable !== "true";
+  // A merge that conflicts stand in the way of stays unavailable when the
+  // panel stops being busy.
+  for (const control of document.querySelectorAll(".comparison-merge")) {
+    const disabled = active || control.dataset.mergeable === "false";
     control.setAttribute("aria-disabled", disabled ? "true" : "false");
     control.tabIndex = disabled ? -1 : 0;
   }
+}
+// Photoshop draws a text field above anything laid over it, so while the
+// status line is up the search field beneath it is not drawn.
+function syncToast() {
+  document.body.classList.toggle("has-toast", document.getElementById("result").textContent !== "");
 }
 function show(message, error) {
   const safeMessage = safeInlineText(message, 800) || (error ? "PhotoGit could not complete that action." : "Done.");
@@ -1924,17 +2289,19 @@ function show(message, error) {
   restartAnimation(result);
   result.textContent = safeMessage;
   result.className = error ? "status-message error" : "status-message success";
+  syncToast();
+  // The result of a press arrives the way a screen does.
+  globalThis.PhotoGitMotion?.enter(result);
   // An error interrupts; a success waits its turn.
   result.setAttribute("role", error ? "alert" : "status");
   // A success message clears itself once read; an error stays until replaced.
   clearTimeout(resultTimer);
   resultTimer = setTimeout(() => {
     if (error || busyNow || result.textContent !== safeMessage) return;
-    // A success leaves on the closing fade, then clears; an error stays.
-    result.classList.add("is-leaving");
-    resultTimer = setTimeout(() => {
-      if (result.textContent === safeMessage) { result.textContent = ""; result.classList.remove("is-leaving"); }
-    }, 200);
+    // A success fades out, then clears; an error stays.
+    const clear = () => { if (result.textContent === safeMessage) result.textContent = ""; syncToast(); };
+    const motion = globalThis.PhotoGitMotion;
+    if (motion && typeof motion.exit === "function") motion.exit(result, clear); else clear();
   }, error ? 5200 : 3200);
 }
 // Replays an element's CSS animation so a value replacing another reads as
@@ -1953,62 +2320,17 @@ function restartAnimation(element) {
   element.style.animation = "";
 }
 function log(message) {
-  const activity = document.getElementById("activity");
-  const now = new Date();
-  const stamp = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  if (activity.textContent === "Ready.") activity.textContent = "";
-  document.getElementById("clear-activity").setAttribute("aria-disabled", "false");
   const text = safeInlineText(message, 2_000);
-  const scanEvent = /^(Captured \d+ Photoshop layer|\d+ semantic edits found|Ready to save the first version|\d+ project file change\(s\) detected)/.test(text);
-  if (scanEvent) {
-    let group = activity.firstElementChild;
-    if (!group || !group.classList.contains("activity-scan")) {
-      group = document.createElement("div"); group.className = "activity-row activity-scan";
-      const toggle = document.createElement("div"); toggle.className = "text-link";
-      toggle.setAttribute("role", "button"); toggle.tabIndex = 0; toggle.setAttribute("aria-expanded", "false");
-      const details = document.createElement("p"); details.hidden = true;
-      const expand = () => { details.hidden = !details.hidden; toggle.setAttribute("aria-expanded", String(!details.hidden)); };
-      toggle.addEventListener("click", expand); activateOnKeyboard(toggle, expand);
-      group.appendChild(toggle); group.appendChild(details); activity.insertBefore(group, activity.firstChild);
-    }
-    // Keep the same bounded session history as the surrounding activity feed.
-    const entries = (group.lastElementChild.textContent || "").split("\n").filter(Boolean);
-    entries.push(`[${stamp}] ${text}`);
-    group.lastElementChild.textContent = entries.slice(-50).join("\n");
-    group.firstElementChild.textContent = `[${stamp}] Change detection · ${entries.slice(-50).length} recent events — details`;
-    while (activity.children.length > 50) activity.lastElementChild.remove();
-    activityEntryCount += 1; setCount("activity-count", activityEntryCount); return;
-  }
-  const row = document.createElement("div"); row.className = "activity-row";
-  const summary = document.createElement("div"); summary.className = "activity-summary";
-  const icon = document.createElement("span"); icon.className = "activity-icon"; icon.setAttribute("aria-hidden", "true");
-  const errorEvent = /error|failed|timed out|blocked|unavailable/i.test(text);
-  icon.textContent = errorEvent ? "!" : "·"; icon.classList.toggle("error", errorEvent);
-  const time = document.createElement("time"); time.className = "activity-time"; time.setAttribute("datetime", now.toISOString()); time.setAttribute("title", now.toLocaleString()); time.textContent = `[${stamp}] `;
-  const copy = document.createElement("span"); copy.className = "activity-copy";
-  copy.textContent = text.length > 160 ? text.slice(0, 160) + "…" : text;
-  summary.appendChild(icon); summary.appendChild(time); summary.appendChild(copy);
-  row.appendChild(summary);
-  if (text.length > 160) {
-    const toggle = document.createElement("div"); toggle.className = "text-link";
-    toggle.setAttribute("role", "button"); toggle.tabIndex = 0;
-    toggle.setAttribute("aria-expanded", "false"); toggle.textContent = "Show details";
-    const details = document.createElement("p"); details.hidden = true; details.textContent = text;
-    const expand = () => { details.hidden = !details.hidden; toggle.setAttribute("aria-expanded", String(!details.hidden)); toggle.textContent = details.hidden ? "Show details" : "Hide details"; };
-    toggle.addEventListener("click", expand);
-    toggle.addEventListener("keydown", event => { if (["Enter", " "].includes(event.key)) { event.preventDefault(); expand(); } });
-    row.appendChild(toggle); row.appendChild(details);
-  }
-  activity.insertBefore(row, activity.firstChild);
-  while (activity.children.length > 50) activity.lastElementChild.remove();
+  const entry = activityView.log(document.getElementById("activity"), text);
+  document.getElementById("clear-activity").setAttribute("aria-disabled", "false");
   // A new event eases up into the top of the feed; the rows below hold.
   const reveal = globalThis.PhotoGitReveal;
-  if (reveal && typeof reveal.stagger === "function") reveal.stagger([row]);
+  if (!activityView.isScanEvent(text) && reveal && typeof reveal.stagger === "function") reveal.stagger([entry]);
   activityEntryCount += 1;
   setCount("activity-count", activityEntryCount);
 }
 function clearActivity() {
-  document.getElementById("activity").textContent = "Ready.";
+  activityView.clear(document.getElementById("activity"));
   document.getElementById("clear-activity").setAttribute("aria-disabled", "true");
   activityEntryCount = 0;
   setCount("activity-count", 0);
@@ -2032,20 +2354,6 @@ function safeInlineText(value, maximum) {
   const safe = String(value ?? "").replace(/[\u0000-\u001f\u007f-\u009f\u202a-\u202e\u2066-\u2069]/g, " ").replace(/\s+/g, " ").trim();
   return safe.length <= maximum ? safe : `${safe.slice(0, maximum - 1)}…`;
 }
-function domainClass(domain) {
-  const value = String(domain || "").toLowerCase();
-  if (value.includes("text")) return "text";
-  if (value.includes("appearance") || value.includes("style")) return "appearance";
-  if (value.includes("structure") || value.includes("layer")) return "structure";
-  return "content";
-}
-function domainIcon(domain) {
-  const type = domainClass(domain);
-  if (type === "text") return '<svg viewBox="0 0 24 24"><path d="M5 6h14M12 6v13m-4 0h8"/></svg>';
-  if (type === "appearance") return '<svg viewBox="0 0 24 24"><path d="M12 4c4.4 0 8 3.1 8 7 0 3-2.2 4-4 4h-1.2c-.9 0-1.4 1-.9 1.8.8 1.3-.2 3.2-2.3 3.2C7.4 20 4 16.4 4 12s3.6-8 8-8Z"/><circle cx="8" cy="10" r=".8"/><circle cx="11" cy="7.5" r=".8"/><circle cx="15" cy="8.5" r=".8"/></svg>';
-  if (type === "structure") return '<svg viewBox="0 0 24 24"><path d="m12 4 8 4-8 4-8-4 8-4Z"/><path d="m4 12 8 4 8-4m-16 4 8 4 8-4"/></svg>';
-  return '<svg viewBox="0 0 24 24"><path d="M4 6h16v12H4z"/><path d="m4 15 4-4 3 3 3-3 6 5"/></svg>';
-}
 function historyIcon() {
-  return '<svg viewBox="0 0 24 24"><path d="M12 7v5l3 2"/><circle cx="12" cy="12" r="8"/></svg>';
+  return '<svg viewBox="0 0 24 24"><path d="m12 4 8 4-8 4-8-4 8-4Z"/><path d="m4 12 8 4 8-4m-16 4 8 4 8-4"/></svg>';
 }

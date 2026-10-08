@@ -86,9 +86,29 @@ describe("desktop helper Photoshop refresh flow", () => {
     expect(refreshed.result.changes).toEqual(expect.arrayContaining([
       expect.objectContaining({ domain: "structure", layerName: "Hero revised", propertyPath: "name" }),
       expect.objectContaining({ domain: "appearance", layerName: "Hero revised", propertyPath: "opacity", currentValue: 72 }),
-      expect.objectContaining({ domain: "text", layerName: "Hero revised", propertyPath: "contents", currentValue: "A clearer headline" }),
-      expect.objectContaining({ domain: "content", layerName: "Hero revised", propertyPath: "fingerprint" })
+      expect.objectContaining({ domain: "text", layerName: "Hero revised", propertyPath: "contents", currentValue: "A clearer headline", summary: expect.stringMatching(/^Hero revised: Text changed from “.*” to “A clearer headline”$/) })
     ]));
+
+    // Any saved version can be compared with the open document, not only
+    // the latest: against the baseline every edit shows, against itself none.
+    const baselineId = (await execute("git", ["rev-parse", "HEAD"], { cwd: projectRoot })).stdout.trim();
+    await writeFile(capturePath, JSON.stringify(edited));
+    await execute(process.execPath, [cliEntry, "save", "--capture", capturePath, "-m", "Revised hero"], { cwd: projectRoot });
+    const againstBaseline = await request(port, token, projectRoot, "compareVersion", { version: baselineId, capture: edited, documentIdentity });
+    expect(againstBaseline).toMatchObject({ ok: true, result: { version: baselineId } });
+    expect(againstBaseline.result.changes.map((change: Record<string, unknown>) => change.propertyPath)).toEqual(expect.arrayContaining(["name", "opacity", "contents"]));
+    expect(await request(port, token, projectRoot, "compareVersion", { version: "HEAD", capture: edited, documentIdentity })).toMatchObject({ ok: true, result: { changeCount: 0 } });
+
+    // Status says how many saved versions Push would send, and who is saving.
+    expect(await request(port, token, projectRoot, "status", {})).toMatchObject({ ok: true, result: { remoteConfigured: false, unpushed: 0, currentUser: "PhotoGit Test" } });
+    const remote = join(parent, "remote.git");
+    await execute("git", ["init", "--bare", remote]);
+    await execute("git", ["remote", "add", "origin", remote], { cwd: projectRoot });
+    expect(await request(port, token, projectRoot, "status", {})).toMatchObject({ ok: true, result: { remoteConfigured: true, upstream: null, unpushed: 2 } });
+    await execute("git", ["push", "--set-upstream", "origin", "HEAD"], { cwd: projectRoot });
+    expect(await request(port, token, projectRoot, "status", {})).toMatchObject({ ok: true, result: { unpushed: 0 } });
+    await execute("git", ["commit", "--allow-empty", "-m", "Local only"], { cwd: projectRoot });
+    expect(await request(port, token, projectRoot, "status", {})).toMatchObject({ ok: true, result: { unpushed: 1 } });
   }, 15_000);
 });
 

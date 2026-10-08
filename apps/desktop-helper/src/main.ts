@@ -8,7 +8,7 @@ import { GitRepository, isWithinRealRoot } from "@photogit/git-engine";
 import { DEFAULT_HELPER_PORT, MAX_REQUEST_BYTES, parseHelperRequest, PROTOCOL_VERSION, validateDocumentIdentity, type BranchOperationResult, type SaveVersionResult, type DocumentIdentity, type HelperRequest, type HelperResponse } from "@photogit/protocol";
 import { validateProjectMetadata, type DocumentCapture, type ProjectMetadata, type ProjectState } from "@photogit/schema";
 import { canonicalJson, stateFromCapture } from "@photogit/serializer";
-import { diffStates, type SemanticChange } from "@photogit/differ";
+import { diffStates, layerKindLabel, type SemanticChange } from "@photogit/differ";
 import { assertHelperArguments, isLoopbackHost, parseHelperConfig, publicRepositoryInfo, safeErrorText, secureWrite, type HelperConfig } from "./security.js";
 import { acquireConfigLock } from "./config-lock.js";
 import { drainBridgeRoot, ensureBridgeFolders, readBoundedText, tokensMatch } from "./bridge.js";
@@ -88,8 +88,8 @@ async function executeRequest(payload: HelperRequest, helperConfig: HelperConfig
   if (!approved.some(Boolean)) throw coded("ROOT_NOT_APPROVED", "This project folder has not been approved in the PhotoGit helper.");
   const repository = new GitRepository(projectRoot);
   if (payload.operation === "status") {
-    const [branch, changes] = await Promise.all([repository.currentBranch(), repository.status()]);
-    return { branch, changeCount: changes.length, documentBinding: await readDocumentBinding(projectRoot), baselineMissing: await repository.readStateAt() === null };
+    const [branch, changes, sync] = await Promise.all([repository.currentBranch(), repository.status(), repository.syncState()]);
+    return { branch, changeCount: changes.length, documentBinding: await readDocumentBinding(projectRoot), baselineMissing: await repository.readStateAt() === null, ...sync };
   }
   if (payload.operation === "history") return { versions: await repository.history(40) };
   if (payload.operation === "versionDetails") return boundedComparison(await repository.versionDetails(payload.version!));
@@ -110,6 +110,18 @@ async function executeRequest(payload: HelperRequest, helperConfig: HelperConfig
     await saveDocumentBinding(projectRoot, identity);
     return { outcome: "success", documentBinding: identity, binding: identity };
   }
+  // The open document against any saved version, not only the latest: what
+  // would change if that version were restored, stated edit by edit.
+  if (payload.operation === "compareVersion") {
+    const head = await repository.readStateAt();
+    const version = await repository.readStateAt(payload.version!);
+    if (!version) throw coded("VERSION_NOT_FOUND", "That saved version has no PhotoGit state to compare with.");
+    await assertDocumentConnection(projectRoot, payload.documentIdentity, payload.capture!.document, head, false);
+    const current = stateFromCapture(projectCapture(payload.capture!, payload.documentIdentity, head, projectRoot), version.project, randomUUID, head?.identities.records ?? version.identities.records);
+    const changes = diffStates(version, current);
+    log("info", { event: "compare_version_complete", requestId: payload.requestId, changeCount: changes.length });
+    return { ...boundedChanges(changes), version: payload.version };
+  }
   if (payload.operation === "refresh") {
     const base = await repository.readStateAt();
     await assertDocumentConnection(projectRoot, payload.documentIdentity, payload.capture!.document, base, false);
@@ -120,6 +132,7 @@ async function executeRequest(payload: HelperRequest, helperConfig: HelperConfig
     const comparisonWarnings: string[] = [];
     if (base && !current.document.renderedFingerprint) comparisonWarnings.push("This scan did not include document-wide rendered comparison. Update or reload the PhotoGit panel, then scan again to compare group effects and masks.");
     else if (base && !base.document.renderedFingerprint) comparisonWarnings.push("This version predates document-wide rendered comparison. Save a version to enable group effects and mask comparison.");
+    else if (base && current.document.renderedFingerprint?.includes("|full-v2:") && !base.document.renderedFingerprint?.includes("|full-v2:")) comparisonWarnings.push("This saved version uses thumbnail comparison, which can miss small brush or eraser edits. Save a new version to establish full-resolution pixel tracking.");
     log("info", { event: "refresh_complete", requestId: payload.requestId, capturedLayerCount: payload.capture!.layers.length, changeCount: changes.length });
     return { ...boundedChanges(changes), baselineMissing: base === null, baseline: "HEAD", comparisonWarnings };
   }
@@ -203,10 +216,11 @@ function firstCheckpointChanges(state: ProjectState): SemanticChange[] {
       layerUuid: layer.uuid,
       photoshopId: layer.photoshopId,
       layerName,
+      layerKind: layerKindLabel(layer.kind),
       propertyPath: "layer",
       baseValue: null,
       currentValue: { name: layerName, kind: layer.kind },
-      summary: inlineText(`Ready to track ${JSON.stringify(layerName)}`, 1_000),
+      summary: inlineText(`Ready to track this ${layerKindLabel(layer.kind)}`, 1_000),
       mergeability: "automatic",
       confidence: 1,
       warnings: []

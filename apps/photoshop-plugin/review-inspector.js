@@ -16,6 +16,12 @@ function facts(document, parent, entries) {
     append(document, row, "dd", "", value);
   }
 }
+// The layer is named beside the edit, so the edit does not repeat it.
+function editText(change) {
+  const summary = text(change?.summary, "Edit details not recorded");
+  const prefix = `${text(change?.layerName).trim()}:`;
+  return prefix.length > 1 && summary.toLowerCase().startsWith(prefix.toLowerCase()) ? summary.slice(prefix.length).trim() || summary : summary;
+}
 function count(value) { return Number.isSafeInteger(value) && value >= 0 ? value : "Not available"; }
 
 // Same rule as the other preview surfaces: helper-decoded base64 raster only.
@@ -32,8 +38,8 @@ function render(container, { comparison, onMerge, previews } = {}) {
   container.setAttribute("aria-label", "Branch comparison");
   container.dataset.mergeable = "false";
   if (!comparison) {
-    append(document, container, "h3", "", "Compare design directions");
-    append(document, container, "p", "fine-print", "Choose a branch review to inspect the incoming changes and merge safeguards.");
+    append(document, container, "h3", "", "Compare branches");
+    append(document, container, "p", "fine-print", "Select a branch to see what it would bring in.");
     return container;
   }
   const incoming = text(comparison.incomingBranch);
@@ -93,7 +99,7 @@ function render(container, { comparison, onMerge, previews } = {}) {
     for (const change of changes.slice(0, 100)) {
       const item = append(document, list, "li", "");
       if (text(change?.layerName)) append(document, item, "strong", "", change.layerName);
-      append(document, item, "p", "", text(change?.summary, "Edit details not recorded"));
+      append(document, item, "p", "", editText(change));
     }
     if (changes.length > 100) append(document, edits, "p", "comparison-limit fine-print", `Showing the first 100 of ${changes.length} recorded edits. The comparison includes all edits, not only this displayed list.`);
   } else append(document, edits, "p", "fine-print", "No layer changes were recorded. Check the changed files and notes before combining.");
@@ -147,6 +153,147 @@ function render(container, { comparison, onMerge, previews } = {}) {
   if (reveal && typeof reveal.stagger === "function") reveal.stagger(container.querySelectorAll(".comparison-direction, .comparison-artwork, .comparison-summary, .comparison-status"));
   return container;
 }
-if (typeof module !== "undefined") module.exports = { render };
-else window.PhotoGitReviewInspector = { render };
+// One branch waiting to merge, as a card. Collapsed, it states how far ahead
+// the branch is and whether anything stands in the way; its one button opens
+// it. Open, the caller fills the body with `resolution` once the comparison
+// has been read. A warning is an icon and words, never a colour.
+function card(document, review, { expanded = false, onToggle } = {}) {
+  const branch = text(review?.branch, "Unknown branch");
+  const mergeable = review?.mergeable === true;
+  const element = document.createElement("article");
+  element.className = `review-card${expanded ? " expanded" : ""}`;
+  element.dataset.branch = branch;
+  element.dataset.mergeable = String(mergeable);
+  const head = append(document, element, "div", "review-head");
+  const title = append(document, head, "div", "review-title");
+  append(document, title, "strong", "", branch);
+  const facts = append(document, title, "span", "review-facts");
+  const ahead = count(review?.ahead);
+  append(document, facts, "span", "", typeof ahead === "number" ? `${ahead} ${ahead === 1 ? "version" : "versions"} ahead` : "Ahead of this branch");
+  const state = document.createElement("span");
+  state.className = `review-state ${mergeable ? "ready" : "blocked"}`;
+  if (!mergeable) state.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 9v5m0 3v.01"/><path d="m3.5 20 8.5-16 8.5 16z"/></svg>';
+  append(document, state, "span", "review-state-label", mergeable ? "Ready to merge" : "Conflicts");
+  const toggle = () => {
+    if (element.closest("[hidden]") || document.body.classList.contains("is-busy") || document.body.classList.contains("is-initializing")) return;
+    if (typeof onToggle === "function") onToggle(branch);
+  };
+  const activate = control => {
+    control.addEventListener("click", () => { if (control.getAttribute("aria-disabled") !== "true") toggle(); });
+    control.addEventListener("keydown", event => {
+      if (!["Enter", " "].includes(event.key) || event.repeat || event.isComposing || control.getAttribute("aria-disabled") === "true") return;
+      event.preventDefault(); event.stopPropagation(); toggle();
+    });
+  };
+  if (expanded) {
+    // Open: the state moves to the corner and the heading closes the card.
+    head.appendChild(state);
+    head.setAttribute("role", "button");
+    head.setAttribute("aria-expanded", "true");
+    head.setAttribute("aria-label", `${branch}. Close`);
+    head.tabIndex = 0;
+    activate(head);
+    const body = append(document, element, "div", "review-body");
+    append(document, body, "p", "review-note", "Reading both branches…");
+  } else {
+    facts.appendChild(state);
+    const button = append(document, head, "div", "button button-small review-toggle", mergeable ? "Review" : "Resolve");
+    button.setAttribute("role", "button");
+    button.setAttribute("aria-expanded", "false");
+    button.setAttribute("aria-label", `${mergeable ? "Review" : "Resolve"} ${branch}`);
+    button.tabIndex = 0;
+    activate(button);
+  }
+  return element;
+}
+
+// Photoshop layers are stored one file per layer and domain; a conflict is a
+// file both branches changed. Each is described by the layer it belongs to
+// and what about it changed, using the names the comparison already carries.
+function conflictEntries(comparison) {
+  const conflicts = Array.isArray(comparison?.conflicts) ? comparison.conflicts.filter(value => typeof value === "string" && value.trim()) : [];
+  const changes = Array.isArray(comparison?.changes) ? comparison.changes : [];
+  const entries = new Map();
+  const add = (name, what) => entries.set(name, [...(entries.get(name) || []), what]);
+  const supporting = [];
+  for (const path of conflicts) {
+    const layerFile = /^\.photogit\/(appearance|text|content)\/([^/]+)\.json$/.exec(path);
+    if (layerFile) {
+      const named = changes.find(change => change?.layerUuid === layerFile[2] && text(change?.layerName));
+      add(named ? named.layerName : "A layer", layerFile[1] === "text" ? "text" : layerFile[1] === "content" ? "pixels" : "appearance");
+    } else if (path === ".photogit/structure/layers.json") add("Layer stack", "layer order");
+    else if (path === ".photogit/document.json") add("Document", "canvas settings");
+    else if (/\.psd$/i.test(path)) add("Saved PSD", "the Photoshop file");
+    // Previews and identity records follow from the edits above.
+    else supporting.push(path);
+  }
+  if (!entries.size) for (const path of supporting) add(path, "this file");
+  return [...entries].map(([name, parts]) => {
+    const unique = [...new Set(parts)];
+    const list = unique.length > 1 ? `${unique.slice(0, -1).join(", ")} and ${unique[unique.length - 1]}` : unique[0];
+    return { name, what: `${list.charAt(0).toUpperCase()}${list.slice(1)} changed on both` };
+  });
+}
+
+// Fills an open card. Returns how many conflicts it listed.
+function resolution(body, comparison, { onMerge, onOpen, onDetails } = {}) {
+  const document = body.ownerDocument;
+  body.textContent = "";
+  const incoming = text(comparison?.incomingBranch, "this branch");
+  const destination = text(comparison?.baseBranch, "the current branch");
+  const entries = conflictEntries(comparison);
+  const mergeable = comparison?.gitMergeable === true && entries.length === 0 && incoming !== destination;
+  for (const entry of entries.slice(0, 50)) {
+    const row = append(document, body, "div", "review-conflict");
+    const head = append(document, row, "div", "review-conflict-head");
+    append(document, head, "strong", "", entry.name);
+    append(document, head, "span", "", entry.what);
+  }
+  if (entries.length > 50) append(document, body, "p", "review-note", `Showing the first 50 of ${entries.length} conflicts.`);
+  // With conflicts Merge is unavailable, so the card leads with what can be
+  // done: look at the incoming branch beside the open document.
+  if (entries.length && typeof onOpen === "function") {
+    const open = append(document, body, "div", "button button-primary button-wide review-open", `Open ${incoming} as a copy`);
+    open.setAttribute("role", "button");
+    open.tabIndex = 0;
+    const view = () => { if (!open.closest("[hidden]") && !document.body.classList.contains("is-busy") && !document.body.classList.contains("is-initializing")) onOpen(incoming); };
+    open.addEventListener("click", view);
+    open.addEventListener("keydown", event => {
+      if (!["Enter", " "].includes(event.key) || event.repeat || event.isComposing) return;
+      event.preventDefault(); event.stopPropagation(); view();
+    });
+  }
+  const button = append(document, body, "div", `button button-wide comparison-merge ${mergeable ? "button-primary" : "button-disabled"}`, `Merge ${incoming}`);
+  button.setAttribute("role", "button");
+  button.setAttribute("aria-disabled", String(!mergeable));
+  button.dataset.mergeable = String(mergeable);
+  button.tabIndex = mergeable ? 0 : -1;
+  const merge = () => {
+    if (!mergeable || button.getAttribute("aria-disabled") === "true" || button.closest("[hidden]") ||
+      document.body.classList.contains("is-busy") || document.body.classList.contains("is-initializing")) return;
+    if (typeof onMerge === "function") onMerge(incoming);
+  };
+  button.addEventListener("click", merge);
+  button.addEventListener("keydown", event => {
+    if (!["Enter", " "].includes(event.key) || event.repeat || event.isComposing) return;
+    event.preventDefault(); event.stopPropagation(); merge();
+  });
+  const changes = Array.isArray(comparison?.changes) ? comparison.changes.length : 0;
+  append(document, body, "p", "review-note", mergeable
+    ? `No conflicts. ${changes} recorded ${changes === 1 ? "edit" : "edits"} would come into ${destination}; you confirm before anything is combined.`
+    : entries.length
+      ? `${entries.length} ${entries.length === 1 ? "conflict" : "conflicts"} to resolve. PhotoGit can’t pick a side for you${typeof onOpen === "function" ? `: open ${incoming} beside your document, bring across what you want to keep, then save a version` : ": open both branches in Photoshop, save the result you want to keep, then refresh"}.`
+      : "This branch can’t be combined yet. Refresh the project, then review it again.");
+  if (typeof onDetails === "function") {
+    const link = append(document, body, "div", "text-link review-details", "See every incoming change");
+    link.setAttribute("role", "button");
+    link.tabIndex = 0;
+    const open = () => { if (!document.body.classList.contains("is-busy")) onDetails(incoming); };
+    link.addEventListener("click", open);
+    link.addEventListener("keydown", event => { if (["Enter", " "].includes(event.key) && !event.repeat) { event.preventDefault(); open(); } });
+  }
+  return entries.length;
+}
+if (typeof module !== "undefined") module.exports = { render, card, resolution };
+else window.PhotoGitReviewInspector = { render, card, resolution };
 })();

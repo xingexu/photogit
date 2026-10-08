@@ -1,1077 +1,413 @@
-/* PhotoGit · Graphite Studio. Native flex layout and opaque tonal fallbacks.
-   Glass is limited to chrome/dialog depth. Artwork and content stay neutral. */
+/* PhotoGit · Midnight panel.
+   One dark, flat appearance that sits inside Photoshop's own dark UI: solid
+   surfaces, 1px borders, 4px corners, one blue accent. Nothing is drawn with
+   gradients, blur or shadow, and state is never carried by colour alone: an
+   added, edited or removed row is told apart by its marker tile and its
+   wording. Every colour is a token in this block and nowhere else.
+   The panel is a single column at every width (it is designed for a ~360px
+   dock and simply gains room when wider). UXP has no CSS grid and no reliable
+   `gap`, so layout is flexbox with margins on siblings. */
 :root {
   color-scheme: dark;
-  --bg: #191a1b; --surface: #202224; --elevated: #2b2d30; --input: #191b1d; --overlay: #27292c;
-  --text: #f2f3f4; --muted: #b4b7bd; --disabled: #8c9199; --line: #383b3f; --border: #828891;
-  --hover: #30343a; --pressed: #383e47; --selected: #293849; --focus: #9ac6ff;
-  --accent: #7ea9ff; --primary: #2a62d2; --primary-text: #ffffff; --primary-hover: #2f6fed; --primary-pressed: #2456bd;
-  --success: #a6d6ad; --success-surface: #26382d; --warning: #efce8a; --warning-surface: #3d3220;
-  --error: #ffb2ac; --error-surface: #432a29; --backdrop: rgba(0,0,0,.5);
-  --rim: #494d52; --shine: rgba(255,255,255,.055); --shadow: rgba(0,0,0,.28); --press-veil: rgba(0,0,0,.12);
-  --glow: rgba(150,190,255,.5); --focus-halo: rgba(154,198,255,.22);
-  --glass: rgba(50,55,63,.70); --glass-rim: rgba(255,255,255,.38); --glass-top: rgba(255,255,255,.14); --nested: #31353c;
-  --bubble-1: rgba(84,132,255,.36); --bubble-2: rgba(156,112,255,.30); --bubble-3: rgba(72,202,190,.24);
-  --glass-glow:
-    0 1px 0 rgba(255,255,255,.45) inset,
-    0 0 0 1px rgba(255,255,255,.10),
-    0 0 70px -6px rgba(150,190,255,.28) inset,
-    0 0 26px -2px rgba(150,190,255,.30),
-    0 0 64px -10px rgba(120,170,255,.24),
-    0 0 46px -12px rgba(120,170,255,.36),
-    0 28px 58px -26px rgba(0,0,0,.78);
-  --space: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-5: 20px; --space-6: 24px;
-  --text-small: 12px; --text-body: 13px; --text-subhead: 15px; --text-title: 18px; --text-heading: 22px;
-  --control: 32px; --control-tall: 40px;
-  --radius-chip: 10px; --radius: 14px; --radius-panel: 24px; --radius-overlay: 30px; --radius-pill: 20px;
+  --bg: #323232; --bg-recessed: #262626; --bg-bar: #2B2B2B; --bg-raised: #3A3A3A; --bg-selected: #404040; --bg-hover: #3D3D3D;
+  --border: #474747; --border-strong: #6E6E6E; --divider: #3D3D3D; --edge-dark: #262626;
+  --text: #E6E6E6; --text-strong: #FFFFFF; --text-2: #C4C4C4; --text-muted: #A6A6A6; --text-tab: #B0B0B0;
+  --accent: #1473E6; --accent-hover: #0F64D2; --accent-pressed: #0C56B8; --accent-line: #5AA9FA;
+  --scrim: rgba(0,0,0,.55);
+  --space: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
+  --text-label: 11px; --text-secondary: 12px; --text-base: 13px; --text-title: 15px;
+  --control: 32px; --control-tall: 32px; --radius: 4px; --radius-pill: 14px;
+  /* One stacking scale: a status toast, then the scrim, then what sits on the
+     scrim. The fade veil in motion.js is the only thing above these, at 50. */
+  --z-toast: 10; --z-scrim: 20; --z-surface: 30;
   --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --mono: "SFMono-Regular", Consolas, monospace;
-  --tilt-x: 0deg; --tilt-y: 0deg; --pointer-x: 50%; --pointer-y: 50%;
-  --depth-lift: 0px; --depth-perspective: 900px; --depth-sheen: rgba(255,255,255,.16);
-  --motion-enabled: 1; --motion-control: 320ms; --motion-nav: 480ms; --motion-press: 200ms;
-  --ease-liquid: cubic-bezier(.22,.9,.24,1);
-}
-:root[data-theme="light"] {
-  color-scheme: light;
-  --bg: #f3f4f6; --surface: #ffffff; --elevated: #eaedf1; --input: #f6f7f9; --overlay: #ffffff;
-  --text: #1c2330; --muted: #505966; --disabled: #6f7781; --line: #dde1e7; --border: #78818d;
-  --hover: #e8ecf2; --pressed: #dce3ed; --selected: #e0eafb; --focus: #245bb6;
-  --accent: #245bb6; --primary: #2d60b5; --primary-text: #ffffff; --primary-hover: #234e98; --primary-pressed: #1c4080;
-  --success: #2b653b; --success-surface: #e8f2eb; --warning: #765006; --warning-surface: #fbf1db;
-  --error: #a12e29; --error-surface: #fceceb; --backdrop: rgba(21,29,42,.24);
-  --rim: #c5cbd3; --shine: rgba(255,255,255,.65); --shadow: rgba(27,35,48,.11); --press-veil: rgba(0,0,0,.12);
-  --glow: rgba(45,96,181,.32); --focus-halo: rgba(36,91,182,.22);
-  /* Light glass: a translucent white over the aurora, a white inner edge
-     and a bluish hairline, so the colour behind a card shows through it. */
-  --glass: rgba(255,255,255,.56); --glass-rim: rgba(90,120,180,.34); --glass-top: rgba(255,255,255,.95); --nested: #ffffff;
-  --depth-sheen: rgba(255,255,255,.7);
-  --bubble-1: rgba(90,140,255,.55); --bubble-2: rgba(175,130,255,.48); --bubble-3: rgba(70,200,185,.42);
-  --glass-glow:
-    0 1px 0 rgba(255,255,255,1) inset,
-    0 0 0 1px rgba(255,255,255,.75),
-    0 0 60px -8px rgba(255,255,255,.7) inset,
-    0 0 24px -2px rgba(120,160,225,.22),
-    0 0 56px -12px rgba(120,160,225,.20),
-    0 0 44px -12px rgba(120,160,225,.30),
-    0 24px 50px -26px rgba(27,35,48,.35);
+  --mono: "SFMono-Regular", Menlo, Consolas, monospace;
+  --motion-enabled: 1;
 }
 * { box-sizing: border-box; }
-html, body { margin: 0; padding: 0; width: 100%; height: 100%; }
-html, body, .panel-root { background: var(--bg); color: var(--text); font-family: var(--font-ui); font-size: var(--text-body); line-height: 1.5; }
-body { overflow: auto; scroll-behavior: smooth; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: var(--rim) transparent; }
 [hidden] { display: none !important; }
-h1, h2, h3, p { margin: 0; }
-/* The wordmark is one word. Below 320px it was wrapping to "Photo / Git",
-   which reads as two words and pushes the header to two lines. */
-h1 { font-size: var(--text-title); line-height: 1.3; letter-spacing: -.4px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-h2 { font-size: var(--text-title); line-height: 1.3; letter-spacing: -.3px; font-weight: 600; }
-h3, strong, b { font-size: inherit; font-weight: 600; }
-p, strong, span, b, code, small, dd, dt, li, h1, h2, h3, label { min-width: 0; overflow-wrap: anywhere; word-break: break-word; }
-svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: var(--font-ui); font-size: var(--text-base); line-height: 1.5; }
+h1, h2, h3, p, dl, dd, dt, figure, ul, ol { margin: 0; }
+ul, ol { padding: 0; list-style: none; }
+h2 { color: var(--text-strong); font-size: var(--text-title); font-weight: 600; line-height: 1.3; }
+h3 { color: var(--text-strong); font-size: var(--text-base); font-weight: 600; line-height: 1.35; }
+strong, b { font-weight: 600; }
+p, strong, span, b, code, dd, dt, li, h2, h3, label { min-width: 0; overflow-wrap: anywhere; }
+code, kbd { font-family: var(--mono); font-size: var(--text-secondary); }
+kbd { padding: 0 4px; border: 1px solid var(--border); border-radius: var(--radius); }
+svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
 img { max-width: 100%; }
-.panel-root { position: relative; z-index: 0; width: 100%; min-width: 0; max-width: 1600px; min-height: 100%; margin: 0 auto; }
-/* Aurora · three soft colour bubbles sit behind the panel, fixed to the
-   viewport, so the glass has something to be glass over. They are a real
-   element rather than a pseudo-element so every host draws them, they take
-   no pointer events, and they paint above the root's own ground and below
-   everything in it. */
-.panel-aurora { position: fixed; z-index: -1; top: 0; left: 0; width: 100%; height: 100%; overflow: hidden; pointer-events: none; }
-.panel-aurora i { position: absolute; display: block; border-radius: 50%; }
-.panel-aurora i:nth-child(1) { top: -22%; left: -14%; width: 70%; height: 62%; background: radial-gradient(circle at 50% 50%, var(--bubble-1), rgba(0,0,0,0) 70%); }
-.panel-aurora i:nth-child(2) { top: 26%; right: -24%; width: 76%; height: 70%; background: radial-gradient(circle at 50% 50%, var(--bubble-2), rgba(0,0,0,0) 70%); }
-.panel-aurora i:nth-child(3) { bottom: -26%; left: 10%; width: 64%; height: 58%; background: radial-gradient(circle at 50% 50%, var(--bubble-3), rgba(0,0,0,0) 70%); }
-.app-header { display: flex; align-items: center; min-height: 64px; padding: var(--space-3) var(--space-4); background: var(--surface); border-bottom: 1px solid var(--line); }
-.app-brand { display: flex; align-items: center; min-width: 0; flex: 1; }
-.pg-mark { display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; flex-shrink: 0; margin-right: var(--space-2); }
-.pg-mark img { display: block; width: 30px; height: 30px; object-fit: contain; }
-.app-title { flex: 1; min-width: 0; }
-.app-title > span { display: none; color: var(--muted); font-size: var(--text-small); }
-.header-action, .sheet-close { display: flex; align-items: center; justify-content: center; flex-shrink: 0; width: var(--control); height: var(--control); border: 1px solid transparent; border-radius: 16px; background: transparent; color: var(--muted); }
-.header-action { margin-left: var(--space); }
-/* The close glyph turns a quarter on hover, which is the platform's cue
-   that a control dismisses. */
-.sheet-close svg { transition: transform var(--motion-control) var(--ease-liquid); }
-.sheet-close:hover svg { transform: rotate(90deg); }
-.command-trigger-label { display: none; }
-/* The sun and moon share one slot and hand over on a short fade and quarter
-   turn, so the toggle reads as one glyph changing rather than two swapping. */
-.appearance-toggle { position: relative; }
-.appearance-toggle svg { position: absolute; transition: opacity var(--motion-control) var(--ease-liquid), transform var(--motion-control) var(--ease-liquid); }
-.theme-moon { opacity: 0; transform: rotate(-90deg) scale(.7); }
-:root[data-theme="light"] .theme-sun { opacity: 0; transform: rotate(90deg) scale(.7); }
-:root[data-theme="light"] .theme-moon { opacity: 1; transform: none; }
-[role="button"], [role="tab"], [role="menuitem"] { position: relative; cursor: pointer; transition: background-color var(--motion-control) var(--ease-liquid), color var(--motion-control) var(--ease-liquid), border-color var(--motion-control) var(--ease-liquid), box-shadow var(--motion-control) var(--ease-liquid), transform var(--motion-nav) var(--ease-liquid); }
-/* The press compresses quickly and releases slowly on a spring-like curve, so
-   it settles rather than snapping. Transform only: no layout is animated. */
-[role="button"]:not([aria-disabled="true"]):active, [role="tab"]:active, [role="menuitem"]:active { transform: scale(.972); transition-duration: var(--motion-press); }
-/* Press feedback: a veil fades in on press and back out on release. It is
-   decoration only — it sits behind pointer events, never changes layout, and
-   click handlers run immediately regardless of where the fade is. The veil
-   always darkens, which raises label contrast on every control in both themes
-   (a lightening veil dropped the primary button's label to 4.24). The command
-   trigger is excluded because its ::after carries the shortcut hint. */
-[role="button"]:not(.command-trigger)::after, [role="tab"]::after, [role="menuitem"]::after {
-  content: ""; position: absolute; inset: 0; border-radius: inherit;
-  background: radial-gradient(circle at var(--ripple-x, 50%) var(--ripple-y, 50%), var(--press-veil) 0%, var(--press-veil) 40%, transparent 78%);
-  opacity: 0; pointer-events: none; transition: opacity var(--motion-nav) var(--ease-liquid);
-}
-[role="button"]:not(.command-trigger):not([aria-disabled="true"]):active::after,
-[role="tab"]:active::after, [role="menuitem"]:active::after { opacity: 1; transition-duration: var(--motion-press); }
-[aria-disabled="true"]::after { display: none; }
-[role="button"]:not([aria-disabled="true"]):hover, [role="tab"]:hover, [role="menuitem"]:hover { background-color: var(--hover); color: var(--text); }
-[role="button"]:not([aria-disabled="true"]):active, [role="tab"]:active, [role="menuitem"]:active { background-color: var(--pressed); }
-[role="button"]:focus, [role="tab"]:focus, [role="menuitem"]:focus, input:focus, sp-dropdown:focus, select:focus { outline: 2px solid var(--focus); outline-offset: 2px; }
-@supports selector(:focus-visible) {
-  [role="button"]:focus:not(:focus-visible), [role="tab"]:focus:not(:focus-visible), [role="menuitem"]:focus:not(:focus-visible) { outline: none; }
-}
-[aria-disabled="true"] { opacity: .55; cursor: default; }
-/* Controls disabled by a running operation show the wait cursor, so the
-   pointer says why rather than only that. */
-body.is-busy [aria-disabled="true"], body.is-busy input:disabled { cursor: progress; }
-::selection { background: var(--selected); color: var(--text); }
-/* Project context and responsive navigation. */
-.repo-project strong { font-size: var(--text-body); }
-.repo-project > span { min-width: 0; }
-.text-link { display: inline-flex; align-items: center; color: var(--muted); font-size: var(--text-small); padding: 3px 4px; border-radius: var(--radius-chip); text-decoration: underline; text-underline-offset: 2px; }
-/* The jump link's arrow moves the way it points on hover. */
-#jump-save span { display: inline-block; margin-left: 3px; transition: transform var(--motion-control) var(--ease-liquid); }
-#jump-save:hover span { transform: translateY(2px); }
-.repo-state { display: flex; align-items: center; flex-shrink: 0; margin-right: var(--space-3); font-size: var(--text-small); color: var(--muted); }
-.repo-state i, .watch-status i { width: 5px; height: 5px; border-radius: 50%; background: currentColor; margin-right: 6px; }
-.repo-state.ok { color: var(--success); }
-/* The dot pops once when the helper comes online. */
-.repo-state.ok i { animation: photogit-pop var(--motion-nav) var(--ease-liquid) backwards; }
-.repo-state.warning { color: var(--warning); }
-/* Helper online, helper offline: the colour crosses rather than cuts, so a
-   reconnect reads as recovery rather than as a different control. */
-.repo-state, .rail-sync { transition: color var(--motion-nav) var(--ease-liquid); }
-.repo-meta { margin-top: var(--space-2); }
-.repo-meta svg { width: 16px; height: 16px; margin-right: var(--space-2); }
-.repo-branch { border: 1px solid transparent; border-radius: var(--radius); font-size: var(--text-body); }
-.repo-branch strong { min-width: 0; }
-.branch-chevron { flex-shrink: 0; width: 12px; height: 12px; margin-left: var(--space-2); color: var(--muted); }
-/* The branch and document names fade in when they change, so a switch or
-   a new document is seen to land in the context card. */
-#branch-name, #document-name, #project-status { animation: photogit-fade-in var(--motion-nav) var(--ease-liquid) backwards; }
-.repo-document { color: var(--text); font-size: var(--text-body); }
-.repo-document span { min-width: 0; overflow-wrap: break-word; }
-.workspace-body, .workspace-content { min-width: 0; }
-.section-nav { display: flex; flex-wrap: wrap; padding: var(--space-2); margin: 0; border-bottom: 1px solid var(--line); background: var(--surface); }
-.nav-item { display: flex; align-items: center; justify-content: center; flex: 1 1 29%; min-width: 0; min-height: 36px; margin: 2px; padding: 8px 5px; border: 1px solid transparent; border-radius: var(--radius); color: var(--muted); font-size: var(--text-small); }
-.nav-item svg { width: 16px; height: 16px; margin-right: var(--space-2); transition: transform var(--motion-control) var(--ease-liquid), color var(--motion-control) var(--ease-liquid); }
-/* A destination name is one word. The global break-anywhere rule let "Changes"
-   split into "Chang / es" once the row stopped wrapping at 640px. */
-.nav-item span { min-width: 0; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.nav-item b { margin-left: var(--space-2); min-width: 20px; padding: 2px var(--space-2); border-radius: 10px; background: var(--primary); color: var(--primary-text); font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; text-align: center; transition: transform var(--motion-control) var(--ease-liquid), box-shadow var(--motion-control) var(--ease-liquid); }
-/* The badge count is the one number in the navigation. Growing it very
-   slightly on hover confirms the row is live without moving its neighbours. */
-.nav-item:hover b { transform: scale(1.07); }
-/* The active section icon takes the accent alongside its label, so the tab
-   reads as selected from the glyph alone at the narrowest widths where the
-   label is dropped. */
-.nav-item.active svg { color: var(--accent); transform: scale(1.06); animation: photogit-pop var(--motion-control) var(--ease-liquid) backwards; }
+::selection { background: var(--accent); color: var(--text-strong); }
+
+/* Shell: top bar, tab strip, one scrolling view, optional pinned bar. */
+.panel-root { position: relative; display: flex; flex-direction: column; width: 100%; height: 100%; min-height: 0; overflow: hidden; background: var(--bg); }
+.workspace { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+.workspace-content { flex: 1; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.view-scroll { flex: 1; min-height: 0; overflow-x: hidden; overflow-y: auto; padding: var(--space-3); scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+/* A wide floating panel keeps lines readable instead of running edge to edge. */
+.view-panel { min-width: 0; max-width: 640px; }
+
+.top-bar { flex: none; display: flex; align-items: center; height: 48px; padding: 0 var(--space-3); border-bottom: 1px solid var(--edge-dark); background: var(--bg-bar); }
+.top-bar > * + * { margin-left: var(--space-2); }
+.branch-switcher { display: flex; align-items: center; flex: 0 1 auto; min-width: 0; height: var(--control); padding: 0 var(--space-2); border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-raised); color: var(--text-strong); }
+.branch-switcher strong { margin: 0 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.branch-switcher svg { color: var(--text-2); }
+.branch-chevron { width: 12px; height: 12px; }
+.top-project { flex: 1 1 0; overflow: hidden; color: var(--text-muted); font-size: var(--text-secondary); text-overflow: ellipsis; white-space: nowrap; }
+/* A working connection is not announced; only a lost one shows here. */
+.repo-state { display: flex; align-items: center; flex: none; color: var(--text-2); font-size: var(--text-label); white-space: nowrap; }
+.repo-state i { display: block; width: 6px; height: 6px; margin-right: 4px; border: 1px solid var(--text-2); border-radius: 3px; }
+.repo-state.ok { display: none; }
+.icon-button { display: flex; align-items: center; justify-content: center; flex: none; width: var(--control); height: var(--control); border-radius: var(--radius); color: var(--text); }
+
+.tab-strip { position: relative; flex: none; display: flex; border-bottom: 1px solid var(--edge-dark); background: var(--bg-bar); }
+/* One underline for the strip; the script slides it under the selected tab. */
+.tab-indicator { position: absolute; bottom: 0; left: 0; width: 0; height: 2px; background: var(--accent-line); }
+/* Work in progress: a full line under the tabs, and an edge on the control
+   that started it. Both appear with the click, before any result. */
+.workspace { position: relative; }
+/* Drawn over the tab strip's edge, so starting work never moves the layout. */
+.progress-track { position: absolute; top: 99px; right: 0; left: 0; z-index: var(--z-toast); height: 2px; background: var(--accent-line); }
+.button.is-working { border-color: var(--accent-line); }
+.nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1 1 0; min-width: 0; height: 52px; border-bottom: 2px solid transparent; color: var(--text-tab); }
+.tab-mark { display: flex; align-items: center; height: 18px; }
+.tab-label { margin-top: 3px; overflow: hidden; font-size: var(--text-label); text-overflow: ellipsis; white-space: nowrap; }
+.nav-item b { min-width: 16px; height: 16px; margin-left: 4px; padding: 0 5px; border-radius: 8px; background: var(--bg-selected); color: var(--text-strong); font-size: 10px; line-height: 16px; text-align: center; white-space: nowrap; overflow-wrap: normal; font-variant-numeric: tabular-nums; }
 .nav-item b[data-empty="true"] { display: none; }
-/* A pill that has just gone from nothing to a number pops in slightly over
-   size and settles, which is what draws the eye to a count that changed
-   from zero. Re-rendering an existing count does not replay it. The fill is
-   backwards, not both: a forwards fill would pin the final transform and
-   block the hover scale the pill already has. */
-.nav-item b { animation: photogit-pop var(--motion-control) var(--ease-liquid) backwards; }
-@keyframes photogit-pop {
-  from { opacity: .01; transform: scale(.6); }
-  60% { transform: scale(1.12); }
-  to { opacity: 1; transform: none; }
-}
-.nav-item.active { background: var(--selected); color: var(--accent); border-color: var(--line); }
-.workspace-content { padding: var(--space-4) var(--space-4) var(--space-2); }
-.view-panel { width: 100%; min-width: 0; }
-/* A selected section rises into place. The display change replays it, so
-   every switch lands the same way; reduced motion removes it. */
-.view-panel:not([hidden]) { animation: photogit-reveal var(--motion-nav) var(--ease-liquid) backwards; }
-.view-heading, .section-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; margin-bottom: var(--space-3); }
-.view-heading h2, .section-heading h2 { margin-right: 8px; }
-.page-description { color: var(--muted); font-size: var(--text-small); margin: -4px 0 var(--space-4); }
-.content-card { min-width: 0; margin-bottom: var(--space-5); }
-.meta-chip { display: inline-block; font-size: var(--text-small); color: var(--muted); background: var(--elevated); padding: 2px var(--space-2); border-radius: 11px; white-space: nowrap; }
-/* The message counter warns as the limit nears and states it when reached;
-   the tone eases in so the warning arrives without a flicker on the
-   keystroke that crosses the line. */
-#message-count { font-variant-numeric: tabular-nums; transition: color var(--motion-control) var(--ease-liquid), background-color var(--motion-control) var(--ease-liquid); }
-#message-count[data-limit="near"] { color: var(--warning); background: var(--warning-surface); }
-#message-count[data-limit="full"] { color: var(--error); background: var(--error-surface); }
+.nav-item.active { background: var(--bg); color: var(--text-strong); }
+.nav-item.active .tab-label { font-weight: 600; }
 
-.changes-heading { display: none; }
-.rail-footer { display: none; }
-.rail-sync { display: flex; align-items: center; min-height: 34px; color: var(--muted); font-size: var(--text-small); }
-.rail-sync svg { width: 15px; height: 15px; margin-right: var(--space-2); }
-.rail-sync.ok { color: var(--success); }
-.rail-sync.warning { color: var(--warning); }
+/* Bars pinned under the scrolling view. */
+.view-footer { flex: none; display: flex; align-items: center; justify-content: flex-start; min-height: 36px; padding: 0 var(--space-3); border-top: 1px solid var(--edge-dark); background: var(--bg-bar); color: var(--text-muted); font-size: var(--text-secondary); }
+.composer { flex: none; padding: var(--space-3); border-top: 1px solid var(--edge-dark); background: var(--bg-bar); }
+.composer > * + * { margin-top: var(--space-2); }
+.capture-heading { display: flex; align-items: center; justify-content: space-between; }
+.version-label { color: var(--text-strong); font-weight: 600; }
+.composer-count { color: var(--text-muted); font-family: var(--mono); font-size: var(--text-secondary); white-space: nowrap; }
+.composer-count[data-limit="near"], .composer-count[data-limit="full"] { color: var(--text-strong); }
+.message-presets { display: flex; flex-wrap: wrap; }
+.capture-panel.is-busy .field-shell { border-color: var(--divider); }
 
-/* Liquid glass: rim light, top sheen and a soft drop, layered on a translucent
-   fill. Blur is applied only where the host supports it; without it the same
-   hierarchy survives as an opaque tonal surface. */
-.view-panel > .liquid-card, .capture-panel, .scan-card.liquid-card, .content-card.liquid-card, .onboarding.liquid-card {
-  border: 1px solid var(--glass-rim); border-radius: var(--radius-panel); background-color: var(--glass);
-  background-image: linear-gradient(180deg, var(--glass-top), rgba(255,255,255,0) 58%);
-  box-shadow: var(--glass-glow);
-}
-@supports (backdrop-filter: blur(2px)) {
-  .view-panel > .liquid-card, .capture-panel, .scan-card.liquid-card, .content-card.liquid-card, .onboarding.liquid-card,
-  .tools-menu, .tool-sheet { backdrop-filter: blur(22px) saturate(150%); }
-}
-/* Every glass card gets the same internal room, so nothing sits on its border. */
-.view-panel > .liquid-card, .capture-panel, .scan-card.liquid-card, .content-card.liquid-card, .onboarding.liquid-card { padding: var(--space-4) var(--space-5); }
-/* Depth · a surface marked data-depth leans a couple of degrees away from the
-   pointer and lifts slightly toward it. The tilt tokens are written by depth.js
-   and default to flat, so a host that never fires the events, or one that
-   cannot composite 3D transforms, renders exactly the surface above. */
-@supports (transform: perspective(600px) rotateX(1deg)) {
-  [data-depth] {
-    transform: perspective(var(--depth-perspective)) rotateX(var(--tilt-x)) rotateY(var(--tilt-y)) translateZ(var(--depth-lift));
-    transition: transform var(--motion-nav) var(--ease-liquid), box-shadow var(--motion-nav) var(--ease-liquid);
-  }
-  [data-depth].is-depth-active { --depth-lift: 5px; }
-}
-/* A specular highlight that follows the pointer across the glass. It sits in a
-   pseudo-element behind pointer events, so it can never intercept a click. */
-[data-depth] { position: relative; }
-[data-depth]::before {
-  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 0;
-  background: radial-gradient(200px circle at var(--pointer-x) var(--pointer-y), var(--depth-sheen), rgba(255,255,255,0) 70%);
-  opacity: 0; transition: opacity var(--motion-nav) var(--ease-liquid);
-}
-[data-depth].is-depth-active::before { opacity: 1; }
-[data-depth] > * { position: relative; z-index: 1; }
+/* Headings and small text. */
+.view-heading { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: var(--space-3); }
+.view-heading > .button { flex: none; margin-left: var(--space-2); }
+.view-title { font-size: var(--text-title); }
+.view-subtitle { margin-top: 2px; color: var(--text-2); font-size: var(--text-secondary); }
+.view-panel > .view-subtitle { margin-bottom: var(--space-3); }
+.section-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-2); }
+.fine-print, .filter-note, .scan-state, .version-inspector-meta, .list-limit-note, .command-hint { color: var(--text-muted); font-size: var(--text-secondary); }
+.fine-print + .fine-print { margin-top: var(--space-2); }
+.field-label { display: block; margin-bottom: 4px; color: var(--text-strong); font-weight: 600; }
+.setup-command { padding: var(--space-2) var(--space-3); border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-recessed); color: var(--text); font-family: var(--mono); font-size: var(--text-secondary); white-space: pre-wrap; }
+.empty-state { padding: var(--space-4) var(--space-2); text-align: center; }
+.empty-state strong { color: var(--text-strong); }
+.empty-state p { margin-top: 2px; color: var(--text-muted); font-size: var(--text-secondary); }
+.empty-state .text-link { display: flex; justify-content: center; margin-top: var(--space-2); }
+.card { padding: var(--space-3); border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-raised); }
+.card > * + * { margin-top: var(--space-2); }
+/* Uppercase section labels: list groups, date groups, small captions. */
+/* The host has no text-transform, so these labels are written in capitals. */
+.list-section, .unlinked-files dt { color: var(--text-muted); font-size: var(--text-label); font-weight: 600; letter-spacing: .06em; }
+.list-section { display: flex; align-items: center; justify-content: space-between; padding: var(--space-3) 0 var(--space-2); border-bottom: 1px solid var(--divider); }
+.list-section:first-child { padding-top: 0; }
+.list-section .section-count { font-family: var(--mono); font-weight: 400; letter-spacing: 0; }
+.pill { display: inline-block; flex: none; height: 20px; padding: 0 8px; border-radius: 10px; line-height: 20px; background: var(--bg-recessed); color: var(--text-strong); font-size: var(--text-label); font-weight: 600; white-space: nowrap; }
+.meta-chip { display: inline-block; padding: 1px 8px; border: 1px solid var(--border); border-radius: var(--radius-pill); color: var(--text-2); font-size: var(--text-label); white-space: nowrap; }
 
-/* The rail is a solid column, never a floating card. */
-.workspace-rail .liquid-card { border: 0; border-radius: 0; background-image: none; box-shadow: none; }
+/* Controls. A control is a flat box with a 1px border; the one filled
+   control on a screen is the primary action. */
+[role="button"], [role="tab"], [role="menuitem"] { cursor: pointer; }
+.button { display: inline-flex; align-items: center; justify-content: center; min-height: var(--control-tall); padding: 0 var(--space-3); border: 1px solid var(--border-strong); border-radius: var(--radius); background: transparent; color: var(--text-strong); font-weight: 600; white-space: nowrap; }
+.button svg { margin-right: 6px; }
+.button-primary { border-color: var(--accent); background: var(--accent); color: var(--text-strong); }
+.button-small { min-height: var(--control); padding: 0 10px; font-size: var(--text-secondary); }
+.button-wide { display: flex; width: 100%; }
+.button-wide + .button-wide { margin-top: var(--space-2); }
+.push-button { flex: none; min-height: var(--control); padding: 0 10px; }
+.text-link { display: inline-flex; align-items: center; color: var(--text-strong); font-size: var(--text-secondary); font-weight: 600; text-decoration: underline; }
+.disclosure-chevron { width: 12px; height: 12px; margin-left: 2px; }
+.text-link[aria-expanded="true"] .disclosure-chevron, .activity-row[aria-expanded="true"] .disclosure-chevron { transform: rotate(90deg); }
+[role="button"]:not([aria-disabled="true"]):hover, [role="tab"]:hover, [role="menuitem"]:not([aria-disabled="true"]):hover { background-color: var(--bg-hover); }
+.button-primary:not([aria-disabled="true"]):hover { background-color: var(--accent-hover); }
+.button-primary:not([aria-disabled="true"]):active { background-color: var(--accent-pressed); }
+[role="button"]:not(.button-primary):not([aria-disabled="true"]):active, [role="menuitem"]:not([aria-disabled="true"]):active { background-color: var(--bg-selected); }
+.nav-item.active:hover { background-color: var(--bg); }
+[role="button"]:focus, [role="tab"]:focus, [role="menuitem"]:focus, input:focus, [tabindex]:focus { outline: 2px solid var(--accent-line); outline-offset: -2px; }
+@supports selector(:focus-visible) {
+  [role="button"]:focus:not(:focus-visible), [role="tab"]:focus:not(:focus-visible), [role="menuitem"]:focus:not(:focus-visible), [tabindex]:focus:not(:focus-visible) { outline: none; }
+}
+/* Unavailable: the same shape, drained of emphasis. */
+[aria-disabled="true"] { cursor: default; color: var(--text-muted); }
+.button[aria-disabled="true"], .button.button-disabled { border-color: var(--border); background: var(--bg-selected); color: var(--text-muted); }
+body.is-busy [aria-disabled="true"], body.is-busy input:disabled { cursor: progress; }
+/* The host runs no CSS transitions or keyframes and does not draw opacity, so
+   nothing here eases by itself and no transition is declared: motion.js steps
+   every fade, move and colour change frame by frame, with its own tokens
+   (fast 120ms, base 180ms, cubic-bezier(0.2, 0, 0, 1)). These
+   two swatches are never shown; they give the script its pressed tones, so
+   the colours stay in this file. */
+.motion-press-tone { position: fixed; width: 0; height: 0; background-color: var(--border-strong); }
+.motion-press-tone.filled { background-color: var(--accent-pressed); }
 
-/* Reference: project, branch and document are one card of labelled cells, each
-   led by a circular badge. */
-.repo-context { display: flex; flex-wrap: wrap; align-items: stretch; padding: var(--space-3); border: 1px solid var(--glass-rim); border-radius: var(--radius-panel); background-color: var(--glass); background-image: linear-gradient(180deg, var(--glass-top), rgba(255,255,255,0) 58%); box-shadow: var(--glass-glow); }
-.repo-topline, .repo-meta { display: contents; }
-.repo-project, .repo-branch, .repo-document { display: flex; align-items: flex-start; flex: 1 1 0; min-width: 0; margin: var(--space) 0; padding: var(--space) 6px; }
-.context-badge { display: flex; align-items: center; justify-content: center; flex-shrink: 0; width: 38px; height: 38px; margin-right: var(--space-3); border: 1px solid var(--glass-rim); border-radius: 50%; background: var(--elevated); color: var(--muted); }
-.context-badge svg { width: 17px; height: 17px; }
-.context-copy { display: block; flex: 0 1 auto; min-width: 0; }
-.context-label { display: block; color: var(--muted); font-size: var(--text-small); margin-bottom: 2px; }
-/* Names break only when a single word cannot fit its cell, never at an
-   arbitrary character: "document.psd" was rendering as "document.p / sd". */
-.context-copy strong, .context-copy > span:not(.context-label):not(.context-value) { display: block; font-size: var(--text-body); font-weight: 600; overflow-wrap: break-word; word-break: normal; }
-.context-value { display: flex; align-items: center; min-width: 0; font-size: var(--text-body); font-weight: 600; }
-.context-value strong { min-width: 0; }
-.repo-project .project-switch { margin: 2px 0 0 -4px; }
-@media (max-width: 719px) { .repo-project { flex: 1 1 100%; } .repo-branch, .repo-document { flex: 1 1 45%; } }
-/* Below 360px two cells side by side leave each about 110px, which is less
-   than a typical branch name. Stack them so a name has the full width. */
-@media (max-width: 360px) { .repo-branch, .repo-document { flex-basis: 100%; } }
-/* Changes: dense list first, complete-document composer second. */
-.scan-card { display: flex; align-items: flex-start; flex-wrap: wrap; margin-bottom: var(--space-4); }
-.scan-copy { flex: 1 1 160px; min-width: 0; padding-right: 10px; }
-/* The headline is the scan's one-line verdict. A new verdict fades in over
-   the old rather than swapping words in place. */
-.scan-copy h2 { font-size: var(--text-subhead); font-weight: 600; letter-spacing: -.2px; animation: photogit-fade-in var(--motion-control) var(--ease-liquid) backwards; }
-.scan-detail { color: var(--muted); font-size: var(--text-small); margin-top: var(--space); white-space: pre-line; animation: photogit-fade-in var(--motion-control) var(--ease-liquid) backwards; }
-.watch-status { display: flex; align-items: center; color: var(--muted); font-size: var(--text-small); margin-top: var(--space); }
-.change-tally { display: flex; flex-wrap: wrap; width: 100%; gap: var(--space-3); margin: var(--space-4) 0 2px; }
-/* Each tile is a term and its value in source order — the label names the
-   number — while the layout shows the number first, as a readout does. */
-.tally-tile { display: flex; flex-direction: column-reverse; flex: 1 1 90px; min-width: 0; margin: 0; padding: var(--space-3) var(--space-4); border: 1px solid var(--glass-rim); border-radius: var(--radius); background: var(--elevated); box-shadow: 0 1px 0 var(--shine) inset; }
-.tally-tile dd { margin: 0; font-size: var(--text-heading); font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: -.5px; line-height: 1.1; transition: transform var(--motion-control) var(--ease-liquid); }
-/* A number that is still settling sits a touch larger, and drops back
-   the moment it lands, so a changing total is visibly in motion. */
-.tally-tile dd.is-counting, .nav-item b.is-counting { transform: scale(1.08); }
-.tally-tile:first-child dd { color: var(--accent); }
-/* New and deleted layers take the colours the rows already give those
-   states, but only once the number is not zero: a red nought draws the
-   eye to nothing. */
-.tally-tile:nth-child(2) dd:not([data-value="0"]) { color: var(--success); }
-.tally-tile:nth-child(3) dd:not([data-value="0"]) { color: var(--error); }
-.tally-tile dt { margin-top: var(--space); color: var(--muted); font-size: var(--text-small); }
-.watch-status.ready, .watch-status.changed { display: none; }
-.watch-status.error { color: var(--error); }
-.watch-status.warning { color: var(--warning); }
-/* While the panel is reading layers the dot breathes, so "Reading layer 12
-   of 40…" is visibly in progress even between updates of the number. It
-   stops with the scan; reduced motion never starts it. */
-.watch-status { transition: color var(--motion-control) var(--ease-liquid); }
-.watch-status.scanning i, .watch-status.pending i { animation: photogit-breathe 1.2s var(--ease-liquid) infinite alternate; }
-@keyframes photogit-breathe {
-  from { opacity: .35; transform: scale(.8); }
-  to { opacity: 1; transform: scale(1.25); }
-}
-.changes-layout { min-width: 0; }
-/* The change list scrolls inside its card, so the search and filters stay
-   in reach above it and the composer beside it never sinks below a long
-   scan. The 3px of right padding leaves room for the row's hover slide. */
-.change-list { max-height: 480px; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; padding-right: 3px; }
-.changes-card .section-heading h2 { font-size: var(--text-subhead); }
-.capture-panel { margin-top: var(--space-4); }
-.capture-title { display: flex; align-items: center; margin-bottom: var(--space-4); }
-.capture-title h2 { font-size: var(--text-subhead); font-weight: 600; letter-spacing: -.2px; }
-.capture-title small { display: block; margin-top: 3px; color: var(--muted); font-size: var(--text-small); }
-.capture-title svg { box-sizing: content-box; flex-shrink: 0; width: 17px; height: 17px; padding: 10px; margin-right: 12px; border: 1px solid var(--glass-rim); border-radius: 50%; background: var(--elevated); color: var(--muted); }
-.capture-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-2); }
-.version-label { color: var(--text); font-weight: 600; }
-.capture-hint { color: var(--muted); font-size: var(--text-small); margin-top: var(--space-2); }
-/* While an operation runs the composer's field and suggestions are
-   disabled; they dim so the busy track is not the only sign. */
-.capture-panel.is-busy .field-shell, .capture-panel.is-busy .message-presets { opacity: .6; }
-/* Reference 01: preview and document facts close the inspector column. */
-.document-preview { margin-top: var(--space-4); padding-top: var(--space-4); border-top: 1px solid var(--line); }
-.preview-title { font-size: var(--text-subhead); font-weight: 600; letter-spacing: -.2px; margin-bottom: var(--space-3); }
-.preview-figure { margin: 0 0 var(--space-3); }
-.preview-figure img { display: block; width: 100%; max-height: 300px; object-fit: contain; border-radius: var(--radius); background: var(--input); }
-.preview-figure figcaption { margin-top: 7px; }
-.document-facts { display: flex; flex-wrap: wrap; margin: 0 -3px; }
-.document-facts div { display: flex; align-items: baseline; margin: 3px; padding: var(--space) var(--space-3); border: 1px solid var(--line); border-radius: 14px; background: var(--elevated); }
-.document-facts dt { color: var(--muted); font-size: 11px; margin-right: 6px; }
-.document-facts dd { margin: 0; font-size: var(--text-small); }
-.capture-actions { display: flex; margin-top: var(--space-3); }
-.capture-actions > .button { flex: 1; }
-.message-presets { display: flex; flex-wrap: wrap; margin: var(--space-2) -3px 0; }
-.preset { padding: var(--space) var(--space-3); margin: 3px; border: 1px solid var(--line); border-radius: 14px; color: var(--muted); font-size: var(--text-small); background: var(--elevated); }
-/* Busy feedback. One CSS track serves both hosts: the browser preview has no
-   <sp-progressbar>, and a host that cannot animate still shows the bar. */
-.progress-track { position: relative; width: 100%; height: 3px; margin-top: var(--space-2); overflow: hidden; border-radius: 2px; background: var(--line); }
-.progress-track span { position: absolute; top: 0; bottom: 0; left: 0; width: 40%; border-radius: inherit; background: var(--accent); box-shadow: 0 0 10px var(--accent); animation: photogit-progress 1.4s var(--ease-liquid) infinite; }
-@keyframes photogit-progress {
-  from { transform: translateX(-100%); }
-  to { transform: translateX(250%); }
-}
-/* Capsules are rounded by exactly half their own height. The host draws a
-   radius larger than half the box as an arc of that radius rather than
-   clamping it, so a 999px pill came out as two great circles. */
-.button { display: flex; align-items: center; justify-content: center; min-height: 38px; padding: var(--space-2) var(--space-4); border: 1px solid transparent; border-radius: 19px; font-size: var(--text-body); font-weight: 500; text-align: center; line-height: 1.4; }
-.button svg { position: relative; width: 16px; height: 16px; margin-right: var(--space-2); }
-.button-primary { background: var(--primary); color: var(--primary-text); border-color: var(--primary); box-shadow: inset 0 1px 0 var(--shine), 0 2px 6px var(--shadow); }
-.button-primary[role="button"]:not([aria-disabled="true"]):hover { background: var(--primary-hover); color: var(--primary-text); border-color: var(--primary-hover); box-shadow: 0 1px 0 rgba(255,255,255,.24) inset, 0 0 28px -6px var(--primary), 0 10px 24px -12px var(--primary); }
-.button-primary[role="button"]:not([aria-disabled="true"]):active { background: var(--primary-pressed); color: var(--primary-text); border-color: var(--primary-pressed); box-shadow: none; }
-/* Cancel scan appears for the duration of a scan and goes with it; fading
-   it in stops the scan card from jumping every time a scan starts. */
-#cancel-scan { margin: -6px 0 18px; animation: photogit-fade-in var(--motion-control) var(--ease-liquid) backwards; }
-#save-version { min-height: 44px; border-radius: 22px; font-weight: 600; box-shadow: 0 1px 0 rgba(255,255,255,.22) inset, 0 10px 24px -12px var(--primary); }
-/* A parked primary action keeps its fill but loses its glow. */
-.button-primary[aria-disabled="true"], #save-version[aria-disabled="true"] { box-shadow: none; }
-.button-quiet { color: var(--text); background: transparent; border-color: var(--border); }
-.button-quiet[role="button"]:not([aria-disabled="true"]):hover { border-color: var(--glass-rim); box-shadow: 0 0 22px -8px var(--glow), 0 1px 0 var(--shine) inset; }
-.button-small { min-height: 30px; padding: var(--space) var(--space-2); border-radius: 15px; font-size: var(--text-small); }
-.button-wide { width: 100%; }
-.button-disabled { color: var(--disabled); border-color: var(--line); }
-.field-label { display: block; margin: var(--space-4) 0 var(--space-2); color: var(--muted); font-size: var(--text-small); }
-.field-shell { display: flex; align-items: center; width: 100%; min-width: 0; min-height: var(--control-tall); border: 1px solid var(--glass-rim); border-radius: var(--radius-pill); background: var(--input); transition: border-color var(--motion-control) var(--ease-liquid), box-shadow var(--motion-control) var(--ease-liquid); }
-.field-shell:focus-within { border-color: var(--focus); box-shadow: 0 0 0 1px var(--focus); }
-/* The shell draws the focus ring for the field it wraps; the input's own
-   outline inside it drew a second, smaller ring — visibly so in the search
-   fields, where the magnifier pushes the input in from the shell's edge. */
+/* Fields are recessed. Photoshop draws its own dark text box wherever an
+   input has no opaque background or border of its own, so the input is given
+   both, in the colour of its shell, and reads as plain text inside it. */
+.field-shell { display: flex; align-items: center; min-width: 0; min-height: var(--control-tall); padding: 0 var(--space-2); border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-recessed); }
+.field-shell:focus-within { border-color: var(--accent-line); }
+.field-shell > svg { margin-right: 6px; color: var(--text-muted); }
+.field-shell input { flex: 1; min-width: 0; height: 28px; margin: 0; padding: 0; border: 1px solid var(--bg-recessed); border-radius: var(--radius); background-color: var(--bg-recessed); color: var(--text); font: inherit; font-style: normal; outline: none; -webkit-appearance: none; appearance: none; }
 .field-shell input:focus { outline: none; }
-/* A field that has just received a suggestion flashes its selection tone
-   once and settles back, so the eye follows the words from chip to field. */
-.field-shell.is-updated { animation: photogit-field-updated var(--motion-nav) var(--ease-liquid); }
-@keyframes photogit-field-updated {
-  from { background-color: var(--selected); }
-  to { background-color: var(--input); }
-}
-@supports (box-shadow: 0 0 0 1px color-mix(in srgb, red 20%, transparent)) {
-  .field-shell:focus-within { box-shadow: 0 0 0 3px color-mix(in srgb, var(--focus) 22%, transparent); }
-}
-input, sp-dropdown, sp-menu, sp-menu-item, select { color: var(--text); font-family: var(--font-ui); font-size: var(--text-body); font-style: normal; }
-input { min-width: 0; width: 100%; height: 34px; padding: 7px var(--space-3); margin: 0; border: 0; border-radius: 17px; background: transparent; appearance: none; }
-input::placeholder { color: var(--muted); opacity: 1; font-family: var(--font-ui); font-size: var(--text-body); font-style: normal; }
-input:disabled { color: var(--disabled); }
-.search-field svg { width: 16px; height: 16px; margin-left: var(--space-3); color: var(--muted); transition: color var(--motion-control) var(--ease-liquid); }
-.search-field:focus-within svg { color: var(--accent); }
-.search-glyph { display: flex; }
-.search-field { border-color: var(--line); }
-sp-dropdown, select { width: 100%; min-height: var(--control-tall); margin: var(--space) 0; padding: var(--space) var(--space-2); background: var(--input); border: 1px solid var(--border); border-radius: var(--radius); }
-sp-menu, sp-menu-item { background: var(--overlay); color: var(--text); }
-.filter-bar { display: flex; flex-wrap: wrap; margin: var(--space-2) -3px; }
-.filter-chip { margin: 3px; padding: var(--space) var(--space-3); border: 1px solid transparent; border-radius: 14px; color: var(--muted); font-size: var(--text-small); }
-.filter-chip[aria-pressed="true"] { color: var(--text); background: var(--elevated); border-color: var(--line); animation: photogit-pop-soft var(--motion-control) var(--ease-liquid) backwards; }
-/* A softer pop for a control that changes state under the pointer: no
-   opacity, so its label never dims, and a smaller overshoot. */
-@keyframes photogit-pop-soft {
-  from { transform: scale(.92); }
-  60% { transform: scale(1.04); }
-  to { transform: none; }
-}
-.chip-count { margin-left: 5px; font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; }
-.filter-note { margin: var(--space-2) 0; color: var(--muted); font-size: var(--text-small); animation: photogit-fade-in var(--motion-control) var(--ease-liquid) backwards; }
-/* Selection is a fill, a slide and an accent edge; the edge is carried by
-   box-shadow, so it must transition with the other two or it snaps on. */
-.list-row { display: flex; align-items: flex-start; min-width: 0; padding: var(--space-3) var(--space-2); border-bottom: 1px solid var(--line); border-radius: var(--radius); background: transparent; transition: background-color var(--motion-control) var(--ease-liquid), box-shadow var(--motion-control) var(--ease-liquid), transform var(--motion-nav) var(--ease-liquid); }
-.list-row[role="button"]:hover { background: var(--hover); }
-.row-glyph, .history-marker { display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; flex-shrink: 0; margin-right: var(--space-3); color: var(--muted); background: var(--elevated); border-radius: var(--radius-chip); }
-.row-glyph svg { width: 17px; height: 17px; }
-.row-copy { flex: 1; min-width: 0; }
-.row-copy strong { display: block; font-size: var(--text-body); font-weight: 500; }
-.row-copy > span { display: block; color: var(--muted); font-size: var(--text-small); overflow-wrap: break-word; }
-.row-copy .layer-identity { margin-top: 1px; }
-.change-detail { margin-top: var(--space); }
-.change-domain { flex-shrink: 0; text-align: right; color: var(--muted); font-size: var(--text-small); margin-left: 8px; max-width: 80px; }
-.change-state, .change-kind { display: block; }
-.change-state { color: var(--warning); }
-.change-state.added { color: var(--success); }
-.change-state.removed { color: var(--error); }
-/* An empty state replaces a list that just emptied. Easing it up from a few
-   pixels below reads as "the list is now this" rather than a flash of new
-   text; a display change replays the animation each time it appears. */
-.empty-state { padding: var(--space-4) 0; color: var(--muted); animation: photogit-reveal var(--motion-nav) var(--ease-liquid) backwards; }
-.empty-state strong { color: var(--text); font-size: var(--text-body); font-weight: 500; }
-.empty-state p { color: var(--muted); font-size: var(--text-small); margin-top: 6px; }
-.empty-state .text-link { margin-top: var(--space-2); }
-.command-empty { padding: 14px 8px; }
-.list-limit-note { color: var(--muted); padding: var(--space-2) 0; font-size: var(--text-small); }
-/* History selection and structured inspector. No fabricated preview data. */
-.history-list-panel { min-width: 0; }
-.history-group { padding-top: var(--space-4); }
-.history-group-heading { display: flex; justify-content: space-between; flex-wrap: wrap; margin-bottom: 6px; color: var(--muted); font-size: var(--text-small); font-weight: 400; animation: photogit-fade-in var(--motion-control) var(--ease-liquid) backwards; }
-.history-group-heading strong { font-weight: 500; margin-right: 8px; }
-.history-group-entries { min-width: 0; }
-.history-row { padding: var(--space-3) var(--space-2); border-radius: var(--radius); border-bottom-color: transparent; margin-bottom: 3px; flex-wrap: wrap; }
-.history-marker { background: transparent; width: 16px; margin-right: 8px; }
-.history-marker svg { width: 14px; height: 14px; }
-.history-row .row-copy { flex-basis: 120px; }
-.history-row.selected { border-color: var(--line); }
-.commit-id { margin: var(--space) 0 0 var(--space-6); font: 11px var(--mono); color: var(--muted); }
-.history-row.selected .commit-id { color: var(--text); }
-.version-inspector { min-width: 0; color: var(--text); }
-#history-inspector { display: none; }
-.inspector-empty { padding: var(--space-6); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--surface); }
-.review-inspector .inspector-empty, .version-inspector[data-state="empty"] { padding: 8px 0 0; border: 0; background: transparent; }
-.inspector-empty h2 { font-size: var(--text-subhead); }
-.inspector-empty p { color: var(--muted); margin-top: var(--space-2); font-size: var(--text-small); }
-.version-inspector-header { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; margin-bottom: var(--space-5); }
-.version-inspector-title { flex: 1 1 200px; min-width: 0; margin-right: 12px; }
-.version-inspector-heading { margin-bottom: 8px; }
-.version-inspector-meta { color: var(--muted); font-size: var(--text-small); }
-.version-inspector-grid { display: flex; flex-wrap: wrap; margin: 0; }
-.version-inspector-visual { flex: 1.35 1 260px; min-width: 0; padding: 0 6px; }
-.version-inspector-information { flex: 1 1 230px; min-width: 0; padding-left: 18px; }
-.version-inspector-grid.metadata-only .version-inspector-visual { flex: 1 1 100%; margin-bottom: 12px; }
-.version-inspector-grid.metadata-only .version-inspector-information { display: flex; flex-wrap: wrap; flex: 1 1 100%; padding-left: 0; }
-.version-inspector-grid.metadata-only .version-inspector-fallback { padding: 14px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--input); }
-.version-inspector-grid.metadata-only .version-inspector-notice { padding: 0; margin-top: 8px; }
-.version-inspector-fallback strong { display: block; color: var(--text); margin: 8px 0; }
-.version-inspector-document-mark { display: inline-block; padding: 6px 8px; border: 1px solid var(--line); border-radius: var(--radius-chip); color: var(--muted); font-size: var(--text-small); }
-.version-inspector-files code, .version-inspector-commit { font-family: var(--mono); font-size: 11px; margin-left: 5px; }
-.version-inspector-section { flex: 1 1 210px; min-width: 0; margin: 6px; padding: var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--surface); }
-.version-inspector-section h3 { margin-bottom: var(--space-3); font-size: var(--text-subhead); }
-.version-inspector-facts { margin: 0; }
-.version-inspector-facts dt { font-size: var(--text-small); color: var(--muted); margin-top: var(--space-2); }
-.version-inspector-facts dd { margin: 2px 0 0; overflow-wrap: anywhere; }
-.version-inspector-changes, .version-inspector-files { padding-left: 16px; color: var(--muted); font-size: var(--text-small); overflow-wrap: anywhere; }
-.version-inspector-changes li, .version-inspector-files li { margin: 7px 0; }
-.version-inspector-notice, .version-inspector-fallback { padding: 14px 0; color: var(--muted); font-size: var(--text-small); }
-.version-inspector-preview img { display: block; max-width: 100%; max-height: 520px; object-fit: contain; border-radius: var(--radius); }
-.version-inspector-open { flex: 0 1 auto; margin-top: 4px; }
-.version-inspector-state { color: var(--muted); padding: 20px 0; }
-/* Branches and reviews separate choices from consequential operations. */
-.branch-layout, .review-layout { min-width: 0; }
-.branch-list { margin-bottom: var(--space-5); }
-.branch-list-panel { min-width: 0; }
-.branch-row { display: flex; align-items: center; flex-wrap: wrap; padding: var(--space-3); border: 1px solid var(--line); border-radius: var(--radius); margin-bottom: var(--space-2); background: var(--nested); }
-.branch-row.current { background: var(--selected); }
-.branch-row svg { color: var(--muted); margin-right: var(--space-2); }
-.branch-row-icon svg { margin-left: -3px; }
-.branch-row-copy { flex: 1; min-width: 80px; }
-.branch-row-copy strong, .branch-row-copy span { display: block; }
-.branch-row-copy span { color: var(--muted); font-size: var(--text-small); margin-top: 3px; }
-.branch-row .button { margin: 6px 0 0 8px; }
-/* Reference 06: a branch with a saved preview becomes a card led by its artwork.
-   Branches without one keep the compact row so the list never fabricates imagery. */
-.branch-row-preview { display: block; order: -1; flex: 0 0 calc(100% + 2 * var(--space-3)); margin: calc(-1 * var(--space-3)) calc(-1 * var(--space-3)) var(--space-3); overflow: hidden; border-radius: calc(var(--radius) - 1px) calc(var(--radius) - 1px) 0 0; background: var(--input); }
-/* The whole saved preview, letterboxed on the input tone, the same way the
-   Changes view shows it. A 132px crop of a portrait poster cut its headline
-   in half and made a saved preview look like a broken render. */
-.branch-row-preview img { display: block; width: 100%; height: 148px; object-fit: contain; }
-.branch-row.has-preview { align-items: flex-start; align-content: flex-start; padding-bottom: var(--space-3); }
-.branch-row.has-preview .branch-row-copy { flex-basis: 100%; }
-.branch-row.current.has-preview { border-color: var(--accent); }
-/* Reference 07: paired branch previews above the change summary. */
-.comparison-artwork { display: flex; margin: var(--space-3) -5px 0; }
-.comparison-artwork-side { flex: 1 1 0; min-width: 0; margin: 0 5px; }
-/* Paired previews are compared by eye, so both show whole, never cropped. */
-.comparison-artwork-side img { display: block; width: 100%; height: 150px; object-fit: contain; border: 1px solid var(--line); border-radius: var(--radius); background: var(--input); }
-.comparison-artwork-side figcaption { margin-top: 6px; overflow-wrap: break-word; }
-.comparison-artwork-note { margin-top: var(--space-2); }
-.task-card, .branch-create-card { min-width: 0; padding: var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--surface); }
-.task-card h3, .branch-create-card h3 { font-size: var(--text-subhead); }
-.current-branch { display: flex; justify-content: space-between; align-items: center; padding: var(--space-2) 0; margin-top: 6px; }
-.current-branch strong { min-width: 0; margin-right: 8px; }
-.branch-create-card { margin-top: var(--space-4); }
-.inline-form { display: flex; flex-wrap: wrap; margin-top: var(--space-2); }
-.inline-form .field-shell { flex: 1 1 140px; margin-bottom: var(--space-2); }
-.inline-form .button { margin: 0 0 var(--space-2) var(--space-2); }
-.fine-print, .provider-note, .docs-intro { color: var(--muted); font-size: var(--text-small); }
-.fine-print { margin-top: var(--space-3); }
-.review-list-panel { min-width: 0; }
-.review-card { padding: var(--space-3); margin-top: var(--space-2); border: 1px solid var(--line); border-radius: var(--radius); background: var(--nested); }
-.review-title { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; }
-.review-title h3 { min-width: 0; margin-right: 8px; }
-.review-title > span { color: var(--muted); font-size: var(--text-small); }
-.review-direction { color: var(--muted); font-size: var(--text-small); margin: 3px 0 var(--space-2); }
-.review-meta { display: flex; flex-wrap: wrap; align-items: center; color: var(--muted); font-size: var(--text-small); margin-top: var(--space-2); }
-.review-meta > span { margin-right: 6px; }
-.review-meta .ready, .review-meta .blocked { padding: 2px var(--space-2); border-radius: 11px; }
-.review-meta .ready { color: var(--success); background: var(--success-surface); }
-.review-meta .blocked { color: var(--warning); background: var(--warning-surface); }
-.review-actions { display: flex; flex-wrap: wrap; margin: var(--space-3) -3px 0; }
-.review-actions > .button { flex: 1 1 90px; margin: 3px; }
-.review-actions > .merge-action[aria-disabled="true"] { flex-basis: 100%; justify-content: flex-start; padding-left: 3px; background: transparent; opacity: 1; border: 0; color: var(--warning); font-weight: 400; }
-.review-inspector { min-width: 0; color: var(--text); }
-#review-inspector { display: none; }
-.comparison-endpoint { min-width: 0; max-width: 100%; }
-.comparison-endpoint > span, .comparison-endpoint > strong { display: block; }
-.comparison-endpoint > span { margin: 0 0 5px; }
-.comparison-facts { display: flex; flex-wrap: wrap; margin: var(--space-3) -6px; }
-.comparison-fact { flex: 1 1 110px; margin: 6px; }
-.comparison-fact dt { font-size: var(--text-small); color: var(--muted); }
-.comparison-fact dd { margin: 2px 0 0; font-size: 17px; color: var(--text); }
-.comparison-change-list, .comparison-file-list, .comparison-conflicts, .comparison-warnings { padding-left: 18px; overflow-wrap: anywhere; font-size: var(--text-small); }
-.comparison-change-list li, .comparison-file-list li, .comparison-conflicts li, .comparison-warnings li { margin: 8px 0; }
-.comparison-file-list code { font: 11px/1.5 var(--mono); margin-left: 6px; }
-.comparison-status .ready { color: var(--success); }
-.comparison-status .blocked { color: var(--warning); }
-.comparison-status.merge-blocked { border-color: var(--warning); background: var(--warning-surface); }
-.comparison-status > h3 { margin-top: 14px; font-size: var(--text-subhead); }
-.comparison-status > h3:first-child { margin-top: 0; }
-.comparison-direction { display: flex; align-items: center; flex-wrap: wrap; padding: var(--space-3) 0; color: var(--text); }
-.comparison-direction strong { background: var(--elevated); padding: var(--space) var(--space-3); border-radius: 14px; }
-.comparison-direction > span { margin: 0 var(--space-2); color: var(--muted); }
-.comparison-layout { display: flex; flex-wrap: wrap; min-width: 0; }
-.comparison-summary { flex: 1 1 240px; min-width: 0; padding-right: var(--space-5); }
-.comparison-status { flex: 1 1 180px; min-width: 0; padding: var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--surface); }
-.comparison-status p { margin-top: var(--space-2); font-size: var(--text-small); color: var(--muted); }
-.comparison-status .button { margin-top: var(--space-4); }
-.comparison-summary h3 { margin: var(--space-4) 0 var(--space-2); font-size: var(--text-subhead); }
-.comparison-summary p, .comparison-files { font-size: var(--text-small); color: var(--muted); white-space: pre-wrap; overflow-wrap: break-word; margin-bottom: 8px; }
-.conflict-panel { padding: var(--space-4); border: 1px solid var(--warning); border-radius: var(--radius-panel); background: var(--warning-surface); animation: photogit-sheet-in var(--motion-nav) var(--ease-liquid) backwards; }
-.conflict-list, .detail-content { white-space: pre-wrap; overflow-wrap: break-word; color: var(--muted); font-size: var(--text-small); }
-/* Session feed, documentation and utility surfaces. */
-.activity { white-space: pre-wrap; overflow-wrap: break-word; }
-.activity-row { padding: var(--space-3) var(--space); border-bottom: 1px solid var(--line); color: var(--muted); font-size: var(--text-small); }
-.activity-row:last-child { border-bottom: 0; }
-/* "Show details" unfolds the full text beneath the summary; it eases in
-   rather than dropping the rows below it in one step. */
-.activity-row p { margin-top: 6px; animation: photogit-reveal var(--motion-control) var(--ease-liquid) backwards; }
-.activity-row:not(.activity-scan) > div:first-child { color: var(--text); }
-.activity-summary { display: flex; align-items: flex-start; flex-wrap: wrap; }
-.activity-icon { width: 16px; flex-shrink: 0; color: var(--muted); font-weight: 600; }
-.activity-icon.error { color: var(--error); animation: photogit-pop var(--motion-nav) var(--ease-liquid) backwards; }
-.activity-time { color: var(--muted); font-size: 11px; margin-right: 10px; white-space: nowrap; }
-.activity-copy { flex: 1 1 150px; min-width: 0; }
-.sync-panel { display: flex; padding: var(--space-3) 0; margin-top: var(--space-3); border-top: 1px solid var(--line); }
-.footer-action { display: flex; align-items: center; justify-content: center; flex: 1; min-height: 34px; padding: 6px; border-radius: 17px; font-size: var(--text-small); color: var(--muted); }
-.footer-action svg { width: 16px; height: 16px; margin-right: var(--space-2); transition: transform var(--motion-control) var(--ease-liquid); }
-.footer-action:hover svg { transform: translateY(-1px); }
-.tools-toggle { flex: 0 0 30px; }
-/* The note sits below both columns, not inside the content column, so the
-   rail ends level with the footer bar instead of a line lower. */
-.shortcut-note { margin: var(--space) 0 var(--space-2); padding: 0 var(--space-4); text-align: center; color: var(--muted); font-size: var(--text-small); }
-kbd { font-family: var(--mono); font-size: 11px; padding: 1px var(--space); border: 1px solid var(--line); border-radius: var(--radius-chip); }
-.docs-intro { margin-bottom: var(--space-3); }
-.command-row { display: flex; align-items: flex-start; padding: var(--space-3) var(--space-2); margin-top: var(--space); border-bottom: 1px solid var(--line); border-radius: var(--radius-chip); min-width: 0; background: transparent; }
-.command-glyph { display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; margin-right: var(--space-2); color: var(--muted); flex-shrink: 0; transition: transform var(--motion-control) var(--ease-liquid), color var(--motion-control) var(--ease-liquid); }
-.command-row:hover .command-glyph { transform: translateY(-1px); }
-.command-row:hover .command-glyph, .command-row:focus .command-glyph { color: inherit; }
-.command-copy { flex: 1; min-width: 0; }
-.command-row strong, .command-row code, .command-copy > span { display: block; overflow-wrap: break-word; }
-.command-row strong { color: var(--text); font-size: var(--text-body); font-weight: 500; }
-.command-row code { color: var(--muted); font: 11px/1.5 var(--mono); margin-top: 3px; }
-.command-copy > span, .command-hint { color: var(--muted); font-size: var(--text-small); white-space: normal; }
-.command-copy > span { margin-top: 3px; }
-.command-hint { margin: var(--space-2) 0; }
-.command-row:focus { outline-offset: -2px; background: var(--selected); }
-#command-error { color: var(--error); white-space: normal; margin: var(--space-2) 0; }
-/* A command is copied, not read: it stays on one line and scrolls sideways
-   in a narrow panel rather than breaking a path in the middle of a word. */
-.setup-command { padding: var(--space-3); margin-top: var(--space-3); background: var(--input); border: 1px solid var(--line); border-radius: var(--radius); font: 11px/1.7 var(--mono); white-space: pre; overflow-x: auto; overflow-wrap: normal; word-break: normal; }
-.setup-command:focus { outline: 2px solid var(--focus); outline-offset: 2px; }
-/* Both sheets close from the same corner glyph, so a dialog's heading row
-   always reads title left, close right. The heading keeps the title on one
-   line beside it rather than wrapping the control underneath. */
-.tool-sheet > .section-heading { flex-wrap: nowrap; align-items: flex-start; }
-.tool-sheet > .section-heading h2 { flex: 1; min-width: 0; }
-.tools-menu, .tool-sheet { position: fixed; z-index: 30; left: 10px; right: 10px; top: 12px; max-height: calc(100% - 24px); overflow: auto; padding: var(--space-4); border: 1px solid var(--rim); border-radius: var(--radius-overlay); background: var(--overlay); box-shadow: 0 12px 40px var(--shadow); }
-.tools-menu { top: auto; bottom: 12px; left: auto; width: 264px; max-width: calc(100% - 20px); padding: var(--space-2); }
-/* Opened from the header, the menu hangs just below it. The header is 64px
-   tall here and 78px from 720px; a fixed 56px sat the menu across the
-   header's own controls. */
-.tools-menu.from-header { top: 68px; bottom: auto; }
-.tool-item { display: flex; align-items: center; min-height: 36px; padding: var(--space-2) var(--space-3); border-radius: var(--radius-chip); }
-.tool-item svg { margin-right: var(--space-2); color: var(--muted); transition: transform var(--motion-control) var(--ease-liquid), color var(--motion-control) var(--ease-liquid); }
-.tool-item:hover svg { transform: translateX(2px); }
-.tool-item:hover svg, .tool-item:focus svg { color: inherit; }
-.surface-backdrop { position: fixed; z-index: 20; top: 0; left: 0; width: 100%; height: 100%; background: var(--backdrop); }
-.detail-content { margin: var(--space-4) 0; }
-#detail-content .version-inspector-header, #detail-content .version-inspector-grid, #detail-content .comparison-layout { white-space: normal; }
-#detail-content.version-inspector, #detail-content.review-inspector { color: var(--text); }
-#create-tag { margin-top: var(--space-4); }
-/* A notice interrupts: the helper dropped, the document is not the project's.
-   Arriving on the sheet's short rise marks it as new rather than as a
-   region that was always there and just changed colour. */
-.notice { margin: var(--space-3) var(--space-4); padding: var(--space-3); border: 1px solid var(--line); border-radius: var(--radius); background: var(--elevated); color: var(--text); animation: photogit-sheet-in var(--motion-nav) var(--ease-liquid) backwards; }
-/* A calm setup card by default. Only a genuinely lost connection turns it
-   into a warning, so first-run choices never read as errors. */
-.notice.is-warning { border-color: var(--warning); background: var(--warning-surface); color: var(--warning); }
-.notice p { color: var(--text); font-size: var(--text-small); margin: 6px 0 var(--space-2); }
-.notice .text-link { margin-top: var(--space-2); }
-.notice .setup-command { margin-top: var(--space-2); }
-.notice .button { margin-top: var(--space-2); }
-.status-message, #result { font-size: var(--text-small); margin: var(--space-2) var(--space-4); overflow-wrap: break-word; }
-#result:empty { display: none; }
-/* A status line is written, read, and cleared. It fades in over the press
-   duration — quick enough that an error is never late, slow enough that a
-   success does not blink — and a fresh message replays it. */
-#result:not(:empty) { animation: photogit-sheet-in var(--motion-control) var(--ease-liquid) backwards; }
-#result.is-leaving { animation: photogit-surface-out var(--motion-press) var(--ease-liquid) both; }
-/* Entrances fill backwards, not both: their end frame is the element's own
-   resting state, and a forwards fill would keep the finished animation
-   applied — which on a compositing host leaves the element on its own layer
-   and its text rasterised a shade differently from its neighbours. */
-@keyframes photogit-fade-in {
-  from { opacity: .01; }
-  to { opacity: 1; }
-}
-#result.success, #result.error { padding: var(--space-2) var(--space-3); border-radius: var(--radius); border: 1px solid var(--line); }
-#result.success { color: var(--success); background: var(--success-surface); }
-#result.error { color: var(--error); background: var(--error-surface); border-color: var(--error); }
-/* Native fields must not paint through modal surfaces. */
-body.has-surface #workspace input, body.has-surface #workspace sp-dropdown, body.has-surface #workspace select { visibility: hidden; }
-.is-initializing #workspace, .is-initializing #onboarding, .is-initializing #connection-notice { display: none !important; }
-/* Startup ends with the skeleton giving way to the workspace or the first-run
-   card. Fading the arrival in makes that a hand-over instead of a cut. */
-.workspace, .onboarding { animation: photogit-fade-in var(--motion-nav) var(--ease-liquid) backwards; }
-.startup-card, .onboarding { margin: var(--space-6) var(--space-4); padding: var(--space-6); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--surface); max-width: 560px; }
-.startup-card p { margin-top: var(--space-2); color: var(--muted); }
-.startup-skeleton { margin-top: var(--space-5); }
-/* The skeleton bars pulse in turn while the saved project is read, so a
-   slow helper looks like waiting rather than like a frozen panel. */
-.startup-skeleton span { display: block; height: 6px; margin-top: var(--space-3); background: var(--elevated); border-radius: var(--radius-chip); animation: photogit-skeleton 1.4s var(--ease-liquid) infinite alternate; }
-.startup-skeleton span:nth-child(2) { animation-delay: .2s; }
-.startup-skeleton span:nth-child(3) { animation-delay: .4s; }
-@keyframes photogit-skeleton {
-  from { opacity: .45; }
-  to { opacity: 1; }
-}
-.startup-skeleton span:first-child { width: 42%; }
-.startup-skeleton span:last-child { width: 72%; }
-.onboarding h2 { margin: var(--space-4) 0 var(--space-3); }
-.onboarding p { color: var(--muted); }
-.onboarding .button { margin-top: var(--space-5); }
-.onboarding #setup-toggle { margin-top: 10px; }
-/* The chevron turns to point down when the instructions are open, so the
-   link reads as a disclosure rather than a jump. */
-.disclosure-chevron { width: 12px; height: 12px; margin-left: 4px; transition: transform var(--motion-control) var(--ease-liquid); }
-[aria-expanded="true"] > .disclosure-chevron { transform: rotate(90deg); }
-#setup-instructions { animation: photogit-reveal var(--motion-control) var(--ease-liquid) backwards; }
-.onboarding-symbol { color: var(--muted); }
-.onboarding-steps { margin: var(--space-5) 0 0; padding: 0; list-style: none; }
-.onboarding-steps li { font-size: var(--text-small); margin-top: var(--space-2); }
-.onboarding-steps b { color: var(--text); margin-right: 8px; font-family: var(--mono); }
-/* Logical pixel breakpoints: minimum 230×200, docked 400, wide workspace 900+. */
-@media (min-width: 640px) {
-  .section-nav { flex-wrap: nowrap; }
-  /* Equal tracks from zero rather than from 14% of the row, so the count pill
-     and label share the space instead of the label losing it. */
-  .nav-item { flex: 1 1 0; padding-left: 4px; padding-right: 4px; }
-  /* Six destinations share 640px here. The icon is the part that can go: the
-     label names the destination and the pill carries its count. Icons return
-     with the rail at 720px. */
-  .nav-item svg { display: none; }
-  .nav-item b { margin-left: var(--space); }
-  .tool-sheet { left: 50%; right: auto; width: 580px; margin-left: -290px; }
-}
-@media (min-width: 720px) {
-  /* Reference 01: the brand sits in the rail's column so the sidebar reads to
-     the top edge, and the remaining header becomes the content top bar. */
-  /* The sidebar column runs unbroken from the logo down, so the header carries
-     no rule across the brand; the content area supplies its own top edge. */
-  .app-header { padding: var(--space-4) var(--space-6) var(--space-2); min-height: 78px; border-bottom: 0; background: var(--bg); }
-  .app-brand { flex: 1 1 auto; min-width: 0; }
+.field-shell input::placeholder { color: var(--text-muted); font-style: normal; }
+.field-shell.is-updated { border-color: var(--accent-line); }
+.inline-form { display: flex; align-items: center; }
+.inline-form .field-shell { flex: 1; margin-right: var(--space-2); }
+.search-field { margin-bottom: var(--space-2); }
+/* Photoshop draws a text field above everything, a dialog included. While a
+   menu or dialog is open the fields beneath it are not drawn; their shells
+   keep their size, so nothing moves. */
+body.has-surface .workspace input { display: none; }
+/* The same goes for the search field the status line floats over. */
+body.has-toast .search-field input { display: none; }
 
-  .app-title > span { display: block; }
-  .command-trigger { flex: 1; justify-content: flex-start; width: auto; max-width: 520px; min-height: var(--control-tall); padding: 0 var(--space-4); margin: 0 auto 0 0; border-color: var(--line); border-radius: var(--radius-pill); background: var(--input); color: var(--muted); }
-  .command-trigger::after { content: "/"; margin-left: auto; padding: 2px 7px; border: 1px solid var(--line); border-radius: var(--radius-chip); font-size: 11px; font-family: var(--mono); color: var(--muted); }
-  .command-trigger svg { margin-right: 9px; }
-  .command-trigger-label { display: block; font-size: var(--text-body); }
-  .workspace-body { display: flex; align-items: stretch; }
-  /* Reference 01: project, branch and document context belong to the rail, not a full-width strip. */
-  .workspace-rail { display: flex; flex-direction: column; flex: 0 0 148px; min-width: 148px; margin-right: var(--space-4); }
+/* Pills: filters and quick-fill suggestions. */
+.filter-bar { display: flex; flex-wrap: wrap; }
+.preset, .filter-chip { display: inline-flex; align-items: center; min-height: 28px; margin: 0 8px 8px 0; padding: 0 12px; border: 1px solid var(--border-strong); border-radius: var(--radius-pill); background: transparent; color: var(--text); font-size: var(--text-secondary); white-space: nowrap; }
+.filter-chip[aria-pressed="true"] { border-color: var(--text-muted); background: var(--bg-selected); color: var(--text-strong); font-weight: 600; }
+.chip-count { margin-left: 4px; font-weight: inherit; font-variant-numeric: tabular-nums; }
+/* A filter that would show nothing is not offered. */
+.filter-chip.is-empty { display: none; }
+.filter-note { margin-bottom: var(--space-2); }
+#change-filters { margin-bottom: var(--space-2); }
 
-  /* Reference: icons sit above their labels, counts ride as pills, and the
-     selected destination lifts into its own glass tile. */
-  .section-nav { display: flex; flex-direction: column; flex-wrap: nowrap; flex: 0 0 auto; min-width: 0; padding: var(--space-3); border: 1px solid var(--glass-rim); border-radius: var(--radius-panel); border-bottom: 1px solid var(--glass-rim); background-color: var(--glass); background-image: linear-gradient(180deg, var(--glass-top), rgba(255,255,255,0) 58%); box-shadow: var(--glass-glow); }
-  /* Separate destinations with space rather than rules, so the selected tile
-     never collides with a divider. */
-  .nav-item { position: relative; flex: 0 0 auto; flex-direction: column; align-items: flex-start; justify-content: center; min-height: 76px; padding: 14px 14px 15px; margin: 3px 0; border: 1px solid transparent; border-radius: var(--radius); font-size: var(--text-body); }
-  .nav-item svg { display: block; width: 20px; height: 20px; margin: 0 0 11px; }
-  #changes-tab svg { margin-left: -5px; }
-  #history-tab svg, #branches-tab svg, #reviews-tab svg { margin-left: -3px; }
-  #activity-tab svg, #docs-tab svg { margin-left: -2px; }
-  .nav-item span { flex: none; }
-  .nav-item b { position: absolute; top: 13px; right: 13px; min-width: 21px; margin: 0; }
-  /* Hover lights the tile; the icon and count lift with it. */
-  .nav-item:hover { border-color: var(--glass-rim); box-shadow: 0 0 0 1px rgba(255,255,255,.05), 0 0 26px -8px var(--glow), 0 1px 0 var(--shine) inset; }
-  .nav-item:hover svg { transform: translateY(-2px) scale(1.07); }
-  .nav-item:hover b { box-shadow: 0 0 16px -3px var(--primary); }
-  .nav-item.active { border-color: var(--glass-rim); background: var(--elevated); color: var(--text); box-shadow: 0 1px 0 var(--shine) inset, 0 0 34px -10px var(--glow); }
-  .nav-item.active b { box-shadow: 0 0 18px -4px var(--primary); }
-  .workspace-content { flex: 1; min-width: 0; padding: 0; }
-  .workspace-body { padding: 0 var(--space-6) var(--space-6); }
-  .repo-context { margin: 0 var(--space-6) var(--space-4); }
-  .tools-menu.from-header { top: 82px; right: var(--space-6); }
-  /* First-run and loading cards are the only content on screen; centred, they
-     read as the panel's focus rather than as something stuck in a corner. */
-  .startup-card, .onboarding { margin: 32px auto; }
-  .notice, .status-message, #result { margin-left: var(--space-6); margin-right: var(--space-6); }
-  .changes-heading { display: flex; }
-  /* Same rule, inset and row height as the footer bar across from it, so
-     the two rules and the two rows line up. */
-  .rail-footer { display: block; margin-top: auto; padding: var(--space-3) var(--space-4); border-top: 1px solid var(--line); }
-  .shortcut-note { padding: 0 var(--space-6); margin-bottom: var(--space-4); }
-}
+/* Changes. */
+.scan-state { display: none; }
+.watch-status { display: none; }
+.watch-status.warning, .watch-status.error { display: flex; align-items: center; margin-bottom: var(--space-2); color: var(--text-strong); font-size: var(--text-secondary); }
+.watch-status i { width: 6px; height: 6px; margin-right: 6px; border: 1px solid var(--text-strong); border-radius: 3px; }
+#cancel-scan { margin-bottom: var(--space-2); }
+.list-row { display: flex; align-items: center; min-width: 0; padding: var(--space-2) 0; border-bottom: 1px solid var(--divider); }
+.row-copy { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.row-copy strong { color: var(--text); font-weight: 400; }
+.row-copy > span { color: var(--text-muted); font-size: var(--text-secondary); }
+.list-row.selected, .list-row[aria-pressed="true"] { background: var(--bg-selected); }
+.list-row.selected .row-copy > span, .list-row[aria-pressed="true"] .row-copy > span { color: var(--text-2); }
+/* Marker tiles tell added, edited and removed apart by shape and sign. */
+.marker, .row-glyph { display: flex; align-items: center; justify-content: center; flex: none; width: 20px; height: 20px; margin-right: var(--space-3); border: 1px solid var(--bg-recessed); border-radius: var(--radius); background: var(--bg-recessed); color: var(--text-2); font-family: var(--mono); font-size: var(--text-secondary); font-weight: 600; line-height: 1; }
+.row-glyph svg { width: 12px; height: 12px; }
+.marker.added { border-color: var(--text); background: var(--text); color: var(--bg-recessed); }
+.marker.removed { border-color: var(--border-strong); background: transparent; color: var(--text); }
+.change-row { align-items: flex-start; }
+.change-row .marker { margin-top: 1px; }
+.change-row.is-removed .change-name { text-decoration: line-through; }
+.change-row .change-detail { white-space: normal; }
+/* A layer is named once; the rows under it are that layer's other edits. */
+.change-row.same-layer .change-name { display: none; }
+.change-row.same-layer .change-detail { color: var(--text-2); }
+.change-kind, .change-value { flex: none; max-width: 50%; margin-left: var(--space-2); color: var(--text-muted); font-size: var(--text-secondary); line-height: 20px; text-align: right; }
+.change-value { color: var(--text-2); font-family: var(--mono); overflow-wrap: anywhere; }
+.list-limit-note { padding: var(--space-2) 0; }
 
-@media (min-width: 900px) {
-  .changes-layout { display: flex; align-items: flex-start; }
-  /* The composer sits beside the list here, not below it. */
-  #jump-save span { display: none; }
-  .changes-card { flex: 1; min-width: 0; margin-right: var(--space-4); }
-  .change-list { max-height: 640px; }
-  .capture-panel { flex: 0 0 320px; min-width: 0; margin: 0 0 var(--space-5); padding: var(--space-5); }
-  .history-layout { display: flex; align-items: flex-start; }
-  .history-list-panel { flex: 0 0 250px; padding-right: var(--space-5); }
-  #history-inspector { display: flex; flex-direction: column; flex: 1; padding-left: var(--space-6); border-left: 1px solid var(--line); min-height: 440px; }
-  /* Selecting no version leaves this column's only child far shorter than
-     the version list beside it. Center it in the reserved height instead of
-     letting it sit pinned to the top of an otherwise empty column. */
-  #history-inspector .inspector-empty { flex: 1; display: flex; flex-direction: column; justify-content: center; }
-  .branch-layout { display: flex; align-items: flex-start; }
-  .branch-list-panel { flex: 1; padding-right: var(--space-6); }
-  /* A grid keeps every card one track wide, so a lone card on the last row does
-     not stretch to fill it the way a flex item would. */
-  .branch-list-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(228px, 1fr)); gap: var(--space-3); margin: 0 0 var(--space-5); }
-  .branch-list-cards .branch-row { max-width: 100%; margin: 0; }
-  .branch-list-cards .branch-row.has-preview { padding-top: 0; }
-  .branch-list-cards .branch-row-preview { margin-top: 0; }
-  .branch-create-card { flex: 0 0 260px; margin-top: 0; }
-  .review-layout { display: flex; align-items: flex-start; margin-top: var(--space-4); }
-  .review-list-panel { flex: 0 0 290px; padding-right: var(--space-5); }
-  #review-inspector { display: flex; flex-direction: column; flex: 1; padding-left: var(--space-6); border-left: 1px solid var(--line); min-height: 400px; }
-  /* Same fix as #history-inspector: an unselected comparison is far shorter
-     than the review list beside it, so center it in the reserved height. */
-  #review-inspector .inspector-empty { flex: 1; display: flex; flex-direction: column; justify-content: center; }
-  .review-card:first-child { margin-top: 0; }
-  .review-title > span { width: 100%; margin-top: 5px; }
-  .comparison-summary { padding-right: 0; flex-basis: 100%; }
-  .comparison-status { flex-basis: 100%; margin-top: var(--space-4); }
-  .view-heading h2, .view-panel > .liquid-card > .view-heading h2 { font-size: var(--text-heading); letter-spacing: -.5px; }
-  #activity-view, #docs-view { max-width: 920px; }
-  .sync-panel { max-width: 520px; }
+/* History. The selected version is a card with its actions; the rest are rows. */
+.history-group + .history-group { margin-top: var(--space-2); }
+.history-group .list-section { border-bottom: 0; padding-bottom: var(--space); }
+.history-group .list-section .history-author { font-weight: 400; letter-spacing: 0; }
+.history-entry { border-bottom: 1px solid var(--divider); }
+.history-entry .history-row { border-bottom: 0; }
+.history-row { align-items: flex-start; }
+.history-row .row-copy strong { color: var(--text-strong); font-weight: 600; }
+.history-meta { font-family: var(--mono); }
+.history-marker, .history-thumbnail { display: flex; align-items: center; justify-content: center; flex: none; width: 40px; height: 40px; margin-right: var(--space-3); border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-recessed); color: var(--text-muted); }
+.history-thumbnail { display: block; object-fit: cover; }
+.history-row.has-thumbnail .history-marker { display: none; }
+.history-entry.selected { margin: var(--space) 0; padding: 0 var(--space-3) var(--space-3); border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--bg-selected); }
+.history-entry.selected .history-row { padding-top: var(--space-3); background: transparent; }
+.history-entry.selected .history-row .row-copy > span { color: var(--text-2); }
+.history-row .pill { margin-left: var(--space-2); }
+.history-actions { display: flex; }
+.history-details { margin-top: var(--space-2); }
+.history-actions .button { flex: 1 1 0; min-width: 0; }
+.history-actions .button + .button { margin-left: var(--space-2); }
+
+/* Branches. The row is the switch; the current branch is the selected row. */
+.branch-list { margin-bottom: var(--space-3); }
+.branch-row { display: flex; align-items: center; min-width: 0; padding: var(--space-2); border-bottom: 1px solid var(--divider); }
+.branch-row.current { border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--bg-selected); }
+.branch-row-preview { flex: none; width: 40px; height: 40px; margin-right: var(--space-3); }
+.branch-row-preview img { display: block; width: 40px; height: 40px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-recessed); object-fit: cover; }
+.branch-row-icon { display: flex; align-items: center; justify-content: center; flex: none; width: 40px; height: 40px; margin-right: var(--space-3); border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-recessed); color: var(--text-muted); }
+.branch-row.has-preview .branch-row-icon { display: none; }
+.branch-row-copy { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.branch-row-copy strong { overflow: hidden; color: var(--text-strong); text-overflow: ellipsis; white-space: nowrap; }
+.branch-row-copy span { overflow: hidden; color: var(--text-muted); font-size: var(--text-secondary); text-overflow: ellipsis; white-space: nowrap; }
+.branch-row.current .branch-row-copy span { color: var(--text-2); }
+.branch-list-empty { padding: var(--space-3) 0; }
+
+/* Reviews: one card per branch; the open card lists what stands in the way. */
+.review-list > * + * { margin-top: var(--space-2); }
+.review-card { border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-raised); }
+.review-card.expanded { border-color: var(--border-strong); }
+.review-head { display: flex; align-items: center; padding: var(--space-3); }
+.review-title { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.review-title strong { color: var(--text-strong); }
+.review-facts { display: flex; flex-wrap: wrap; align-items: center; color: var(--text-2); font-size: var(--text-secondary); }
+.review-state { display: inline-flex; align-items: center; margin-left: var(--space-2); color: var(--text-strong); white-space: nowrap; }
+.review-state svg { width: 14px; height: 14px; margin-right: 4px; }
+.review-head > .review-state { flex: none; font-weight: 600; }
+.review-head .button { flex: none; margin-left: var(--space-2); }
+.review-body { padding: var(--space-3); border-top: 1px solid var(--edge-dark); }
+.review-body > * + * { margin-top: var(--space-3); }
+.review-conflict-head { display: flex; align-items: baseline; justify-content: space-between; }
+.review-conflict-head strong { color: var(--text-strong); }
+.review-conflict-head span { flex: none; margin-left: var(--space-2); color: var(--text-2); font-size: var(--text-secondary); }
+.review-note { color: var(--text-2); font-size: var(--text-secondary); }
+.conflict-list { font-family: var(--mono); font-size: var(--text-secondary); white-space: pre-wrap; }
+
+/* Activity. */
+.activity-row { align-items: flex-start; }
+.activity-glyph { margin-top: 1px; }
+.activity-glyph.error { border-color: var(--border-strong); background: transparent; color: var(--text-strong); }
+.activity-row .row-copy strong { color: var(--text-strong); font-weight: 600; }
+.row-copy > .activity-copy { color: var(--text); font-size: var(--text-base); }
+.activity-time, .activity-time-slot { flex: none; margin-left: var(--space-2); color: var(--text-muted); font-family: var(--mono); font-size: var(--text-secondary); line-height: 20px; white-space: nowrap; }
+.activity-time-slot .activity-time { margin-left: 0; }
+.activity-chevron { display: flex; align-items: center; flex: none; height: 20px; margin-left: 2px; color: var(--text-muted); }
+.activity-details { margin: 0 0 var(--space-2) 32px; padding: var(--space-2) var(--space-3); border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-recessed); color: var(--text-2); font-size: var(--text-secondary); }
+.activity-details li { display: flex; align-items: baseline; }
+.activity-details li + li { margin-top: 4px; }
+.activity-details .activity-time { margin: 0 var(--space-2) 0 0; line-height: inherit; }
+
+/* Docs and command palette. */
+#command-directory, #command-results { margin-top: var(--space-2); }
+.command-row { display: flex; align-items: flex-start; padding: var(--space-2) 0; border-bottom: 1px solid var(--divider); }
+.command-glyph { display: flex; flex: none; margin: 1px var(--space-3) 0 0; color: var(--text-muted); }
+.command-copy { display: flex; flex-direction: column; min-width: 0; }
+.command-copy strong { color: var(--text-strong); }
+.command-copy code, .command-copy span { color: var(--text-muted); font-size: var(--text-secondary); }
+.command-hint { margin-top: 4px; }
+#command-error:not(:empty) { margin-top: 4px; color: var(--text-strong); }
+.docs-setup { margin-top: var(--space-3); }
+
+/* Notices, status line, startup and full-screen states. */
+.notice { flex: none; margin: var(--space-3); padding: var(--space-3); border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--bg-raised); }
+.notice strong { color: var(--text-strong); }
+.notice p { margin: 4px 0 var(--space-2); color: var(--text-2); font-size: var(--text-secondary); }
+.notice > .text-link, .notice > .setup-command { margin-bottom: var(--space-2); }
+/* The status line floats under the tab strip, so a result arriving or
+   leaving never pushes the screen down or up. Pressing it dismisses it. */
+.status-message { position: fixed; top: 108px; right: var(--space-3); left: var(--space-3); z-index: var(--z-toast); font-size: var(--text-secondary); cursor: pointer; }
+.status-message:not(:empty) { padding: var(--space-2) var(--space-3); border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--bg-raised); color: var(--text); }
+.status-message.error:not(:empty) { border-left: 2px solid var(--text-strong); color: var(--text-strong); }
+/* With nothing to say it takes no room. */
+.status-message:empty { display: none; }
+.startup-card, .onboarding { flex: none; margin: var(--space-3); padding: var(--space-4); border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-raised); }
+.startup-card p { margin-top: var(--space); color: var(--text-muted); }
+.startup-skeleton { margin-top: var(--space-3); }
+.startup-skeleton span, .inspector-skeleton span { display: block; height: 10px; margin-top: var(--space-2); border-radius: var(--radius); background: var(--bg-selected); }
+.startup-skeleton span:nth-child(2), .inspector-skeleton span:nth-child(2) { width: 72%; }
+.startup-skeleton span:nth-child(3), .inspector-skeleton span:nth-child(3) { width: 48%; }
+.onboarding { max-height: calc(100% - 24px); overflow-y: auto; }
+.onboarding > * + * { margin-top: var(--space-3); }
+#setup-instructions > * + * { margin-top: var(--space-2); }
+.state-icon { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-recessed); color: var(--text-strong); }
+.state-icon svg { width: 20px; height: 20px; }
+.state-copy { color: var(--text-2); }
+/* A document that is not the project's takes over the panel: there is
+   nothing to list, save or review until that is settled. */
+.unlinked-state { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+.unlinked-body { flex: 1; display: flex; flex-direction: column; justify-content: center; min-height: 0; overflow-y: auto; padding: var(--space-4); }
+.unlinked-body > * + * { margin-top: var(--space-3); }
+.unlinked-body h2 { font-size: 17px; }
+.unlinked-files { padding: 0 var(--space-3); border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-recessed); }
+.unlinked-files > div { padding: var(--space-3) 0; }
+.unlinked-files > div + div { border-top: 1px solid var(--border); }
+.unlinked-files dd { margin-top: 2px; color: var(--text-strong); font-weight: 600; }
+.unlinked-footer { justify-content: space-between; }
+
+/* Menu, dialogs and scrim. */
+.surface-backdrop { position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: var(--z-scrim); background: var(--scrim); }
+.tools-menu, .tool-sheet { border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--bg-raised); }
+.tools-menu { position: fixed; top: 44px; right: var(--space-2); z-index: var(--z-surface); width: 220px; max-width: calc(100% - 16px); max-height: calc(100% - 52px); overflow-y: auto; padding: var(--space) 0; }
+.tool-item { display: flex; align-items: center; min-height: 36px; padding: 0 var(--space-3); color: var(--text); }
+.tool-item svg { margin-right: var(--space-2); color: var(--text-muted); }
+.menu-rule { height: 1px; margin: var(--space) 0; background: var(--border); }
+.tool-sheet { position: fixed; top: var(--space-2); right: var(--space-2); bottom: var(--space-2); left: var(--space-2); z-index: var(--z-surface); display: flex; flex-direction: column; padding: var(--space-3); background: var(--bg); }
+#tag-sheet { bottom: auto; }
+#tag-sheet .field-shell, #tag-sheet-help { margin-bottom: var(--space-2); }
+.tool-sheet .section-heading { flex: none; }
+.detail-content { flex: 1; min-height: 0; overflow-y: auto; white-space: pre-line; }
+.detail-content .version-inspector, .detail-content .review-inspector, .detail-content > div { white-space: normal; }
+#detail-action { flex: none; margin-top: var(--space-2); }
+
+/* Version details and branch comparison, shown in the dialog. */
+.version-inspector-header { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; }
+.version-inspector-title { flex: 1 1 180px; min-width: 0; margin-bottom: var(--space-2); }
+.version-inspector-meta { font-family: var(--mono); }
+.version-inspector-current { margin-top: 4px; }
+.version-inspector-open { flex: none; margin-bottom: var(--space-2); }
+.version-inspector-grid > * + * { margin-top: var(--space-3); }
+.version-compare-toggle { display: flex; margin-bottom: var(--space-2); }
+.version-compare-toggle .button { flex: 1 1 0; border-radius: 0; }
+.version-compare-toggle .button:first-child { border-radius: var(--radius) 0 0 var(--radius); }
+.version-compare-toggle .button:last-child { border-left: 0; border-radius: 0 var(--radius) var(--radius) 0; }
+.version-compare-toggle .button[aria-pressed="true"] { background: var(--bg-selected); }
+.version-preview-pair[data-show="after"] .version-before, .version-preview-pair[data-show="before"] .version-inspector-preview { display: none; }
+.version-preview-label { margin-bottom: 4px; color: var(--text-muted); font-size: var(--text-secondary); }
+.version-before img, .version-inspector-artwork img, .comparison-artwork-side img { display: block; width: 100%; height: 200px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-recessed); object-fit: contain; }
+.version-inspector-artwork figcaption, .version-demo-note { margin-top: 4px; }
+.version-inspector-fallback { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 120px; padding: var(--space-3); border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-recessed); text-align: center; }
+.version-inspector-document-mark { margin-bottom: 6px; padding: 2px 6px; border: 1px solid var(--border-strong); border-radius: var(--radius); color: var(--text-2); font-family: var(--mono); font-size: var(--text-label); }
+.version-inspector-notice { margin-top: var(--space-2); }
+.version-inspector-section { margin-top: var(--space-3); padding-top: var(--space-2); border-top: 1px solid var(--divider); }
+.version-inspector-information .version-inspector-section:first-child { margin-top: 0; }
+.version-inspector-section h3 { margin-bottom: 6px; }
+.version-inspector-fact, .comparison-fact { display: flex; justify-content: space-between; padding: 4px 0; border-top: 1px solid var(--divider); }
+.version-inspector-fact dt, .comparison-fact dt { margin-right: var(--space-2); color: var(--text-muted); font-size: var(--text-secondary); }
+.version-inspector-fact dd, .comparison-fact dd { font-family: var(--mono); font-size: var(--text-secondary); text-align: right; }
+.version-change-tally { display: flex; flex-wrap: wrap; margin-bottom: 6px; }
+.version-change-stat { display: flex; align-items: baseline; margin-right: var(--space-3); }
+.version-change-stat strong { margin-right: 4px; color: var(--text-strong); font-family: var(--mono); }
+.version-change-stat span { color: var(--text-muted); font-size: var(--text-secondary); }
+.version-change-stat::before, .version-edit-badge::before { display: inline-block; width: 12px; color: var(--text-2); font-family: var(--mono); font-weight: 600; }
+.version-change-stat.added::before, .version-edit-badge.added::before { content: "+"; }
+.version-change-stat.removed::before, .version-edit-badge.removed::before { content: "−"; }
+.version-change-stat.modified::before, .version-edit-badge.modified::before { content: "~"; }
+.version-inspector-changes > li, .version-inspector-warnings > li, .version-inspector-files > li, .comparison-change-list > li, .comparison-file-list > li, .comparison-conflicts > li, .comparison-warnings > li { padding: 6px 0; border-top: 1px solid var(--divider); }
+.version-inspector-changes > li { display: flex; flex-wrap: wrap; align-items: baseline; }
+.version-edit-badge { flex: none; width: 76px; color: var(--text-2); font-size: var(--text-secondary); }
+.version-inspector-changes strong { flex: 1 1 60%; min-width: 0; color: var(--text-strong); }
+.version-inspector-changes p { flex: 1 1 100%; padding-left: 76px; color: var(--text-2); font-size: var(--text-secondary); }
+.version-edit-values { flex: 1 1 100%; display: flex; flex-direction: column; padding-left: 76px; color: var(--text-muted); font-family: var(--mono); font-size: var(--text-secondary); }
+.version-inspector-files > li, .comparison-file-list > li { display: flex; align-items: center; }
+.version-inspector-files code, .comparison-file-list code { margin-left: var(--space-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.version-inspector-more { margin-top: var(--space-2); }
+.version-inspector-list-count { margin-top: 4px; }
+.version-inspector-commit { font-family: var(--mono); }
+.inspector-empty { padding: var(--space-4); color: var(--text-muted); }
+.review-inspector > * + * { margin-top: var(--space-3); }
+.comparison-direction { display: flex; align-items: center; }
+.comparison-endpoint { display: flex; flex-direction: column; min-width: 0; }
+.comparison-endpoint strong { color: var(--text-strong); }
+.comparison-arrow { margin: 0 var(--space-3); color: var(--text-muted); }
+.comparison-artwork { display: flex; }
+.comparison-artwork-side { flex: 1 1 0; min-width: 0; }
+.comparison-artwork-side + .comparison-artwork-side { margin-left: var(--space-2); }
+.comparison-layout > * + * { margin-top: var(--space-3); }
+.comparison-summary > * + *, .comparison-status > * + * { margin-top: var(--space-2); }
+.comparison-change-list strong { color: var(--text-strong); }
+.comparison-change-list p { color: var(--text-2); font-size: var(--text-secondary); }
+.comparison-status { padding: var(--space-3); border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-raised); }
+.comparison-status.merge-blocked { border-color: var(--border-strong); }
+
+@media (max-width: 299px) {
+  .top-project, .tab-label { display: none; }
+  .nav-item { height: 40px; }
 }
-@media (min-width: 1200px) {
-  .workspace-rail { flex-basis: 164px; min-width: 164px; }
-  .capture-panel { flex-basis: 372px; padding: var(--space-5) var(--space-6); }
-  .history-list-panel { flex-basis: 300px; }
-  .review-list-panel { flex-basis: 330px; }
-  .comparison-summary { flex-basis: 240px; padding-right: var(--space-5); }
-  .comparison-status { flex: 0 0 220px; margin-top: 0; }
-}
-@media (max-width: 360px) {
-  .app-header, .repo-context { padding-left: var(--space-3); padding-right: var(--space-3); }
-  /* Four header actions and a status label do not fit beside the wordmark
-     here. The status keeps its dot and colour; its label stays in the
-     accessibility tree and in the connection notice, so nothing is lost. */
-  .repo-state { margin-right: 8px; }
-  .repo-state i { margin-right: 0; width: 7px; height: 7px; }
-  .repo-state span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-  /* Cards give content back the room their padding would otherwise take. */
-  .view-panel > .liquid-card, .capture-panel, .scan-card.liquid-card, .content-card.liquid-card { padding: var(--space-3); }
-  .workspace-content { padding: var(--space-4) var(--space-3) var(--space-2); }
-  .nav-item svg { display: none; }
-  .repo-state { margin-top: 6px; }
-  .scan-button { margin-top: 10px; }
-  .scan-copy { flex-basis: 100%; }
-  /* The row keeps its Added / Removed / Modified state — that is the fact the
-     colour carries — and gives up only the domain word beneath it. */
-  .change-kind { display: none; }
-  .change-domain { max-width: 64px; margin-left: 6px; }
-  .row-glyph { width: 24px; margin-right: 8px; }
-  .inline-form .button { width: 100%; margin-left: 0; }
-}
-/* Three destinations to a row leaves about 50px for a label at 300px, which
-   is where "Branches" starts to ellipsize. Two to a row keeps every name. */
-@media (max-width: 330px) {
-  .nav-item { flex-basis: 45%; }
-}
-@media (max-width: 280px) {
-  .view-panel > .liquid-card, .capture-panel, .scan-card.liquid-card, .content-card.liquid-card { padding: var(--space-3) var(--space-2); }
-  .pg-mark, .pg-mark img { width: 24px; height: 24px; }
-  .pg-mark { margin-right: 6px; }
-  .app-title h1 { font-size: var(--text-body); }
-  .header-action { width: 26px; margin-left: 2px; }
-  .nav-item { font-size: 11px; padding: 7px 2px; }
-  .nav-item b { display: none; }
-  .repo-document { flex-basis: 100%; margin-top: 8px; padding-left: 0; border: 0; }
-  .onboarding, .startup-card, .tool-sheet { padding: 14px; }
-  .footer-action svg { display: none; }
-  .tools-toggle svg { display: block; }
+/* A wider panel is the same single column with room to breathe. */
+@media (min-width: 560px) {
+  .view-scroll, .composer { padding-left: var(--space-4); padding-right: var(--space-4); }
+  .tool-sheet { top: 48px; bottom: 48px; left: 50%; right: auto; width: 520px; margin-left: -260px; }
+  #tag-sheet { bottom: auto; }
 }
 @media (prefers-reduced-motion: reduce) {
   :root { --motion-enabled: 0; }
-  * { transition: none !important; animation: none !important; }
-  /* Smooth scrolling is animation too: switching sections and jumping to the
-     message field both scroll, and both must land instantly here. */
-  body { scroll-behavior: auto; }
-  /* Removing the transition alone would leave the press and hover transforms
-     snapping between states, which is the movement the setting asks to avoid.
-     Drop the displacement itself and let colour carry the feedback. */
-  /* Depth is movement by definition; reduced motion removes it outright rather
-     than freezing it mid-lean. */
-  [data-depth] { transform: none !important; }
-  [role="button"]::after, [role="tab"]::after, [role="menuitem"]::after { background: var(--press-veil) !important; }
-  [data-depth]::before { opacity: 0 !important; }
-  .tool-sheet:not([hidden]), .tools-menu:not([hidden]), .surface-backdrop { animation: none !important; opacity: 1 !important; transform: none !important; }
-  .is-revealing { animation: none !important; opacity: 1 !important; transform: none !important; }
-  /* A still bar is still a busy signal. */
-  .progress-track span { animation: none !important; width: 100%; transform: none !important; opacity: .6; }
-  [role="button"]:active, [role="tab"]:active, [role="menuitem"]:active,
-  .nav-item:hover svg, .nav-item:hover b { transform: none !important; }
-  /* Hover displacements are movement too: the row's slide, the preview's
-     zoom and the primary button's lift all stay put. */
-  .list-row[role="button"]:hover, .list-row.selected, .preview-figure:hover img, .button-primary[role="button"]:hover { transform: none !important; }
-  .branch-row:hover, .review-card:hover, .sheet-close:hover svg, .repo-branch:hover .branch-chevron, #jump-save:hover span, .preset[role="button"]:hover, .tally-tile dd.is-counting, .nav-item b.is-counting { transform: none !important; }
-}
-@media (prefers-contrast: more) {
-  /* Separators and rims are deliberately quieter than the interactive
-     boundary. When the host asks for more contrast, bring them up to it. */
-  :root { --line: #5c6169; --glass-rim: rgba(255,255,255,.55); --shine: rgba(255,255,255,.1); }
-  :root[data-theme="light"] { --line: #98a1ac; --glass-rim: rgba(60,80,120,.5); }
-  .panel-aurora { display: none; }
-}
-@media (prefers-reduced-transparency: reduce) {
-  /* Take the glass back to an opaque tonal surface: no translucent fill, no
-     blur behind it, and no sheen gradient over it. */
-  :root { --glass: var(--surface); --glass-top: transparent; }
-  .panel-aurora { display: none; }
-  .view-panel > .liquid-card, .capture-panel, .scan-card.liquid-card, .content-card.liquid-card,
-  .onboarding.liquid-card, .repo-context, .section-nav, .tools-menu, .tool-sheet, .app-header {
-    background-image: none; backdrop-filter: none;
-  }
-  .app-header, .tools-menu, .tool-sheet { box-shadow: none; }
-}
-
-/* --- Interaction polish ------------------------------------------------- */
-/* The tally tiles are readouts, not controls, so they get a light hover only:
-   the rim warms and the surface rises. No cursor change, no press state. */
-.tally-tile { transition: border-color var(--motion-control) var(--ease-liquid), box-shadow var(--motion-control) var(--ease-liquid), background-color var(--motion-control) var(--ease-liquid); }
-.tally-tile:hover { border-color: var(--border); box-shadow: 0 1px 0 var(--shine) inset, 0 0 22px -8px var(--glow); }
-.tally-tile:hover dd { transform: translateY(-1px); }
-
-/* The context badges are the panel's only circular forms; letting the branch
-   badge take the accent on hover ties that cell to the pointer. Only the
-   branch cell navigates — project and document are readouts — so only it
-   gets the affordance; lighting a badge that does nothing invites a click
-   that does nothing. */
-.context-badge { transition: color var(--motion-control) var(--ease-liquid), border-color var(--motion-control) var(--ease-liquid), background-color var(--motion-control) var(--ease-liquid); }
-.repo-branch:hover .context-badge { color: var(--accent); border-color: var(--focus); background: var(--selected); }
-.branch-chevron { transition: transform var(--motion-control) var(--ease-liquid), color var(--motion-control) var(--ease-liquid); }
-.repo-branch:hover .branch-chevron { transform: translateX(2px); color: var(--accent); }
-
-/* Message presets read as chips; on hover they fill rather than just brighten,
-   which is the difference between a label and something you can pick. */
-.preset { transition: color var(--motion-control) var(--ease-liquid), border-color var(--motion-control) var(--ease-liquid), background-color var(--motion-control) var(--ease-liquid), transform var(--motion-control) var(--ease-liquid); }
-.preset[role="button"]:not([aria-disabled="true"]):hover { color: var(--text); border-color: var(--border); background: var(--selected); transform: translateY(-1px); }
-
-/* Document facts are static chips. A rim that lifts on hover makes the row
-   scannable with the pointer without suggesting any of them can be clicked. */
-.document-facts div { transition: border-color var(--motion-control) var(--ease-liquid); }
-.document-facts div:hover { border-color: var(--border); }
-
-/* The saved preview is the one piece of real artwork in the panel. Hovering it
-   eases in a slight zoom inside a clipped frame, so the frame never moves. */
-/* The saved preview lands in the background once its branch tip has loaded,
-   so it arrives some time after the card. Fading it in marks it as arrived
-   rather than as something that flashed into a blank frame. */
-.preview-figure { overflow: hidden; border-radius: var(--radius); animation: photogit-fade-in var(--motion-nav) var(--ease-liquid) backwards; }
-.preview-figure img { transition: transform var(--motion-nav) var(--ease-liquid); }
-.preview-figure:hover img { transform: scale(1.03); }
-
-/* A button's icon leads its label, so it leads the hover too — a couple of
-   pixels of travel, which reads as intent rather than as a jump. */
-.button svg { transition: transform var(--motion-control) var(--ease-liquid); }
-.button[role="button"]:not([aria-disabled="true"]):hover svg { transform: translateX(-2px); }
-
-/* The active section is already coloured; a short rule under it gives the tab
-   row a fixed reading line, which is what makes the selection obvious at a
-   glance in a narrow panel. */
-.nav-item.active::before {
-  content: ""; position: absolute; left: 50%; bottom: 3px; width: 18px; height: 2px; margin-left: -9px;
-  border-radius: 2px; background: var(--accent); pointer-events: none;
-  /* The rule draws out from its centre when a section becomes active, so the
-     eye is led to the new selection rather than finding it already there. */
-  animation: photogit-rule-in var(--motion-control) var(--ease-liquid) backwards;
-}
-@keyframes photogit-rule-in {
-  from { transform: scaleX(.1); opacity: .01; }
-  to { transform: none; opacity: 1; }
-}
-
-/* A change row slides a few pixels toward the pointer. The list has a fixed
-   left edge, so the travel reads as focus rather than as reflow. A selected
-   row holds the same offset and keeps a solid accent edge, so the selection
-   survives when a different row is under the pointer. */
-.list-row[role="button"]:hover { transform: translateX(3px); }
-.list-row.selected { background: var(--selected); transform: translateX(3px); box-shadow: inset 3px 0 0 var(--accent), 0 0 26px -12px var(--glow); animation: photogit-select var(--motion-nav) var(--ease-liquid) backwards; }
-@keyframes photogit-select {
-  from { background-color: var(--hover); }
-  to { background-color: var(--selected); }
-}
-
-/* Branch rows are cards in a grid. Lifting one on hover separates it from the
-   grid without changing any cell's size. */
-.branch-row { transition: border-color var(--motion-control) var(--ease-liquid), background-color var(--motion-control) var(--ease-liquid), box-shadow var(--motion-control) var(--ease-liquid), transform var(--motion-nav) var(--ease-liquid); }
-.branch-row:hover { border-color: var(--glass-rim); background: var(--hover); box-shadow: 0 0 28px -12px var(--glow); transform: translateY(-2px); }
-
-/* Focus is a keyboard state and must outrank every pointer decoration, so it
-   carries a glow in addition to the outline the panel already draws. */
-[role="button"]:focus-visible, [role="tab"]:focus-visible, [role="menuitem"]:focus-visible {
-  box-shadow: 0 0 0 4px var(--focus-halo);
-}
-
-/* Reveal · a freshly rendered row eases up into place. The animation runs on a
-   row that is already present and already interactive, so it can only ever be
-   decoration over content the user can use. */
-@keyframes photogit-reveal {
-  from { opacity: .01; transform: translateY(6px); }
-  to { opacity: 1; transform: none; }
-}
-.is-revealing { animation: photogit-reveal var(--motion-nav) var(--ease-liquid) var(--reveal-delay, 0ms) backwards; }
-
-/* The host scrollbar is the one piece of chrome the panel does not control by
-   default, and its light track cuts a bright stripe down the glass. */
-::-webkit-scrollbar { width: 10px; height: 10px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { border: 3px solid transparent; border-radius: 8px; background: var(--rim); background-clip: content-box; }
-::-webkit-scrollbar-thumb:hover { background: var(--border); background-clip: content-box; }
-
-/* A primary button is the panel's heaviest element, so it earns real depth:
-   it rises toward the pointer on hover and settles flush on press. */
-@supports (transform: perspective(600px) rotateX(1deg)) {
-  .button-primary { transition: transform var(--motion-control) var(--ease-liquid), background-color var(--motion-control) var(--ease-liquid), box-shadow var(--motion-control) var(--ease-liquid); }
-  .button-primary[role="button"]:not([aria-disabled="true"]):hover { transform: perspective(var(--depth-perspective)) translateZ(6px); }
-}
-
-/* Notices carry the panel's only coloured surfaces. A matching rim glow keeps
-   them legible as one object when they sit on glass. */
-.notice { transition: box-shadow var(--motion-control) var(--ease-liquid); }
-.notice:hover { box-shadow: 0 0 30px -14px var(--glow); }
-
-/* A tool sheet is a dialog over the panel. Easing it up from a few pixels
-   below signals that it arrived rather than that the view was replaced. The
-   tools menu arrives the same way, and both leave on the short fade the
-   script already waits for before it hides them: is-closing is the class it
-   adds for that window, and the backdrop follows the same is-open flag. */
-@keyframes photogit-sheet-in {
-  from { opacity: .01; transform: translateY(10px) scale(.985); }
-  to { opacity: 1; transform: none; }
-}
-@keyframes photogit-surface-out {
-  from { opacity: 1; }
-  to { opacity: .01; transform: scale(.985); }
-}
-.tool-sheet:not([hidden]), .tools-menu:not([hidden]) { animation: photogit-sheet-in var(--motion-nav) var(--ease-liquid) backwards; }
-.tool-sheet.is-closing, .tools-menu.is-closing { animation: photogit-surface-out var(--motion-press) var(--ease-liquid) both; pointer-events: none; }
-.surface-backdrop { opacity: 0; transition: opacity var(--motion-press) var(--ease-liquid); }
-.surface-backdrop.is-open { opacity: 1; }
-
-/* Scan now turns its arrow while a scan is reading layers. Bounded by the
-   scanning state; reduced motion removes it. */
-@keyframes photogit-spin { to { transform: rotate(360deg); } }
-.is-scanning #rescan svg { animation: photogit-spin 1s linear infinite; }
-
-/* Review cards lift on hover like the branch cards beside them. */
-.review-card { transition: transform var(--motion-nav) var(--ease-liquid), box-shadow var(--motion-control) var(--ease-liquid); }
-.review-card:hover { transform: translateY(-2px); box-shadow: 0 0 28px -12px var(--glow); }
-
-/* Inspector skeleton · three bars pulse in turn while a version or a
-   comparison loads; the loaded content replaces them. */
-.inspector-skeleton { margin-top: var(--space-5); }
-.inspector-skeleton span { display: block; height: 6px; margin-top: var(--space-3); background: var(--elevated); border-radius: var(--radius-chip); animation: photogit-skeleton 1.4s var(--ease-liquid) infinite alternate; }
-.inspector-skeleton span:nth-child(1) { width: 46%; }
-.inspector-skeleton span:nth-child(2) { width: 78%; animation-delay: .2s; }
-.inspector-skeleton span:nth-child(3) { width: 62%; animation-delay: .4s; }
-
-/* While an operation runs, a sheen crosses the parked Save button so the
-   busy track below it is not the only sign of work. Bounded by the busy
-   state; reduced motion removes it. */
-@keyframes photogit-shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
-.capture-panel.is-busy #save-version { background-image: linear-gradient(110deg, rgba(255,255,255,0) 30%, rgba(255,255,255,.18) 50%, rgba(255,255,255,0) 70%); background-size: 200% 100%; animation: photogit-shimmer 1.4s linear infinite; }
-
-/* The version just saved glows once when History opens on it. */
-@keyframes photogit-glow-once {
-  from { background-color: var(--selected); box-shadow: 0 0 26px -10px var(--glow); }
-  to { background-color: transparent; box-shadow: none; }
-}
-.history-row.is-new { animation: photogit-glow-once 900ms var(--ease-liquid) backwards; }
-
-/* The aurora fades up over the first second, so the panel opens onto
-   colour arriving rather than colour already there. */
-.panel-aurora { animation: photogit-fade-in 1.2s var(--ease-liquid) backwards; }
-
-/* The counter pops as it crosses into its warning tones, so the
-   keystroke that nears the limit is felt at the counter. */
-#message-count[data-limit="near"], #message-count[data-limit="full"] { animation: photogit-pop-soft var(--motion-control) var(--ease-liquid) backwards; }
-
-/* The command and tools actions in the header grow their icon a touch on
-   hover. The theme toggle keeps its own sun-to-moon transform. */
-.header-action:not(.appearance-toggle) svg { transition: transform var(--motion-control) var(--ease-liquid); }
-.header-action:not(.appearance-toggle):hover svg { transform: scale(1.1); }
-
-/* The helper dot breathes while a reconnect is in flight, and stops
-   with the answer. */
-.repo-state.is-reconnecting i { animation: photogit-breathe 1.2s var(--ease-liquid) infinite alternate; }
-
-/* The footer action whose operation is running turns its icon. */
-.footer-action.is-working svg { animation: photogit-spin 1s linear infinite; }
-
-/* A card with a field in focus glows a little stronger, so the place
-   being typed into is lit as well as the field. */
-.capture-panel, .branch-create-card { transition: box-shadow var(--motion-nav) var(--ease-liquid); }
-.capture-panel:focus-within { box-shadow: var(--glass-glow), 0 0 44px -10px var(--glow); }
-.branch-create-card:focus-within { box-shadow: 0 0 28px -10px var(--glow); }
-
-/* Both tools toggles turn their dots a quarter while their menu is open,
-   and turn back as it closes. */
-.tools-toggle svg, #header-menu svg { transition: transform var(--motion-control) var(--ease-liquid); }
-.tools-toggle[aria-expanded="true"] svg, #header-menu[aria-expanded="true"] svg { transform: rotate(90deg); }
-
-/* The counter pops when it carries a note, which is the one time it has
-   something to say beyond the count. */
-#message-count[aria-live="polite"] { animation: photogit-pop-soft var(--motion-control) var(--ease-liquid) backwards; }
-
-/* The theme toggle carries a halo on hover, matching the glow the other
-   circular controls take. */
-.appearance-toggle:hover { box-shadow: 0 0 18px -6px var(--glow); }
-
-/* A sheet's action arrives a beat after its content, so the question is
-   read before the answer is offered. */
-#detail-action:not([hidden]) { animation: photogit-reveal var(--motion-nav) var(--ease-liquid) 120ms backwards; }
-
-/* An empty state's explanation follows its title in by a beat. */
-.empty-state p { animation: photogit-reveal var(--motion-nav) var(--ease-liquid) 80ms backwards; }
-
-/* Forced colours · the host replaces every colour with the system palette,
-   which removes the fills that carry selection. An outline survives. */
-@media (forced-colors: active) {
-  .nav-item.active, .list-row.selected, .branch-row.current, .filter-chip[aria-pressed="true"] { outline: 2px solid; outline-offset: -2px; }
-  /* Chips and pills are told apart from their text by a fill alone. */
-  .nav-item b, .meta-chip, .preset, .filter-chip, .review-meta .ready, .review-meta .blocked, .document-facts div, .comparison-direction strong { border: 1px solid; }
-  /* The busy track and the status dots are pure colour; give them the
-     system's highlight and text colours rather than nothing. */
-  .progress-track { border: 1px solid; }
-  .progress-track span { background: Highlight; }
-  .repo-state i, .watch-status i, .rail-sync svg { background: CanvasText; }
-  [aria-disabled="true"] { color: GrayText; opacity: 1; }
 }

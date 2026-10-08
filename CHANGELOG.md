@@ -1,5 +1,50 @@
 # Changelog
 
+## Midnight panel · explicit edits
+
+**Not committed to a release.** Verified in Photoshop 27.10 through UXP
+Developer Tools at a 360px dock and a 610px floating panel, on a disposable
+project and document; see the limits at the end.
+
+- Edits are stated exactly. A move reads "Moved 12 px right and 9 px up", a
+  restack names the neighbour, a group move names the group, text style lists
+  each property, and effects, masks, adjustment settings, smart filters and
+  label colour are captured per layer and named ("Drop shadow opacity changed
+  from 35% to 60%", "Layer mask was repainted"). One layer edit is one row:
+  bounds are no longer four rows per box, a new layer no longer marks its
+  siblings as reordered, a canvas resize no longer lists every layer as moved,
+  and a pixel hash that ignores position keeps a move from also reading as a
+  pixel edit.
+- Photoshop's "rgbColorMode" is recognised as RGB, so real documents are no
+  longer saved as "limited".
+- The panel is one dark, flat column: top bar (branch switcher, project,
+  Push, one ⋮ menu holding Pull, Docs and the tools), an icon-over-label tab
+  strip badged only for unsaved edits and blocked reviews, the full Changes
+  list under Document and Layers headers with marker tiles, a composer pinned
+  under it, History as date groups with the selected version as a card,
+  Reviews as cards that open to list their conflicts, and a full-screen state
+  for a document that is not the project's.
+- Fixed along the way: a blocked Merge became pressable-looking again once
+  the panel stopped being busy; a version action left on screen could open a
+  file in a newly connected project; text fields drew through open dialogs;
+  an empty status line drew a band.
+
+- Motion is one helper (`motion.js`): the host runs no CSS transitions or
+  keyframes and does not draw `opacity`, so fades, moves and colour changes
+  are stepped on animation frames with two durations (120ms, 180ms) and one
+  easing. Tabs also select on focus, so a click that only focuses the panel
+  still switches.
+- Checked against a UI/UX rule list: the status line floats instead of
+  pushing the layout, the busy line overlays the tab strip, line height is
+  1.5, pills and menu items are larger with 8px gaps, stacking uses one
+  scale, and views cap their line length on wide panels.
+
+Not done, because the helper has no data or operation for it: the unpushed
+count on Push, choosing a side per conflict, comparing a version with the
+open document, and hiding the author only when it is the current user. The
+browser demo (`demo.html`) has not been moved to the new shell and does not
+run. `depth.js` is no longer loaded by the panel.
+
 ## Motion pass II · feedback at the control
 
 Fifty commits, one motion each, all bounded, all released once

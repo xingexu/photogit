@@ -39,13 +39,32 @@ describe("branch design directions", () => {
     const rows = Array.from(p.container.querySelectorAll(".branch-row"));
     expect(rows.map(row => row.querySelector("strong")!.textContent)).toEqual(["main", "alternate", "typography"]);
     expect(rows[0]!.getAttribute("aria-current")).toBe("true");
-    expect(rows[0]!.querySelector(".branch-current-label")!.textContent).toBe("Current");
-    expect(rows[0]!.querySelector(".branch-switch")).toBeNull();
-    expect(p.container.querySelectorAll(".branch-switch")).toHaveLength(2);
+    // The highlight is the only marker: no badge, and no button inside a row.
+    expect(p.container.querySelector(".branch-current-label, .branch-switch, .meta-chip, .button")).toBeNull();
+    expect(p.container.textContent).not.toMatch(/Current|Switch/);
+    expect(rows[0]!.getAttribute("role")).toBe("listitem");
+    expect(rows[0]!.hasAttribute("tabindex")).toBe(false);
+    expect(p.container.querySelectorAll('.branch-row[role="button"]')).toHaveLength(2);
     expect(JSON.stringify(branches)).toBe(original);
     expect(p.container.querySelector("img")).toBeNull();
     expect(p.container.textContent).not.toMatch(/Updated|ago|commit|remote|synced/i);
     expect(p.onSwitch).not.toHaveBeenCalled();
+  });
+
+  it("says what each branch last holds when the record carries it, and nothing invented when it does not", () => {
+    const p = fixture();
+    const dateLabel = vi.fn(() => "October 1");
+    p.render({ dateLabel, branches: [
+      { name: "main", current: true, subject: "new scribbles", date: "2026-10-01T17:08:00-04:00" },
+      { name: "alternate", current: false, subject: "  ", date: "not a date" },
+      { name: "typography", current: false, subject: "Tighter headline" }
+    ] });
+    const meta = [...p.container.querySelectorAll(".branch-row-copy span")].map(span => span.textContent);
+    expect(meta).toEqual(["new scribbles · October 1", "Local branch", "Tighter headline"]);
+    expect(dateLabel).toHaveBeenCalledTimes(1);
+    // Without a date formatter the message still stands alone.
+    p.render({ branches: [{ name: "main", current: true, subject: "new scribbles", date: "2026-10-01T17:08:00-04:00" }] });
+    expect(p.container.querySelector(".branch-row-copy span")!.textContent).toBe("new scribbles");
   });
 
   it("uses explicit current context rather than stale branch flags", () => {
@@ -56,7 +75,7 @@ describe("branch design directions", () => {
     expect(p.container.querySelector(".current strong")!.textContent).toBe("main");
     p.render({ current: "detached" });
     expect(p.container.querySelector(".current")).toBeNull();
-    expect(p.container.querySelectorAll(".branch-switch")).toHaveLength(3);
+    expect(p.container.querySelectorAll('.branch-row[role="button"]')).toHaveLength(3);
   });
 
   it("keeps markup and long branch names as text while preserving the exact name for the caller", () => {
@@ -64,16 +83,19 @@ describe("branch design directions", () => {
     const p = fixture(); p.render({ branches: [{ name, current: false }] });
     expect(p.container.querySelector("strong")!.textContent).toBe(name);
     expect(p.container.querySelector("img, script")).toBeNull();
-    const button = p.container.querySelector(".branch-switch")! as HTMLElement;
+    const button = p.container.querySelector(".branch-row")! as HTMLElement;
     expect(button.getAttribute("aria-label")).toBe(`Switch to ${name}`);
     button.click(); expect(p.onSwitch).toHaveBeenCalledExactlyOnceWith(name);
   });
 
-  it("only delegates switching through explicit click or keyboard activation", () => {
+  it("switches when the whole row is pressed or activated from the keyboard, and never from the current row", () => {
     const p = fixture(); p.render();
-    const row = p.container.querySelectorAll(".branch-row")[1]! as HTMLElement;
-    row.click(); expect(p.onSwitch).not.toHaveBeenCalled();
-    const button = row.querySelector(".branch-switch")! as HTMLElement;
+    const current = p.container.querySelectorAll(".branch-row")[0]! as HTMLElement;
+    current.click(); p.key(current, "Enter"); expect(p.onSwitch).not.toHaveBeenCalled();
+    const button = p.container.querySelectorAll(".branch-row")[1]! as HTMLElement;
+    // A press anywhere in the row counts, including on its name.
+    button.querySelector("strong")!.dispatchEvent(new (p.document.defaultView as any).Event("click", { bubbles: true }));
+    expect(p.onSwitch).toHaveBeenCalledExactlyOnceWith("alternate"); p.onSwitch.mockClear();
     button.click(); p.key(button, "Enter"); p.key(button, " ");
     expect(p.onSwitch).toHaveBeenCalledTimes(3);
     expect(p.onSwitch).toHaveBeenLastCalledWith("alternate");
@@ -82,7 +104,7 @@ describe("branch design directions", () => {
   });
 
   it("respects operation locking, hidden ancestors and explicit disabled state", () => {
-    const p = fixture(); p.render(); const button = p.container.querySelector(".branch-switch")! as HTMLElement;
+    const p = fixture(); p.render(); const button = p.container.querySelector('.branch-row[role="button"]')! as HTMLElement;
     p.document.body.classList.add("is-busy"); button.click(); p.key(button, "Enter"); p.document.body.classList.remove("is-busy");
     p.document.body.classList.add("is-initializing"); button.click(); p.document.body.classList.remove("is-initializing");
     p.container.hidden = true; button.click(); p.container.hidden = false;
@@ -95,16 +117,16 @@ describe("branch design directions", () => {
     const p = fixture(); p.render(); p.render({ current: "alternate" });
     expect(p.container.querySelectorAll(".branch-row")).toHaveLength(3);
     expect(p.container.querySelector(".current strong")!.textContent).toBe("alternate");
-    (p.container.querySelector(".branch-switch")! as HTMLElement).click();
+    (p.container.querySelector('.branch-row[role="button"]')! as HTMLElement).click();
     expect(p.onSwitch).toHaveBeenCalledExactlyOnceWith("main");
     expect(branches[1]!.current).toBe(true);
   });
 
   it("renders a useful empty state and supports read-only use without switch callbacks", () => {
     const p = fixture(); p.render({ branches: [] });
-    expect(p.container.querySelector('[role="status"]')!.textContent).toContain("Save your first version");
+    expect(p.container.querySelector('[role="status"]')!.textContent).toContain("Save a version to create your first branch");
     expect(p.container.querySelector(".branch-row")).toBeNull();
-    p.render({ onSwitch: undefined }); expect(p.container.querySelector(".branch-switch")).toBeNull();
+    p.render({ onSwitch: undefined }); expect(p.container.querySelector('.branch-row[role="button"]')).toBeNull();
     expect(p.container.querySelectorAll(".branch-row")).toHaveLength(3);
   });
 

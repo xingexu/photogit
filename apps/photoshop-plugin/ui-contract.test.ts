@@ -24,7 +24,7 @@ async function panel() {
   let timerId = 0;
   let modalDepth = 0;
   const executionContext = { isCancelled: false };
-  const pixels = { width: 2, height: 2, components: 4, getData: vi.fn(async () => new Uint8Array([0, 1, 2, 255])), dispose: vi.fn() };
+  const pixels = { width: 2, height: 2, components: 4, getData: vi.fn(async () => new Uint8Array([0, 1, 2, 255, 0, 1, 2, 255, 0, 1, 2, 255, 0, 1, 2, 255])), dispose: vi.fn() };
   const app: { documents: unknown[]; activeDocument: any; open: ReturnType<typeof vi.fn> } = { documents: [], activeDocument: null, open: vi.fn() };
   const core = { executeAsModal: vi.fn(async (work: (context: { isCancelled: boolean }) => unknown) => {
     modalDepth++;
@@ -119,6 +119,71 @@ async function bridgePanel(body?: unknown) {
   }
   return { ...p, requests, responses };
 }
+
+describe("PhotoGit automatic workspace updates", () => {
+  it("resumes a pending artwork scan after inspecting a version", async () => {
+    const p = await panel(); p.connect();
+    p.evaluate('queueAutomaticScan("brush-edit")');
+    const resume = vi.fn(); p.context.queueAutomaticScan = resume;
+    await p.evaluate('run("Loading version…", async () => {})');
+    expect(resume).toHaveBeenCalledWith("operation-finished", 250);
+    expect(p.id("watch-status").textContent).not.toContain("Scan paused");
+    p.evaluate('cancelScan()');
+    expect(p.id("watch-status").textContent).toContain("Scan paused");
+  });
+  it("restores the project draft and history search after a plugin reload", async () => {
+    const p = await panel(); p.connect();
+    const saved = new Map<string, string>();
+    p.context.localStorage = { getItem: (key: string) => saved.get(key), setItem: (key: string, value: string) => saved.set(key, value) };
+    p.id<HTMLInputElement>("message").value = "Drawing in progress";
+    p.id<HTMLInputElement>("history-search").value = "poster";
+    p.evaluate('selectedVersionId = "abc123"; savePanelState()');
+    p.id<HTMLInputElement>("message").value = "";
+    p.id<HTMLInputElement>("history-search").value = "";
+    await p.evaluate('restorePanelState()');
+    expect(p.id<HTMLInputElement>("message").value).toBe("Drawing in progress");
+    expect(p.id<HTMLInputElement>("history-search").value).toBe("poster");
+    expect([...saved.keys()]).toEqual(["photogit.workspace:/synthetic-project"]);
+  });
+  it("restores the selected version as the highlighted card without loading it or opening a document", async () => {
+    const p = await panel(); p.connect();
+    p.context.localStorage.getItem = () => JSON.stringify({ selectedVersionId: "second" });
+    p.evaluate("historyEntries = entries", { entries: ["first", "second"].map(id => ({ id, shortId: id, author: "Designer", date: "2026-09-04T12:00:00Z", message: `Design ${id}` })) });
+    const inspect = vi.fn(async () => undefined); p.context.inspectVersion = inspect;
+    await p.evaluate('restorePanelState()');
+    expect(p.evaluate("selectedVersionId")).toBe("second");
+    expect(p.document.querySelector<HTMLElement>(".history-entry.selected .history-row")!.dataset.version).toBe("second");
+    // Selecting is not opening: details and copies stay explicit presses.
+    expect(inspect).not.toHaveBeenCalled();
+    expect(p.core.executeAsModal).not.toHaveBeenCalled();
+  });
+  it("does not redraw unchanged history and skips polling during a user operation", async () => {
+    const p = await panel(); p.connect();
+    p.evaluate('historyEntries = [{ id: "first" }]');
+    const read = vi.fn(async () => ({ versions: [{ id: "first" }] })); p.context.callHelper = read;
+    const load = vi.fn(async () => undefined); p.context.loadHistory = load;
+    await p.evaluate('refreshHistoryInBackground()');
+    expect(load).not.toHaveBeenCalled();
+    read.mockResolvedValue({ versions: [{ id: "second" }] });
+    await p.evaluate('refreshHistoryInBackground()');
+    expect(load).toHaveBeenCalledWith({ versions: [{ id: "second" }] });
+    p.evaluate('busyNow = true');
+    await p.evaluate('refreshHistoryInBackground()');
+    expect(read).toHaveBeenCalledTimes(2);
+  });
+  it("keeps one history read in flight and discards a result from the previous project", async () => {
+    const p = await panel(); p.connect();
+    const pending = deferred<unknown>();
+    const read = vi.fn(() => pending.promise); p.context.callHelper = read;
+    const load = vi.fn(); p.context.loadHistory = load;
+    const first = p.evaluate('refreshHistoryInBackground()');
+    await p.evaluate('refreshHistoryInBackground()');
+    p.evaluate('projectFolder = { name: "Other", nativePath: "/other" }');
+    pending.resolve({ versions: [{ id: "old-project" }] });
+    await first;
+    expect(read).toHaveBeenCalledOnce(); expect(load).not.toHaveBeenCalled();
+  });
+});
 
 describe("PhotoGit command palette — production behavior with mocked host", () => {
   it("opens setup documentation before a project has been connected", async () => {
@@ -258,10 +323,12 @@ describe("PhotoGit production panel behavior — host mocked", () => {
   it("navigates all tabs with arrow/Home/End keys and keeps one selected tab", async () => {
     const p = await panel();
     p.id("section-nav").addEventListener("keydown", p.context.handleTabKeyboard);
+    // Docs is reached from the menu, so the strip wraps to Activity.
     p.keyboard(p.id("changes-tab"), "ArrowLeft");
-    expect(p.id("docs-tab").getAttribute("aria-selected")).toBe("true");
-    expect(p.document.activeElement).toBe(p.id("docs-tab"));
-    p.keyboard(p.id("docs-tab"), "Home");
+    expect(p.id("activity-tab").getAttribute("aria-selected")).toBe("true");
+    expect(p.document.activeElement).toBe(p.id("activity-tab"));
+    expect(p.id("docs-tab").hidden).toBe(true);
+    p.keyboard(p.id("activity-tab"), "Home");
     expect(p.id("changes-view").hidden).toBe(false);
     p.keyboard(p.id("changes-tab"), "ArrowRight");
     expect(p.id("history-view").hidden).toBe(false);
@@ -272,7 +339,7 @@ describe("PhotoGit production panel behavior — host mocked", () => {
     expect(p.id("history-view").hidden).toBe(false);
     p.keyboard(p.id("history-tab"), "End");
     expect([...p.document.querySelectorAll('[role="tab"][aria-selected="true"]')]).toHaveLength(1);
-    expect(p.id("docs-view").hidden).toBe(false);
+    expect(p.id("activity-view").hidden).toBe(false);
     for (const section of ["changes", "history", "branches", "reviews", "activity", "docs"]) {
       p.evaluate("selectTab(section, false)", { section });
       expect(p.id(`${section}-view`).hidden).toBe(false);
@@ -340,19 +407,157 @@ describe("PhotoGit production panel behavior — host mocked", () => {
     expect(p.id("changes-empty").hidden).toBe(true);
   });
 
-  it("keeps the layer list before the composer with a keyboard shortcut past large lists", async () => {
+  it("shows how many saved versions Push would send, and is unavailable with nothing to send or nowhere to send it", async () => {
+    const p = await panel(); p.connect();
+    const push = p.id("push");
+    const status = (extra: Record<string, unknown>) => p.evaluate("loadStatus(result)", { result: { branch: "main", changeCount: 0, documentBinding: null, baselineMissing: false, ...extra } });
+    await status({ remoteConfigured: true, unpushed: 3, currentUser: "Designer" });
+    expect(push.textContent).toBe("Push 3");
+    expect(push.getAttribute("aria-disabled")).toBe("false");
+    expect(push.getAttribute("aria-label")).toBe("Push 3 saved versions to the shared remote");
+    await status({ remoteConfigured: true, unpushed: 0 });
+    expect(push.textContent).toBe("Push");
+    expect(push.getAttribute("aria-disabled")).toBe("true");
+    expect(push.getAttribute("title")).toBe("Every saved version is already shared");
+    await status({ remoteConfigured: false, unpushed: 0 });
+    expect(push.getAttribute("title")).toBe("No shared remote is set up for this project");
+    // Work in progress does not leave Push looking available afterwards.
+    await status({ remoteConfigured: true, unpushed: 1 });
+    p.evaluate("busy(true)"); expect(push.getAttribute("aria-disabled")).toBe("true");
+    p.evaluate("busy(false)"); expect(push.getAttribute("aria-disabled")).toBe("false");
+    await status({ remoteConfigured: true, unpushed: 0 });
+    p.evaluate("busy(true); busy(false)"); expect(push.getAttribute("aria-disabled")).toBe("true");
+    // An older helper that reports neither field leaves Push as it was.
+    await status({});
+    expect(push.textContent).toBe("Push"); expect(push.getAttribute("aria-disabled")).toBe("false");
+  });
+
+  it("answers a press on an unavailable Push or Pull with the reason instead of doing nothing", async () => {
+    const p = await panel(); p.connect(); p.evaluate("bindPanelEvents()");
+    const pushed = vi.fn(); p.context.push = pushed;
+    const status = (extra: Record<string, unknown>) => p.evaluate("loadStatus(result)", { result: { branch: "main", changeCount: 0, documentBinding: null, baselineMissing: false, ...extra } });
+    await status({ remoteConfigured: true, unpushed: 0 });
+    p.id("push").click();
+    expect(p.id("result").textContent).toContain("Every saved version is already shared");
+    expect(p.id("pull").getAttribute("aria-disabled")).toBe("false");
+    await status({ remoteConfigured: false, unpushed: 0 });
+    p.id("push").click();
+    expect(p.id("result").textContent).toContain("no shared remote");
+    expect(p.id("pull").getAttribute("aria-disabled")).toBe("true");
+    p.evaluate('show("cleared", false)'); p.id("pull").click();
+    expect(p.id("result").textContent).toContain("git remote add origin");
+    expect(pushed).not.toHaveBeenCalled();
+    // While work is in progress a press stays silent rather than replacing the progress message.
+    p.evaluate('busy(true); show("Working…", false)'); p.id("push").click();
+    expect(p.id("result").textContent).toBe("Working…");
+    p.evaluate("busy(false)");
+    await status({ remoteConfigured: true, unpushed: 2 });
+    expect(p.id("push").dataset.unavailable).toBeUndefined();
+    expect(p.id("pull").getAttribute("aria-disabled")).toBe("false");
+  });
+
+  it("gives every empty state a way forward and says what Save version will save", async () => {
+    const p = await panel(); p.connect(); p.evaluate("bindPanelEvents()");
+    const label = () => p.document.querySelector("#save-version span")!.textContent;
+    p.evaluate("renderChanges([], {})");
+    expect(label()).toBe("Save version");
+    expect(p.id("changes-empty").querySelector("#empty-scan")!.textContent).toBe("Scan now");
+    p.evaluate("renderChanges([], { changeCount: 3 })"); expect(label()).toBe("Save version · 3 edits");
+    p.evaluate("renderChanges([], { changeCount: 1 })"); expect(label()).toBe("Save version · 1 edit");
+    p.evaluate("renderChanges([], { baselineMissing: true })"); expect(label()).toBe("Save first version");
+    expect(p.id("reviews-empty-action").textContent).toBe("New branch");
+    p.id("reviews-empty-action").click();
+    expect(p.id("workspace").dataset.view).toBe("branches");
+    p.evaluate("historyEntries = []; filterHistory()");
+    expect(p.id("history-empty-action").textContent).toBe("Go to Changes");
+    p.id("history-empty-action").click();
+    expect(p.id("workspace").dataset.view).toBe("changes");
+    p.evaluate('historyEntries = [{ id: "a".repeat(40), shortId: "aaaaaaa", message: "One", author: "A", date: "2026-10-01T10:00:00Z" }]');
+    p.id<HTMLInputElement>("history-search").value = "nothing like it";
+    p.evaluate("filterHistory()");
+    expect(p.id("history-empty-action").textContent).toBe("Clear search");
+    p.id("history-empty-action").click();
+    expect(p.id<HTMLInputElement>("history-search").value).toBe("");
+    expect(p.document.querySelectorAll(".history-row")).toHaveLength(1);
+  });
+
+  it("names a history author only when it is not the current Git user", async () => {
+    const p = await panel(); p.connect();
+    const versions = ["Designer", "Reviewer", "Designer"].map((author, index) => ({ id: String(index + 1).repeat(40), shortId: String(index + 1).repeat(7), author, date: "2026-09-04T12:00:00Z", message: `Design ${index + 1}` }));
+    p.evaluate('projectStatus = { currentUser: "Designer" }; historyEntries = versions; renderHistory(versions)', { versions });
+    expect([...p.document.querySelectorAll(".history-author")].map(node => node.textContent)).toEqual(["", "Reviewer", ""]);
+  });
+
+  it("compares a saved version with the open document and lists every difference without changing anything", async () => {
+    const p = await panel(); const doc = p.connect(); p.evaluate("bindPanelEvents()");
+    p.document.body.classList.remove("is-initializing"); p.id("workspace").hidden = false;
+    p.evaluate('projectStatus = { branch: "main", baselineMissing: false, documentBinding: null }');
+    const version = { id: "a".repeat(40), shortId: "aaaaaaa", author: "Designer", date: "2026-09-04T12:00:00Z", message: "Cover <b>one</b>" };
+    const helper = vi.fn(async (operation: string, payload: any) => operation === "compareVersion"
+      ? { version: payload.version, changeCount: 2, changes: [change(4, { summary: "Layer 4: Opacity changed from 100% to 63%" }), change(5, { category: "added", summary: "Added pixel layer “Fresh”" })] }
+      : {});
+    p.context.callHelper = helper; p.context.documentAllowed = () => true;
+    p.context.captureDocument = vi.fn(async () => ({ document: { documentId: String(doc.id), name: doc.name }, layers: [] }));
+    p.evaluate("historyEntries = [version]; selectedVersionId = version.id; renderHistory(historyEntries)", { version });
+    p.document.querySelector<HTMLElement>(".history-actions .button-primary")!.click();
+    await settle(); await settle();
+    expect(helper).toHaveBeenCalledWith("compareVersion", expect.objectContaining({ version: version.id, capture: expect.any(Object), documentIdentity: expect.objectContaining({ documentId: String(doc.id) }) }));
+    expect(p.id("detail-sheet").hidden).toBe(false);
+    expect(p.id("detail-title").textContent).toBe("Compare with aaaaaaa");
+    const content = p.id("detail-content");
+    expect(content.querySelector(".version-inspector-heading")!.textContent).toBe("2 differences since this version");
+    expect([...content.querySelectorAll(".version-inspector-changes p")].map(node => node.textContent)).toEqual(["Opacity changed from 100% to 63%", "Added pixel layer “Fresh”"]);
+    expect(content.textContent).toContain("Cover <b>one</b>");
+    expect(content.querySelector("b")).toBeNull();
+    expect(p.app.open).not.toHaveBeenCalled();
+    expect(p.id("result").textContent).toBe("2 differences from aaaaaaa.");
+    // A document that is not the project's is not compared at all.
+    helper.mockClear(); p.context.documentAllowed = () => false; p.evaluate("closeDetail()");
+    p.document.querySelector<HTMLElement>(".history-actions .button-primary")!.click(); await settle();
+    expect(helper).not.toHaveBeenCalled();
+    expect(p.id("result").textContent).toContain("Open the project’s document");
+  });
+
+  it("shows work on the control that started it, and one line under the tabs, from the click until the result", async () => {
+    const p = await panel(); p.connect(); p.evaluate("bindPanelEvents()");
+    p.document.body.classList.remove("is-initializing"); p.id("workspace").hidden = false;
+    const save = p.id("save-version");
+    save.querySelector("span")!.dispatchEvent(new (p.document.defaultView as any).Event("click", { bubbles: true }));
+    p.evaluate("busy(true)");
+    expect(save.classList.contains("is-working")).toBe(true);
+    expect(save.getAttribute("aria-busy")).toBe("true");
+    expect(p.id("progress").hidden).toBe(false);
+    // The line is shell-wide, not part of one screen.
+    expect(p.id("progress").closest(".view-panel, .capture-panel")).toBeNull();
+    p.evaluate("busy(false)");
+    expect(save.classList.contains("is-working")).toBe(false);
+    expect(save.hasAttribute("aria-busy")).toBe(false);
+    expect(p.id("progress").hidden).toBe(true);
+    // Work that no button started marks no button.
+    p.evaluate("pressedAt = 0; busy(true)");
+    expect(p.document.querySelector(".is-working")).toBeNull();
+    p.evaluate("busy(false)");
+  });
+
+  it("pins the save composer under the list so a long list never pushes it out of reach", async () => {
     const p = await panel();
     p.connect(); p.evaluate("bindPanelEvents()");
     p.document.body.classList.remove("is-initializing"); p.id("workspace").hidden = false;
     p.evaluate("renderChanges(testChanges)", { testChanges: Array.from({ length: 600 }, (_, index) => change(index + 1)) });
-    const sections = [...p.id("changes-view").querySelectorAll(".changes-card, .capture-panel")];
-    expect(sections).toEqual([p.document.querySelector(".changes-card"), p.document.querySelector(".capture-panel")]);
-    const controls = [...p.id("changes-view").querySelectorAll('[tabindex="0"], input')];
-    expect(controls.indexOf(p.id("jump-save"))).toBeGreaterThanOrEqual(0);
-    expect(controls.indexOf(p.id("jump-save"))).toBeLessThan(controls.indexOf(p.document.querySelector(".change-row")!));
-    p.keyboard(p.id("jump-save"), "Enter");
-    expect(p.document.activeElement).toBe(p.id("message"));
+    const composer = p.document.querySelector<HTMLElement>(".capture-panel")!;
+    expect(p.id("view-scroll").contains(composer)).toBe(false);
+    expect(composer.parentElement).toBe(p.id("view-scroll").parentElement);
+    expect(composer.hidden).toBe(false);
     expect(p.id<HTMLInputElement>("message").disabled).toBeFalsy();
+    // A bookmark, not an upload arrow: saving a version is not pushing it.
+    expect(p.id("save-version").querySelector("path")!.getAttribute("d")).toBe("M7 4h10v16l-5-4-5 4z");
+    // The composer belongs to Changes; History has its own footer bar instead.
+    p.evaluate('selectTab("history", false)');
+    expect(composer.hidden).toBe(true);
+    expect(p.id("history-total").hidden).toBe(false);
+    p.evaluate('selectTab("changes", false)');
+    expect(composer.hidden).toBe(false);
+    expect(p.id("history-total").hidden).toBe(true);
   });
 
   it("selects a changed layer without unhiding it and clears the previous selection", async () => {
@@ -412,7 +617,7 @@ describe("PhotoGit production panel behavior — host mocked", () => {
     p.evaluate('selectTab("branches", false)');
     const execute = vi.fn(async () => undefined); p.context.executeCommand = execute;
     await p.evaluate("loadBranches(result)", { result: { current: "main", branches: [{ name: "main", current: true }, { name: "alternate", current: false }] } });
-    const button = p.id("branch-list").querySelector<HTMLElement>(".branch-switch")!;
+    const button = p.id("branch-list").querySelector<HTMLElement>('.branch-row[role="button"]')!;
     button.click(); expect(execute).toHaveBeenCalledExactlyOnceWith("switch alternate");
     execute.mockClear();
     p.evaluate('projectFolder = { nativePath: "/different-project" }');
@@ -421,7 +626,7 @@ describe("PhotoGit production panel behavior — host mocked", () => {
     expect(p.id("result").textContent).toContain("project changed");
   });
 
-  it("does not overwrite new-project branch rows or the picker with a late branch-list response", async () => {
+  it("does not overwrite new-project branch rows with a late branch-list response", async () => {
     const p = await panel(); p.connect();
     const waiting = deferred<Record<string, unknown>>(); p.context.callHelper = vi.fn(() => waiting.promise);
     const loading = p.evaluate("loadBranches()"); await settle();
@@ -430,23 +635,32 @@ describe("PhotoGit production panel behavior — host mocked", () => {
     waiting.resolve({ current: "old-main", branches: [{ name: "old-main", current: true }, { name: "old-direction", current: false }] });
     await loading;
     expect(p.id("branch-name").textContent).toBe("new-main");
-    expect(p.id("branch-name-detail").textContent).toBe("new-main");
     expect(p.id("branch-list").textContent).toContain("new-main");
     expect(p.id("branch-list").textContent).not.toContain("old-");
-    expect([...p.id("branch-menu").children].map(item => (item as HTMLElement).dataset.branch)).toEqual(["new-main"]);
     expect(p.id("branches-count").textContent).toBe("1");
   });
 
-  it("preserves interleaved author chronology and opens actual version details on click", async () => {
+  it("preserves interleaved author chronology, names authors only when there are several, and opens details from the selected card", async () => {
     const p = await panel();
     p.connect();
+    p.document.body.classList.remove("is-initializing"); p.id("workspace").hidden = false;
+    p.evaluate('selectTab("history", false)');
     const versions = ["A", "B", "A"].map((author, index) => ({ id: String(index + 1).repeat(40), shortId: String(index + 1).repeat(8), author, date: "2026-09-04T12:00:00Z", message: `Design ${index + 1}` }));
     const helper = vi.fn(async () => ({ changes: [{ summary: "Layer renamed" }], files: [{ status: "M", path: "snapshot/document.psd" }], snapshotAvailable: true }));
     p.context.callHelper = helper;
-    p.evaluate("renderHistory(versions)", { versions });
+    p.evaluate("historyEntries = versions; renderHistory(versions)", { versions });
     expect([...p.document.querySelectorAll(".history-row strong")].map(node => node.textContent)).toEqual(["Design 1", "Design 2", "Design 3"]);
     expect(p.document.querySelectorAll(".history-group")).toHaveLength(3);
+    expect([...p.document.querySelectorAll(".history-author")].map(node => node.textContent)).toEqual(["A", "B", "A"]);
+    // Pressing a row selects it; nothing is read from the helper yet.
     p.document.querySelector<HTMLElement>(".history-row")!.click();
+    await settle();
+    expect(helper).not.toHaveBeenCalled();
+    const card = p.document.querySelector<HTMLElement>(".history-entry.selected")!;
+    expect(card.querySelector<HTMLElement>(".history-row")!.dataset.version).toBe(versions[0]!.id);
+    expect(card.querySelector(".pill")!.textContent).toBe("Latest");
+    expect([...card.querySelectorAll(".history-actions .button")].map(button => button.textContent)).toEqual(["Compare", "Restore"]);
+    card.querySelector<HTMLElement>(".history-details")!.click();
     await settle();
     expect(helper).toHaveBeenCalledWith("versionDetails", { version: versions[0]!.id });
     expect(p.id("detail-title").textContent).toBe(`Version ${versions[0]!.shortId}`);
@@ -455,93 +669,82 @@ describe("PhotoGit production panel behavior — host mocked", () => {
     expect(p.id("detail-content").textContent).toContain("snapshot/document.psd");
     expect(p.id("detail-content").textContent).not.toContain("[object Object]");
     expect(p.id("detail-action").textContent).toBe("Open version copy");
+    // One author is not worth a label on every group.
+    const solo = versions.map(version => ({ ...version, author: "A" }));
+    p.evaluate("historyEntries = versions; renderHistory(versions)", { versions: solo });
+    expect([...p.document.querySelectorAll(".history-author")].every(node => node.textContent === "")).toBe(true);
   });
 
-  it("shows wide History details inline and opens an independent copy only on explicit activation", async () => {
+  it("acts on a version only from its selected card and opens a separate copy only on Restore", async () => {
     const p = await panel(); const doc = p.connect();
     p.document.body.classList.remove("is-initializing");
     p.id("workspace").hidden = false;
-    p.context.matchMedia = () => ({ matches: true });
     p.evaluate('selectTab("history", false)');
-    const version = { id: "a".repeat(40), shortId: "aaaaaaaa", author: "Designer", date: "2026-09-07", message: "Cover <img src=x>" };
-    const details = { changes: [change(1, { summary: "Heading <script>literal</script>" })], files: [{ status: "M", path: "snapshot/document.psd" }], snapshotAvailable: true };
-    const helper = vi.fn(async () => details); const open = vi.fn(async () => undefined);
-    p.context.callHelper = helper; p.context.openSnapshot = open;
-    p.evaluate("renderHistory(versions)", { versions: [version] });
-    const row = p.document.querySelector<HTMLElement>(".history-row")!;
-    row.click(); await settle();
-    expect(helper).toHaveBeenCalledWith("versionDetails", { version: version.id });
-    expect(row.classList.contains("selected")).toBe(true);
-    expect(row.getAttribute("aria-pressed")).toBe("true");
-    expect(p.id("history-inspector").textContent).toContain(version.message);
-    expect(p.id("history-inspector").textContent).toContain("Heading <script>literal</script>");
-    expect(p.id("history-inspector").textContent).toContain("snapshot/document.psd");
-    expect(p.id("history-inspector").querySelector("img, script")).toBeNull();
-    expect(p.id("detail-sheet").hidden).toBe(true);
-    expect(p.document.body.classList.contains("has-surface")).toBe(false);
+    const versions = [
+      { id: "a".repeat(40), shortId: "aaaaaaaa", author: "Designer", date: "2026-09-07T10:00:00Z", message: "Cover <img src=x>" },
+      { id: "b".repeat(40), shortId: "bbbbbbbb", author: "Designer", date: "2026-09-06T10:00:00Z", message: "Earlier cover" }
+    ];
+    const open = vi.fn(async () => undefined); p.context.openSnapshot = open;
+    p.context.callHelper = vi.fn(async () => ({ versions }));
+    await p.evaluate("loadHistory()");
+    // The newest version is selected on open, as a card with its two actions.
+    expect(p.document.querySelectorAll(".history-entry.selected")).toHaveLength(1);
+    expect(p.document.querySelector<HTMLElement>(".history-entry.selected .history-row")!.dataset.version).toBe(versions[0]!.id);
+    expect(p.document.querySelectorAll(".history-actions")).toHaveLength(1);
+    expect(p.id("history").querySelector("img, script")).toBeNull();
+    expect(p.id("history").textContent).toContain("Cover <img src=x>");
+    expect(p.id("history-total").textContent).toBe("2 versions");
+    const older = p.document.querySelectorAll<HTMLElement>(".history-row")[1]!;
+    older.click();
+    const card = p.document.querySelector<HTMLElement>(".history-entry.selected")!;
+    expect(card.querySelector<HTMLElement>(".history-row")!.dataset.version).toBe(versions[1]!.id);
+    expect(card.querySelector<HTMLElement>(".history-row")!.getAttribute("aria-pressed")).toBe("true");
+    expect(card.querySelector(".pill")).toBeNull();
     expect(open).not.toHaveBeenCalled();
-    p.keyboard(p.id("history-inspector").querySelector(".version-inspector-open"), "Enter");
+    p.keyboard(card.querySelectorAll(".history-actions .button")[1], "Enter");
     await settle();
     expect(open).toHaveBeenCalledOnce();
-    expect(open).toHaveBeenCalledWith(version.id, false);
+    expect(open).toHaveBeenCalledWith(versions[1]!.id, false);
     expect(p.app.activeDocument).toBe(doc);
+    // A newer version arriving takes the selection back to the newest.
+    const newer = { id: "c".repeat(40), shortId: "cccccccc", author: "Designer", date: "2026-09-08T10:00:00Z", message: "Newest cover" };
+    p.context.callHelper = vi.fn(async () => ({ versions: [newer, ...versions] }));
+    await p.evaluate("loadHistory()");
+    expect(p.document.querySelector<HTMLElement>(".history-entry.selected .history-row")!.dataset.version).toBe(newer.id);
   });
 
-  it("replaces an old inline version action with a loading state while fetching the next version", async () => {
-    const p = await panel(); p.connect();
-    p.context.matchMedia = () => ({ matches: true });
-    const version = { id: "a".repeat(40), shortId: "aaaaaaaa", author: "Designer", date: "2026-09-07", message: "First version" };
-    p.context.callHelper = vi.fn(async () => ({ changes: [], files: [], snapshotAvailable: true }));
-    await p.evaluate("inspectVersion(version)", { version });
-    expect(p.id("history-inspector").querySelector(".version-inspector-open")).not.toBeNull();
-    const waiting = deferred<{ changes: unknown[]; files: unknown[]; snapshotAvailable: boolean }>();
-    p.context.callHelper = vi.fn(() => waiting.promise);
-    const inspection = p.evaluate("inspectVersion(version)", { version: { ...version, id: "b".repeat(40), message: "Second version" } });
-    await settle();
-    expect(p.id("history-inspector").getAttribute("aria-busy")).toBe("true");
-    expect(p.id("history-inspector").querySelector(".version-inspector-open")).toBeNull();
-    waiting.resolve({ changes: [], files: [], snapshotAvailable: false }); await inspection;
-    expect(p.id("history-inspector").getAttribute("aria-busy")).toBe("false");
-    expect(p.id("history-inspector").textContent).toContain("Second version");
-    expect(p.id("history-inspector").textContent).toContain("Saved file unavailable");
-    expect(p.id("history-inspector").querySelector(".version-inspector-open")).toBeNull();
-  });
-
-  it("keeps an inline version-opening action inert after the connected project changes", async () => {
-    const p = await panel(); p.connect();
+  it("keeps a version-opening action inert after the connected project changes", async () => {
+    const p = await panel(); p.connect(); p.evaluate("bindPanelEvents()");
     p.document.body.classList.remove("is-initializing");
     p.id("workspace").hidden = false;
-    p.context.matchMedia = () => ({ matches: true });
     p.evaluate('selectTab("history", false)');
     p.context.callHelper = vi.fn(async () => ({ changes: [], files: [], snapshotAvailable: true }));
     const open = vi.fn(async () => undefined); p.context.openSnapshot = open;
     await p.evaluate("inspectVersion(version)", { version: { id: "a".repeat(40), shortId: "aaaaaaaa", message: "Old project design" } });
+    expect(p.id("detail-action").textContent).toBe("Open version copy");
     p.evaluate('projectFolder = { nativePath: "/different-project" }');
-    p.id("history-inspector").querySelector<HTMLElement>(".version-inspector-open")!.click();
+    p.id("detail-action").click();
     await settle();
     expect(open).not.toHaveBeenCalled();
     expect(p.id("result").textContent).toContain("project changed");
   });
 
-  it("does not render late version details into a different project's inspector", async () => {
+  it("does not show late version details after a different project is connected", async () => {
     const p = await panel(); p.connect();
-    p.context.matchMedia = () => ({ matches: true });
     const waiting = deferred<{ changes: unknown[]; files: unknown[]; snapshotAvailable: boolean }>();
     p.context.callHelper = vi.fn(() => waiting.promise);
     const inspection = p.evaluate("inspectVersion(version)", { version: { id: "a".repeat(40), message: "Old project design" } });
     await settle();
     p.evaluate('projectFolder = { nativePath: "/different-project" }');
     waiting.resolve({ changes: [], files: [], snapshotAvailable: true }); await inspection;
-    expect(p.id("history-inspector").textContent).not.toContain("Old project design");
-    expect(p.id("history-inspector").querySelector(".version-inspector-open")).toBeNull();
+    expect(p.id("detail-sheet").hidden).toBe(true);
+    expect(p.id("detail-content").textContent).not.toContain("Old project design");
     expect(p.evaluate("selectedVersionId")).not.toBe("a".repeat(40));
   });
 
-  it("clears the selected version and its inline action when choosing a different project", async () => {
+  it("clears the selected version, the open review and the branch list when choosing a different project", async () => {
     const p = await panel(); p.connect();
-    p.context.matchMedia = () => ({ matches: true });
-    p.context.callHelper = vi.fn(async () => ({ changes: [], files: [], snapshotAvailable: true }));
-    await p.evaluate("inspectVersion(version)", { version: { id: "a".repeat(40), message: "Previous project design" } });
+    p.evaluate('selectedVersionId = "a".repeat(40); expandedReview = "old-direction"');
     await p.evaluate("loadBranches(result)", { result: { current: "main", branches: [{ name: "main", current: true }, { name: "old-direction", current: false }] } });
     const nextFolder = { name: "New project", nativePath: "/next-project" };
     Object.assign(p.storage.localFileSystem, { getFolder: vi.fn(async () => nextFolder), createPersistentToken: vi.fn(async () => "next-project-token") });
@@ -550,26 +753,17 @@ describe("PhotoGit production panel behavior — host mocked", () => {
     await p.evaluate("chooseProject()");
     expect(p.evaluate("projectFolder")).toBe(nextFolder);
     expect(p.evaluate("selectedVersionId")).toBeNull();
-    expect(p.id("history-inspector").dataset.state).toBe("empty");
-    expect(p.id("history-inspector").textContent).not.toContain("Previous project design");
-    expect(p.id("history-inspector").querySelector(".version-inspector-open")).toBeNull();
+    expect(p.evaluate("expandedReview")).toBeNull();
     expect(p.id("branch-list").querySelector(".branch-row")).toBeNull();
-    expect(p.id("branch-menu").children).toHaveLength(0);
-    expect((p.id("branch-picker") as HTMLElement & { selectedIndex: number }).selectedIndex).toBe(-1);
   });
 
-  it("shows a recoverable inline History error without retaining an old version-opening action", async () => {
+  it("reports a version that could not be loaded without opening a dialog for it", async () => {
     const p = await panel(); p.connect();
-    p.context.matchMedia = () => ({ matches: true });
-    const version = { id: "a".repeat(40), message: "Saved design" };
-    p.context.callHelper = vi.fn(async () => ({ changes: [], files: [], snapshotAvailable: true }));
-    await p.evaluate("inspectVersion(version)", { version });
     p.context.callHelper = vi.fn(async () => { throw new Error("Helper unavailable"); });
-    await p.evaluate("inspectVersion(version)", { version });
-    expect(p.id("history-inspector").getAttribute("aria-busy")).toBe("false");
-    expect(p.id("history-inspector").textContent).toContain("Could not load this version");
-    expect(p.id("history-inspector").querySelector('[role="alert"]')!.textContent).toContain("Helper unavailable");
-    expect(p.id("history-inspector").querySelector(".version-inspector-open")).toBeNull();
+    await p.evaluate("inspectVersion(version)", { version: { id: "a".repeat(40), message: "Saved design" } });
+    expect(p.id("detail-sheet").hidden).toBe(true);
+    expect(p.id("result").textContent).toContain("Helper unavailable");
+    expect(p.id("result").getAttribute("role")).toBe("alert");
     expect(p.evaluate("busyNow")).toBe(false);
   });
 
@@ -600,38 +794,94 @@ describe("PhotoGit production panel behavior — host mocked", () => {
     }
   });
 
-  it("opens a semantic comparison and keeps blocked merge controls inert", async () => {
+  it("opens a blocked review in place, lists its conflicts, and leaves nothing to merge with", async () => {
     const p = await panel();
     p.connect();
     const merge = vi.fn();
-    const helper = vi.fn(async () => ({ baseBranch: "main", incomingBranch: "feature", ahead: 1, behind: 0, changes: [{ summary: "Headline text changed" }], files: [{ status: "M", path: "snapshot/document.psd" }], conflicts: ["snapshot/document.psd"], warnings: ["Both branches changed the PSD."], gitMergeable: false }));
+    const helper = vi.fn(async () => ({ baseBranch: "main", incomingBranch: "feature", ahead: 1, behind: 0, changes: [{ layerName: "Headline", layerUuid: "uuid-1", summary: "Headline text changed" }], files: [{ status: "M", path: "snapshot/document.psd" }], conflicts: [".photogit/text/uuid-1.json", "snapshot/document.psd"], warnings: ["Both branches changed the PSD."], gitMergeable: false }));
     p.context.callHelper = helper; p.context.mergeReview = merge;
-    p.evaluate('renderReviews([{ branch: "feature", ahead: 1, changeCount: 1, changes: ["snapshot/document.psd"], mergeable: false }], [])');
-    p.document.querySelector<HTMLElement>(".merge-action")!.click();
-    expect(merge).not.toHaveBeenCalled();
-    p.document.querySelector<HTMLElement>(".compare-action")!.click();
+    p.evaluate('reviewEntries = [{ branch: "feature", ahead: 1, changeCount: 1, changes: ["snapshot/document.psd"], mergeable: false }]; renderReviews(reviewEntries, [])');
+    const toggle = () => p.document.querySelector<HTMLElement>("#reviews .review-card .review-toggle")!;
+    expect(p.document.querySelector("#reviews .review-card")!.textContent).toBe("feature1 version aheadConflictsResolve");
+    // Like every other control, it is inert until startup has finished.
+    toggle().click(); await settle();
+    expect(helper).not.toHaveBeenCalled();
+    p.document.body.classList.remove("is-initializing"); p.id("workspace").hidden = false;
+    p.evaluate('selectTab("reviews", false)');
+    toggle().click();
     await settle();
     expect(helper).toHaveBeenCalledWith("compareBranches", { branch: "feature" });
-    const endpoints = [...p.id("detail-content").querySelectorAll(".comparison-endpoint")];
-    expect(endpoints.map(endpoint => endpoint.textContent)).toEqual(["Sourcefeature", "Destinationmain"]);
-    expect(p.id("detail-content").textContent).toContain("Headline text changed");
-    expect(p.id("detail-content").textContent).toContain("Can’t combine yet");
+    const card = p.document.querySelector<HTMLElement>("#reviews .review-card.expanded")!;
+    expect(card.querySelector(".review-state-label")!.textContent).toBe("2 conflicts");
+    expect([...card.querySelectorAll(".review-conflict-head")].map(row => row.textContent)).toEqual(["HeadlineText changed on both", "Saved PSDThe Photoshop file changed on both"]);
+    const button = card.querySelector<HTMLElement>(".comparison-merge")!;
+    expect(button.textContent).toBe("Merge feature");
+    expect(button.getAttribute("aria-disabled")).toBe("true");
+    button.click(); p.keyboard(button, "Enter"); await settle();
+    expect(merge).not.toHaveBeenCalled();
+    expect(p.id("detail-sheet").hidden).toBe(true);
+    // The heading closes the card again.
+    card.querySelector<HTMLElement>(".review-head")!.click();
+    expect(p.document.querySelector("#reviews .review-card.expanded")).toBeNull();
+    expect(helper).toHaveBeenCalledOnce();
   });
 
-  it.each([false, true])("routes comparison review through a fresh check and confirmation (wide: %s)", async wide => {
+  it("offers Merge on a review without conflicts and still confirms before combining", async () => {
     const p = await panel(); p.connect();
     p.document.body.classList.remove("is-initializing"); p.id("workspace").hidden = false;
-    p.context.matchMedia = () => ({ matches: wide });
+    p.evaluate('selectTab("reviews", false)');
+    const comparison = { baseBranch: "main", incomingBranch: "feature", ahead: 2, behind: 0, changes: [change(1)], files: [{ status: "M", path: ".photogit/appearance/a.json" }], conflicts: [], warnings: [], gitMergeable: true };
+    const helper = vi.fn(async () => comparison); const merge = vi.fn(async () => undefined);
+    p.context.callHelper = helper; p.context.performMerge = merge;
+    p.evaluate('reviewEntries = [{ branch: "feature", ahead: 2, changeCount: 1, mergeable: true }]; renderReviews(reviewEntries, [])');
+    expect(p.document.querySelector("#reviews .review-card")!.textContent).toBe("feature2 versions aheadReady to mergeReview");
+    p.document.querySelector<HTMLElement>("#reviews .review-toggle")!.click(); await settle();
+    const button = p.document.querySelector<HTMLElement>("#reviews .review-card.expanded .comparison-merge")!;
+    expect(button.getAttribute("aria-disabled")).toBe("false");
+    button.click(); await settle();
+    // Both branches are read again and the merge is confirmed in a dialog.
+    expect(helper).toHaveBeenCalledTimes(2);
+    expect(p.id("detail-title").textContent).toBe("Combine this branch?");
+    expect(p.id("detail-action").hidden).toBe(false);
+    expect(merge).not.toHaveBeenCalled();
+  });
+
+  it("labels the Reviews tab with what is waiting and badges only the branches that cannot merge", async () => {
+    const p = await panel();
+    const repository = { provider: "local", currentBranch: "film-final", baseBranch: "main", remoteConfigured: false };
+    const review = (branch: string, mergeable: boolean) => ({ branch, baseBranch: "film-final", ahead: 1, behind: 0, changeCount: 2, changes: [], mergeable });
+    await p.evaluate("loadReviews(result)", { result: { repository, reviews: [review("a", false), review("b", false)], conflicts: [], tags: [] } });
+    expect(p.id("reviews-heading").textContent).toBe("2 branches waiting to merge");
+    expect(p.id("review-provider").textContent).toBe("Into film-final. Each one has conflicts to resolve first.");
+    expect(p.id("reviews-count").textContent).toBe("2");
+    await p.evaluate("loadReviews(result)", { result: { repository, reviews: [review("a", false), review("b", true), review("c", true)], conflicts: [], tags: [] } });
+    expect(p.id("review-provider").textContent).toBe("Into film-final. 1 has conflicts to resolve first.");
+    expect(p.id("reviews-count").textContent).toBe("1");
+    await p.evaluate("loadReviews(result)", { result: { repository, reviews: [review("b", true)], conflicts: [], tags: [] } });
+    expect(p.id("reviews-heading").textContent).toBe("1 branch waiting to merge");
+    expect(p.id("review-provider").textContent).toBe("Into film-final.");
+    expect(p.id("reviews-count").dataset.empty).toBe("true");
+    await p.evaluate("loadReviews(result)", { result: { repository, reviews: [], conflicts: [], tags: [] } });
+    expect(p.id("reviews-heading").textContent).toBe("Nothing waiting to merge");
+    expect(p.id("reviews-empty").hidden).toBe(false);
+    // Counts that ask for nothing are not badged at all.
+    for (const id of ["history-count", "branches-count", "activity-count"]) expect(p.id(id).hidden).toBe(true);
+  });
+
+  it("routes the full comparison through a fresh check and confirmation", async () => {
+    const p = await panel(); p.connect();
+    p.document.body.classList.remove("is-initializing"); p.id("workspace").hidden = false;
     p.evaluate('selectTab("reviews", false)');
     const comparison = { baseBranch: "main", incomingBranch: "feature", ahead: 2, behind: 1, changes: [change(1)], files: [{ status: "M", path: "snapshot/document.psd" }], conflicts: [], warnings: [], gitMergeable: true };
     const helper = vi.fn(async () => comparison); const merge = vi.fn(async () => undefined);
     p.context.callHelper = helper; p.context.performMerge = merge;
     await p.evaluate('compareBranch("feature")');
-    const content = p.id(wide ? "review-inspector" : "detail-content");
-    expect(content.querySelector(".comparison-summary")!.textContent).toContain("Layer 1: Opacity changed");
+    const content = p.id("detail-content");
+    // The layer is named once, beside the edit, not again inside it.
+    expect(content.querySelector(".comparison-change-list li")!.textContent).toMatch(/^Layer 1Opacity changed/);
     expect(content.querySelector(".comparison-status")!.textContent).toContain("Ready to combine");
     expect(content.textContent).toContain("doesn’t blend layers");
-    expect(p.id("detail-sheet").hidden).toBe(wide);
+    expect(p.id("detail-sheet").hidden).toBe(false);
     expect(merge).not.toHaveBeenCalled();
     p.keyboard(content.querySelector(".comparison-merge"), "Enter"); await settle();
     expect(helper).toHaveBeenCalledTimes(2);
@@ -643,16 +893,15 @@ describe("PhotoGit production panel behavior — host mocked", () => {
     expect(merge).not.toHaveBeenCalled();
   });
 
-  it.each([false, true])("keeps conflicting comparisons inert and literal even with contradictory mergeability (wide: %s)", async wide => {
+  it("keeps conflicting comparisons inert and literal even with contradictory mergeability", async () => {
     const p = await panel(); p.connect();
     p.document.body.classList.remove("is-initializing"); p.id("workspace").hidden = false;
-    p.context.matchMedia = () => ({ matches: wide });
     p.evaluate('selectTab("reviews", false)');
     const comparison = { baseBranch: "main", incomingBranch: "<img src=x>", ahead: 1, behind: 1, changes: [change(1, { summary: "<script>literal</script>" })], files: [], conflicts: ["snapshot/document.psd"], warnings: ["Keep both originals"], gitMergeable: true };
     const merge = vi.fn(); p.context.mergeReview = merge;
     p.context.callHelper = vi.fn(async () => comparison);
     await p.evaluate('compareBranch("feature")');
-    const content = p.id(wide ? "review-inspector" : "detail-content");
+    const content = p.id("detail-content");
     expect(content.textContent).toContain("<img src=x>");
     expect(content.textContent).toContain("<script>literal</script>");
     expect(content.querySelector("img, script")).toBeNull();
@@ -666,36 +915,32 @@ describe("PhotoGit production panel behavior — host mocked", () => {
   it("refuses an old comparison's merge action after changing projects", async () => {
     const p = await panel(); p.connect();
     p.document.body.classList.remove("is-initializing"); p.id("workspace").hidden = false;
-    p.context.matchMedia = () => ({ matches: true });
     p.evaluate('selectTab("reviews", false)');
     const merge = vi.fn(); p.context.mergeReview = merge;
     p.context.callHelper = vi.fn(async () => ({ baseBranch: "main", incomingBranch: "feature", ahead: 1, behind: 0, changes: [], files: [], conflicts: [], warnings: [], gitMergeable: true }));
     await p.evaluate('compareBranch("feature")');
     p.evaluate('projectFolder = { nativePath: "/different-project" }');
-    p.id("review-inspector").querySelector<HTMLElement>(".comparison-merge")!.click();
+    p.id("detail-content").querySelector<HTMLElement>(".comparison-merge")!.click();
     await settle();
     expect(merge).not.toHaveBeenCalled();
     expect(p.id("result").textContent).toContain("project changed");
   });
 
-  it("does not leave a previous wide comparison actionable when the next comparison fails", async () => {
+  it("closes a review card again when reading its branches fails", async () => {
     const p = await panel(); p.connect();
     p.document.body.classList.remove("is-initializing"); p.id("workspace").hidden = false;
-    p.context.matchMedia = () => ({ matches: true });
-    p.context.callHelper = vi.fn(async () => ({ baseBranch: "main", incomingBranch: "first-direction", ahead: 1, behind: 0, changes: [], files: [], conflicts: [], warnings: [], gitMergeable: true }));
-    await p.evaluate('compareBranch("first-direction")');
-    expect(p.id("review-inspector").querySelector(".comparison-merge")).not.toBeNull();
+    p.evaluate('selectTab("reviews", false)');
     p.context.callHelper = vi.fn(async () => { throw new Error("Helper unavailable"); });
-    await p.evaluate('compareBranch("next-direction")');
+    p.evaluate('reviewEntries = [{ branch: "next-direction", ahead: 1, changeCount: 1, mergeable: true }]; renderReviews(reviewEntries, [])');
+    p.document.querySelector<HTMLElement>("#reviews .review-toggle")!.click(); await settle();
     expect(p.id("result").textContent).toContain("Helper unavailable");
-    expect(p.id("review-inspector").querySelector(".comparison-merge")).toBeNull();
-    expect(p.id("review-inspector").textContent).not.toContain("first-direction");
+    expect(p.document.querySelector("#reviews .review-card.expanded")).toBeNull();
+    expect(p.document.querySelector("#reviews .comparison-merge")).toBeNull();
     expect(p.evaluate("busyNow")).toBe(false);
   });
 
   it("does not render a late comparison from a previously connected project", async () => {
     const p = await panel(); p.connect();
-    p.context.matchMedia = () => ({ matches: true });
     const waiting = deferred<Record<string, unknown>>();
     p.context.callHelper = vi.fn(() => waiting.promise);
     const comparison = p.evaluate('compareBranch("old-project-branch")');
@@ -703,8 +948,8 @@ describe("PhotoGit production panel behavior — host mocked", () => {
     p.evaluate('projectFolder = { nativePath: "/different-project" }');
     waiting.resolve({ baseBranch: "main", incomingBranch: "old-project-branch", ahead: 1, behind: 0, changes: [], files: [], conflicts: [], warnings: [], gitMergeable: true });
     await comparison;
-    expect(p.id("review-inspector").textContent).not.toContain("old-project-branch");
-    expect(p.id("review-inspector").querySelector(".comparison-merge")).toBeNull();
+    expect(p.id("detail-content").textContent).not.toContain("old-project-branch");
+    expect(p.id("detail-content").querySelector(".comparison-merge")).toBeNull();
     expect(p.id("detail-sheet").hidden).toBe(true);
   });
 
@@ -808,32 +1053,34 @@ describe("PhotoGit production panel behavior — host mocked", () => {
     expect(p.id("change-summary").textContent).toBe("Connect a document");
   });
 
-  it("staggers the tally tiles in only when the tally first appears", async () => {
+  it("replaces the workspace with the unlinked state, and clears the list and filters, for a document that is not the project's", async () => {
     const p = await panel();
     p.connect();
-    const stagger = vi.fn();
-    p.evaluate("globalThis.PhotoGitReveal = { stagger }", { stagger });
-    await p.evaluate("renderChanges(changes)", { changes: [change(1)] });
-    expect(stagger.mock.calls.some(([rows]) => [...rows].every((row: Element) => row.classList.contains("tally-tile")))).toBe(true);
-    stagger.mockClear();
-    await p.evaluate("renderChanges(changes)", { changes: [change(1), change(2)] });
-    expect(stagger.mock.calls.some(([rows]) => [...rows].some((row: Element) => row.classList.contains("tally-tile")))).toBe(false);
-    expect(p.id("tally-changed").textContent).toBe("2");
-  });
-
-  it("clears the tally and filter bar with the list when the document is not connected", async () => {
-    const p = await panel();
-    p.connect();
+    p.document.body.classList.remove("is-initializing"); p.id("workspace").hidden = false;
+    p.evaluate('selectTab("changes", false)');
     await p.evaluate("renderChanges(changes)", { changes: [change(1), change(2, { category: "added" })] });
-    expect(p.id("change-tally").hidden).toBe(false);
     expect(p.id("change-filters").hidden).toBe(false);
-    p.app.activeDocument = syntheticDocument(2);
-    p.app.documents.push(p.app.activeDocument);
+    expect(p.id("document-connection").hidden).toBe(true);
+    const other = syntheticDocument(2);
+    p.app.activeDocument = other;
+    p.app.documents.push(other);
     p.evaluate("renderDocumentBinding()");
     expect(p.id("changes").children.length).toBe(0);
-    expect(p.id("change-tally").hidden).toBe(true);
-    expect(p.id("tally-changed").textContent).toBe("0");
     expect(p.id("change-filters").hidden).toBe(true);
+    // The state takes over below the top bar: no tabs, no list, no Push.
+    expect(p.id("document-connection").hidden).toBe(false);
+    expect(p.id("section-nav").hidden).toBe(true);
+    expect(p.document.querySelector<HTMLElement>(".workspace-content")!.hidden).toBe(true);
+    expect(p.id("push").hidden).toBe(true);
+    expect(p.id("document-connection-title").textContent).toMatch(/^This document isn’t linked to /);
+    expect(p.id("project-document-name").textContent).toBeTruthy();
+    expect(p.id("document-name").closest("#document-connection")).not.toBeNull();
+    expect([p.id("open-project-document"), p.id("connect-document")].map(button => button.textContent)).toEqual(["Open project document", "Track this document instead"]);
+    expect(p.id("change-project").closest(".unlinked-footer")).not.toBeNull();
+    // Docs stay reachable from the menu while a foreign document is open.
+    p.evaluate('selectTab("docs", false)');
+    expect(p.id("document-connection").hidden).toBe(true);
+    expect(p.document.querySelector<HTMLElement>(".workspace-content")!.hidden).toBe(false);
   });
 
   it("adopts a document only after confirmation and reports a completed connection", async () => {
@@ -936,7 +1183,7 @@ describe("PhotoGit production panel behavior — host mocked", () => {
     const helper = vi.fn(async () => ({ changes: [], changeCount: 0, baselineMissing: false }));
     p.context.callHelper = helper;
     await p.evaluate("scanChanges()");
-    expect(modalChecks).toEqual([true, true]);
+    expect(modalChecks).toEqual([true, true, true, true]);
     expect(p.core.executeAsModal).toHaveBeenCalledOnce();
     expect(helper).toHaveBeenCalledOnce();
     expect(p.id("change-summary").textContent).toBe("No detected changes");
@@ -967,8 +1214,8 @@ describe("PhotoGit production panel behavior — host mocked", () => {
     expect(captured.layers[0].content.fingerprint).toBeNull();
     expect(captured.layers[1].content.fingerprint).toMatch(/^pixels-v1:/);
     expect(captured.document.renderedFingerprint).toMatch(/^pixels-v1:/);
-    expect(p.imaging.getPixels.mock.calls.map(([options]) => options?.layerID)).toEqual([11, undefined]);
-    expect(p.imaging.getPixels.mock.calls[1]![0]).toMatchObject({ documentID: doc.id, sourceBounds: { left: 0, top: 0, right: 256, bottom: 256 } });
+    expect(p.imaging.getPixels.mock.calls.map(([options]) => options?.layerID)).toEqual([11, 11, undefined, undefined]);
+    expect(p.imaging.getPixels.mock.calls[2]![0]).toMatchObject({ documentID: doc.id, sourceBounds: { left: 0, top: 0, right: 256, bottom: 256 } });
     expect(p.imaging.getPixels.mock.calls.every(([options]) => options?.applyAlpha === false)).toBe(true);
     expect(captured.layers[1].parentPhotoshopId).toBe(10);
   });
@@ -986,8 +1233,8 @@ describe("PhotoGit production panel behavior — host mocked", () => {
     expect(captured.layers[0].content.opaque).toBe(true);
     expect(captured.layers[0].content.reason).toContain("compared at document level");
     expect(captured.document.renderedFingerprint).toMatch(/^pixels-v1:/);
-    expect(p.imaging.getPixels.mock.calls.map(([options]) => options?.layerID)).toEqual([20, undefined]);
-    expect(p.pixels.dispose).toHaveBeenCalledOnce();
+    expect(p.imaging.getPixels.mock.calls.map(([options]) => options?.layerID)).toEqual([20, undefined, undefined]);
+    expect(p.pixels.dispose).toHaveBeenCalledTimes(2);
   });
 
   it.each([
@@ -1016,7 +1263,7 @@ describe("PhotoGit production panel behavior — host mocked", () => {
     p.evaluate("renderChanges([])");
     await p.evaluate("scanChanges()");
     expect(helper).not.toHaveBeenCalled();
-    expect(p.pixels.dispose).toHaveBeenCalledOnce();
+    expect(p.pixels.dispose).toHaveBeenCalledTimes(2);
     expect(p.id("change-summary").textContent).toBe("Scan needs attention");
     expect(p.id("watch-status").textContent).toContain("Scan incomplete");
     expect(p.id("result").textContent).toContain("Composite image unavailable");
@@ -1044,13 +1291,17 @@ describe("PhotoGit production panel behavior — host mocked", () => {
     } };
     p.connect(doc);
     p.imaging.getPixels.mockImplementation(async () => { expect(p.inModal()).toBe(true); events.push("pixels"); return { imageData: p.pixels }; });
-    p.context.ensureFolder = async () => memoryFolder();
+    const incoming = memoryFolder();
+    p.context.ensureFolder = async () => incoming;
     p.context.callHelper = vi.fn(async () => { expect(p.inModal()).toBe(false); events.push("version"); return { versionId: "a".repeat(40), shortId: "aaaaaaaa", warningCount: 0 }; });
     for (const name of ["loadStatus", "loadBranches", "loadHistory", "loadReviews"]) p.context[name] = vi.fn(async () => undefined);
     p.id<HTMLInputElement>("message").value = "Save modal regression";
     p.id<HTMLInputElement>("history-search").value = "cover";
     await p.evaluate("saveVersion()");
-    expect(events).toEqual(["pixels", "pixels", "psd", "png", "version"]);
+    expect(events).toEqual(["pixels", "pixels", "pixels", "pixels", "psd", "pixels", "version"]);
+    expect(Array.from(new Uint8Array(incoming.entries.get("document.png").content).slice(0, 8))).toEqual([137, 80, 78, 71, 13, 10, 26, 10]);
+    expect(p.imaging.getPixels.mock.calls.at(-1)?.[0]).toMatchObject({ targetSize: { width: 256 }, componentSize: 8, colorSpace: "RGB", applyAlpha: false });
+    expect(doc.saveAs.png).not.toHaveBeenCalled();
     expect(p.core.executeAsModal).toHaveBeenCalledOnce();
     expect(p.id("changes-count").textContent).toBe("0");
     expect(p.evaluate("suppressNotifications")).toBe(false);
@@ -1103,8 +1354,8 @@ describe("PhotoGit production panel behavior — host mocked", () => {
     expect(result.layers).toHaveLength(9);
     expect(result.layers.every((layer: any) => layer.content.fingerprint.startsWith("pixels-v1:"))).toBe(true);
     expect(result.document.renderedFingerprint).toMatch(/^pixels-v1:/);
-    expect(p.imaging.getPixels).toHaveBeenCalledTimes(10);
-    expect(p.pixels.dispose).toHaveBeenCalledTimes(10);
+    expect(p.imaging.getPixels).toHaveBeenCalledTimes(20);
+    expect(p.pixels.dispose).toHaveBeenCalledTimes(20);
     expect(progress.mock.calls).toEqual([[4, 9], [8, 9], [9, 9]]);
   });
 
@@ -1124,7 +1375,8 @@ describe("PhotoGit production panel behavior — host mocked", () => {
     const p = await panel();
     p.evaluate('log("<img src=x>"); log("Second event"); clearActivity()');
     expect(p.id("activity-count").textContent).toBe("0");
-    expect(p.id("activity").textContent).toBe("Ready.");
+    expect(p.id("activity").textContent).toBe("No activity yetScans, saved versions and branch changes appear here.");
+    expect(p.id("activity").querySelectorAll(".activity-row")).toHaveLength(0);
     expect(p.id("activity").querySelector("img")).toBeNull();
   });
   it("collapses technical activity details and bounds the visible log", async () => {
@@ -1152,7 +1404,8 @@ describe("PhotoGit production startup — mocked host and filesystem", () => {
     expect(p.document.body.classList.contains("is-initializing")).toBe(false);
     expect(p.id("workspace").getAttribute("aria-busy")).toBe("false");
     expect(p.id("onboarding").hidden).toBe(false);
-    expect(p.context.window.setInterval).toHaveBeenCalledOnce();
+    expect(p.context.window.setInterval).toHaveBeenCalledTimes(2);
+    expect(p.context.window.setInterval.mock.calls.map((call: unknown[]) => call[1])).toEqual([1000, 10000]);
     expect(p.action.addNotificationListener).toHaveBeenCalledOnce();
     p.id("global-search").click();
     expect(p.id("detail-sheet").hidden).toBe(false);
@@ -1188,7 +1441,8 @@ describe("PhotoGit production startup — mocked host and filesystem", () => {
     expect(p.id("startup-state").hidden).toBe(true);
     expect(helper.mock.calls.map(call => call[0])).toEqual(["status", "branches", "history", "reviews"]);
     for (const call of helper.mock.calls as unknown[][]) expect(call[2]).toBe(5000);
-    expect(p.id("repo-sync-status").textContent).toBe("Synced");
+    expect(p.id("repo-sync-status").textContent).toMatch(/^Updated \d/);
+    expect(p.id("repo-sync-status").textContent).not.toContain("Synced");
   });
   it.each(["token", "pairing", "preferences"])("recovers from %s failure and keeps setup usable", async failure => {
     const p = await panel();
@@ -1286,7 +1540,7 @@ describe("PhotoGit rounded design and label clarity", () => {
   });
   it("groups scan events with expandable details and separates user actions", async () => {
     const p = await panel();
-    p.evaluate('clearActivity(); log("Captured 3 Photoshop layer(s); comparing with the latest version."); log("2 semantic edits found.")');
+    p.evaluate('clearActivity(); log("Read 3 layers and compared them with the last saved version."); log("2 unsaved edits found.")');
     expect(p.id("activity").children).toHaveLength(1);
     const group = p.id("activity").firstElementChild!;
     expect(group.textContent).toContain("2 recent events");
@@ -1302,12 +1556,12 @@ describe("PhotoGit rounded design and label clarity", () => {
     p.evaluate('setSyncStatus("Project files changed")');
     expect(p.id("sync-status").textContent).toBe("Status");
     expect(p.id("show-status").getAttribute("title")).toContain("Project files changed");
-    expect(p.document.querySelector<HTMLElement>(".current-branch")!.hidden).toBe(false);
-    expect(p.document.querySelector(".current-branch")!.textContent).toContain("Current");
-    expect(p.document.querySelector('label[for="branch-picker"]')!.textContent).toBe("Switch branch");
+    // Status lives in the one overflow menu, with Pull and Docs.
+    expect([...p.id("tools-menu").querySelectorAll(".tool-item")].map(item => item.id)).toEqual(expect.arrayContaining(["pull", "show-status", "tool-docs", "global-search"]));
+    expect(p.document.querySelector(".sync-panel, .app-header, #tools-toggle, #branch-picker")).toBeNull();
     p.evaluate("renderHistory(versions)", { versions: [{ message: "Refined cover", shortId: "abc1234", id: "a".repeat(40), author: "Designer", date: new Date().toISOString() }] });
     expect(p.id("history").textContent).not.toContain("Inspect version");
-    expect(p.id("history").querySelector('[role="button"]')!.getAttribute("aria-label")).toBe("Inspect version abc1234: Refined cover");
+    expect(p.id("history").querySelector('[role="button"]')!.getAttribute("aria-label")).toBe("Select version abc1234: Refined cover");
   });
   it("removes repeated captions without removing input names or merge warnings", async () => {
     const p = await panel();
@@ -1320,86 +1574,58 @@ describe("PhotoGit rounded design and label clarity", () => {
     }
     expect(p.id("docs-view").textContent).toContain("Combining branches doesn’t blend layers");
     p.evaluate("renderChanges(testChanges)", { testChanges: [change(12), change(0, { domain: "document", layerName: "Document" })] });
-    expect(p.id("changes").textContent).toContain("Layer #12");
+    expect(p.id("changes").querySelector('.change-row[data-group="layers"]')!.getAttribute("title")).toBe("Layer #12");
     expect(p.id("changes").textContent).not.toContain("Whole document");
     expect(p.id("changes").querySelector('[role="button"]')!.getAttribute("aria-label")).toContain("Photoshop layer 12");
+    // Document settings read as a name and a before → after value.
+    p.evaluate("renderChanges(testChanges)", { testChanges: [change(0, { domain: "document", layerName: "Document", propertyPath: "width", baseValue: 1400, currentValue: 700, summary: "Canvas width changed from 1400 px to 700 px" })] });
+    expect(p.id("changes").querySelector(".change-row")!.textContent).toBe("~Canvas width1400 → 700 px");
+    expect(p.id("changes").querySelector(".change-section")!.textContent).toBe("DOCUMENT1");
   });
-  it("keeps text and interactive boundaries high contrast on both themes' main surfaces", async () => {
+  it("keeps every colour in one token block and all text at 4.5:1 on the surfaces it sits on", async () => {
     const css = await readFile(resolve(pluginRoot, "styles.css"), "utf8");
     const luminance = (hex: string) => {
       const channels = hex.match(/[a-f\d]{2}/gi)!.map(channel => parseInt(channel, 16) / 255).map(value => value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4);
       return channels[0]! * 0.2126 + channels[1]! * 0.7152 + channels[2]! * 0.0722;
     };
     const contrast = (a: string, b: string) => { const values = [luminance(a), luminance(b)].sort((x, y) => y - x); return (values[0]! + 0.05) / (values[1]! + 0.05); };
-    const themes = css.match(/^:root(?:\[data-theme="light"\])? \{[^}]+}/gm)!;
-    expect(themes).toHaveLength(2);
-    for (const block of themes) {
-      const colors = Object.fromEntries([...block.matchAll(/--([\w-]+):\s*(#[a-f\d]{6})/gi)].map(match => [match[1], match[2]]));
-      for (const surface of ["bg", "surface", "elevated", "input", "overlay", "selected", "hover", "pressed"]) {
-        for (const text of ["text", "muted"]) expect(contrast(colors[text]!, colors[surface]!)).toBeGreaterThanOrEqual(4.5);
-        for (const boundary of ["border", "focus"]) expect(contrast(colors[boundary]!, colors[surface]!)).toBeGreaterThanOrEqual(3);
-      }
-      for (const state of ["primary", "primary-hover", "primary-pressed"]) {
-        expect(contrast(colors["primary-text"]!, colors[state]!)).toBeGreaterThanOrEqual(4.5);
-      }
-      expect(contrast(colors.accent!, colors.selected!)).toBeGreaterThanOrEqual(4.5);
-      for (const status of ["success", "warning", "error"]) {
-        expect(contrast(colors[status]!, colors[`${status}-surface`]!)).toBeGreaterThanOrEqual(4.5);
-      }
+    const themes = css.match(/^:root \{[^}]+}/gm)!;
+    expect(themes).toHaveLength(1);
+    const colors = Object.fromEntries([...themes[0]!.matchAll(/--([\w-]+):\s*(#[a-f\d]{6})/gi)].map(match => [match[1], match[2]]));
+    expect(colors).toMatchObject({ bg: "#323232", "bg-recessed": "#262626", "bg-bar": "#2B2B2B", "bg-raised": "#3A3A3A", "bg-selected": "#404040", border: "#474747", "border-strong": "#6E6E6E", divider: "#3D3D3D", "edge-dark": "#262626", text: "#E6E6E6", "text-strong": "#FFFFFF", "text-2": "#C4C4C4", "text-muted": "#A6A6A6", accent: "#1473E6", "accent-line": "#5AA9FA" });
+    // No colour is written outside the token block.
+    const rules = css.replace(themes[0]!, "").replace(/\/\*[\s\S]*?\*\//g, "");
+    expect(rules).not.toMatch(/#[a-f\d]{3,8}\b|rgba?\(/i);
+    // Flat: no gradients, blur or shadows anywhere.
+    expect(rules).not.toMatch(/gradient|box-shadow|backdrop-filter|filter:\s*blur|text-shadow/i);
+    for (const surface of ["bg", "bg-recessed", "bg-bar", "bg-raised"]) {
+      for (const text of ["text", "text-strong", "text-2", "text-muted"]) expect(contrast(colors[text]!, colors[surface]!)).toBeGreaterThanOrEqual(4.5);
     }
-    expect(css).toContain("prefers-reduced-transparency: reduce");
+    // Selected surfaces carry the brighter secondary text, never the muted one.
+    for (const text of ["text", "text-strong", "text-2"]) expect(contrast(colors[text]!, colors["bg-selected"]!)).toBeGreaterThanOrEqual(4.5);
+    expect(css).toMatch(/\.list-row\.selected \.row-copy > span[^}]*\{ color: var\(--text-2\)/);
+    expect(contrast(colors["text-tab"]!, colors["bg-bar"]!)).toBeGreaterThanOrEqual(4.5);
+    for (const state of ["accent", "accent-hover", "accent-pressed"]) expect(contrast(colors["text-strong"]!, colors[state]!)).toBeGreaterThanOrEqual(4.5);
+    // The "+" marker is dark on light.
+    expect(contrast(colors["bg-recessed"]!, colors.text!)).toBeGreaterThanOrEqual(4.5);
   });
 });
 
-describe("PhotoGit appearance — shared startup and preference behavior", () => {
-  async function appearance(saved: string | null = null, fails = false) {
-    const { document, window } = parseHTML(await readFile(resolve(pluginRoot, "index.html"), "utf8"));
-    const localStorage = { getItem: () => { if (fails) throw new Error("Unavailable"); return saved; }, setItem: vi.fn((_key: string, value: string) => { if (fails) throw new Error("Unavailable"); saved = value; }) };
-    const source = await readFile(resolve(pluginRoot, "appearance.js"), "utf8");
-    const context = createContext({ document, localStorage });
-    runInContext(source, context);
-    return { document, window, localStorage, reload: () => runInContext(source, context) };
-  }
-  it.each([null, "invalid", "dark"])("defaults safely from %s", async saved => {
-    const p = await appearance(saved);
-    expect(p.document.documentElement.getAttribute("data-theme")).toBe("dark");
+describe("PhotoGit dark-only appearance", () => {
+  it.each([null, "light", "dark", "invalid"])("uses dark appearance with saved preference %s", async saved => {
+    const { document } = parseHTML(await readFile(resolve(pluginRoot, "index.html"), "utf8"));
+    const localStorage = { getItem: () => saved, removeItem: vi.fn() };
+    runInContext(await readFile(resolve(pluginRoot, "appearance.js"), "utf8"), createContext({ document, localStorage }));
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+    expect(document.getElementById("appearance-toggle")).toBeNull();
+    expect(document.getElementById("appearance-note")).toBeNull();
+    expect(localStorage.removeItem).toHaveBeenCalledWith("photogit.appearance");
   });
-  it("applies light synchronously, changes via keyboard, and persists after reload", async () => {
-    const p = await appearance("light");
-    expect(p.document.documentElement.getAttribute("data-theme")).toBe("light");
-    const toggle = p.document.getElementById("appearance-toggle")!;
-    expect(toggle.getAttribute("aria-label")).toBe("Switch to Dark mode");
-    const event = new p.window.Event("keydown", { bubbles: true, cancelable: true });
-    Object.assign(event, { key: "Enter" }); toggle.dispatchEvent(event);
-    expect(p.localStorage.setItem).toHaveBeenCalledWith("photogit.appearance", "dark");
-    p.reload();
-    expect(p.document.documentElement.getAttribute("data-theme")).toBe("dark");
-    expect(toggle.getAttribute("aria-label")).toBe("Switch to Light mode");
-    expect(p.document.querySelector(".appearance-group")).toBeNull();
-  });
-  it("survives unavailable preference storage and explains session-only appearance", async () => {
-    const p = await appearance(null, true);
-    (p.document.getElementById("appearance-toggle") as HTMLElement).click();
-    expect(p.document.documentElement.getAttribute("data-theme")).toBe("light");
-    expect(p.document.getElementById("appearance-note")!.textContent).toContain("storage is unavailable");
-    expect(p.document.getElementById("appearance-note")!.hidden).toBe(false);
-  });
-  it("toggles when the icon is clicked, updates its action name and keeps success quiet", async () => {
-    const p = await appearance("dark");
-    p.document.querySelector(".theme-sun path")!.dispatchEvent(new p.window.Event("click", { bubbles: true }));
-    expect(p.document.documentElement.getAttribute("data-theme")).toBe("light");
-    expect(p.document.getElementById("appearance-toggle")!.getAttribute("title")).toBe("Switch to Dark mode");
-    expect(p.document.getElementById("appearance-note")!.hidden).toBe(true);
-  });
-  it("supports Space without repeating the toggle when the key is held", async () => {
-    const p = await appearance("dark");
-    const toggle = p.document.getElementById("appearance-toggle")!;
-    for (const repeat of [false, true]) {
-      const event = new p.window.Event("keydown", { bubbles: true, cancelable: true });
-      Object.assign(event, { key: " ", repeat }); toggle.dispatchEvent(event);
-    }
-    expect(p.document.documentElement.getAttribute("data-theme")).toBe("light");
-    expect(p.localStorage.setItem).toHaveBeenCalledTimes(1);
+  it("does not depend on preference storage", async () => {
+    const { document } = parseHTML(await readFile(resolve(pluginRoot, "index.html"), "utf8"));
+    const localStorage = { removeItem() { throw new Error("Unavailable"); } };
+    runInContext(await readFile(resolve(pluginRoot, "appearance.js"), "utf8"), createContext({ document, localStorage }));
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
   });
 });
 
@@ -1563,5 +1789,64 @@ describe("PhotoGit production scan coordinator — host independent", () => {
     expect(model.sameDocument({ documentId: "1", sourcePath: "/a.psd" }, { documentId: "1", sourcePath: "/b.psd" })).toBe(false);
     expect(model.sameDocument({ documentId: "1", sourcePath: null }, { documentId: "2", sourcePath: null })).toBe(false);
     expect(model.sameDocument({ documentId: "1", sourcePath: null }, { documentId: "1", sourcePath: null })).toBe(true);
+  });
+});
+
+describe("full-resolution drawing detection", () => {
+  it("detects a tiny edit missed by the thumbnail and reads every tile at native depth", async () => {
+    const p = await panel();
+    const layer = { ...syntheticLayer(), bounds: { left: 0, top: 0, right: 1025, bottom: 513 } };
+    const doc = syntheticDocument(1, [layer]);
+    let painted = false;
+    const disposed = vi.fn();
+    p.imaging.getPixels.mockImplementation(async (options: any) => {
+      if (options.targetSize) return { imageData: p.pixels };
+      const stroke = painted && options.sourceBounds.left === 1024 && options.sourceBounds.top === 512;
+      return { level: 0, sourceBounds: options.sourceBounds, imageData: {
+        width: options.sourceBounds.right - options.sourceBounds.left,
+        height: options.sourceBounds.bottom - options.sourceBounds.top, components: 4, componentSize: 16,
+        getData: vi.fn(async () => new Uint8Array([0, stroke ? 1 : 0, 0, 255])), dispose: disposed
+      } };
+    });
+    const read = () => p.evaluate("core.executeAsModal(() => fingerprintLayerPixels(doc, layer))", { doc, layer });
+    const before = await read(); painted = true; const after = await read(); painted = false; const erased = await read();
+    expect(before.split("|full-v2:")[0]).toBe(after.split("|full-v2:")[0]);
+    expect(before.split("|full-v2:")[1]).not.toBe(after.split("|full-v2:")[1]);
+    expect(erased).toBe(before);
+    const tiles = p.imaging.getPixels.mock.calls.map(([options]) => options as any).filter(options => !options.targetSize);
+    expect(tiles.slice(0, 6).map(options => options.sourceBounds)).toEqual([
+      { left: 0, top: 0, right: 512, bottom: 512 }, { left: 512, top: 0, right: 1024, bottom: 512 }, { left: 1024, top: 0, right: 1025, bottom: 512 },
+      { left: 0, top: 512, right: 512, bottom: 513 }, { left: 512, top: 512, right: 1024, bottom: 513 }, { left: 1024, top: 512, right: 1025, bottom: 513 }
+    ]);
+    expect(tiles.every(options => options.componentSize === -1 && options.applyAlpha === false)).toBe(true);
+    expect(disposed).toHaveBeenCalledTimes(18);
+  });
+
+  it("cancels between imaging calls, disposes the tile and preserves cancellation semantics", async () => {
+    const p = await panel(); let cancelled = false;
+    const layer = syntheticLayer(); const doc = syntheticDocument();
+    p.imaging.getPixels.mockImplementation(async (options: any) => {
+      if (!options.targetSize) cancelled = true;
+      return { imageData: p.pixels };
+    });
+    const check = () => { if (cancelled) { const error = new Error("Cancelled"); error.name = "StaleScanError"; throw error; } };
+    await expect(p.evaluate("core.executeAsModal(() => fingerprintLayerPixels(doc, layer, check))", { doc, layer, check })).rejects.toMatchObject({ name: "StaleScanError" });
+    expect(p.pixels.dispose).toHaveBeenCalledTimes(2);
+    expect(p.imaging.getPixels).toHaveBeenCalledTimes(2);
+  });
+
+  it("loads the actual parent preview even when history is filtered or ordered differently", async () => {
+    const p = await panel(); p.connect();
+    p.evaluate('window.innerWidth = 1200');
+    const selected = { id: "a".repeat(40), shortId: "aaaaaaa", message: "Brush work", author: "You", date: "2026-09-22" };
+    const parent = "b".repeat(40);
+    const helper = vi.fn(async (operation: string, payload: any) => operation === "versionDetails"
+      ? { version: selected, parentVersionId: parent, changes: [], files: [], warnings: [], snapshotAvailable: true }
+      : { available: true, contentType: "image/png", png: payload.version === parent ? "YmVmb3Jl" : "YWZ0ZXI=" });
+    p.context.callHelper = helper;
+    await p.evaluate("inspectVersion(selected)", { selected });
+    expect(helper).toHaveBeenCalledWith("versionPreview", { version: parent });
+    expect([...p.id("detail-content").querySelectorAll(".version-preview-pair img")].map(image => image.getAttribute("src"))).toEqual(["data:image/png;base64,YmVmb3Jl", "data:image/png;base64,YWZ0ZXI="]);
+    expect(p.app.open).not.toHaveBeenCalled();
   });
 });

@@ -26,12 +26,13 @@ export class GitCommandError extends Error {
 }
 
 export type VersionEntry = { id: string; shortId: string; author: string; date: string; message: string };
-export type BranchEntry = { name: string; current: boolean; tip: string };
+export type BranchEntry = { name: string; current: boolean; tip: string; subject: string; date: string };
 export type ReviewEntry = { branch: string; baseBranch: string; ahead: number; behind: number; changeCount: number; changes: string[]; mergeable: boolean; mergeKind: "git" };
 export type RepositoryInfo = { remoteUrl: string | null; provider: "github" | "local" | "other"; currentBranch: string; baseBranch: string };
 export type FileChange = { path: string; status: string };
+export type SyncState = { remoteConfigured: boolean; upstream: string | null; unpushed: number; currentUser: string | null };
 export type BranchComparison = { baseBranch: string; incomingBranch: string; mergeBase: string; ahead: number; behind: number; files: FileChange[]; changes: SemanticChange[]; gitMergeable: boolean; conflicts: string[]; warnings: string[] };
-export type VersionDetails = { version: VersionEntry; files: FileChange[]; changes: SemanticChange[]; snapshotAvailable: boolean; warnings: string[] };
+export type VersionDetails = { version: VersionEntry; parentVersionId: string | null; files: FileChange[]; changes: SemanticChange[]; snapshotAvailable: boolean; warnings: string[] };
 
 export class GitRepository {
   readonly root: string;
@@ -101,13 +102,12 @@ export class GitRepository {
     await this.assertRepository();
     const [current, output] = await Promise.all([
       this.currentBranch(),
-      this.run(["for-each-ref", "--format=%(refname:short)%09%(objectname)", "refs/heads"])
+      this.run(["for-each-ref", "--format=%(refname:short)%09%(objectname)%09%(committerdate:iso-strict)%09%(contents:subject)", "refs/heads"])
     ]);
+    // The message is last because it is the only field that may hold a tab.
     return output.split("\n").filter(Boolean).map((line) => {
-      const separator = line.lastIndexOf("\t");
-      const name = separator === -1 ? line : line.slice(0, separator);
-      const tip = separator === -1 ? "" : line.slice(separator + 1);
-      return { name, current: name === current, tip: /^[a-f0-9]{40,64}$/.test(tip) ? tip : "" };
+      const [name = "", tip = "", date = "", ...subject] = line.split("\t");
+      return { name, current: name === current, tip: /^[a-f0-9]{40,64}$/.test(tip) ? tip : "", subject: subject.join(" ").replace(/[\u0000-\u001f\u007f-\u009f\u202a-\u202e\u2066-\u2069]/g, " ").trim().slice(0, 500), date: /^\d{4}-\d{2}-\d{2}T/.test(date) ? date : "" };
     }).sort((first, second) => first.name.localeCompare(second.name));
   }
 
@@ -140,6 +140,30 @@ export class GitRepository {
     const branch = await this.currentBranch();
     if (branch === "detached") throw new Error("Switch to a branch before sharing changes.");
     await this.run(["push", "--set-upstream", remote, branch]);
+  }
+
+  // What Push would send: saved versions on this branch that the remote does
+  // not have yet. A branch that was never pushed counts everything the
+  // remote has none of. Without a remote there is nothing to push.
+  async syncState(remote = "origin"): Promise<SyncState> {
+    assertRemoteName(remote);
+    await this.assertRepository();
+    const [remoteUrl, branch, user, head] = await Promise.all([
+      this.run(["remote", "get-url", remote], { allowFailure: true }),
+      this.currentBranch(),
+      this.run(["config", "user.name"], { allowFailure: true }),
+      this.run(["rev-parse", "--verify", "--quiet", "HEAD"], { allowFailure: true })
+    ]);
+    const currentUser = user || null;
+    if (!remoteUrl || !head || branch === "detached") return { remoteConfigured: Boolean(remoteUrl), upstream: null, unpushed: 0, currentUser };
+    const upstream = await this.run(["rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{upstream}"], { allowFailure: true });
+    const tracked = upstream && upstream !== "@{upstream}" ? upstream : null;
+    const remoteBranch = tracked ?? (await this.run(["rev-parse", "--verify", "--quiet", `refs/remotes/${remote}/${branch}`], { allowFailure: true }) ? `${remote}/${branch}` : null);
+    const counted = remoteBranch
+      ? await this.run(["rev-list", "--count", `${remoteBranch}..HEAD`], { allowFailure: true })
+      : await this.run(["rev-list", "--count", "HEAD", "--not", `--remotes=${remote}`], { allowFailure: true });
+    const unpushed = Number.parseInt(counted, 10);
+    return { remoteConfigured: true, upstream: remoteBranch, unpushed: Number.isSafeInteger(unpushed) && unpushed >= 0 ? unpushed : 0, currentUser };
   }
 
   async repositoryInfo(remote = "origin"): Promise<RepositoryInfo> {
@@ -406,7 +430,7 @@ export class GitRepository {
     } catch { warnings.push("Saved layer details are unavailable for this version."); }
     const snapshotAvailable = await this.validateSnapshotAt(id).then(() => true).catch(() => false);
     if (!snapshotAvailable) warnings.push("This version has no locally available valid PSD snapshot.");
-    return { version: { id: fullId, shortId, author: safeDisplayText(author, 200), date: safeDisplayText(date, 64), message: safeDisplayText(message, 500) }, files, changes, snapshotAvailable, warnings };
+    return { version: { id: fullId, shortId, author: safeDisplayText(author, 200), date: safeDisplayText(date, 64), message: safeDisplayText(message, 500) }, parentVersionId: previous ?? null, files, changes, snapshotAvailable, warnings };
   }
 
   async validateSnapshotAt(version: string): Promise<{ version: string; bytes: number }> {
@@ -530,7 +554,7 @@ export class GitRepository {
       const name = separator === -1 ? line : line.slice(0, separator);
       const tip = separator === -1 ? "" : line.slice(separator + 1);
       if (name.endsWith("/HEAD") || names.has(name.slice(name.indexOf("/") + 1))) continue;
-      remoteEntries.push({ name, current: false, tip: /^[a-f0-9]{40,64}$/.test(tip) ? tip : "" });
+      remoteEntries.push({ name, current: false, tip: /^[a-f0-9]{40,64}$/.test(tip) ? tip : "", subject: "", date: "" });
     }
     return [...local, ...remoteEntries];
   }

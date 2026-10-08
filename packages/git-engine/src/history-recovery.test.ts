@@ -116,6 +116,7 @@ describe("immutable history, recovery, and Git comparison", () => {
     const currentId = await repo.saveVersion(changed, "Resize", { snapshotPath: source });
     const details = await repo.versionDetails(currentId);
     expect(details.version.message).toBe("Resize");
+    expect(details.parentVersionId).toBe(id);
     expect(details.changes).toContainEqual(expect.objectContaining({ domain: "document", propertyPath: "width", baseValue: 20, currentValue: 40 }));
     expect(details.files).toContainEqual({ path: "snapshot/document.psd", status: "M" });
     expect(details.snapshotAvailable).toBe(true);
@@ -160,6 +161,22 @@ describe("immutable history, recovery, and Git comparison", () => {
     expect(await readFile(await repo.exportVersionSnapshot("HEAD"))).toEqual(bytes);
     await writeFile(objectPath, Buffer.alloc(bytes.length));
     await expect(repo.validateSnapshotAt("HEAD")).rejects.toThrow(/integrity check/);
+  });
+
+  it("lists each branch with the message and time of its latest saved version", async () => {
+    const repository = await fixture();
+    await repository.run(["commit", "--allow-empty", "-m", "Poster\tbaseline"]);
+    const base = await repository.currentBranch();
+    await repository.run(["checkout", "-b", "option-b"]);
+    await repository.run(["commit", "--allow-empty", "-m", "Warmer palette", "-m", "A body line that is not the summary."]);
+    const branches = await repository.branches();
+    expect(branches.map(branch => [branch.name, branch.current, branch.subject])).toEqual(
+      [[base, false, "Poster baseline"], ["option-b", true, "Warmer palette"]].sort((first, second) => String(first[0]).localeCompare(String(second[0])))
+    );
+    for (const branch of branches) {
+      expect(branch.tip).toMatch(/^[a-f0-9]{40,64}$/);
+      expect(Number.isFinite(new Date(branch.date).getTime())).toBe(true);
+    }
   });
 
   it("reviews remote-only branches against the current base and honors configured default bases", async () => {
