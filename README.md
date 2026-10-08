@@ -1,16 +1,51 @@
+<div align="center">
+
+<img src="apps/photoshop-plugin/icons/photogit.png" alt="PhotoGit logo" width="96">
+
 # PhotoGit
 
-Version control for Photoshop. Track supported layer edits, save exact PSD versions, explore branches, and compare changes from a Photoshop panel backed by Git and a local helper.
+**Version control for Photoshop.**<br>
+Save exact PSD versions, see what changed layer by layer, and explore branches, all from a panel inside Photoshop.
 
-**Development build (0.2.0).** Not a production release. Keep independent backups of valuable artwork.
+[![CI](https://github.com/xingexu/photogit/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/xingexu/photogit/actions/workflows/ci.yml)
+[![Version](https://img.shields.io/badge/version-0.2.0%20development-orange)](CHANGELOG.md)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+[![Node](https://img.shields.io/badge/node-%E2%89%A5%2022-339933?logo=node.js&logoColor=white)](docs/DEVELOPMENT.md)
+[![Photoshop](https://img.shields.io/badge/Photoshop-25%2B-31A8FF?logo=adobephotoshop&logoColor=white)](docs/COMPATIBILITY.md)
 
-## Preview
+[Website](https://photogit-three.vercel.app/) · [Quick start](docs/QUICK_START.md) · [Commands](docs/COMMANDS.md) · [Architecture](docs/ARCHITECTURE.md) · [Changelog](CHANGELOG.md)
 
-![PhotoGit landing page](artifacts/photogitpreview.png)
+</div>
 
-[Try it now](https://photogit-three.vercel.app/)
+> [!WARNING]
+> **Development build (0.2.0), not a production release.** Keep independent backups of valuable artwork.
 
-## How It Works
+## The panel
+
+<table>
+  <tr>
+    <td width="33%"><img src="artifacts/readme/panel-history.png" alt="History tab listing saved versions, with Compare and Restore on the selected one"></td>
+    <td width="33%"><img src="artifacts/readme/panel-branches.png" alt="Branches tab showing each branch with its latest saved version"></td>
+    <td width="33%"><img src="artifacts/readme/panel-reviews.png" alt="Reviews tab showing branches waiting to merge and their conflicts"></td>
+  </tr>
+  <tr>
+    <td align="center"><b>History</b><br>Every saved version, with a preview. Compare any of them with the open document, or restore it as a separate copy.</td>
+    <td align="center"><b>Branches</b><br>Try an alternative without losing the original. Each branch shows the last version saved on it.</td>
+    <td align="center"><b>Reviews</b><br>See which branches are ready to merge and which have conflicts to settle first.</td>
+  </tr>
+</table>
+
+## What it does
+
+- **Tracks edits as you work.** The Changes tab lists unsaved edits by layer: pixels, text, opacity, blend mode, order, and more.
+- **Saves exact versions.** Each version stores the full PSD alongside a readable description of every layer, so you can always open precisely what you saved.
+- **Explains what changed.** History shows previews, before/after comparisons, and which layers were added, deleted, or edited.
+- **Branches like Git, because it is Git.** Every version is a Git commit, so push, pull, and GitHub work as usual.
+- **Keeps Git out of the panel.** A local helper is the only process that runs Git; the panel talks to it over a paired, Git-ignored bridge.
+
+Want a look before installing anything? Visit the [website](https://photogit-three.vercel.app/), or open `apps/photoshop-plugin/demo.html` for a simulated panel.
+
+## How it works
 
 PhotoGit serializes your Photoshop document into a domain-split JSON tree under `.photogit/`, instead of versioning the raw PSD as one opaque blob:
 
@@ -41,7 +76,7 @@ npm run build
 
 There's no published package yet — running `npm run photogit -- ...` and `npm run helper -- ...` from this checkout is the only supported way to use the CLI and helper.
 
-## Usage Guide (Panel — Primary Workflow)
+## Using the panel
 
 The main way to use PhotoGit is through the panel inside Photoshop. You only need the terminal for one-time project setup.
 
@@ -65,6 +100,11 @@ For pairing, Git identity, and troubleshooting, see the [setup guide](docs/QUICK
 
 ## Commands
 
+Type `/` or <kbd>⌘</kbd><kbd>K</kbd> anywhere in the panel to open the command palette.
+
+<details>
+<summary><b>All commands</b></summary>
+
 | Command | Result |
 | --- | --- |
 | `/changes`, `/history`, `/branches`, `/reviews`, `/activity`, `/docs` | Navigate to that section |
@@ -80,9 +120,11 @@ For pairing, Git identity, and troubleshooting, see the [setup guide](docs/QUICK
 | `/conflicts` | View conflicting files |
 | `/pull` / `/push` | Sync with the project's configured remote |
 
+</details>
+
 Full details, including message-length limits, are in the [command directory](docs/COMMANDS.md).
 
-## Project Structure
+## Project structure
 
 ```
 photogit/
@@ -135,4 +177,4 @@ PhotoGit is pre-release (0.2.0) — discuss large behavior or schema changes in 
 
 ## License
 
-MIT
+[MIT](LICENSE)
