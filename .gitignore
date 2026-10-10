@@ -19,3 +19,4 @@ artifacts/demo-frames-*/
 .uxprc
 .gstack/
 .vercel/
+.claude/
