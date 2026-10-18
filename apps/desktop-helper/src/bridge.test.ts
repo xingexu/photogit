@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { describe, expect, it } from "vitest";
 import { BRIDGE_FILE_RETENTION_MS, MAX_REQUEST_BYTES, type HelperResponse } from "@photogit/protocol";
-import { cleanupBridge, ensureBridgeFolders, processBridgeRequest } from "./bridge.js";
+import { BRIDGE_HEARTBEAT_FILE, cleanupBridge, ensureBridgeFolders, processBridgeRequest, removeBridgeHeartbeat, writeBridgeHeartbeat } from "./bridge.js";
 import { acquireConfigLock } from "./config-lock.js";
 
 async function fixture(requestId = "request-fixture") {
@@ -18,6 +18,21 @@ async function fixture(requestId = "request-fixture") {
 }
 
 describe("authenticated filesystem bridge", () => {
+  it("publishes a private heartbeat the panel can read, replaces planted links, and removes it on shutdown", async () => {
+    const f = await fixture();
+    const path = join(f.root, ".photogit", "bridge", BRIDGE_HEARTBEAT_FILE);
+    const outside = join(await mkdtemp(join(tmpdir(), "photogit-outside-")), "target");
+    await writeFile(outside, "untouched");
+    await symlink(outside, path);
+    await writeBridgeHeartbeat(f.root, 1234);
+    expect(JSON.parse(await readFile(path, "utf8"))).toEqual({ protocolVersion: 1, pid: process.pid, at: 1234 });
+    expect(await readFile(outside, "utf8")).toBe("untouched");
+    expect((await stat(path)).mode & 0o777).toBe(0o600);
+    expect((await readdir(join(f.root, ".photogit", "bridge"))).filter((name) => name.endsWith(".tmp"))).toEqual([]);
+    await removeBridgeHeartbeat(f.root);
+    await expect(stat(path)).rejects.toThrow();
+  });
+
   it("does not execute a request until the panel publishes its ready marker", async () => {
     const f = await fixture();
     await writeFile(f.requestPath, JSON.stringify(f.envelope));

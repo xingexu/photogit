@@ -25,6 +25,12 @@ entrypoints.setup({
 const PROTOCOL_VERSION = 1;
 const HELPER_TIMEOUT_MS = 120000;
 const HELPER_HEALTH_TIMEOUT_MS = 5000;
+// The helper rewrites its heartbeat every second from a timer of its own, and
+// claims a request within one 150 ms poll. A request nobody claimed while the
+// heartbeat is stale was never seen, so it can be withdrawn and reported at once.
+const HELPER_HEARTBEAT_STALE_MS = 4000;
+const HELPER_PICKUP_GRACE_MS = 1500;
+const HELPER_WATCH_INTERVAL_MS = 2000;
 const MAX_HELPER_IO_BYTES = 5 * 1024 * 1024;
 const MAX_CAPTURE_LAYERS = 50_000;
 const MAX_VISIBLE_CHANGES = 500;
@@ -36,6 +42,7 @@ const IGNORED_PHOTOSHOP_EVENTS = new Set(["select", "deselect", "invokeCommand",
 let projectFolder = null;
 let helperToken = null;
 let busyNow = false;
+let runningLabel = "";
 let historyEntries = [];
 let branchTips = {};
 let historyPreviews = {};
@@ -247,6 +254,7 @@ async function startPanel() {
     setStartup(false);
   }
   await installPhotoshopChangeDetection();
+  watchHelper();
   await restorePanelState();
   if (helperOnline) queueAutomaticScan("initial-load", 150);
 }
@@ -397,7 +405,7 @@ function handleOutsideClick(event) {
 }
 
 async function chooseProject() {
-  if (busyNow) return show("PhotoGit is busy. Try again in a moment.", true);
+  if (busyNow) return show(`Still working on “${runningLabel.replace(/…$/, "")}”. Choose the project again when it finishes.`, true);
   const folder = await storage.localFileSystem.getFolder();
   if (!folder) return;
   savePanelState();
@@ -415,6 +423,7 @@ async function chooseProject() {
   branchView.render(document.getElementById("branch-list"));
   selectedVersionId = null;
   expandedReview = null;
+  runningLabel = "Opening project…";
   busy(true);
   try {
   const token = await storage.localFileSystem.createPersistentToken(folder);
@@ -477,7 +486,7 @@ async function refreshWorkspace(announceErrors = false, readTimeoutMs = HELPER_T
   } catch (error) {
     if (!current() || error.name === "StaleScanError") return;
     setHelper("Not connected", false);
-    document.getElementById("connection-message").textContent = `PhotoGit’s background service isn’t responding. Your saved versions are safe. Start the service for “${safeInlineText(projectFolder.name, 200)}”, then choose Reconnect.`;
+    document.getElementById("connection-message").textContent = `PhotoGit’s background service isn’t responding. Your saved versions are safe. Start the service for “${safeInlineText(projectFolder.name, 200)}”, and PhotoGit reconnects on its own.`;
     document.getElementById("setup-command-live").textContent = `npm run helper -- --approve-root "${projectFolder.nativePath || projectFolder.name}"`;
     log(`Refresh failed: ${error.message || String(error)}`);
     if (announceErrors) show(error.message || "PhotoGit could not refresh this project.", true);
@@ -906,15 +915,44 @@ function connectDocument() {
   }));
 }
 
-async function reconnectHelper() {
-  if (busyNow) return show("PhotoGit is busy. Try again in a moment.", false);
+let reconnecting = null;
+function reconnectHelper({ quiet = false } = {}) {
   if (!projectFolder) return chooseProject();
+  // Presses during a reconnect join it rather than starting another.
+  if (!reconnecting) reconnecting = reconnectWhenIdle(quiet).finally(() => { reconnecting = null; });
+  return reconnecting;
+}
+
+async function reconnectWhenIdle(quiet) {
   // The header dot breathes while the reconnect is in flight.
   const status = document.getElementById("helper-status");
   status.classList.add("is-reconnecting");
-  try { await loadPairing(); await refreshWorkspace(true); if (helperOnline) { show("Connected.", false); queueAutomaticScan("reconnected", 100); } }
-  catch (error) { show(`${error.message} Finish setup for this project, then choose Reconnect.`, true); }
+  try {
+    // An exclusive operation finishes first; the reconnect follows it rather
+    // than being refused.
+    if (busyNow) { if (!quiet) show("Reconnecting once the current step finishes…", false); await whenIdle(); }
+    const folder = projectFolder;
+    if (!folder) return;
+    await loadPairing();
+    if (projectFolder !== folder) return;
+    await refreshWorkspace(!quiet);
+    if (helperOnline) { show("Connected.", false); queueAutomaticScan("reconnected", 100); }
+  }
+  catch (error) { if (error.name !== "StaleScanError" && !quiet) show(`${error.message} Finish setup for this project, then choose Reconnect.`, true); }
   finally { status.classList.remove("is-reconnecting"); }
+}
+
+// While disconnected, the panel watches for the helper to come back and
+// reconnects by itself, so starting the service is the only step.
+let helperWatchTimer = null;
+function watchHelper() {
+  if (helperWatchTimer) return;
+  const tick = async () => {
+    try {
+      if (!helperOnline && !reconnecting && !busyNow && !startupPending && projectFolder && await helperAlive(projectFolder)) await reconnectHelper({ quiet: true });
+    } finally { helperWatchTimer = setTimeout(tick, HELPER_WATCH_INTERVAL_MS); }
+  };
+  helperWatchTimer = setTimeout(tick, HELPER_WATCH_INTERVAL_MS);
 }
 
 async function saveVersion() {
@@ -1379,15 +1417,24 @@ async function callHelper(operation, fields = {}, timeoutMs = HELPER_TIMEOUT_MS)
   await readyFile.write("ready\n");
 
   const deadline = Date.now() + timeoutMs;
+  let nextLivenessCheck = Date.now() + Math.min(HELPER_PICKUP_GRACE_MS, timeoutMs);
   let responseFile = null;
   while (Date.now() < deadline) {
     try {
       await responses.getEntry(`${requestId}.ready`);
       responseFile = await responses.getEntry(`${requestId}.json`);
       break;
-    } catch {
-      await delay(125);
+    } catch { /* Not answered yet. */ }
+    if (Date.now() >= nextLivenessCheck) {
+      nextLivenessCheck = Date.now() + 1000;
+      if (!await entryExists(requests, `${requestId}.claim`) && !await helperAlive(folder) && await withdrawRequest(requests, requestId)) {
+        // Withdrawn before the helper claimed it: nothing ran, so this is a
+        // plain connection failure, never an unknown outcome.
+        await removeEntry(requests, `${requestId}.json`);
+        throw helperOfflineError(folder);
+      }
     }
+    await delay(125);
   }
   if (!responseFile) {
     await Promise.all([
@@ -1880,7 +1927,7 @@ function renderCommandDocs() {
 
 function openCommandPalette(initial = "") {
   if (startupPending) return;
-  if (busyNow) return show("PhotoGit is busy. Try again in a moment.", false);
+  if (busyNow) return show(`Still working on “${runningLabel.replace(/…$/, "")}”. Commands open again when it finishes.`, false);
   openDetail("Go to or run a command", "");
   const content = document.getElementById("detail-content");
   const field = document.createElement("input");
@@ -2013,7 +2060,15 @@ function selectTab(name, animate = true) {
 }
 
 async function run(label, action) {
-  if (busyNow) return show("PhotoGit is busy. Try again in a moment.", false);
+  if (busyNow) return show(`Still working on “${runningLabel.replace(/…$/, "")}”. This finishes on its own.`, false);
+  // A known-offline helper is checked before anything is locked: a live one is
+  // reconnected first, a missing one is reported at once.
+  if (!helperOnline && projectFolder && helperToken) {
+    if (await helperAlive(projectFolder)) await reconnectHelper({ quiet: true });
+    if (!helperOnline) return show(helperOfflineError(projectFolder).message, true);
+  }
+  if (busyNow) return;
+  runningLabel = label;
   const resumeScanning = Boolean(scans.running || autoScanTimer);
   busy(true);
   workspaceGeneration += 1;
@@ -2050,6 +2105,39 @@ async function ensureFolder(root, path) {
     catch { cursor = await cursor.createFolder(segment); }
   }
   return cursor;
+}
+
+async function entryExists(folder, name) {
+  try { await folder.getEntry(name); return true; }
+  catch { return false; }
+}
+
+// True while the helper serving this folder has written its heartbeat recently.
+async function helperAlive(folder) {
+  try {
+    const entry = await (await (await folder.getEntry(".photogit")).getEntry("bridge")).getEntry("helper.alive");
+    const text = await entry.read();
+    if (text.length > 1_024) return false;
+    const beat = JSON.parse(text);
+    return isHelperRecord(beat) && beat.protocolVersion === PROTOCOL_VERSION && typeof beat.at === "number" && Math.abs(Date.now() - beat.at) < HELPER_HEARTBEAT_STALE_MS;
+  } catch { return false; }
+}
+
+// Removing the ready marker is the withdrawal: the helper checks it after its
+// claim and before running anything. A claim that appears anyway means the
+// helper got there first, so the marker goes back and the wait continues.
+async function withdrawRequest(requests, requestId) {
+  try { await (await requests.getEntry(`${requestId}.ready`)).delete(); }
+  catch { return false; }
+  if (!await entryExists(requests, `${requestId}.claim`)) return true;
+  try { await (await requests.createFile(`${requestId}.ready`, { overwrite: true })).write("ready\n"); } catch { /* The helper finishes or times out on its own. */ }
+  return false;
+}
+
+function helperOfflineError(folder) {
+  const error = new Error(`PhotoGit’s background service isn’t running for “${safeInlineText(folder.name, 200)}”. Start it, and PhotoGit reconnects on its own.`);
+  error.code = "HELPER_OFFLINE";
+  return error;
 }
 
 async function removeEntry(folder, name) {
@@ -2238,6 +2326,8 @@ function setHelper(label, ok) {
   }
   const notice = document.getElementById("connection-notice");
   notice.hidden = ok || !projectFolder;
+  // The toast moves clear of the notice so it never covers Reconnect.
+  document.body.classList.toggle("has-connection-notice", !notice.hidden);
   // Only a lost connection earns the warning treatment; setup states stay calm.
   notice.classList.toggle("is-warning", !ok && Boolean(projectFolder));
   const element = document.getElementById("helper-status");
@@ -2246,8 +2336,11 @@ function setHelper(label, ok) {
   element.setAttribute("title", label);
   document.getElementById("repo-sync-status").textContent = label;
 }
+let idleWaiters = [];
+function whenIdle() { return busyNow ? new Promise((resolve) => idleWaiters.push(resolve)) : Promise.resolve(); }
 function busy(active) {
   busyNow = active;
+  if (!active) { const waiters = idleWaiters; idleWaiters = []; for (const resolve of waiters) resolve(); }
   document.body.classList.toggle("is-busy", active);
   document.getElementById("workspace").setAttribute("aria-busy", active ? "true" : "false");
   document.getElementById("progress").hidden = !active;
@@ -2284,6 +2377,9 @@ function syncToast() {
   document.body.classList.toggle("has-toast", document.getElementById("result").textContent !== "");
 }
 function show(message, error) {
+  // The connection notice already says the service is offline; repeating it
+  // as a toast adds nothing.
+  if (error && document.body.classList.contains("has-connection-notice") && /background service isn’t running|helper is offline/i.test(message)) return;
   const safeMessage = safeInlineText(message, 800) || (error ? "PhotoGit could not complete that action." : "Done.");
   const result = document.getElementById("result");
   restartAnimation(result);

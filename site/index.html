@@ -4,17 +4,44 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>PhotoGit — Version control for Photoshop</title>
-  <meta name="description" content="PhotoGit — version control for Photoshop. Try it on GitHub.">
+  <meta name="description" content="Free, open-source version control for Photoshop. Save exact PSD versions, see what changed layer by layer, and branch ideas from a panel inside Photoshop.">
   <meta name="theme-color" content="#3fa9f5">
+  <link rel="canonical" href="https://photogit-three.vercel.app/">
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="apple-touch-icon" href="logo.png">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="PhotoGit">
+  <meta property="og:title" content="PhotoGit — Version control for Photoshop">
+  <meta property="og:description" content="Save every PSD version, see what changed layer by layer, and branch your ideas without leaving Photoshop. Free and open source.">
+  <meta property="og:url" content="https://photogit-three.vercel.app/">
+  <meta property="og:image" content="https://photogit-three.vercel.app/og.png">
+  <meta property="og:image:width" content="1280">
+  <meta property="og:image:height" content="640">
+  <meta property="og:image:alt" content="PhotoGit: version control for Photoshop, shown beside the History panel">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="PhotoGit — Version control for Photoshop">
+  <meta name="twitter:description" content="Save every PSD version, see what changed layer by layer, and branch your ideas without leaving Photoshop.">
+  <meta name="twitter:image" content="https://photogit-three.vercel.app/og.png">
+  <script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"SoftwareApplication","name":"PhotoGit","applicationCategory":"DesignApplication","operatingSystem":"macOS","description":"Free, open-source version control for Photoshop documents, built on Git.","url":"https://photogit-three.vercel.app/","codeRepository":"https://github.com/xingexu/photogit","license":"https://opensource.org/licenses/MIT","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+  </script>
   <link rel="preload" as="image" href="artwork/japanties-pixel.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Silkscreen:wght@400;700&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Press+Start+2P&family=Silkscreen:wght@400;700&display=swap">
   <style>
     :root {
     /* design-epoch: '536' */
       --font-pixel: "Silkscreen", "Courier New", ui-monospace, monospace;
       --font-logo: "Press Start 2P", "Courier New", ui-monospace, monospace;
+      --font-body: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --navy: #123451;
+      --ink: #0b2a45;
+      --sky: #3fa9f5;
+      --paper: #f4faff;
+      --line: #b6dff5;
+      --blossom: #ffcbdf;
+      --muted: #47627b;
       --glass-top: rgba(255, 255, 255, 0.22);
       --glass-fill: rgba(10, 16, 30, 0.40);
       --glass-rim: rgba(255, 255, 255, 0.38);
@@ -156,7 +183,7 @@
       user-select: none; -webkit-user-select: none;
       cursor: pointer;
       touch-action: manipulation;
-      margin: 0 0 20px; font-family: var(--font-logo); font-size: clamp(30px, 5.2vw, 108px); line-height: 1.25;
+      margin: 0 0 20px; font-family: var(--font-logo); font-size: clamp(30px, 4.6vw, 88px); line-height: 1.25;
       letter-spacing: .02em; font-weight: 400; color: #fff; text-transform: uppercase;
       text-shadow: 0 3px 0 #fff, 4px 4px 0 #bdefff, -4px 4px 0 #bdefff, 0 8px 0 #5fc7ff, 0 12px 0 #2d74af, 8px 8px 0 #7bd7ff, -8px 8px 0 #7bd7ff, 0 0 28px #d9f7ff, 0 0 64px #7bd7ff, 0 0 90px #349fff;
       white-space: nowrap;
@@ -166,19 +193,22 @@
     .title:focus-visible { outline: 3px solid #fff; outline-offset: 10px; }
     /* Temporary typing slots reserve the complete title width. */
     .title-letter { display: inline-block; }
-    .actions { display: flex; align-items: stretch; justify-content: center; animation: arrive 550ms 651ms ease-out both; }
-    .try-container {
-      display: flex; align-items: center; width: min(clamp(280px, 18vw, 360px), calc(100vw - 48px));
-      border: 2px solid #ffffffd9; border-radius: 999px;
-      background: linear-gradient(145deg, #ffffff65, #c1eaff6b 65%, #78c5f180);
-      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-      box-shadow: inset 0 3px 0 #ffffffa0, inset 0 -4px 0 #71bce966, 0 8px 0 #286b9770, 0 17px 26px #0c385b55;
-    }
-    .actions a { position: relative; display: flex; align-items: center; justify-content: center; width: 100%; min-height: clamp(60px, 3.5vw, 72px); padding: 11px 40px 13px; border-radius: 999px; color: #fff; text-decoration: none; font-family: Arial, Helvetica, sans-serif; font-size: clamp(19px, 1.1vw, 24px); font-weight: 700; text-shadow: 0 3px 0 #498caf; transition: background 180ms, transform 180ms; }
-    .actions a:hover { background: #ffffff38; transform: translateY(-3px); }
-    .actions a:focus-visible { outline: 3px solid #ffcbdf; outline-offset: 3px; }
-    .actions a .try-arrow { position: absolute; right: 22px; top: calc(50% - 14px); font-size: 26px; line-height: 1; transition: transform 180ms; }
-    .actions a:hover .try-arrow { transform: translate(3px, -2px); }
+    /* A soft scrim keeps the copy legible over the busy village artwork. */
+    .content::before { content: ""; position: absolute; z-index: -1; inset: 18% -10% 4%; background: radial-gradient(ellipse at 50% 55%, rgba(8, 32, 58, .62) 0%, rgba(8, 32, 58, .38) 45%, rgba(8, 32, 58, 0) 72%); pointer-events: none; }
+    .tagline { margin: 6px auto 0; max-width: 760px; font-family: var(--font-body); font-size: clamp(26px, 3.2vw, 46px); font-weight: 800; line-height: 1.1; letter-spacing: -.02em; text-shadow: 0 3px 0 #2d74af, 0 0 30px #0b3a6299; animation: arrive 550ms 450ms ease-out both; }
+    .subline { margin: 16px auto 30px; max-width: 600px; font-family: var(--font-body); font-size: clamp(16px, 1.4vw, 20px); font-weight: 500; line-height: 1.5; color: #f2faff; text-shadow: 0 1px 2px #0b3a62cc, 0 0 18px #0b3a6299; animation: arrive 550ms 550ms ease-out both; }
+    .actions { display: flex; flex-wrap: wrap; gap: 14px; align-items: stretch; justify-content: center; animation: arrive 550ms 651ms ease-out both; }
+    .cta { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 56px; padding: 0 26px; font-family: var(--font-body); font-size: 18px; font-weight: 700; text-decoration: none; border: 3px solid #0b2a45; transition: transform 160ms, box-shadow 160ms, background 160ms; }
+    .cta svg { width: 22px; height: 22px; fill: currentColor; flex: none; }
+    .cta-primary { color: #0b2a45; background: #fff; box-shadow: 5px 5px 0 #0b2a45; }
+    .cta-primary:hover { background: #ffe8f2; transform: translate(-2px, -2px); box-shadow: 7px 7px 0 #0b2a45; }
+    .cta-secondary { color: #fff; background: #123451e6; border-color: #b6dff5; box-shadow: 5px 5px 0 #0b2a45; }
+    .cta-secondary:hover { background: #1b4a72; transform: translate(-2px, -2px); box-shadow: 7px 7px 0 #0b2a45; }
+    .cta:focus-visible { outline: 3px solid #ffcbdf; outline-offset: 4px; }
+    .star-count { padding: 2px 9px; margin-left: 2px; font-size: 15px; background: #0b2a45; color: #fff; }
+    .star-count[hidden] { display: none; }
+    .hero-meta { margin-top: 26px; font-family: var(--font-body); font-size: 14px; font-weight: 600; color: #eaf7ff; text-shadow: 0 1px 2px #0b3a62; animation: arrive 550ms 750ms ease-out both; }
+    .hero-meta span + span::before { content: "·"; margin: 0 10px; opacity: .7; }
     @keyframes arrive { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     .site-footer {
       position: relative;
@@ -218,16 +248,113 @@
     @media (max-width: 560px) {
       .actions { flex-direction: column; align-items: center; gap: 14px; }
       .title { margin-bottom: 14px; }
-      .try-container { width: min(280px, calc(100vw - 48px)); justify-content: center; }
-      .actions a { min-height: 60px; font-size: 19px; }
-      .actions a .try-arrow { right: 20px; }
+      .cta { width: min(300px, calc(100vw - 48px)); }
+      .hero-meta { line-height: 1.7; }
+      .hero-meta span { display: block; }
+      .hero-meta span + span::before { content: none; }
       .site-footer { padding-inline: 16px; gap: 12px; flex-wrap: wrap; justify-content: center; }
       .footer-credit { font-size: 10px; }
       .icon-bar { gap: 7px; }
       .icon-bar a { width: 44px; height: 44px; }
       .icon-bar svg { width: 20px; height: 20px; }
     }
-    @media (max-height: 420px) { .content { padding: 20px; } .title { margin-bottom: 18px; font-size: clamp(24px, 5.2vw, 40px); } .actions { flex-direction: row; } }
+    @media (max-height: 420px) { .content { padding: 72px 20px 20px; } .title { margin-bottom: 8px; font-size: clamp(24px, 5.2vw, 40px); } .subline { margin-bottom: 16px; } .actions { flex-direction: row; } }
+    .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    html { scroll-behavior: smooth; }
+    /* Top bar over the hero. */
+    .topbar { position: absolute; z-index: 4; top: 0; left: 0; right: 0; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px max(20px, calc((100vw - 1200px) / 2)); font-family: var(--font-body); }
+    .brand { display: inline-flex; align-items: center; gap: 10px; color: #fff; text-decoration: none; font-family: var(--font-logo); font-size: 14px; text-shadow: 0 2px 0 #2d74af; }
+    .brand img { width: 34px; height: 34px; border-radius: 8px; }
+    .topnav { display: flex; align-items: center; gap: 4px; }
+    .topnav a { color: #fff; text-decoration: none; font-size: 15px; font-weight: 600; padding: 10px 12px; text-shadow: 0 1px 2px #0b3a62; }
+    .topnav a:hover { text-decoration: underline; text-underline-offset: 4px; }
+    .topnav .gh-mini { display: inline-flex; align-items: center; gap: 8px; margin-left: 8px; padding: 8px 14px; background: var(--navy); border: 2px solid var(--line); box-shadow: 3px 3px 0 #09223a; text-shadow: none; }
+    .topnav .gh-mini:hover { text-decoration: none; background: #1b4a72; }
+    .topnav .gh-mini svg { width: 18px; height: 18px; fill: currentColor; }
+    .topnav a:focus-visible, .brand:focus-visible { outline: 3px solid var(--blossom); outline-offset: 2px; }
+    @media (max-width: 760px) { .topnav a:not(.gh-mini) { display: none; } .brand span { display: none; } }
+
+    /* Content sections below the hero. */
+    .section { position: relative; z-index: 1; padding: clamp(64px, 9vw, 120px) 20px; font-family: var(--font-body); color: var(--ink); background: var(--paper); }
+    .section.alt { background: #e3f2fd; }
+    .section.dark { background: var(--navy); color: #fff; }
+    .wrap { max-width: 1120px; margin: 0 auto; }
+    .eyebrow { margin: 0 0 14px; font-family: var(--font-pixel); font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #1f7dc4; }
+    .dark .eyebrow { color: var(--blossom); }
+    .section h2 { margin: 0 0 16px; font-size: clamp(30px, 4vw, 46px); line-height: 1.1; font-weight: 800; letter-spacing: -.02em; text-wrap: balance; }
+    .lede { margin: 0 0 48px; max-width: 640px; font-size: 18px; line-height: 1.6; color: var(--muted); }
+    .dark .lede { color: #c8e4f7; }
+    .center { text-align: center; }
+    .center .lede { margin-inline: auto; }
+
+    .problem { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: center; }
+    .files { margin: 0; padding: 22px; list-style: none; background: #fff; border: 3px solid var(--ink); box-shadow: 8px 8px 0 var(--ink); font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 15px; }
+    .files li { display: flex; align-items: center; gap: 12px; padding: 10px 6px; border-bottom: 1px dashed #c9dbe8; color: #6b8296; }
+    .files li:last-child { border-bottom: 0; }
+    .files li s { text-decoration-color: #e2557f; text-decoration-thickness: 2px; }
+    .files .ps { flex: none; width: 26px; height: 26px; display: grid; place-items: center; font: 700 11px/1 var(--font-body); color: #31a8ff; background: #001e36; border-radius: 4px; }
+    .files li.keep { color: var(--ink); font-weight: 700; }
+    .files li.keep::after { content: "12 versions"; margin-left: auto; padding: 3px 8px; font: 700 12px/1.4 var(--font-body); color: var(--ink); background: var(--blossom); }
+
+    .shots { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 28px; }
+    .shot { margin: 0; }
+    .shot img { display: block; width: 100%; height: auto; border: 3px solid var(--ink); border-radius: 12px; box-shadow: 8px 8px 0 var(--ink); background: #2b2b2b; }
+    .shot figcaption { margin-top: 22px; font-size: 16px; line-height: 1.55; color: var(--muted); }
+    .shot figcaption b { display: block; margin-bottom: 4px; font-size: 19px; color: var(--ink); }
+
+    .features { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+    .feature { padding: 26px; background: #fff; border: 2px solid var(--ink); box-shadow: 5px 5px 0 var(--ink); }
+    .feature .icon { width: 44px; height: 44px; display: grid; place-items: center; margin-bottom: 16px; background: var(--sky); border: 2px solid var(--ink); }
+    .feature .icon svg { width: 24px; height: 24px; fill: none; stroke: #fff; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+    .feature h3 { margin: 0 0 8px; font-size: 19px; font-weight: 700; }
+    .feature p { margin: 0; font-size: 15.5px; line-height: 1.6; color: var(--muted); }
+
+    .steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; counter-reset: step; }
+    .step { position: relative; padding: 28px; border: 2px solid #ffffff40; background: #ffffff0d; }
+    .step::before { counter-increment: step; content: counter(step); display: grid; place-items: center; width: 42px; height: 42px; margin-bottom: 18px; font: 400 16px/1 var(--font-logo); color: var(--ink); background: var(--blossom); box-shadow: 3px 3px 0 #09223a; }
+    .step h3 { margin: 0 0 8px; font-size: 20px; }
+    .step p { margin: 0 0 16px; color: #c8e4f7; line-height: 1.6; font-size: 15.5px; }
+    .step code { display: block; padding: 12px 14px; white-space: pre-wrap; overflow-wrap: anywhere; font: 13.5px/1.5 ui-monospace, "SF Mono", Menlo, monospace; color: #e8f6ff; background: #0b2238; border: 1px solid #ffffff26; }
+    .steps-foot { margin: 36px 0 0; text-align: center; color: #c8e4f7; }
+    .steps-foot a { color: #fff; font-weight: 700; }
+
+    .compare-scroll { overflow-x: auto; border: 3px solid var(--ink); box-shadow: 8px 8px 0 var(--ink); background: #fff; }
+    .compare { width: 100%; min-width: 680px; border-collapse: collapse; font-size: 15.5px; }
+    .compare th, .compare td { padding: 15px 18px; text-align: center; border-bottom: 1px solid #dbe8f2; }
+    .compare th:first-child, .compare td:first-child { text-align: left; font-weight: 600; }
+    .compare thead th { font-size: 14px; font-weight: 700; color: var(--muted); background: #f0f7fc; }
+    .compare thead th.us { color: #fff; background: var(--ink); font-size: 16px; }
+    .compare td.us { background: #fff3f8; }
+    .compare tbody tr:last-child td { border-bottom: 0; }
+    .yes { color: #138a52; font-weight: 800; }
+    .no { color: #b4c3cf; font-weight: 800; }
+    .part { color: #9a6b00; font-weight: 600; font-size: 14px; }
+
+    .faq { max-width: 780px; margin: 40px auto 0; }
+    .faq details { border-bottom: 2px solid var(--ink); }
+    .faq details:first-of-type { border-top: 2px solid var(--ink); }
+    .faq summary { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 22px 4px; cursor: pointer; list-style: none; font-size: 18px; font-weight: 700; }
+    .faq summary::-webkit-details-marker { display: none; }
+    .faq summary::after { content: "+"; flex: none; font: 400 18px/1 var(--font-logo); color: #1f7dc4; }
+    .faq details[open] summary::after { content: "−"; }
+    .faq summary:focus-visible { outline: 3px solid var(--sky); outline-offset: 2px; }
+    .faq details p { margin: 0 4px 22px; line-height: 1.7; color: var(--muted); font-size: 16px; }
+    .faq a { color: #1667a6; font-weight: 600; }
+
+    .final { text-align: center; }
+    .final .actions { animation: none; margin-top: 8px; }
+    .final .cta-secondary { background: transparent; }
+    .final .cta-secondary:hover { background: #ffffff1a; }
+    .final-note { margin: 28px 0 0; font-size: 14px; color: #9cc3df; }
+
+    @media (max-width: 900px) {
+      .problem { grid-template-columns: 1fr; gap: 36px; }
+      .shots { grid-template-columns: 1fr; max-width: 420px; margin: 0 auto; }
+      .features { grid-template-columns: 1fr 1fr; }
+      .steps { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 600px) { .features { grid-template-columns: 1fr; } }
+
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { animation: none !important; transition: none !important; }
       .title-letter { opacity: 1; }
@@ -240,7 +367,7 @@
   </style>
 </head>
 <body>
-  <main class="landing">
+  <main class="landing" id="top">
     <img class="hero"
          src="artwork/japanties-pixel.png"
          width="1058" height="661"
@@ -356,13 +483,145 @@
     </div>
     <section class="content" aria-label="PhotoGit">
       <h1 class="title-heading"><button type="button" disabled class="title" aria-label="PhotoGit" aria-description="Click or press Enter or Space for fluttering leaves and chirping birds" tabindex="0"><span class="title-letter" style="--n:0" aria-hidden="true">P</span><span class="title-letter" style="--n:1" aria-hidden="true">H</span><span class="title-letter" style="--n:2" aria-hidden="true">O</span><span class="title-letter" style="--n:3" aria-hidden="true">T</span><span class="title-letter" style="--n:4" aria-hidden="true">O</span><span class="title-letter" style="--n:5" aria-hidden="true">G</span><span class="title-letter" style="--n:6" aria-hidden="true">I</span><span class="title-letter" style="--n:7" aria-hidden="true">T</span></button></h1>
+      <p class="tagline">Version control for Photoshop.</p>
+      <p class="subline">Save every PSD version, see exactly what changed layer by layer, and branch your ideas without leaving Photoshop.</p>
       <div class="actions">
-        <div class="try-container">
-          <a class="try-link" href="https://github.com/xingexu/photogit#quick-start">Try it now <span class="try-arrow" aria-hidden="true">→</span></a>
-        </div>
+        <a class="cta cta-primary" href="https://github.com/xingexu/photogit" data-gh-star><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6L2.5 9.4l6.6-.8z"/></svg>Star on GitHub<span class="star-count" data-star-count hidden></span></a>
+        <a class="cta cta-secondary" href="#get-started">Get started <span aria-hidden="true">→</span></a>
       </div>
+      <p class="hero-meta"><span>Free &amp; open source</span><span>Your files stay on your machine</span><span>Built on Git</span></p>
     </section>
+    <header class="topbar">
+      <a class="brand" href="#top" aria-label="PhotoGit home"><img src="favicon.png" alt="" width="34" height="34"><span>PHOTOGIT</span></a>
+      <nav class="topnav" aria-label="Main">
+        <a href="#features">Features</a>
+        <a href="#get-started">Get started</a>
+        <a href="#faq">FAQ</a>
+        <a href="https://github.com/xingexu/photogit/tree/main/docs">Docs</a>
+        <a class="gh-mini" href="https://github.com/xingexu/photogit" aria-label="PhotoGit on GitHub"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .3A12 12 0 0 0 8.21 23.69c.6.11.82-.26.82-.58v-2.04c-3.34.73-4.04-1.61-4.04-1.61-.55-1.39-1.33-1.76-1.33-1.76-1.09-.74.08-.73.08-.73 1.2.09 1.84 1.24 1.84 1.24 1.07 1.83 2.81 1.3 3.49.99.11-.77.42-1.3.76-1.6-2.66-.31-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.13-.3-.54-1.52.12-3.18 0 0 1.01-.32 3.3 1.23A11.5 11.5 0 0 1 12 6.2c1.02 0 2.04.14 3 .4 2.29-1.55 3.3-1.23 3.3-1.23.65 1.66.24 2.88.12 3.18.77.84 1.23 1.91 1.23 3.22 0 4.61-2.81 5.62-5.48 5.92.43.37.82 1.1.82 2.22v3.2c0 .32.22.7.83.58A12 12 0 0 0 12 .3Z"/></svg>GitHub<span class="star-count" data-star-count hidden></span></a>
+      </nav>
+    </header>
   </main>
+
+  <section class="section" aria-labelledby="problem-title">
+    <div class="wrap problem">
+      <div>
+        <p class="eyebrow">Sound familiar?</p>
+        <h2 id="problem-title">Stop naming files <span style="white-space:nowrap">final_v7_REAL.psd</span></h2>
+        <p class="lede" style="margin-bottom:0">Designers have been versioning Photoshop work with “Save As” for thirty years. It eats disk space, hides what changed, and nobody remembers which copy the client approved. PhotoGit keeps one document and a complete, searchable history behind it, right in a Photoshop panel.</p>
+      </div>
+      <ul class="files" aria-label="Before and after">
+        <li><span class="ps" aria-hidden="true">Ps</span><s>poster_final.psd</s></li>
+        <li><span class="ps" aria-hidden="true">Ps</span><s>poster_final_v2.psd</s></li>
+        <li><span class="ps" aria-hidden="true">Ps</span><s>poster_final_v2_client-edits.psd</s></li>
+        <li><span class="ps" aria-hidden="true">Ps</span><s>poster_final_v3_REAL_use-this.psd</s></li>
+        <li class="keep"><span class="ps" aria-hidden="true">Ps</span>poster.psd</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="section alt" id="features" aria-labelledby="panel-title">
+    <div class="wrap">
+      <div class="center">
+        <p class="eyebrow">The panel</p>
+        <h2 id="panel-title">Your whole design history, docked in Photoshop</h2>
+        <p class="lede">No new app to learn. PhotoGit is a panel next to Layers and History, and it remembers every version you choose to save.</p>
+      </div>
+      <div class="shots">
+        <figure class="shot"><img src="screens/panel-history.png" width="744" height="1180" loading="lazy" alt="History tab listing saved versions with previews, and Compare and Restore buttons on the selected version"><figcaption><b>History</b>Every saved version with a preview. Compare any one with the open document, or restore it as a separate copy.</figcaption></figure>
+        <figure class="shot"><img src="screens/panel-branches.png" width="744" height="1180" loading="lazy" alt="Branches tab showing each branch with its latest saved version"><figcaption><b>Branches</b>Explore a bold alternative without touching the original. Each branch shows the last version saved on it.</figcaption></figure>
+        <figure class="shot"><img src="screens/panel-reviews.png" width="744" height="1180" loading="lazy" alt="Reviews tab listing branches waiting to merge and any conflicts"><figcaption><b>Reviews</b>See which branches are ready to merge and which have conflicts to settle first.</figcaption></figure>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="features-title">
+    <div class="wrap">
+      <div class="center">
+        <p class="eyebrow">Features</p>
+        <h2 id="features-title">Git’s safety net, without the Git</h2>
+        <p class="lede">Everything developers love about version control, rebuilt around layers, pixels and PSDs.</p>
+      </div>
+      <div class="features">
+        <article class="feature"><div class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 3 8l9 5 9-5-9-5Z"/><path d="m3 13 9 5 9-5"/></svg></div><h3>Layer-by-layer changes</h3><p>See which layers were added, deleted or edited, down to pixels, text, opacity, blend mode and order.</p></article>
+        <article class="feature"><div class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg></div><h3>Exact PSD versions</h3><p>Every version stores the full PSD, so you can always reopen precisely what you saved. Nothing is flattened or approximated.</p></article>
+        <article class="feature"><div class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="8" height="14"/><rect x="13" y="5" width="8" height="14"/></svg></div><h3>Before / after compare</h3><p>Put any saved version beside your open document and see what moved before you commit to it.</p></article>
+        <article class="feature"><div class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="5" r="2"/><circle cx="6" cy="19" r="2"/><circle cx="18" cy="8" r="2"/><path d="M6 7v10M18 10c0 4-6 3-12 7"/></svg></div><h3>Branches for big ideas</h3><p>Try a new direction on a branch and merge it back when the client picks it. Conflicting PSD edits are blocked, not silently overwritten.</p></article>
+        <article class="feature"><div class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div><h3>Local and private</h3><p>Your artwork lives in a folder on your machine. Nothing is uploaded unless you push to a remote you choose.</p></article>
+        <article class="feature"><div class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 9-4 3 4 3M16 9l4 3-4 3M13 6l-2 12"/></svg></div><h3>Real Git underneath</h3><p>Every version is an ordinary Git commit, so GitHub, backups and your team’s existing tools just work.</p></article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section dark" id="get-started" aria-labelledby="start-title">
+    <div class="wrap">
+      <div class="center">
+        <p class="eyebrow">Get started</p>
+        <h2 id="start-title">Up and running in three steps</h2>
+        <p class="lede">You need Node.js 22+, Git with Git LFS, Photoshop 2024 (v25) or later, and Adobe UXP Developer Tools. The terminal is only used once, for setup.</p>
+      </div>
+      <div class="steps">
+        <div class="step"><h3>Install PhotoGit</h3><p>Clone the repository and build it.</p><code>git clone https://github.com/xingexu/photogit.git<br>cd photogit &amp;&amp; npm ci &amp;&amp; npm run build</code></div>
+        <div class="step"><h3>Create a project</h3><p>Point PhotoGit at a folder for your artwork and start the local helper.</p><code>npm run photogit -- init ~/Design/poster<br>npm run helper -- --approve-root ~/Design/poster</code></div>
+        <div class="step"><h3>Open the panel</h3><p>Load the plugin in UXP Developer Tools, then choose <b>Plugins → PhotoGit</b> in Photoshop and save your first version.</p><code>apps/photoshop-plugin/manifest.json</code></div>
+      </div>
+      <p class="steps-foot">Full walkthrough, pairing and troubleshooting in the <a href="https://github.com/xingexu/photogit/blob/main/docs/QUICK_START.md">setup guide</a>.</p>
+    </div>
+  </section>
+
+  <section class="section alt" aria-labelledby="compare-title">
+    <div class="wrap">
+      <div class="center">
+        <p class="eyebrow">Why PhotoGit</p>
+        <h2 id="compare-title">How designers version PSDs today</h2>
+        <p class="lede">Most version-control tools for designers were built for Sketch or Figma. Photoshop files were left with “Save As”.</p>
+      </div>
+      <div class="compare-scroll" tabindex="0" role="region" aria-label="Comparison table">
+        <table class="compare">
+          <thead><tr><th scope="col"><span class="visually-hidden">Capability</span></th><th scope="col">“Save As” copies</th><th scope="col">Plain Git + LFS</th><th scope="col" class="us">PhotoGit</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Reopen any exact past PSD</th><td><span class="yes" aria-label="Yes">✓</span></td><td><span class="yes" aria-label="Yes">✓</span></td><td class="us"><span class="yes" aria-label="Yes">✓</span></td></tr>
+            <tr><th scope="row">See which layers changed</th><td><span class="no" aria-label="No">✕</span></td><td><span class="no" aria-label="No">✕</span></td><td class="us"><span class="yes" aria-label="Yes">✓</span></td></tr>
+            <tr><th scope="row">Visual before / after compare</th><td><span class="part">Manually</span></td><td><span class="no" aria-label="No">✕</span></td><td class="us"><span class="yes" aria-label="Yes">✓</span></td></tr>
+            <tr><th scope="row">Branch ideas without duplicate files</th><td><span class="no" aria-label="No">✕</span></td><td><span class="yes" aria-label="Yes">✓</span></td><td class="us"><span class="yes" aria-label="Yes">✓</span></td></tr>
+            <tr><th scope="row">Works inside Photoshop</th><td><span class="yes" aria-label="Yes">✓</span></td><td><span class="no" aria-label="No">✕</span></td><td class="us"><span class="yes" aria-label="Yes">✓</span></td></tr>
+            <tr><th scope="row">No command line day to day</th><td><span class="yes" aria-label="Yes">✓</span></td><td><span class="no" aria-label="No">✕</span></td><td class="us"><span class="yes" aria-label="Yes">✓</span></td></tr>
+            <tr><th scope="row">Sync to GitHub or any Git remote</th><td><span class="no" aria-label="No">✕</span></td><td><span class="yes" aria-label="Yes">✓</span></td><td class="us"><span class="yes" aria-label="Yes">✓</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="faq" aria-labelledby="faq-title">
+    <div class="wrap">
+      <div class="center">
+        <p class="eyebrow">FAQ</p>
+        <h2 id="faq-title">Questions, answered</h2>
+      </div>
+      <div class="faq">
+        <details><summary>Is PhotoGit free?</summary><p>Yes. PhotoGit is open source under the MIT license. There is no account, subscription or usage limit.</p></details>
+        <details><summary>Do I need to know Git?</summary><p>No. Day to day you scan, save, compare and branch from buttons in the panel. Git runs behind the scenes in a small local helper. You use the terminal once, to set up a project.</p></details>
+        <details><summary>Is my artwork uploaded anywhere?</summary><p>No. Versions are stored in a folder on your own computer. They only leave it if you choose to push to a Git remote such as GitHub.</p></details>
+        <details><summary>Which Photoshop versions and platforms are supported?</summary><p>The panel targets Photoshop 25 (2024) and later, and has been tested end to end on macOS with Photoshop 2026. Windows has not been verified yet. See the <a href="https://github.com/xingexu/photogit/blob/main/docs/COMPATIBILITY.md">compatibility notes</a>.</p></details>
+        <details><summary>Can two people work on the same PSD?</summary><p>Yes, through branches. PhotoGit splits each document into per-layer data, so it can tell when edits overlap. Changes that conflict are flagged for a decision rather than blended automatically.</p></details>
+        <details><summary>Is it ready for client work?</summary><p>PhotoGit is an early 0.2 development build. It works, but keep independent backups of important artwork while it matures. Star or watch the repository to hear about releases.</p></details>
+      </div>
+    </div>
+  </section>
+
+  <section class="section dark final" aria-labelledby="final-title">
+    <div class="wrap">
+      <p class="eyebrow">Open source</p>
+      <h2 id="final-title">Help us give every designer a safety net</h2>
+      <p class="lede">PhotoGit is built in the open. A star helps more designers find it, and issues and pull requests shape what comes next.</p>
+      <div class="actions">
+        <a class="cta cta-primary" href="https://github.com/xingexu/photogit" data-gh-star><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6L2.5 9.4l6.6-.8z"/></svg>Star on GitHub<span class="star-count" data-star-count hidden></span></a>
+        <a class="cta cta-secondary" href="https://github.com/xingexu/photogit/issues/new/choose">Request a feature</a>
+      </div>
+      <p class="final-note">MIT licensed · Made for designers who have lost work to “Save As”</p>
+    </div>
+  </section>
     <footer class="site-footer">
       <span class="footer-credit">© 2026 XINGE XU</span>
       <button class="chirp-toggle" type="button" aria-pressed="false" aria-label="Mute sounds">Sound on ♪</button>
@@ -656,6 +915,26 @@
       });
 
 
+    })();
+  </script>
+  <script>
+    // Show the live star count once it is large enough to read as social proof.
+    (function () {
+      var badges = document.querySelectorAll('[data-star-count]');
+      if (!badges.length || !window.fetch) return;
+      fetch('https://api.github.com/repos/xingexu/photogit', { headers: { Accept: 'application/vnd.github+json' } })
+        .then(function (response) { return response.ok ? response.json() : null; })
+        .then(function (repo) {
+          var stars = repo && repo.stargazers_count;
+          if (typeof stars !== 'number' || stars < 25) return;
+          var label = stars >= 1000 ? (stars / 1000).toFixed(stars >= 10000 ? 0 : 1).replace(/\.0$/, '') + 'k' : String(stars);
+          badges.forEach(function (badge) {
+            badge.textContent = '★ ' + label;
+            badge.hidden = false;
+            badge.parentElement.setAttribute('aria-label', badge.parentElement.textContent.replace('★ ' + label, '').trim() + ', ' + stars + ' stars');
+          });
+        })
+        .catch(function () { /* The buttons work without the count. */ });
     })();
   </script>
 </body>

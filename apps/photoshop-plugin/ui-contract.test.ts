@@ -1334,16 +1334,50 @@ describe("PhotoGit production panel behavior — host mocked", () => {
     expect(p.evaluate("busyNow")).toBe(false);
   });
 
-  it("refuses helper reconnection during a save or other exclusive operation", async () => {
+  it("tells a stopped helper from a live one by its heartbeat, and withdraws only unclaimed requests", async () => {
+    const p = await panel();
+    const memoryFolder = (files: Record<string, string>, children: Record<string, any> = {}): any => ({
+      getEntry: async (name: string) => {
+        if (children[name]) return children[name];
+        if (!(name in files)) throw new Error("missing");
+        return { read: async () => files[name], delete: async () => { delete files[name]; } };
+      },
+      createFile: async (name: string) => ({ write: async (text: string) => { files[name] = text; } })
+    });
+    const beat = (at: number) => memoryFolder({}, { ".photogit": memoryFolder({}, { bridge: memoryFolder({ "helper.alive": JSON.stringify({ protocolVersion: 1, pid: 1, at }) }) }) });
+    p.context.liveFolder = beat(Date.now());
+    p.context.staleFolder = beat(Date.now() - 60_000);
+    p.context.emptyFolder = memoryFolder({});
+    expect(await p.evaluate("helperAlive(liveFolder)")).toBe(true);
+    expect(await p.evaluate("helperAlive(staleFolder)")).toBe(false);
+    expect(await p.evaluate("helperAlive(emptyFolder)")).toBe(false);
+    const unclaimed: Record<string, string> = { "r1.ready": "ready\n", "r1.json": "{}" };
+    p.context.unclaimed = memoryFolder(unclaimed);
+    expect(await p.evaluate("withdrawRequest(unclaimed, 'r1')")).toBe(true);
+    expect(unclaimed["r1.ready"]).toBeUndefined();
+    const claimed: Record<string, string> = { "r2.ready": "ready\n", "r2.json": "{}", "r2.claim": "" };
+    p.context.claimed = memoryFolder(claimed);
+    expect(await p.evaluate("withdrawRequest(claimed, 'r2')")).toBe(false);
+    expect(claimed["r2.ready"]).toBe("ready\n");
+    expect(p.evaluate("helperOfflineError({ name: 'photogit-demo' })").code).toBe("HELPER_OFFLINE");
+  });
+
+  it("holds a helper reconnection until a save or other exclusive operation finishes", async () => {
     const p = await panel();
     p.connect();
     const pairing = vi.fn(); p.context.loadPairing = pairing;
     const refresh = vi.fn(); p.context.refreshWorkspace = refresh;
     p.evaluate("busy(true)");
-    await p.evaluate("reconnectHelper()");
+    const pending = p.evaluate("reconnectHelper()");
+    await Promise.resolve();
     expect(pairing).not.toHaveBeenCalled();
     expect(refresh).not.toHaveBeenCalled();
-    expect(p.id("result").textContent).toContain("PhotoGit is busy");
+    expect(p.id("result").textContent).toContain("Reconnecting once the current step finishes");
+    expect(p.id("result").textContent).not.toContain("busy");
+    p.evaluate("busy(false)");
+    await pending;
+    expect(pairing).toHaveBeenCalledOnce();
+    expect(refresh).toHaveBeenCalledOnce();
   });
 
   it("captures leaf pixels plus the document composite, disposes images, and reports bounded batch progress", async () => {

@@ -299,6 +299,8 @@ body.has-toast .search-field input { display: none; }
 .status-message.error:not(:empty) { border-left: 2px solid var(--text-strong); color: var(--text-strong); }
 /* With nothing to say it takes no room. */
 .status-message:empty { display: none; }
+/* The connection notice owns the top of the panel; the toast sits above the footer instead. */
+body.has-connection-notice .status-message { top: auto; bottom: 48px; }
 .startup-card, .onboarding { flex: none; margin: var(--space-3); padding: var(--space-4); border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-raised); }
 .startup-card p { margin-top: var(--space); color: var(--text-muted); }
 .startup-skeleton { margin-top: var(--space-3); }
