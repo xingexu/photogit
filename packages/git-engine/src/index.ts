@@ -16,6 +16,8 @@ const MAX_REPOSITORY_METADATA_BYTES = 1024 * 1024;
 const MAX_ARTIFACT_BYTES = 8 * 1024 * 1024 * 1024;
 const MAX_LOCK_BYTES = 8 * 1024;
 const GIT_TIMEOUT_MS = 60_000;
+// Renamed version titles live here, beside the history rather than in it.
+const VERSION_TITLES_REF = "refs/notes/photogit-titles";
 const MAX_STATE_BYTES = 64 * 1024 * 1024;
 
 export class GitCommandError extends Error {
@@ -105,9 +107,10 @@ export class GitRepository {
       this.run(["for-each-ref", "--format=%(refname:short)%09%(objectname)%09%(committerdate:iso-strict)%09%(contents:subject)", "refs/heads"])
     ]);
     // The message is last because it is the only field that may hold a tab.
-    return output.split("\n").filter(Boolean).map((line) => {
-      const [name = "", tip = "", date = "", ...subject] = line.split("\t");
-      return { name, current: name === current, tip: /^[a-f0-9]{40,64}$/.test(tip) ? tip : "", subject: subject.join(" ").replace(/[\u0000-\u001f\u007f-\u009f\u202a-\u202e\u2066-\u2069]/g, " ").trim().slice(0, 500), date: /^\d{4}-\d{2}-\d{2}T/.test(date) ? date : "" };
+    const lines = output.split("\n").filter(Boolean).map((line) => line.split("\t"));
+    const titles = await this.versionTitles(lines.map(([, tip = ""]) => tip).filter((tip) => /^[a-f0-9]{40,64}$/.test(tip)));
+    return lines.map(([name = "", tip = "", date = "", ...subject]) => {
+      return { name, current: name === current, tip: /^[a-f0-9]{40,64}$/.test(tip) ? tip : "", subject: (titles.get(tip) ?? subject.join(" ")).replace(/[\u0000-\u001f\u007f-\u009f\u202a-\u202e\u2066-\u2069]/g, " ").trim().slice(0, 500), date: /^\d{4}-\d{2}-\d{2}T/.test(date) ? date : "" };
     }).sort((first, second) => first.name.localeCompare(second.name));
   }
 
@@ -140,6 +143,10 @@ export class GitRepository {
     const branch = await this.currentBranch();
     if (branch === "detached") throw new Error("Switch to a branch before sharing changes.");
     await this.run(["push", "--set-upstream", remote, branch]);
+    // Renamed version titles travel with the branch when there are any.
+    if (await this.run(["rev-parse", "--verify", "--quiet", VERSION_TITLES_REF], { allowFailure: true })) {
+      await this.run(["push", remote, `${VERSION_TITLES_REF}:${VERSION_TITLES_REF}`], { allowFailure: true });
+    }
   }
 
   // What Push would send: saved versions on this branch that the remote does
@@ -243,6 +250,45 @@ export class GitRepository {
     await this.run(["tag", name]);
   }
 
+  /**
+   * Gives a saved version a new title. The title is kept as a Git note, so the
+   * version itself (its ID, snapshot and preview) never changes and nothing
+   * already shared is rewritten. Renaming back to the saved message clears it.
+   */
+  async renameVersion(version: string, title: string): Promise<{ id: string; title: string }> {
+    const normalized = title.trim();
+    if (!normalized || normalized.length > 500 || /[\0-\x1f\x7f]/.test(normalized)) throw new Error("A version title must be one line between 1 and 500 characters.");
+    await this.assertRepository();
+    const id = await this.resolveVersion(version);
+    const subject = await this.run(["show", "-s", "--format=%s", id]);
+    if (normalized === subject.trim()) await this.run(["notes", `--ref=${VERSION_TITLES_REF}`, "remove", "--ignore-missing", id]);
+    else await this.run(["notes", `--ref=${VERSION_TITLES_REF}`, "add", "-f", "-m", normalized, id]);
+    return { id, title: normalized };
+  }
+
+  /** Renames a branch. The current branch can be renamed in place. */
+  async renameBranch(from: string, to: string): Promise<void> {
+    assertBranchName(from);
+    assertBranchName(to);
+    await this.assertRepository();
+    if (from === to) return;
+    if (!await this.run(["rev-parse", "--verify", "--quiet", `refs/heads/${from}`], { allowFailure: true })) throw new Error(`There is no branch named ${from}.`);
+    if (await this.run(["rev-parse", "--verify", "--quiet", `refs/heads/${to}`], { allowFailure: true })) throw new Error(`A branch named ${to} already exists.`);
+    await this.run(["branch", "-m", from, to]);
+  }
+
+  private async versionTitles(ids: string[]): Promise<Map<string, string>> {
+    const titles = new Map<string, string>();
+    if (!ids.length) return titles;
+    const output = await this.run(["log", "-z", "--no-walk=unsorted", `--notes=${VERSION_TITLES_REF}`, "--format=%H%x00%N", ...new Set(ids)], { allowFailure: true });
+    const fields = output.split("\0");
+    for (let index = 0; index + 1 < fields.length; index += 2) {
+      const id = fields[index]!.trim(), title = fields[index + 1]!.trim();
+      if (/^[a-f0-9]{40,64}$/.test(id) && title) titles.set(id, title);
+    }
+    return titles;
+  }
+
   async pullRequestUrl(base?: string, remote = "origin"): Promise<string> {
     if (base) assertBranchName(base);
     const info = await this.repositoryInfo(remote);
@@ -256,14 +302,15 @@ export class GitRepository {
   async history(limit = 30): Promise<VersionEntry[]> {
     await this.assertRepository();
     const count = Number.isFinite(limit) ? Math.min(500, Math.max(1, Math.trunc(limit))) : 30;
-    const format = "%H%x00%h%x00%an%x00%aI%x00%s";
-    const output = await this.run(["log", "-z", `--max-count=${count}`, `--format=${format}`], { allowFailure: true });
+    const format = "%H%x00%h%x00%an%x00%aI%x00%s%x00%N";
+    const output = await this.run(["log", "-z", `--notes=${VERSION_TITLES_REF}`, `--max-count=${count}`, `--format=${format}`], { allowFailure: true });
     if (!output) return [];
     const fields = output.split("\0");
     if (fields.at(-1) === "") fields.pop();
     const versions: VersionEntry[] = [];
-    for (let index = 0; index + 4 < fields.length; index += 5) {
-      const [id = "", shortId = "", author = "", date = "", message = ""] = fields.slice(index, index + 5);
+    for (let index = 0; index + 5 < fields.length; index += 6) {
+      const [id = "", shortId = "", author = "", date = "", subject = "", title = ""] = fields.slice(index, index + 6);
+      const message = title.trim() || subject;
       if (!/^[a-f0-9]{40,64}$/i.test(id) || !/^[a-f0-9]{4,64}$/i.test(shortId)) continue;
       versions.push({
         id,
@@ -415,10 +462,11 @@ export class GitRepository {
   async versionDetails(version: string): Promise<VersionDetails> {
     const id = await this.resolveVersion(version);
     const [description, parent] = await Promise.all([
-      this.run(["show", "-s", "--format=%H%x00%h%x00%an%x00%aI%x00%s", id]),
+      this.run(["show", "-s", `--notes=${VERSION_TITLES_REF}`, "--format=%H%x00%h%x00%an%x00%aI%x00%s%x00%N", id]),
       this.run(["rev-list", "--parents", "-n", "1", id])
     ]);
-    const [fullId = id, shortId = id.slice(0, 8), author = "", date = "", message = ""] = description.split("\0");
+    const [fullId = id, shortId = id.slice(0, 8), author = "", date = "", subject = "", title = ""] = description.split("\0");
+    const message = title.trim() || subject;
     const previous = parent.split(" ")[1];
     const files = await this.changedFiles(previous ?? null, id);
     const warnings: string[] = [];
@@ -449,7 +497,10 @@ export class GitRepository {
     const directory = join(this.root, ".photogit", "recovered");
     await mkdir(directory, { recursive: true, mode: 0o700 });
     if (!await isWithinRealRoot(this.root, directory)) throw new Error("Recovery folder resolves outside the project.");
-    const destination = join(directory, `version-${source.version.slice(0, 12)}-${randomUUID()}.psd`);
+    const [title] = await this.versionTitles([source.version]).then((titles) => [...titles.values()]);
+    const subject = title ?? await this.run(["show", "-s", "--format=%s", source.version], { allowFailure: true });
+    const readable = subject.normalize("NFKD").replace(/[^A-Za-z0-9._-]+/g, "-").replace(/^[-.]+|[-.]+$/g, "").slice(0, 60) || "version";
+    const destination = join(directory, `${readable}-${source.version.slice(0, 7)}-${randomUUID().slice(0, 8)}.psd`);
     const handle = await open(destination, "wx", 0o600);
     try {
       if (source.path) {

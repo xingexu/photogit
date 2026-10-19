@@ -204,7 +204,8 @@ describe("real helper process filesystem bridge", () => {
     expect(details).toMatchObject({ ok: true, result: { version: { id: version }, snapshotAvailable: true } });
     const recovered = await f.request("openVersion", { version });
     expect(recovered).toMatchObject({ ok: true, result: { outcome: "success" } });
-    expect(recovered.result.snapshotPath).toMatch(/^\.photogit\/recovered\/version-/);
+    // Copies are named after the version's title, then its short ID.
+    expect(recovered.result.snapshotPath).toMatch(/^\.photogit\/recovered\/[A-Za-z0-9._-]+-[a-f0-9]{7}-[a-f0-9]{8}\.psd$/);
     expect(await readFile(join(f.root, recovered.result.snapshotPath))).toEqual(bytes);
     const second = await f.request("openVersion", { version: "HEAD" });
     expect(second.result.snapshotPath).not.toBe(recovered.result.snapshotPath);

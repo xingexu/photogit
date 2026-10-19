@@ -33,7 +33,7 @@ export type StatusRequest = {
 
 export type ProjectActionRequest = {
   protocolVersion: typeof PROTOCOL_VERSION;
-  operation: "history" | "branches" | "refresh" | "createBranch" | "switchBranch" | "pull" | "push" | "reviews" | "mergeBranch" | "createTag" | "pullRequestLink" | "connectDocument" | "versionDetails" | "openVersion" | "versionPreview" | "compareBranches" | "compareVersion";
+  operation: "history" | "branches" | "refresh" | "createBranch" | "switchBranch" | "pull" | "push" | "reviews" | "mergeBranch" | "createTag" | "pullRequestLink" | "connectDocument" | "versionDetails" | "openVersion" | "versionPreview" | "compareBranches" | "compareVersion" | "renameVersion" | "renameBranch";
   requestId: string;
   projectRoot: string;
   capture?: DocumentCapture;
@@ -41,6 +41,8 @@ export type ProjectActionRequest = {
   tag?: string;
   base?: string;
   version?: string;
+  title?: string;
+  newBranch?: string;
   documentIdentity?: DocumentIdentity;
   adopt?: boolean;
 };
@@ -70,7 +72,7 @@ export type BridgeEnvelope = {
 export function parseHelperRequest(value: unknown): HelperRequest {
   if (!isRecord(value)) throw new Error("Request body must be an object.");
   if (value.protocolVersion !== PROTOCOL_VERSION) throw new Error(`Protocol version ${String(value.protocolVersion)} is not supported.`);
-  const operations = ["capture", "status", "history", "branches", "refresh", "createBranch", "switchBranch", "pull", "push", "reviews", "mergeBranch", "createTag", "pullRequestLink", "connectDocument", "versionDetails", "openVersion", "versionPreview", "compareBranches", "compareVersion"];
+  const operations = ["capture", "status", "history", "branches", "refresh", "createBranch", "switchBranch", "pull", "push", "reviews", "mergeBranch", "createTag", "pullRequestLink", "connectDocument", "versionDetails", "openVersion", "versionPreview", "compareBranches", "compareVersion", "renameVersion", "renameBranch"];
   if (typeof value.operation !== "string" || !operations.includes(value.operation)) throw new Error("Unknown helper operation.");
   if (typeof value.requestId !== "string" || !SAFE_REQUEST_ID.test(value.requestId)) throw new Error("Invalid request ID.");
   if (!isSafePathString(value.projectRoot)) throw new Error("A valid project root is required.");
@@ -87,7 +89,9 @@ export function parseHelperRequest(value: unknown): HelperRequest {
     switchBranch: ["branch"],
     mergeBranch: ["branch"],
     createTag: ["tag"],
-    pullRequestLink: ["base"]
+    pullRequestLink: ["base"],
+    renameVersion: ["version", "title"],
+    renameBranch: ["branch", "newBranch"]
   };
   assertAllowedKeys(value, ["protocolVersion", "operation", "requestId", "projectRoot", ...(operationFields[value.operation] ?? [])], "request");
   if (value.operation === "capture") {
@@ -102,8 +106,10 @@ export function parseHelperRequest(value: unknown): HelperRequest {
     validateDocumentIdentity(value.documentIdentity);
     if (value.adopt !== undefined && typeof value.adopt !== "boolean") throw new Error("The document adoption choice must be a boolean.");
   }
-  if (["versionDetails", "openVersion", "versionPreview", "compareVersion"].includes(value.operation) && (typeof value.version !== "string" || (value.version !== "HEAD" && !/^[a-fA-F0-9]{7,64}$/.test(value.version)))) throw new Error("A saved version ID or HEAD is required.");
-  if (["createBranch", "switchBranch", "mergeBranch", "compareBranches"].includes(value.operation) && !isBoundedString(value.branch, 200)) throw new Error("This operation requires a branch name of at most 200 characters.");
+  if (["versionDetails", "openVersion", "versionPreview", "compareVersion", "renameVersion"].includes(value.operation) && (typeof value.version !== "string" || (value.version !== "HEAD" && !/^[a-fA-F0-9]{7,64}$/.test(value.version)))) throw new Error("A saved version ID or HEAD is required.");
+  if (["createBranch", "switchBranch", "mergeBranch", "compareBranches", "renameBranch"].includes(value.operation) && !isBoundedString(value.branch, 200)) throw new Error("This operation requires a branch name of at most 200 characters.");
+  if (value.operation === "renameBranch" && !isBoundedString(value.newBranch, 200)) throw new Error("Renaming a branch requires a new name of at most 200 characters.");
+  if (value.operation === "renameVersion" && (typeof value.title !== "string" || value.title.trim().length === 0 || value.title.length > 500 || /[\0-\x1f\x7f]/.test(value.title))) throw new Error("A one-line version title between 1 and 500 characters is required.");
   if (value.operation === "createTag" && !isBoundedString(value.tag, 100)) throw new Error("This operation requires a tag name of at most 100 characters.");
   if (["pullRequestLink", "compareBranches"].includes(value.operation) && value.base !== undefined && !isBoundedString(value.base, 200)) throw new Error("The comparison base branch is invalid.");
   return value as HelperRequest;

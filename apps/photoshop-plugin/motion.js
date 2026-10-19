@@ -300,10 +300,46 @@
     hovered.delete(element);
     if (element.parentNode) blend(element, hover, resting(element));
   }, true);
+  // A press answers the moment the pointer goes down, not when the click
+  // lands: the control takes its pressed tone and sinks 1px, holds while the
+  // button is down, and eases back to rest on release. Keyboard presses have
+  // no pointer, so their click still gets the one-shot press below.
+  let held = null, releasedFrom = null;
+  function hold(element) {
+    if (!element.style || reduced()) return;
+    tones = tones || { plain: swatch("motion-press-tone"), filled: swatch("motion-press-tone filled") };
+    const tone = element.classList.contains("button-primary") ? tones.filled : tones.plain;
+    if (!tone) return;
+    release(false);
+    stop(`tint:${tintId(element)}`);
+    held = { element, background: element.style.backgroundColor || "", transform: element.style.transform || "" };
+    element.style.backgroundColor = `rgba(${tone[0]}, ${tone[1]}, ${tone[2]}, ${tone[3]})`;
+    element.style.transform = "translateY(1px)";
+  }
+  function release(animate = true) {
+    if (!held) return;
+    const { element, background, transform } = held;
+    held = null;
+    releasedFrom = element;
+    const pressedPaint = snapshot(element);
+    element.style.transform = transform;
+    element.style.backgroundColor = background;
+    if (animate && element.parentNode) blend(element, pressedPaint, snapshot(element));
+  }
+  document.addEventListener("mousedown", event => { const element = control(event); if (element && event.button === 0) hold(element); }, true);
+  document.addEventListener("mouseup", () => release(), true);
+  document.addEventListener("mouseout", event => {
+    if (held && !(event.relatedTarget && held.element.contains(event.relatedTarget)) && event.target && held.element.contains(event.target)) release();
+  }, true);
   // One listener gives every control the same press, including controls a
   // list renders later. It only decorates: the control's own handler runs
   // whether or not this does.
-  document.addEventListener("click", event => { const element = control(event); if (element) press(element); }, true);
+  document.addEventListener("click", event => {
+    const element = control(event);
+    if (!element) return;
+    if (element === releasedFrom) { releasedFrom = null; return; }
+    press(element);
+  }, true);
 
   const positions = new WeakMap();
   const destinations = new WeakMap();

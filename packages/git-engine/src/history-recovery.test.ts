@@ -121,7 +121,7 @@ describe("immutable history, recovery, and Git comparison", () => {
     expect(details.files).toContainEqual({ path: "snapshot/document.psd", status: "M" });
     expect(details.snapshotAvailable).toBe(true);
     const exported = await repo.exportVersionSnapshot(id);
-    expect(exported).toContain(".photogit/recovered/version-");
+    expect(exported).toContain(".photogit/recovered/First-version-");
     expect(await readFile(exported)).toEqual(first);
     expect(await readFile(join(repo.root, "snapshot/document.psd"))).toEqual(second);
     expect(await repo.run(["rev-parse", "HEAD"])).toBe(currentId);
@@ -177,6 +177,37 @@ describe("immutable history, recovery, and Git comparison", () => {
       expect(branch.tip).toMatch(/^[a-f0-9]{40,64}$/);
       expect(Number.isFinite(new Date(branch.date).getTime())).toBe(true);
     }
+  });
+
+  it("renames a version's title without changing its ID, and renaming back clears it", async () => {
+    const repository = await fixture();
+    await repository.run(["commit", "--allow-empty", "-m", "Earlier"]);
+    await repository.run(["commit", "--allow-empty", "-m", "Bad title"]);
+    const [latest] = await repository.history(5);
+    const statusBefore = await repository.status();
+    await repository.renameVersion(latest!.id, "Hero layout");
+    const renamed = await repository.history(5);
+    expect(renamed.map(version => [version.id, version.message])).toEqual([[latest!.id, "Hero layout"], [renamed[1]!.id, "Earlier"]]);
+    expect((await repository.versionDetails(latest!.id)).version.message).toBe("Hero layout");
+    expect((await repository.branches())[0]!.subject).toBe("Hero layout");
+    // The rename touches no project files.
+    expect(await repository.status()).toEqual(statusBefore);
+    await repository.renameVersion(latest!.id, "Bad title");
+    expect((await repository.history(1))[0]!.message).toBe("Bad title");
+    await expect(repository.renameVersion(latest!.id, "two\nlines")).rejects.toThrow(/one line/);
+  });
+
+  it("renames a branch, including the current one, and refuses an existing name", async () => {
+    const repository = await fixture();
+    await repository.run(["commit", "--allow-empty", "-m", "Base"]);
+    const base = await repository.currentBranch();
+    await repository.run(["branch", "option-b"]);
+    await repository.renameBranch(base, "film-final");
+    expect(await repository.currentBranch()).toBe("film-final");
+    await expect(repository.renameBranch("film-final", "option-b")).rejects.toThrow(/already exists/);
+    await expect(repository.renameBranch("missing", "other")).rejects.toThrow(/no branch named/);
+    await expect(repository.renameBranch("option-b", "bad name")).rejects.toThrow(/Invalid branch name/);
+    expect((await repository.branches()).map(branch => branch.name)).toEqual(["film-final", "option-b"]);
   });
 
   it("reviews remote-only branches against the current base and honors configured default bases", async () => {

@@ -158,6 +158,14 @@ async function executeRequest(payload: HelperRequest, helperConfig: HelperConfig
     return { tag: payload.tag };
   }
   if (payload.operation === "pullRequestLink") return { url: await repository.pullRequestUrl(payload.base) };
+  if (payload.operation === "renameVersion") {
+    const renamed = await repository.renameVersion(payload.version!, payload.title!);
+    return { outcome: "success", versionId: renamed.id, title: renamed.title };
+  }
+  if (payload.operation === "renameBranch") {
+    await repository.renameBranch(payload.branch!, payload.newBranch!);
+    return { outcome: "success", branch: payload.newBranch, previousBranch: payload.branch };
+  }
   if (payload.operation !== "capture") throw coded("UNKNOWN_OPERATION", "Unknown helper operation.");
 
   for (const path of [payload.snapshotPath, payload.previewPath]) {

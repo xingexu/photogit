@@ -659,7 +659,7 @@ describe("PhotoGit production panel behavior — host mocked", () => {
     const card = p.document.querySelector<HTMLElement>(".history-entry.selected")!;
     expect(card.querySelector<HTMLElement>(".history-row")!.dataset.version).toBe(versions[0]!.id);
     expect(card.querySelector(".pill")!.textContent).toBe("Latest");
-    expect([...card.querySelectorAll(".history-actions .button")].map(button => button.textContent)).toEqual(["Compare", "Restore"]);
+    expect([...card.querySelectorAll(".history-actions .button")].map(button => button.textContent)).toEqual(["Compare", "Restore", "Export"]);
     card.querySelector<HTMLElement>(".history-details")!.click();
     await settle();
     expect(helper).toHaveBeenCalledWith("versionDetails", { version: versions[0]!.id });
@@ -1488,7 +1488,9 @@ describe("PhotoGit production startup — mocked host and filesystem", () => {
     await p.evaluate("initializePanel()");
     expect(p.id("startup-state").hidden).toBe(true);
     expect(p.id("onboarding").hidden).toBe(false);
-    expect(p.evaluate("projectFolder")).toBeNull();
+    // An unreadable pairing keeps the project; the helper watch pairs again.
+    if (failure === "pairing") expect(p.evaluate("projectFolder")?.name).toBe("Project");
+    else expect(p.evaluate("projectFolder")).toBeNull();
     expect(p.evaluate("helperToken")).toBeNull();
     p.id("setup-toggle").click();
     expect(p.id("setup-instructions").hidden).toBe(false);
@@ -1526,6 +1528,56 @@ describe("PhotoGit production startup — mocked host and filesystem", () => {
     p.evaluate('show("No version was written.", true); setHelper("Helper online", true)');
     expect(p.id("result").textContent).toBe("No version was written.");
   });
+  it("says a helper-offline error inside an open dialog instead of swallowing it", async () => {
+    const p = await panel(); p.connect();
+    p.evaluate('document.body.classList.add("has-connection-notice"); openDetail("Connect this document?", "Adopt it.", "Connect document", () => {})');
+    expect(p.id("detail-sheet").classList.contains("is-compact")).toBe(true);
+    expect(p.id("detail-error").hidden).toBe(true);
+    p.evaluate('show("PhotoGit’s background service isn’t running for “Project”.", true)');
+    expect(p.id("detail-error").hidden).toBe(false);
+    expect(p.id("detail-error").textContent).toContain("background service");
+    p.evaluate('closeDetail(); openDetail("Version", "", "", null)');
+    expect(p.id("detail-error").hidden).toBe(true);
+    expect(p.id("detail-sheet").classList.contains("is-compact")).toBe(false);
+  });
+  it("renames a version and closes the rename sheet once the helper answers", async () => {
+    const p = await panel(); p.connect(); p.evaluate("bindPanelEvents()");
+    const id = "a".repeat(40);
+    const helper = vi.fn(async (operation: string) => operation === "renameVersion"
+      ? { outcome: "success", versionId: id, title: "Hero layout" }
+      : operation === "history" ? { versions: [] } : { branches: [], current: "main" });
+    p.context.callHelper = helper;
+    p.evaluate(`renameVersion({ id: "${id}", shortId: "aaaaaaa", message: "Old title" })`);
+    expect(p.id("rename-sheet").hidden).toBe(false);
+    expect((p.id("rename-input") as HTMLInputElement).value).toBe("Old title");
+    (p.id("rename-input") as HTMLInputElement).value = "Hero layout";
+    p.id("rename-confirm").click(); await settle();
+    expect(helper).toHaveBeenCalledWith("renameVersion", { version: id, title: "Hero layout" });
+    for (const timer of [...p.timers.values()]) if (timer.delay <= 200) timer.callback();
+    await settle();
+    expect(p.id("rename-sheet").hidden).toBe(true);
+    // The real helper's answer is accepted, not rejected as unknown.
+    expect(() => p.evaluate(`validateHelperResult("renameVersion", { outcome: "success", versionId: "${id}", title: "Hero layout" })`)).not.toThrow();
+    expect(() => p.evaluate(`validateHelperResult("renameBranch", { outcome: "success", branch: "film-final" })`)).not.toThrow();
+  });
+  it("offers rename on each history row only as a hover control", async () => {
+    const p = await panel(); p.connect();
+    p.evaluate(`historyEntries = [{ id: "${"b".repeat(40)}", shortId: "bbbbbbb", author: "A", date: "2026-10-01T10:00:00Z", message: "Poster" }]; renderHistory(historyEntries)`);
+    const rename = p.document.querySelector<HTMLElement>("#history .history-row .row-rename")!;
+    expect(rename).not.toBeNull();
+    expect(rename.tabIndex).toBe(-1);
+    expect(p.document.querySelector("#history .history-actions")).toBeNull();
+  });
+  it("exports a version in a chosen image format and remembers the choice", async () => {
+    const p = await panel(); p.connect(); p.evaluate("bindPanelEvents()");
+    p.evaluate(`openExportSheet({ id: "${"c".repeat(40)}", shortId: "ccccccc", message: "Poster: final!" })`);
+    expect(p.id("export-sheet").hidden).toBe(false);
+    p.document.querySelector<HTMLElement>('#export-formats [data-format="jpg"]')!.click();
+    expect(p.document.querySelector('#export-formats [data-format="jpg"]')!.getAttribute("aria-checked")).toBe("true");
+    expect(p.document.querySelector('#export-formats [data-format="png"]')!.getAttribute("aria-checked")).toBe("false");
+    expect(p.id("export-confirm").textContent).toBe("Export JPEG…");
+    expect(p.evaluate(`exportFileName({ shortId: "ccccccc", message: "Poster: final!" }, EXPORT_FORMATS.jpg)`)).toBe("Poster-final-ccccccc.jpg");
+  });
   it("ignores pairing data that arrives after its startup deadline", async () => {
     const p = await panel(); const waiting = deferred<string>();
     p.context.localStorage.getItem = () => "saved-folder";
@@ -1537,7 +1589,7 @@ describe("PhotoGit production startup — mocked host and filesystem", () => {
     await startup;
     waiting.resolve(JSON.stringify({ protocolVersion: 1, token: "synthetic-test-token-".repeat(3) })); await settle();
     expect(p.evaluate("helperToken")).toBeNull();
-    expect(p.evaluate("projectFolder")).toBeNull();
+    expect(p.evaluate("projectFolder")?.name).toBe("Project");
     expect(p.id("startup-state").hidden).toBe(true);
   });
   it("releases loading if automatic Photoshop notifications are unavailable", async () => {
