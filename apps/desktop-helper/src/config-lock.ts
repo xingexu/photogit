@@ -52,7 +52,9 @@ function helperProcessExists(pid: number): boolean {
   if (!processExists(pid)) return false;
   if (pid === process.pid) return true;
   try {
-    const command = execFileSync("ps", ["-p", String(pid), "-o", "comm="], { encoding: "utf8", timeout: 2000 }).trim();
+    // The full command line, not comm: Node 24 on Linux renames its main
+    // thread, so comm no longer says "node".
+    const command = execFileSync("ps", ["-p", String(pid), "-o", "args="], { encoding: "utf8", timeout: 2000 }).trim();
     return command === "" || /node/i.test(command);
   } catch { return true; }
 }
