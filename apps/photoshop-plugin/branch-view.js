@@ -22,7 +22,7 @@ function latestVersion(branch, dateLabel) {
   return [subject, day].filter(Boolean).join(" · ") || "Local branch";
 }
 
-function render(container, { branches = [], current, onSwitch, previews, demoPreviews, dateLabel } = {}) {
+function render(container, { branches = [], current, onSwitch, onRename, previews, demoPreviews, dateLabel } = {}) {
   const document = container.ownerDocument;
   container.textContent = "";
   container.classList.add("branch-list");
@@ -85,6 +85,24 @@ function render(container, { branches = [], current, onSwitch, previews, demoPre
     meta.title = meta.textContent;
     copy.appendChild(meta);
     row.appendChild(copy);
+    if (typeof onRename === "function") {
+      // Its own control inside the row: renaming never switches branches.
+      const rename = document.createElement("div");
+      rename.className = "icon-button row-rename";
+      rename.setAttribute("role", "button");
+      rename.setAttribute("aria-label", `Rename ${branch.name}`);
+      rename.title = "Rename branch";
+      rename.tabIndex = -1;
+      rename.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4l10-10-4-4L4 16v4zm9-13 4 4"/></svg>';
+      const invoke = event => {
+        event.stopPropagation();
+        if (document.body.classList.contains("is-busy") || document.body.classList.contains("is-initializing")) return;
+        onRename(branch.name);
+      };
+      rename.addEventListener("click", invoke);
+      row.appendChild(rename);
+      row.addEventListener("keydown", event => { if (event.key === "F2") { event.preventDefault(); invoke(event); } });
+    }
     if (switchable) {
       row.classList.add("is-switchable");
       row.setAttribute("role", "button");

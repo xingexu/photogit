@@ -1,6 +1,7 @@
 /* PhotoGit · Midnight panel.
    One dark, flat appearance that sits inside Photoshop's own dark UI: solid
-   surfaces, 1px borders, 4px corners, one blue accent. Nothing is drawn with
+   surfaces, 1px borders, soft 8px corners and pill-round controls, one blue
+   accent. Nothing is drawn with
    gradients, blur or shadow, and state is never carried by colour alone: an
    added, edited or removed row is told apart by its marker tile and its
    wording. Every colour is a token in this block and nowhere else.
@@ -16,7 +17,7 @@
   --scrim: rgba(0,0,0,.55);
   --space: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
   --text-label: 11px; --text-secondary: 12px; --text-base: 13px; --text-title: 15px;
-  --control: 32px; --control-tall: 32px; --radius: 4px; --radius-pill: 14px;
+  --control: 32px; --control-tall: 32px; --radius: 8px; --radius-control: 16px; --radius-pill: 14px;
   /* One stacking scale: a status toast, then the scrim, then what sits on the
      scrim. The fade veil in motion.js is the only thing above these, at 50. */
   --z-toast: 10; --z-scrim: 20; --z-surface: 30;
@@ -45,11 +46,11 @@ img { max-width: 100%; }
 .workspace-content { flex: 1; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
 .view-scroll { flex: 1; min-height: 0; overflow-x: hidden; overflow-y: auto; padding: var(--space-3); scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
 /* A wide floating panel keeps lines readable instead of running edge to edge. */
-.view-panel { min-width: 0; max-width: 640px; }
+.view-panel { min-width: 0; }
 
 .top-bar { flex: none; display: flex; align-items: center; height: 48px; padding: 0 var(--space-3); border-bottom: 1px solid var(--edge-dark); background: var(--bg-bar); }
 .top-bar > * + * { margin-left: var(--space-2); }
-.branch-switcher { display: flex; align-items: center; flex: 0 1 auto; min-width: 0; height: var(--control); padding: 0 var(--space-2); border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-raised); color: var(--text-strong); }
+.branch-switcher { display: flex; align-items: center; flex: 0 1 auto; min-width: 0; height: var(--control); padding: 0 var(--space-3); border: 1px solid var(--border); border-radius: var(--radius-control); background: var(--bg-raised); color: var(--text-strong); }
 .branch-switcher strong { margin: 0 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .branch-switcher svg { color: var(--text-2); }
 .branch-chevron { width: 12px; height: 12px; }
@@ -58,7 +59,7 @@ img { max-width: 100%; }
 .repo-state { display: flex; align-items: center; flex: none; color: var(--text-2); font-size: var(--text-label); white-space: nowrap; }
 .repo-state i { display: block; width: 6px; height: 6px; margin-right: 4px; border: 1px solid var(--text-2); border-radius: 3px; }
 .repo-state.ok { display: none; }
-.icon-button { display: flex; align-items: center; justify-content: center; flex: none; width: var(--control); height: var(--control); border-radius: var(--radius); color: var(--text); }
+.icon-button { display: flex; align-items: center; justify-content: center; flex: none; width: var(--control); height: var(--control); border-radius: var(--radius-control); color: var(--text); }
 
 .tab-strip { position: relative; flex: none; display: flex; border-bottom: 1px solid var(--edge-dark); background: var(--bg-bar); }
 /* One underline for the strip; the script slides it under the selected tab. */
@@ -117,7 +118,7 @@ img { max-width: 100%; }
 /* Controls. A control is a flat box with a 1px border; the one filled
    control on a screen is the primary action. */
 [role="button"], [role="tab"], [role="menuitem"] { cursor: pointer; }
-.button { display: inline-flex; align-items: center; justify-content: center; min-height: var(--control-tall); padding: 0 var(--space-3); border: 1px solid var(--border-strong); border-radius: var(--radius); background: transparent; color: var(--text-strong); font-weight: 600; white-space: nowrap; }
+.button { display: inline-flex; align-items: center; justify-content: center; min-height: var(--control-tall); padding: 0 var(--space-4); border: 1px solid var(--border-strong); border-radius: var(--radius-control); background: transparent; color: var(--text-strong); font-weight: 600; white-space: nowrap; }
 .button svg { margin-right: 6px; }
 .button-primary { border-color: var(--accent); background: var(--accent); color: var(--text-strong); }
 .button-small { min-height: var(--control); padding: 0 10px; font-size: var(--text-secondary); }
@@ -172,7 +173,7 @@ body.has-toast .search-field input { display: none; }
 /* Pills: filters and quick-fill suggestions. */
 .filter-bar { display: flex; flex-wrap: wrap; }
 .preset, .filter-chip { display: inline-flex; align-items: center; min-height: 28px; margin: 0 8px 8px 0; padding: 0 12px; border: 1px solid var(--border-strong); border-radius: var(--radius-pill); background: transparent; color: var(--text); font-size: var(--text-secondary); white-space: nowrap; }
-.filter-chip[aria-pressed="true"] { border-color: var(--text-muted); background: var(--bg-selected); color: var(--text-strong); font-weight: 600; }
+.filter-chip[aria-pressed="true"], .filter-chip[aria-checked="true"] { border-color: var(--text-muted); background: var(--bg-selected); color: var(--text-strong); font-weight: 600; }
 .chip-count { margin-left: 4px; font-weight: inherit; font-variant-numeric: tabular-nums; }
 /* A filter that would show nothing is not offered. */
 .filter-chip.is-empty { display: none; }
@@ -237,6 +238,11 @@ body.has-toast .search-field input { display: none; }
 .branch-row-icon { display: flex; align-items: center; justify-content: center; flex: none; width: 40px; height: 40px; margin-right: var(--space-3); border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-recessed); color: var(--text-muted); }
 .branch-row.has-preview .branch-row-icon { display: none; }
 .branch-row-copy { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+/* Rename appears only under the pointer; F2 renames from the keyboard. */
+.row-rename { display: none; width: 28px; height: 28px; margin-left: var(--space); color: var(--text-muted); }
+.history-row:hover .row-rename, .branch-row:hover .row-rename { display: flex; }
+.row-rename:hover { color: var(--text-strong); }
+.export-formats { display: flex; flex-wrap: wrap; margin-top: var(--space); }
 .branch-row-copy strong { overflow: hidden; color: var(--text-strong); text-overflow: ellipsis; white-space: nowrap; }
 .branch-row-copy span { overflow: hidden; color: var(--text-muted); font-size: var(--text-secondary); text-overflow: ellipsis; white-space: nowrap; }
 .branch-row.current .branch-row-copy span { color: var(--text-2); }
@@ -299,6 +305,8 @@ body.has-toast .search-field input { display: none; }
 .status-message.error:not(:empty) { border-left: 2px solid var(--text-strong); color: var(--text-strong); }
 /* With nothing to say it takes no room. */
 .status-message:empty { display: none; }
+/* The connection notice owns the top of the panel; the toast sits above the footer instead. */
+body.has-connection-notice .status-message { top: auto; bottom: 48px; }
 .startup-card, .onboarding { flex: none; margin: var(--space-3); padding: var(--space-4); border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-raised); }
 .startup-card p { margin-top: var(--space); color: var(--text-muted); }
 .startup-skeleton { margin-top: var(--space-3); }
@@ -331,12 +339,15 @@ body.has-toast .search-field input { display: none; }
 .tool-item svg { margin-right: var(--space-2); color: var(--text-muted); }
 .menu-rule { height: 1px; margin: var(--space) 0; background: var(--border); }
 .tool-sheet { position: fixed; top: var(--space-2); right: var(--space-2); bottom: var(--space-2); left: var(--space-2); z-index: var(--z-surface); display: flex; flex-direction: column; padding: var(--space-3); background: var(--bg); }
-#tag-sheet { bottom: auto; }
-#tag-sheet .field-shell, #tag-sheet-help { margin-bottom: var(--space-2); }
+#tag-sheet, #rename-sheet { bottom: auto; }
+#tag-sheet .field-shell, #tag-sheet-help, #rename-sheet .field-shell, #rename-sheet-help { margin-bottom: var(--space-2); }
 .tool-sheet .section-heading { flex: none; }
 .detail-content { flex: 1; min-height: 0; overflow-y: auto; white-space: pre-line; }
 .detail-content .version-inspector, .detail-content .review-inspector, .detail-content > div { white-space: normal; }
 #detail-action { flex: none; margin-top: var(--space-2); }
+#detail-sheet.is-compact { bottom: auto; max-height: calc(100% - 16px); }
+#detail-sheet.is-compact .detail-content { flex: none; }
+.detail-error { flex: none; margin-top: var(--space-2); padding: var(--space-2) var(--space-3); border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--bg-recessed); color: var(--text-strong); white-space: pre-line; }
 
 /* Version details and branch comparison, shown in the dialog. */
 .version-inspector-header { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; }
@@ -347,8 +358,8 @@ body.has-toast .search-field input { display: none; }
 .version-inspector-grid > * + * { margin-top: var(--space-3); }
 .version-compare-toggle { display: flex; margin-bottom: var(--space-2); }
 .version-compare-toggle .button { flex: 1 1 0; border-radius: 0; }
-.version-compare-toggle .button:first-child { border-radius: var(--radius) 0 0 var(--radius); }
-.version-compare-toggle .button:last-child { border-left: 0; border-radius: 0 var(--radius) var(--radius) 0; }
+.version-compare-toggle .button:first-child { border-radius: var(--radius-control) 0 0 var(--radius-control); }
+.version-compare-toggle .button:last-child { border-left: 0; border-radius: 0 var(--radius-control) var(--radius-control) 0; }
 .version-compare-toggle .button[aria-pressed="true"] { background: var(--bg-selected); }
 .version-preview-pair[data-show="after"] .version-before, .version-preview-pair[data-show="before"] .version-inspector-preview { display: none; }
 .version-preview-label { margin-bottom: 4px; color: var(--text-muted); font-size: var(--text-secondary); }

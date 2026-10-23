@@ -11,7 +11,7 @@ import { canonicalJson, stateFromCapture } from "@photogit/serializer";
 import { diffStates, layerKindLabel, type SemanticChange } from "@photogit/differ";
 import { assertHelperArguments, isLoopbackHost, parseHelperConfig, publicRepositoryInfo, safeErrorText, secureWrite, type HelperConfig } from "./security.js";
 import { acquireConfigLock } from "./config-lock.js";
-import { drainBridgeRoot, ensureBridgeFolders, readBoundedText, tokensMatch } from "./bridge.js";
+import { drainBridgeRoot, ensureBridgeFolders, readBoundedText, removeBridgeHeartbeat, tokensMatch, writeBridgeHeartbeat } from "./bridge.js";
 
 class SlidingWindowLimiter {
   private readonly requests = new Map<string, number[]>();
@@ -33,9 +33,12 @@ const port = numericOption("--port", DEFAULT_HELPER_PORT);
 const approvedFromArgs = repeatedOption("--approve-root").map((path) => resolve(path));
 const releaseLock = await acquireConfigLock(configPath);
 let exiting = false;
+let heartbeatRoots: string[] = [];
 async function shutdown(code: number): Promise<void> {
   if (exiting) return;
   exiting = true;
+  // Tell open panels at once that the service stopped.
+  await Promise.all(heartbeatRoots.map((root) => removeBridgeHeartbeat(root)));
   await releaseLock();
   process.exit(code);
 }
@@ -155,6 +158,14 @@ async function executeRequest(payload: HelperRequest, helperConfig: HelperConfig
     return { tag: payload.tag };
   }
   if (payload.operation === "pullRequestLink") return { url: await repository.pullRequestUrl(payload.base) };
+  if (payload.operation === "renameVersion") {
+    const renamed = await repository.renameVersion(payload.version!, payload.title!);
+    return { outcome: "success", versionId: renamed.id, title: renamed.title };
+  }
+  if (payload.operation === "renameBranch") {
+    await repository.renameBranch(payload.branch!, payload.newBranch!);
+    return { outcome: "success", branch: payload.newBranch, previousBranch: payload.branch };
+  }
   if (payload.operation !== "capture") throw coded("UNKNOWN_OPERATION", "Unknown helper operation.");
 
   for (const path of [payload.snapshotPath, payload.previewPath]) {
@@ -341,6 +352,16 @@ function startFileBridge(helperConfig: HelperConfig): void {
   };
   void drain();
   setInterval(() => void drain(), 150);
+  // The heartbeat runs on its own timer so a long Git operation never makes
+  // a live helper look offline to the panel.
+  const beat = async () => {
+    for (const root of helperConfig.approvedRoots) {
+      await writeBridgeHeartbeat(root).catch((error) => log("error", { event: "bridge_heartbeat_failed", message: safeMessage(error) }));
+    }
+  };
+  void beat();
+  setInterval(() => void beat(), 1000);
+  heartbeatRoots = helperConfig.approvedRoots;
 }
 
 

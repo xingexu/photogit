@@ -25,6 +25,13 @@ entrypoints.setup({
 const PROTOCOL_VERSION = 1;
 const HELPER_TIMEOUT_MS = 120000;
 const HELPER_HEALTH_TIMEOUT_MS = 5000;
+// The helper rewrites its heartbeat every second from a timer of its own, and
+// claims a request within one 150 ms poll. A request nobody claimed while the
+// heartbeat is stale was never seen, so it can be withdrawn and reported at once.
+const HELPER_HEARTBEAT_STALE_MS = 4000;
+const HELPER_PICKUP_GRACE_MS = 1500;
+const HELPER_WATCH_INTERVAL_MS = 1000;
+const HELPER_START_GRACE_MS = 4000;
 const MAX_HELPER_IO_BYTES = 5 * 1024 * 1024;
 const MAX_CAPTURE_LAYERS = 50_000;
 const MAX_VISIBLE_CHANGES = 500;
@@ -36,6 +43,7 @@ const IGNORED_PHOTOSHOP_EVENTS = new Set(["select", "deselect", "invokeCommand",
 let projectFolder = null;
 let helperToken = null;
 let busyNow = false;
+let runningLabel = "";
 let historyEntries = [];
 let branchTips = {};
 let historyPreviews = {};
@@ -137,7 +145,16 @@ function bindPanelEvents() {
   bind("tool-create-tag", "click", openTagSheet);
   bind("tool-settings", "click", openRepositorySettings);
   bind("close-tag-sheet", "click", () => closeTagSheet(false, true));
-  bind("surface-backdrop", "click", () => { closeTagSheet(false, true); closeDetail(false); });
+  bind("surface-backdrop", "click", () => { closeTagSheet(false, true); closeRenameSheet(false, true); closeExportSheet(false, true); closeDetail(false); });
+  bind("close-export-sheet", "click", () => closeExportSheet(false, true));
+  bind("export-confirm", "click", submitExport);
+  for (const option of document.querySelectorAll("#export-formats [data-format]")) {
+    option.addEventListener("click", () => selectExportFormat(option.dataset.format));
+    activateOnKeyboard(option, () => selectExportFormat(option.dataset.format));
+  }
+  bind("close-rename-sheet", "click", () => closeRenameSheet(false, true));
+  bind("rename-confirm", "click", submitRename);
+  bindInputAction("rename-input", submitRename);
   bind("create-tag", "click", createTag);
   bindInputAction("message", saveVersion);
   bindInputAction("new-branch-name", createBranch);
@@ -225,12 +242,19 @@ async function startPanel() {
     if (folderToken) {
       try {
         projectFolder = await startupRead(storage.localFileSystem.getEntryForPersistentToken(folderToken));
-        await startupRead(loadPairing());
       } catch {
         try { localStorage.removeItem("photogit.projectFolderToken"); } catch { /* Continue with setup. */ }
         projectFolder = null;
         helperToken = null;
         show("Your saved project connection is unavailable. Connect the project again.", true);
+      }
+      // A pairing that can't be read yet (the helper writes it when it starts)
+      // keeps the project: the helper watch pairs again once it is running.
+      if (projectFolder) {
+        // A read that outlives its deadline is abandoned, never applied late.
+        let abandoned = false;
+        try { await startupRead(loadPairing(() => !abandoned)); }
+        catch (error) { abandoned = true; helperToken = null; log(`Pairing not ready: ${error.message || String(error)}`); }
       }
     }
     document.getElementById("startup-message").textContent = projectFolder ? "Checking the helper and loading saved versions." : "Preparing your workspace.";
@@ -247,6 +271,7 @@ async function startPanel() {
     setStartup(false);
   }
   await installPhotoshopChangeDetection();
+  watchHelper();
   await restorePanelState();
   if (helperOnline) queueAutomaticScan("initial-load", 150);
 }
@@ -271,7 +296,12 @@ function setStartup(active) {
 function bind(id, event, handler) {
   const element = document.getElementById(id);
   const invoke = (inputEvent) => {
-    if (startupPending) return;
+    // A press while the panel opens is answered, never silently dropped;
+    // Reconnect runs as soon as opening finishes.
+    if (startupPending) {
+      if (id === "reconnect-helper") { show("Reconnecting as soon as PhotoGit finishes opening…", false); void startupPromise?.then(() => reconnectHelper()); return; }
+      return show("PhotoGit is still opening your project. One moment…", false);
+    }
     // An unavailable control still answers a press: it says why.
     if (element.getAttribute("aria-disabled") === "true") {
       if (busyNow || !element.dataset.unavailable) return;
@@ -339,7 +369,7 @@ function handleTabKeyboard(event) {
 }
 
 function handleGlobalKeyboard(event) {
-  const sheet = !document.getElementById("detail-sheet").hidden ? document.getElementById("detail-sheet") : document.getElementById("tag-sheet");
+  const sheet = ["detail-sheet", "rename-sheet", "export-sheet", "tag-sheet"].map(id => document.getElementById(id)).find(element => !element.hidden) || document.getElementById("tag-sheet");
   if (!sheet.hidden && event.key === "Tab") {
     const controls = Array.from(sheet.querySelectorAll('[tabindex="0"], input:not([disabled])')).filter(control => !control.hidden && control.getAttribute("aria-disabled") !== "true");
     const first = controls[0];
@@ -357,6 +387,8 @@ function handleGlobalKeyboard(event) {
   if (!sheet.hidden) {
     event.preventDefault();
     event.stopPropagation();
+    if (sheet.id === "rename-sheet") return closeRenameSheet(false, true);
+    if (sheet.id === "export-sheet") return closeExportSheet(false, true);
     return sheet.id === "detail-sheet" ? closeDetail(false) : closeTagSheet(false, true);
   }
   const menu = document.getElementById("tools-menu");
@@ -397,7 +429,7 @@ function handleOutsideClick(event) {
 }
 
 async function chooseProject() {
-  if (busyNow) return show("PhotoGit is busy. Try again in a moment.", true);
+  if (busyNow) return show(`Still working on “${runningLabel.replace(/…$/, "")}”. Choose the project again when it finishes.`, true);
   const folder = await storage.localFileSystem.getFolder();
   if (!folder) return;
   savePanelState();
@@ -415,6 +447,7 @@ async function chooseProject() {
   branchView.render(document.getElementById("branch-list"));
   selectedVersionId = null;
   expandedReview = null;
+  runningLabel = "Opening project…";
   busy(true);
   try {
   const token = await storage.localFileSystem.createPersistentToken(folder);
@@ -432,7 +465,7 @@ async function chooseProject() {
   await restorePanelState();
 }
 
-async function loadPairing() {
+async function loadPairing(stillWanted = () => true) {
   if (!projectFolder) throw new Error("No project folder selected.");
   const folder = projectFolder;
   const photogit = await folder.getEntry(".photogit");
@@ -441,7 +474,7 @@ async function loadPairing() {
   if (utf8ByteLength(pairingText) > 65_536) throw new Error("The project helper pairing file is too large.");
   const pairing = JSON.parse(pairingText);
   if (!isHelperRecord(pairing) || pairing.protocolVersion !== PROTOCOL_VERSION || typeof pairing.token !== "string" || !/^[A-Za-z0-9_-]{32,200}$/.test(pairing.token)) throw new Error("The project helper pairing is invalid.");
-  if (projectFolder !== folder) throw new panelModel.StaleScanError();
+  if (projectFolder !== folder || !stillWanted()) throw new panelModel.StaleScanError();
   helperToken = pairing.token;
   await Promise.all([
     ensureFolder(folder, ".photogit/bridge/requests"),
@@ -477,8 +510,8 @@ async function refreshWorkspace(announceErrors = false, readTimeoutMs = HELPER_T
   } catch (error) {
     if (!current() || error.name === "StaleScanError") return;
     setHelper("Not connected", false);
-    document.getElementById("connection-message").textContent = `PhotoGit’s background service isn’t responding. Your saved versions are safe. Start the service for “${safeInlineText(projectFolder.name, 200)}”, then choose Reconnect.`;
-    document.getElementById("setup-command-live").textContent = `npm run helper -- --approve-root "${projectFolder.nativePath || projectFolder.name}"`;
+    document.getElementById("connection-message").textContent = `PhotoGit’s background service isn’t responding. Your saved versions are safe. Start the service for “${safeInlineText(projectFolder.name, 200)}”, and PhotoGit reconnects on its own.`;
+    document.getElementById("setup-command-live").textContent = helperStartCommand(projectFolder);
     log(`Refresh failed: ${error.message || String(error)}`);
     if (announceErrors) show(error.message || "PhotoGit could not refresh this project.", true);
   }
@@ -538,7 +571,7 @@ async function loadBranches(existingResult) {
     if (folder !== projectFolder) return show("The project changed. Refresh the branch list before switching.", true);
     return executeCommand(`switch ${branch}`);
   };
-  branchView.render(document.getElementById("branch-list"), { branches: result.branches, current: result.current, previews: branchPreviews, onSwitch, dateLabel: historyDateLabel });
+  branchView.render(document.getElementById("branch-list"), { branches: result.branches, current: result.current, previews: branchPreviews, onSwitch, onRename: renameBranch, dateLabel: historyDateLabel });
   // Previews are decorative. Load them in the background so the branch list stays
   // immediately usable and a slow or missing preview never delays switching.
   void loadBranchPreviews(folder, result, onSwitch);
@@ -555,7 +588,7 @@ async function loadBranchPreviews(folder, result, onSwitch) {
     if (preview) loaded += 1;
   }
   if (!loaded || folder !== projectFolder) return;
-  branchView.render(document.getElementById("branch-list"), { branches: result.branches, current: result.current, previews: branchPreviews, onSwitch, dateLabel: historyDateLabel });
+  branchView.render(document.getElementById("branch-list"), { branches: result.branches, current: result.current, previews: branchPreviews, onSwitch, onRename: renameBranch, dateLabel: historyDateLabel });
 }
 
 async function loadHistory(existingResult) {
@@ -682,6 +715,8 @@ function renderHistory(versions) {
       const choose = () => { selectVersion(version.id); document.querySelector("#history .history-entry.selected .history-row")?.focus(); };
       row.addEventListener("click", choose);
       activateOnKeyboard(row, choose);
+      row.addEventListener("keydown", event => { if (event.key === "F2") { event.preventDefault(); renameVersion(version); } });
+      row.appendChild(hoverRenameButton(`Rename version ${version.shortId}`, () => renameVersion(version)));
       entry.appendChild(row);
       if (selected) entry.appendChild(historyActions(version));
       entries.appendChild(entry);
@@ -692,7 +727,24 @@ function renderHistory(versions) {
   if (reveal && typeof reveal.stagger === "function") reveal.stagger(container.querySelectorAll(".history-entry"));
 }
 
-// The selected version carries its two actions; no version is acted on
+// Rename sits on the row itself and only shows while the row is hovered, so
+// the list stays calm. F2 renames a focused row from the keyboard.
+function hoverRenameButton(label, onRename) {
+  const control = document.createElement("div");
+  control.className = "icon-button row-rename";
+  control.setAttribute("role", "button");
+  control.setAttribute("aria-label", label);
+  control.title = "Rename";
+  control.tabIndex = -1;
+  control.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4l10-10-4-4L4 16v4zm9-13 4 4"/></svg>';
+  control.addEventListener("click", event => {
+    event.stopPropagation();
+    if (!busyNow && !startupPending) onRename();
+  });
+  return control;
+}
+
+// The selected version carries its actions; no version is acted on
 // without first being the one that is visibly selected.
 function historyActions(version) {
   const actions = document.createElement("div");
@@ -712,6 +764,7 @@ function historyActions(version) {
   const folder = projectFolder;
   button("Compare", "button-primary", `Compare version ${version.shortId} with the open document`, () => compareWithCurrent(version, folder));
   button("Restore", "", `Restore version ${version.shortId} as a separate copy`, () => restoreVersion(version, folder));
+  button("Export", "", `Export version ${version.shortId} as an image`, () => openExportSheet(version));
   const wrap = document.createElement("div");
   wrap.className = "history-card-actions";
   wrap.appendChild(actions);
@@ -906,15 +959,44 @@ function connectDocument() {
   }));
 }
 
-async function reconnectHelper() {
-  if (busyNow) return show("PhotoGit is busy. Try again in a moment.", false);
+let reconnecting = null;
+function reconnectHelper({ quiet = false } = {}) {
   if (!projectFolder) return chooseProject();
+  // Presses during a reconnect join it rather than starting another.
+  if (!reconnecting) reconnecting = reconnectWhenIdle(quiet).finally(() => { reconnecting = null; });
+  return reconnecting;
+}
+
+async function reconnectWhenIdle(quiet) {
   // The header dot breathes while the reconnect is in flight.
   const status = document.getElementById("helper-status");
   status.classList.add("is-reconnecting");
-  try { await loadPairing(); await refreshWorkspace(true); if (helperOnline) { show("Connected.", false); queueAutomaticScan("reconnected", 100); } }
-  catch (error) { show(`${error.message} Finish setup for this project, then choose Reconnect.`, true); }
+  try {
+    // An exclusive operation finishes first; the reconnect follows it rather
+    // than being refused.
+    if (busyNow) { if (!quiet) show("Reconnecting once the current step finishes…", false); await whenIdle(); }
+    const folder = projectFolder;
+    if (!folder) return;
+    await loadPairing();
+    if (projectFolder !== folder) return;
+    await refreshWorkspace(!quiet);
+    if (helperOnline) { show("Connected.", false); queueAutomaticScan("reconnected", 100); }
+  }
+  catch (error) { if (error.name !== "StaleScanError" && !quiet) show(`${error.message} Finish setup for this project, then choose Reconnect.`, true); }
   finally { status.classList.remove("is-reconnecting"); }
+}
+
+// While disconnected, the panel watches for the helper to come back and
+// reconnects by itself, so starting the service is the only step.
+let helperWatchTimer = null;
+function watchHelper() {
+  if (helperWatchTimer) return;
+  const tick = async () => {
+    try {
+      if (!helperOnline && !reconnecting && !busyNow && !startupPending && projectFolder && await helperAlive(projectFolder)) await reconnectHelper({ quiet: true });
+    } finally { helperWatchTimer = setTimeout(tick, HELPER_WATCH_INTERVAL_MS); }
+  };
+  helperWatchTimer = setTimeout(tick, HELPER_WATCH_INTERVAL_MS);
 }
 
 async function saveVersion() {
@@ -1131,6 +1213,180 @@ function openTagSheet() {
   document.getElementById("tag-name").focus();
 }
 
+// One sheet renames whatever asks for it: a version's title, a branch.
+let renameRequest = null;
+function openRenameSheet({ title, help, label, value, maxLength = 500, onSubmit }) {
+  closeToolsMenu(true);
+  if (!document.getElementById("detail-sheet").hidden) closeDetail(true);
+  surfaceReturnFocus = surfaceReturnFocus || document.activeElement;
+  renameRequest = { onSubmit, value };
+  document.getElementById("rename-sheet-title").textContent = title;
+  document.getElementById("rename-sheet-help").textContent = help;
+  document.getElementById("rename-label").textContent = label;
+  const input = document.getElementById("rename-input");
+  input.maxLength = maxLength;
+  input.value = value;
+  setSheetError(document.getElementById("rename-sheet"), "");
+  openBackdrop();
+  openSurface(document.getElementById("rename-sheet"));
+  input.focus();
+  try { input.select(); } catch { /* Selection is a convenience. */ }
+}
+
+function closeRenameSheet(immediate = false, returnFocus = false) {
+  const sheet = document.getElementById("rename-sheet");
+  if (sheet.hidden) return;
+  closeSurface(sheet, immediate);
+  closeBackdrop(immediate);
+  renameRequest = null;
+  if (returnFocus && surfaceReturnFocus?.focus) surfaceReturnFocus.focus();
+}
+
+function submitRename() {
+  const request = renameRequest;
+  if (!request) return;
+  const input = document.getElementById("rename-input");
+  const value = input.value.trim();
+  if (!value) { input.focus(); return show("Enter a name.", true); }
+  if (value === request.value) return closeRenameSheet(false, true);
+  return request.onSubmit(value);
+}
+
+function renameVersion(version) {
+  if (!ensureReady()) return;
+  const folder = projectFolder;
+  openRenameSheet({
+    title: "Rename version",
+    help: `Give version ${version.shortId} a clearer title. The version itself is unchanged.`,
+    label: "Version title",
+    value: version.message,
+    onSubmit: title => run("Renaming version…", async () => {
+      if (projectFolder !== folder) throw new Error("The project changed. Rename the version again.");
+      await callHelper("renameVersion", { version: version.id, title });
+      closeRenameSheet(false, true);
+      await loadHistory(await callHelper("history", {}));
+      await loadBranches(await callHelper("branches", {}));
+      show(`Renamed version ${version.shortId}.`, false);
+    })
+  });
+}
+
+function renameBranch(branch) {
+  if (!ensureReady()) return;
+  const folder = projectFolder;
+  openRenameSheet({
+    title: "Rename branch",
+    help: "Letters, numbers, dots, dashes and slashes, such as hero-option-b.",
+    label: "Branch name",
+    value: branch,
+    maxLength: 200,
+    onSubmit: name => run(`Renaming ${branch}…`, async () => {
+      if (projectFolder !== folder) throw new Error("The project changed. Rename the branch again.");
+      await callHelper("renameBranch", { branch, newBranch: name });
+      closeRenameSheet(false, true);
+      await refreshWorkspace();
+      show(`Renamed ${branch} to ${name}.`, false);
+    })
+  });
+}
+
+// A saved version leaves PhotoGit as an ordinary image file. Photoshop itself
+// writes it: the version's PSD opens as a copy, is saved in the chosen format
+// where the designer picks, and closes again without touching the project.
+const EXPORT_FORMATS = {
+  png: { label: "PNG", ext: "png", note: "Lossless and keeps transparency. Best for screens." },
+  jpg: { label: "JPEG", ext: "jpg", note: "Smallest file, flattened onto white. Best for sharing." },
+  tiff: { label: "TIFF", ext: "tif", note: "Lossless and high fidelity. Best for print." },
+  psd: { label: "PSD", ext: "psd", note: "The full Photoshop file, with every layer." }
+};
+let exportRequest = null;
+
+function openExportSheet(version) {
+  if (!ensureReady()) return;
+  closeToolsMenu(true);
+  surfaceReturnFocus = document.activeElement;
+  exportRequest = { version, folder: projectFolder };
+  document.getElementById("export-sheet-help").textContent = `Save version ${version.shortId}, “${safeInlineText(version.message, 120)}”, as a file.`;
+  let saved = "png";
+  try { saved = localStorage.getItem("photogit.exportFormat") || "png"; } catch { /* Default format. */ }
+  selectExportFormat(EXPORT_FORMATS[saved] ? saved : "png");
+  setSheetError(document.getElementById("export-sheet"), "");
+  openBackdrop();
+  openSurface(document.getElementById("export-sheet"));
+  document.querySelector("#export-formats [aria-checked='true']")?.focus();
+}
+
+function selectExportFormat(id) {
+  const format = EXPORT_FORMATS[id];
+  if (!format) return;
+  const options = [...document.querySelectorAll("#export-formats [data-format]")];
+  const change = () => {
+    for (const option of options) {
+      const chosen = option.dataset.format === id;
+      option.setAttribute("aria-checked", String(chosen));
+      option.classList.toggle("is-selected", chosen);
+      option.tabIndex = chosen ? 0 : -1;
+    }
+  };
+  const motion = globalThis.PhotoGitMotion;
+  if (motion && typeof motion.recolour === "function") motion.recolour(options, change); else change();
+  document.getElementById("export-format-note").textContent = format.note;
+  document.getElementById("export-confirm").textContent = `Export ${format.label}…`;
+  if (exportRequest) exportRequest.format = id;
+  try { localStorage.setItem("photogit.exportFormat", id); } catch { /* Remembering is optional. */ }
+}
+
+function closeExportSheet(immediate = false, returnFocus = false) {
+  const sheet = document.getElementById("export-sheet");
+  if (sheet.hidden) return;
+  closeSurface(sheet, immediate);
+  closeBackdrop(immediate);
+  exportRequest = null;
+  if (returnFocus && surfaceReturnFocus?.focus) surfaceReturnFocus.focus();
+}
+
+function exportFileName(version, format) {
+  const base = String(version.message || "version").normalize("NFKD").replace(/[^A-Za-z0-9 ._-]+/g, "").trim().replace(/\s+/g, "-").slice(0, 60) || "version";
+  return `${base}-${version.shortId}.${format.ext}`;
+}
+
+function submitExport() {
+  const request = exportRequest;
+  if (!request || !request.format) return;
+  const { version, folder } = request;
+  const format = EXPORT_FORMATS[request.format];
+  return run(`Exporting ${format.label}…`, async () => {
+    if (folder !== projectFolder) throw new Error("The project changed. Export the version again.");
+    const file = await storage.localFileSystem.getFileForSaving(exportFileName(version, format), { types: [format.ext] });
+    if (!file) return show("Export cancelled.", false);
+    const result = await callHelper("openVersion", { version: version.id });
+    const snapshot = await folder.getEntry(result.snapshotPath);
+    suppressNotifications = true;
+    try {
+      await core.executeAsModal(async () => {
+        const doc = await app.open(snapshot);
+        try { await saveDocumentAs(doc, request.format, file); }
+        finally { await doc.closeWithoutSaving(); }
+      }, { commandName: "Export PhotoGit version" });
+    } finally { suppressNotifications = false; }
+    closeExportSheet(false, true);
+    log(`Exported version ${version.shortId} as ${format.label}.`);
+    show(`Exported version ${version.shortId} as ${safeInlineText(file.name, 200)}.`, false);
+  });
+}
+
+async function saveDocumentAs(doc, format, file) {
+  if (format === "png") return doc.saveAs.png(file, { compression: 6 }, true);
+  if (format === "jpg") return doc.saveAs.jpg(file, { quality: 12 }, true);
+  if (format === "psd") return doc.saveAs.psd(file, { embedColorProfile: true, maximizeCompatibility: true }, true);
+  if (format === "tiff") {
+    // The DOM has no TIFF writer; Photoshop's own save command does.
+    const token = storage.localFileSystem.createSessionToken(file);
+    return action.batchPlay([{ _obj: "save", as: { _obj: "TIFF", byteOrder: { _enum: "platform", _value: "IBMPC" }, LZWCompression: true }, in: { _path: token, _kind: "local" }, documentID: doc.id, copy: true, lowerCase: true }], {});
+  }
+  throw new Error("Choose an image format to export.");
+}
+
 function closeTagSheet(immediate = false, returnFocus = false) {
   closeSurface(document.getElementById("tag-sheet"), immediate);
   closeBackdrop(immediate);
@@ -1244,9 +1500,23 @@ function openDetail(title, content, actionLabel = "", action = null) {
   button.hidden = !action;
   button.textContent = actionLabel;
   detailAction = action;
+  setDetailError("");
+  // A short confirmation sizes to its words, so its button sits right under
+  // them instead of at the panel's bottom edge, where Photoshop's floating
+  // contextual task bar can cover it.
+  document.getElementById("detail-sheet").classList.toggle("is-compact", Boolean(content));
   openBackdrop();
   openSurface(document.getElementById("detail-sheet"));
   document.getElementById("close-detail").focus();
+}
+
+function setDetailError(message) { setSheetError(document.getElementById("detail-sheet"), message); }
+
+function setSheetError(sheet, message) {
+  const note = sheet?.querySelector(".sheet-error");
+  if (!note) return;
+  note.textContent = safeInlineText(message, 800);
+  note.hidden = !message;
 }
 
 function closeDetail(immediate = true) {
@@ -1379,15 +1649,24 @@ async function callHelper(operation, fields = {}, timeoutMs = HELPER_TIMEOUT_MS)
   await readyFile.write("ready\n");
 
   const deadline = Date.now() + timeoutMs;
+  let nextLivenessCheck = Date.now() + Math.min(HELPER_PICKUP_GRACE_MS, timeoutMs);
   let responseFile = null;
   while (Date.now() < deadline) {
     try {
       await responses.getEntry(`${requestId}.ready`);
       responseFile = await responses.getEntry(`${requestId}.json`);
       break;
-    } catch {
-      await delay(125);
+    } catch { /* Not answered yet. */ }
+    if (Date.now() >= nextLivenessCheck) {
+      nextLivenessCheck = Date.now() + 1000;
+      if (!await entryExists(requests, `${requestId}.claim`) && !await helperAlive(folder) && await withdrawRequest(requests, requestId)) {
+        // Withdrawn before the helper claimed it: nothing ran, so this is a
+        // plain connection failure, never an unknown outcome.
+        await removeEntry(requests, `${requestId}.json`);
+        throw helperOfflineError(folder);
+      }
     }
+    await delay(125);
   }
   if (!responseFile) {
     await Promise.all([
@@ -1527,6 +1806,11 @@ function validateHelperResult(operation, value) {
       // interpolates helper text into markup.
       if (typeof result.png !== "string" || result.png.length < 8 || result.png.length > MAX_HELPER_IO_BYTES || !/^[A-Za-z0-9+/]+={0,2}$/.test(result.png)) throw invalidHelperData("versionPreview.png");
     }
+  } else if (operation === "renameVersion") {
+    requireHelperText(result.versionId, "renameVersion.versionId", 64);
+    requireHelperText(result.title, "renameVersion.title", 500);
+  } else if (operation === "renameBranch") {
+    requireHelperText(result.branch, "renameBranch.branch", 200);
   } else {
     throw new Error("The PhotoGit helper returned data for an unknown operation.");
   }
@@ -1880,7 +2164,7 @@ function renderCommandDocs() {
 
 function openCommandPalette(initial = "") {
   if (startupPending) return;
-  if (busyNow) return show("PhotoGit is busy. Try again in a moment.", false);
+  if (busyNow) return show(`Still working on “${runningLabel.replace(/…$/, "")}”. Commands open again when it finishes.`, false);
   openDetail("Go to or run a command", "");
   const content = document.getElementById("detail-content");
   const field = document.createElement("input");
@@ -2013,7 +2297,17 @@ function selectTab(name, animate = true) {
 }
 
 async function run(label, action) {
-  if (busyNow) return show("PhotoGit is busy. Try again in a moment.", false);
+  if (busyNow) return show(`Still working on “${runningLabel.replace(/…$/, "")}”. This finishes on its own.`, false);
+  // A known-offline helper is checked before anything is locked: a live one is
+  // reconnected first, a missing one is reported at once.
+  // A helper that is still starting gets a few seconds to appear.
+  if (!helperOnline && projectFolder && helperToken) {
+    const folder = projectFolder;
+    if (await helperAlive(folder) || await waitForHelper(folder, HELPER_START_GRACE_MS, label)) await reconnectHelper({ quiet: true });
+    if (!helperOnline) return show(`${helperOfflineError(folder).message}\nStart it with: ${helperStartCommand(folder)}`, true);
+  }
+  if (busyNow) return;
+  runningLabel = label;
   const resumeScanning = Boolean(scans.running || autoScanTimer);
   busy(true);
   workspaceGeneration += 1;
@@ -2050,6 +2344,55 @@ async function ensureFolder(root, path) {
     catch { cursor = await cursor.createFolder(segment); }
   }
   return cursor;
+}
+
+async function entryExists(folder, name) {
+  try { await folder.getEntry(name); return true; }
+  catch { return false; }
+}
+
+// True while the helper serving this folder has written its heartbeat recently.
+async function helperAlive(folder) {
+  try {
+    const entry = await (await (await folder.getEntry(".photogit")).getEntry("bridge")).getEntry("helper.alive");
+    const text = await entry.read();
+    if (text.length > 1_024) return false;
+    const beat = JSON.parse(text);
+    return isHelperRecord(beat) && beat.protocolVersion === PROTOCOL_VERSION && typeof beat.at === "number" && Math.abs(Date.now() - beat.at) < HELPER_HEARTBEAT_STALE_MS;
+  } catch { return false; }
+}
+
+// Removing the ready marker is the withdrawal: the helper checks it after its
+// claim and before running anything. A claim that appears anyway means the
+// helper got there first, so the marker goes back and the wait continues.
+async function withdrawRequest(requests, requestId) {
+  try { await (await requests.getEntry(`${requestId}.ready`)).delete(); }
+  catch { return false; }
+  if (!await entryExists(requests, `${requestId}.claim`)) return true;
+  try { await (await requests.createFile(`${requestId}.ready`, { overwrite: true })).write("ready\n"); } catch { /* The helper finishes or times out on its own. */ }
+  return false;
+}
+
+// Polls the heartbeat until the helper serving this folder appears.
+async function waitForHelper(folder, timeoutMs, label = "") {
+  const deadline = Date.now() + timeoutMs;
+  if (label) show(`Waiting for PhotoGit’s background service before “${label.replace(/…$/, "")}”…`, false);
+  while (Date.now() < deadline) {
+    if (projectFolder !== folder) return false;
+    if (await helperAlive(folder)) return true;
+    await delay(250);
+  }
+  return false;
+}
+
+function helperStartCommand(folder) {
+  return `npm run helper -- --approve-root "${folder.nativePath || folder.name}"`;
+}
+
+function helperOfflineError(folder) {
+  const error = new Error(`PhotoGit’s background service isn’t running for “${safeInlineText(folder.name, 200)}”. Start it, and PhotoGit reconnects on its own.`);
+  error.code = "HELPER_OFFLINE";
+  return error;
 }
 
 async function removeEntry(folder, name) {
@@ -2238,6 +2581,8 @@ function setHelper(label, ok) {
   }
   const notice = document.getElementById("connection-notice");
   notice.hidden = ok || !projectFolder;
+  // The toast moves clear of the notice so it never covers Reconnect.
+  document.body.classList.toggle("has-connection-notice", !notice.hidden);
   // Only a lost connection earns the warning treatment; setup states stay calm.
   notice.classList.toggle("is-warning", !ok && Boolean(projectFolder));
   const element = document.getElementById("helper-status");
@@ -2246,8 +2591,11 @@ function setHelper(label, ok) {
   element.setAttribute("title", label);
   document.getElementById("repo-sync-status").textContent = label;
 }
+let idleWaiters = [];
+function whenIdle() { return busyNow ? new Promise((resolve) => idleWaiters.push(resolve)) : Promise.resolve(); }
 function busy(active) {
   busyNow = active;
+  if (!active) { const waiters = idleWaiters; idleWaiters = []; for (const resolve of waiters) resolve(); }
   document.body.classList.toggle("is-busy", active);
   document.getElementById("workspace").setAttribute("aria-busy", active ? "true" : "false");
   document.getElementById("progress").hidden = !active;
@@ -2284,6 +2632,13 @@ function syncToast() {
   document.body.classList.toggle("has-toast", document.getElementById("result").textContent !== "");
 }
 function show(message, error) {
+  // The connection notice already says the service is offline; repeating it
+  // as a toast adds nothing.
+  // An open dialog covers the notice, though, so there the error is said.
+  const openSheet = ["detail-sheet", "rename-sheet", "export-sheet"].map(id => document.getElementById(id)).find(sheet => !sheet.hidden);
+  const dialogOpen = Boolean(openSheet);
+  if (openSheet) setSheetError(openSheet, error ? message : "");
+  if (error && !dialogOpen && document.body.classList.contains("has-connection-notice") && /background service isn’t running|helper is offline/i.test(message)) return;
   const safeMessage = safeInlineText(message, 800) || (error ? "PhotoGit could not complete that action." : "Done.");
   const result = document.getElementById("result");
   restartAnimation(result);

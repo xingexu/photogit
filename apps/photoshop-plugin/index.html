@@ -4,12 +4,12 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>PhotoGit</title>
-    <script src="motion.js?v=153"></script>
-    <script src="appearance.js?v=153"></script>
-    <script src="counter.js?v=153"></script>
-    <script src="reveal.js?v=153"></script>
-    <link rel="stylesheet" href="styles.css?v=153">
-    <script src="index.js?v=153"></script>
+    <script src="motion.js?v=154"></script>
+    <script src="appearance.js?v=154"></script>
+    <script src="counter.js?v=154"></script>
+    <script src="reveal.js?v=154"></script>
+    <link rel="stylesheet" href="styles.css?v=154">
+    <script src="index.js?v=154"></script>
   </head>
   <body class="is-initializing">
     <main class="panel-root">
@@ -218,6 +218,7 @@
       <section id="detail-sheet" class="tool-sheet" role="dialog" aria-modal="true" aria-labelledby="detail-title" aria-describedby="detail-content" hidden>
         <div class="section-heading"><h2 id="detail-title"></h2><div id="close-detail" class="icon-button sheet-close" role="button" tabindex="0" aria-label="Close" title="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6.5 6.5 11 11m0-11-11 11"/></svg></div></div>
         <div id="detail-content" class="detail-content"></div>
+        <p id="detail-error" class="detail-error sheet-error" role="alert" hidden></p>
         <div id="detail-action" class="button button-primary button-wide" role="button" tabindex="0" hidden></div>
       </section>
       <section id="tag-sheet" class="tool-sheet" role="dialog" aria-modal="true" aria-labelledby="tag-sheet-title" aria-describedby="tag-sheet-help" hidden>
@@ -228,6 +229,30 @@
           <input id="tag-name" type="text" maxlength="100" placeholder="e.g. v1.0.0" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" uxp-quiet="true">
         </div>
         <div id="create-tag" class="button button-primary button-wide" role="button" tabindex="0">Create tag</div>
+      </section>
+      <section id="rename-sheet" class="tool-sheet" role="dialog" aria-modal="true" aria-labelledby="rename-sheet-title" aria-describedby="rename-sheet-help" hidden>
+        <div class="section-heading"><h2 id="rename-sheet-title">Rename</h2><div id="close-rename-sheet" class="icon-button sheet-close" role="button" tabindex="0" aria-label="Close" title="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6.5 6.5 11 11m0-11-11 11"/></svg></div></div>
+        <p id="rename-sheet-help" class="fine-print"></p>
+        <label id="rename-label" class="field-label" for="rename-input">New name</label>
+        <div class="field-shell">
+          <input id="rename-input" type="text" maxlength="500" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" uxp-quiet="true">
+        </div>
+        <p class="detail-error sheet-error" role="alert" hidden></p>
+        <div id="rename-confirm" class="button button-primary button-wide" role="button" tabindex="0">Rename</div>
+      </section>
+      <section id="export-sheet" class="tool-sheet" role="dialog" aria-modal="true" aria-labelledby="export-sheet-title" aria-describedby="export-sheet-help" hidden>
+        <div class="section-heading"><h2 id="export-sheet-title">Export version</h2><div id="close-export-sheet" class="icon-button sheet-close" role="button" tabindex="0" aria-label="Close" title="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6.5 6.5 11 11m0-11-11 11"/></svg></div></div>
+        <p id="export-sheet-help" class="fine-print"></p>
+        <div class="field-label" id="export-formats-label">Format</div>
+        <div id="export-formats" class="export-formats" role="radiogroup" aria-labelledby="export-formats-label">
+          <div class="filter-chip" role="radio" data-format="png" aria-checked="true" tabindex="0">PNG</div>
+          <div class="filter-chip" role="radio" data-format="jpg" aria-checked="false" tabindex="-1">JPEG</div>
+          <div class="filter-chip" role="radio" data-format="tiff" aria-checked="false" tabindex="-1">TIFF</div>
+          <div class="filter-chip" role="radio" data-format="psd" aria-checked="false" tabindex="-1">PSD</div>
+        </div>
+        <p id="export-format-note" class="fine-print"></p>
+        <p class="detail-error sheet-error" role="alert" hidden></p>
+        <div id="export-confirm" class="button button-primary button-wide" role="button" tabindex="0">Export PNG…</div>
       </section>
     </main>
   </body>

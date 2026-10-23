@@ -66,6 +66,30 @@ export async function cleanupBridge(root: string, now = Date.now()): Promise<voi
   }
 }
 
+// The panel reads this marker to tell "helper not running" from "helper busy"
+// within seconds, instead of waiting out a whole request timeout.
+export const BRIDGE_HEARTBEAT_FILE = "helper.alive";
+
+export async function writeBridgeHeartbeat(root: string, now = Date.now()): Promise<void> {
+  const metadata = await lstat(root).catch(() => null);
+  if (!metadata?.isDirectory()) return;
+  await ensureBridgeFolders(root);
+  const bridge = join(root, ".photogit", "bridge");
+  const target = join(bridge, BRIDGE_HEARTBEAT_FILE);
+  const temp = join(bridge, `${BRIDGE_HEARTBEAT_FILE}.${process.pid}.tmp`);
+  // Exclusive creation never follows a planted link; rename replaces a link
+  // rather than writing through it.
+  await unlink(temp).catch(() => undefined);
+  await writeFile(temp, `${JSON.stringify({ protocolVersion: PROTOCOL_VERSION, pid: process.pid, at: now })}\n`, { encoding: "utf8", mode: 0o600, flag: "wx" });
+  await rename(temp, target);
+}
+
+export async function removeBridgeHeartbeat(root: string): Promise<void> {
+  const target = join(root, ".photogit", "bridge", BRIDGE_HEARTBEAT_FILE);
+  const metadata = await lstat(target).catch(() => null);
+  if (metadata?.isFile() && !metadata.isSymbolicLink()) await unlink(target).catch(() => undefined);
+}
+
 export async function drainBridgeRoot(root: string, config: HelperConfig, options: BridgeOptions): Promise<void> {
   const metadata = await lstat(root).catch(() => null);
   if (!metadata) return;

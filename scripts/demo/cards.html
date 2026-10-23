@@ -1,0 +1,86 @@
+<!doctype html>
+<!-- Title, end and caption cards for the demo video. Rendered to PNG by
+     scripts/demo/render-cards.mjs, e.g. cards.html#caption=Text|/scan -->
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800&family=Press+Start+2P&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+  html, body { margin: 0; width: 1920px; height: 1080px; overflow: hidden; background: transparent; font-family: Inter, sans-serif; color: #fff; }
+  .card { position: absolute; inset: 0; display: none; }
+  .art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 30%; image-rendering: pixelated; }
+  .shade { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 46%, rgba(8, 32, 58, .7) 0%, rgba(8, 32, 58, .45) 40%, rgba(8, 32, 58, .1) 75%); }
+  .center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+  .logo { width: 132px; height: 132px; border-radius: 28px; box-shadow: 0 12px 0 #0b2a45, 0 30px 60px rgba(0,0,0,.35); margin-bottom: 42px; }
+  .wordmark { font-family: "Press Start 2P"; font-size: 84px; letter-spacing: .02em; text-shadow: 0 6px 0 #2d74af, 0 0 40px #7bd7ff; margin: 0 0 30px; }
+  .tag { font-size: 54px; font-weight: 800; letter-spacing: -.02em; margin: 0; text-shadow: 0 3px 0 #0b2a45; }
+  .tag em { font-style: normal; color: #ffcbdf; }
+  .sub { margin: 22px 0 0; font-size: 28px; font-weight: 500; color: #e2f3ff; }
+  .pills { display: flex; gap: 16px; margin-top: 40px; }
+  .pills span { padding: 12px 20px; font-size: 22px; font-weight: 700; background: #112d49; border: 3px solid #b6dff5; box-shadow: 5px 5px 0 #09223a; }
+  .url { margin-top: 44px; font: 700 30px "JetBrains Mono", monospace; padding: 16px 28px; color: #0b2a45; background: #fff; border: 4px solid #0b2a45; box-shadow: 8px 8px 0 #0b2a45; }
+
+  /* Chapter card: full-frame navy with pixel eyebrow. */
+  #chapter { background: #123451; }
+  #chapter .eyebrow { font-family: "Press Start 2P"; font-size: 22px; color: #ffcbdf; letter-spacing: .1em; margin-bottom: 30px; }
+  #chapter h2 { margin: 0; font-size: 92px; font-weight: 800; letter-spacing: -.03em; }
+  #chapter p { margin: 24px 0 0; font-size: 30px; color: #c8e4f7; }
+
+  /* Lower-third caption over footage (transparent background). */
+  #caption { }
+  .lower { position: absolute; left: 64px; bottom: 64px; max-width: 1180px; display: flex; align-items: center; gap: 22px; padding: 22px 32px 22px 26px; background: rgba(11, 34, 56, .92); border: 3px solid #b6dff5; box-shadow: 8px 8px 0 rgba(9, 34, 58, .85); }
+  .lower::before { content: ""; flex: none; width: 10px; align-self: stretch; background: #ffcbdf; }
+  .lower .text { font-size: 36px; font-weight: 700; line-height: 1.25; letter-spacing: -.01em; }
+  .lower code { flex: none; font: 700 30px "JetBrains Mono", monospace; color: #0b2a45; background: #ffcbdf; padding: 8px 14px; }
+  .step { position: absolute; right: 64px; bottom: 64px; font-family: "Press Start 2P"; font-size: 16px; color: #fff; padding: 14px 16px; background: rgba(11, 34, 56, .92); border: 3px solid #b6dff5; }
+  .step:empty { display: none; }
+</style>
+</head>
+<body>
+  <section class="card" id="title">
+    <img class="art" src="../../site/artwork/japanties-pixel.png" alt="">
+    <div class="shade"></div>
+    <div class="center">
+      <img class="logo" src="../../apps/photoshop-plugin/icons/photogit.png" alt="">
+      <p class="wordmark">PHOTOGIT</p>
+      <p class="tag">Version control for <em>Photoshop</em>.</p>
+      <p class="sub">A real walkthrough: install, track, branch, merge and share.</p>
+    </div>
+  </section>
+
+  <section class="card" id="chapter">
+    <div class="center"><div class="eyebrow" data-slot="eyebrow"></div><h2 data-slot="title"></h2><p data-slot="sub"></p></div>
+  </section>
+
+  <section class="card" id="end">
+    <img class="art" src="../../site/artwork/japanties-pixel.png" alt="">
+    <div class="shade"></div>
+    <div class="center">
+      <img class="logo" src="../../apps/photoshop-plugin/icons/photogit.png" alt="">
+      <p class="tag">Free and open source.</p>
+      <div class="pills"><span>MIT licensed</span><span>Local-first</span><span>Built on Git</span></div>
+      <div class="url">github.com/xingexu/photogit ★</div>
+    </div>
+  </section>
+
+  <section class="card" id="caption">
+    <div class="lower"><code data-slot="code"></code><span class="text" data-slot="text"></span></div>
+    <div class="step" data-slot="step"></div>
+  </section>
+
+<script>
+  // #<card>=<slot values separated by |>, for example
+  // #caption=/scan|Checks the document for edits on demand.|02 / 05
+  const [card, raw = ""] = decodeURIComponent(location.hash.slice(1)).split("=");
+  const values = raw.split("|");
+  const element = document.getElementById(card || "title");
+  element.style.display = "block";
+  const slots = { chapter: ["eyebrow", "title", "sub"], caption: ["code", "text", "step"] }[card] || [];
+  slots.forEach((slot, index) => {
+    const target = element.querySelector(`[data-slot="${slot}"]`);
+    target.textContent = values[index] || "";
+    if (!target.textContent && slot === "code") target.style.display = "none";
+  });
+</script>
+</body>
+</html>
