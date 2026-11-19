@@ -2,10 +2,10 @@
 
 Serve this directory with `python3 -m http.server 3000 --directory site` from the repository root.
 
-Click or tap PHOTOGIT, or activate it with Enter or Space, for a leaf burst and whoosh. Escape dismisses it. The footer sound toggle remembers your preference. Reduced-motion settings disable the burst and background motion.
+Hover over the Photoshop workspace with a mouse to tilt the scene. The workspace, floating tools, and rest of the page use CSS perspective and layered surfaces. The artwork is a local WebP.
 
-The initial title reveal takes 1.2 seconds. The call to action fades in during the reveal. The completed title becomes plain text and stays visible.
+Click or tap the PhotoGit label, or activate it with Enter or Space, for a petal burst and bird reaction. Escape dismisses it. The footer sound toggle remembers your preference. Reduced-motion settings disable the tilt, floating animation, and burst.
 
-Audio is an original generated mono 16-bit PCM WAV. Regenerate it with `python3 scripts/generate-leaf-whoosh.py`. Playback requires a user gesture and respects browser and device settings.
+The bird chirp plays after a user gesture and respects browser and device settings.
 
 For Vercel Git imports, set Root Directory to `site`, framework to Other, no build command, and output directory to `.`.

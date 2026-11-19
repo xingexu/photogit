@@ -3,8 +3,10 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 const site = new URL('../site/', import.meta.url);
 const html = fs.readFileSync(new URL('index.html', site), 'utf8');
-test('all referenced local image and sound assets exist', () => {
-  const assets = [...html.matchAll(/(?:src=\"|url\(')([^'\"]+\.(?:png|wav))/g)].map(match => match[1]);
+test('all referenced local landing assets exist', () => {
+  const assets = [...html.matchAll(/(?:src="|href="|url\(')([^'"]+\.(?:css|js|png|wav|webp))(?=["'])/g)]
+    .map(match => match[1])
+    .filter(asset => !/^https?:/.test(asset));
   assets.push('audio/leaf-whoosh.wav');
   for (let i = 1; i <= 10; i++) assets.push(`artwork/petals/petal-${i}.png`);
   for (const asset of assets) assert.ok(fs.statSync(new URL(asset, site)).size > 0, asset);
