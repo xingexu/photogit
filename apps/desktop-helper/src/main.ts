@@ -119,7 +119,7 @@ async function executeRequest(payload: HelperRequest, helperConfig: HelperConfig
     const head = await repository.readStateAt();
     const version = await repository.readStateAt(payload.version!);
     if (!version) throw coded("VERSION_NOT_FOUND", "That saved version has no PhotoGit state to compare with.");
-    await assertDocumentConnection(projectRoot, payload.documentIdentity, payload.capture!.document, head, false);
+    await checkDocumentConnection(projectRoot, payload.documentIdentity, payload.capture!.document, head, false);
     const current = stateFromCapture(projectCapture(payload.capture!, payload.documentIdentity, head, projectRoot), version.project, randomUUID, head?.identities.records ?? version.identities.records);
     const changes = diffStates(version, current);
     log("info", { event: "compare_version_complete", requestId: payload.requestId, changeCount: changes.length });
@@ -127,7 +127,7 @@ async function executeRequest(payload: HelperRequest, helperConfig: HelperConfig
   }
   if (payload.operation === "refresh") {
     const base = await repository.readStateAt();
-    await assertDocumentConnection(projectRoot, payload.documentIdentity, payload.capture!.document, base, false);
+    await checkDocumentConnection(projectRoot, payload.documentIdentity, payload.capture!.document, base, false);
     const project = base?.project ?? JSON.parse(await readBoundedText(join(projectRoot, ".photogit", "project.json"))) as ProjectMetadata;
     validateProjectMetadata(project);
     const current = stateFromCapture(projectCapture(payload.capture!, payload.documentIdentity, base, projectRoot), project, randomUUID, base?.identities.records ?? []);
@@ -174,7 +174,7 @@ async function executeRequest(payload: HelperRequest, helperConfig: HelperConfig
   const base = await repository.readStateAt();
   const project = base?.project ?? JSON.parse(await readBoundedText(join(projectRoot, ".photogit", "project.json"))) as ProjectMetadata;
   validateProjectMetadata(project);
-  await assertDocumentConnection(projectRoot, payload.documentIdentity, payload.capture.document, base, true);
+  const newBinding = await checkDocumentConnection(projectRoot, payload.documentIdentity, payload.capture.document, base, true);
   const identities = base?.identities.records ?? [];
   const state = stateFromCapture(projectCapture(payload.capture, payload.documentIdentity, base, projectRoot), project, randomUUID, identities);
   const previousBranch = await repository.currentBranch();
@@ -199,6 +199,15 @@ async function executeRequest(payload: HelperRequest, helperConfig: HelperConfig
       // An unreadable HEAD is unknown, never proof that no version was saved.
       ...(headKnown || gitChanged ? { gitChanged } : {}), ...(!headKnown ? { outcomeUnknown: true } : {})
     });
+  }
+  if (newBinding) {
+    try {
+      await saveDocumentBinding(projectRoot, newBinding);
+    } catch (error) {
+      throw Object.assign(coded("RECOVERY_REQUIRED", `Version ${versionId.slice(0, 8)} was saved, but PhotoGit could not connect the document. Refresh history and reconnect the document before saving again. ${safeMessage(error)}`), {
+        outcome: "recovery_required", branch: previousBranch, previousBranch, gitChanged: true
+      });
+    }
   }
   return { outcome: "success", versionId, shortId: versionId.slice(0, 8), warningCount: state.document.warnings.length } satisfies SaveVersionResult;
 }
@@ -294,14 +303,14 @@ function projectCapture(capture: DocumentCapture, identity: DocumentIdentity | u
   return capture;
 }
 
-async function assertDocumentConnection(root: string, supplied: DocumentIdentity | undefined, document: { documentId: string; name: string }, baseline: ProjectState | null, saving: boolean): Promise<void> {
+async function checkDocumentConnection(root: string, supplied: DocumentIdentity | undefined, document: { documentId: string; name: string }, baseline: ProjectState | null, saving: boolean): Promise<DocumentIdentity | undefined> {
   if (supplied && supplied.documentId !== document.documentId) throw coded("DOCUMENT_MISMATCH", "The captured Photoshop document does not match the connected document identity. Scan the active document again.");
   const binding = await readDocumentBinding(root);
   if (binding && (!supplied || !sameDocument(binding, supplied))) throw coded("DOCUMENT_MISMATCH", `This project is connected to ${binding.name}. Open that document, reconnect it, or explicitly adopt this document.`);
   if (!binding && baseline) throw coded("DOCUMENT_CONNECTION_REQUIRED", `Connect this project to its Photoshop document (${baseline.document.name}) before scanning or saving.`);
   if (!binding && saving) {
     if (!supplied) throw coded("DOCUMENT_CONNECTION_REQUIRED", "Connect the active Photoshop document before saving its first version.");
-    await saveDocumentBinding(root, supplied);
+    return supplied;
   }
 }
 
