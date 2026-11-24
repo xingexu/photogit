@@ -136,7 +136,7 @@
     </div>
     <div class="landing-inner">
     <div class="content">
-      <button type="button" disabled class="title" aria-label="PhotoGit" aria-description="Click or press Enter or Space for fluttering leaves and chirping birds" tabindex="0"><span class="title-letter" style="--n:0" aria-hidden="true">P</span><span class="title-letter" style="--n:1" aria-hidden="true">H</span><span class="title-letter" style="--n:2" aria-hidden="true">O</span><span class="title-letter" style="--n:3" aria-hidden="true">T</span><span class="title-letter" style="--n:4" aria-hidden="true">O</span><span class="title-letter" style="--n:5" aria-hidden="true">G</span><span class="title-letter" style="--n:6" aria-hidden="true">I</span><span class="title-letter" style="--n:7" aria-hidden="true">T</span></button>
+      <button type="button" disabled class="title" aria-description="Activate for fluttering leaves and chirping birds">PhotoGit</button>
       <h1 class="tagline" id="hero-title"><span>Version control</span><em>for Photoshop.</em></h1>
       <p class="subline">Save every PSD version, see exactly what changed layer by layer, and branch your ideas without leaving Photoshop.</p>
       <div class="actions">
@@ -147,31 +147,23 @@
     </div>
       <div class="studio-stage" aria-hidden="true">
         <div class="studio-scene">
-          <div class="studio-orbit"></div>
           <div class="studio-window">
-            <div class="window-bar"><span class="window-dots"><i></i><i></i><i></i></span><span>eclipse-poster.psd</span></div>
-            <img src="artwork/studio-canvas.webp" width="1200" height="800" alt="" fetchpriority="high" decoding="async">
-            <div class="art-corners"></div>
+            <div class="window-bar"><span>eclipse-poster.psd</span><span class="window-saved">Version saved</span></div>
+            <div class="studio-art">
+              <img src="artwork/studio-canvas.webp" width="1200" height="800" alt="" fetchpriority="high" decoding="async">
+            </div>
             <div class="window-foot"><span>66.7%</span><span>RGB / 8</span></div>
           </div>
-          <div class="studio-float studio-ps">Ps</div>
-          <div class="studio-float studio-tools">
-            <span><svg viewBox="0 0 24 24"><path d="m4 4 7 15 2-6 6-2Z"/></svg></span>
-            <span><svg viewBox="0 0 24 24"><path d="M5 4v15h15M4 5h15v15"/></svg></span>
-            <span><svg viewBox="0 0 24 24"><path d="m16 4 4 4-9 9-6 2 2-6Zm-3 3 4 4M5 19l4-4"/></svg></span>
-            <span>T</span>
-          </div>
           <div class="studio-float studio-swatches">
-            <div class="float-label">Swatches <span>· · ·</span></div>
+            <div class="float-label">Swatches</div>
             <div class="swatch-row"><i style="--swatch:#dcfc69"></i><i style="--swatch:#f49bc8"></i><i style="--swatch:#986cf5"></i><i style="--swatch:#4c2a72"></i><i style="--swatch:#16121e"></i></div>
           </div>
           <div class="studio-float studio-layers">
-            <div class="float-label">Layers <span>· · ·</span></div>
+            <div class="float-label">Layers</div>
             <div class="layer-item selected"><i></i> Eclipse</div>
             <div class="layer-item"><i></i> Mountains</div>
             <div class="layer-item"><i></i> Atmosphere</div>
           </div>
-          <div class="studio-float studio-commit"><i></i> Version saved <span>↗</span></div>
         </div>
       </div>
     </div>
@@ -185,11 +177,11 @@
         <p class="lede">Designers have been versioning Photoshop work with “Save As” for thirty years. It eats disk space, hides what changed, and nobody remembers which copy the client approved. PhotoGit keeps one document and a complete, searchable history behind it, right in a Photoshop panel.</p>
       </div>
       <ul class="files" aria-label="Before and after">
-        <li><span class="ps" aria-hidden="true">Ps</span><s>poster_final.psd</s></li>
-        <li><span class="ps" aria-hidden="true">Ps</span><s>poster_final_v2.psd</s></li>
-        <li><span class="ps" aria-hidden="true">Ps</span><s>poster_final_v2_client-edits.psd</s></li>
-        <li><span class="ps" aria-hidden="true">Ps</span><s>poster_final_v3_REAL_use-this.psd</s></li>
-        <li class="keep"><span class="ps" aria-hidden="true">Ps</span>poster.psd</li>
+        <li><s>poster_final.psd</s></li>
+        <li><s>poster_final_v2.psd</s></li>
+        <li><s>poster_final_v2_client-edits.psd</s></li>
+        <li><s>poster_final_v3_REAL_use-this.psd</s></li>
+        <li class="keep">poster.psd</li>
       </ul>
     </div>
   </section>
@@ -217,12 +209,12 @@
         <p class="lede">Everything developers love about version control, rebuilt around layers, pixels and PSDs.</p>
       </div>
       <div class="features">
-        <article class="feature"><div class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 3 8l9 5 9-5-9-5Z"/><path d="m3 13 9 5 9-5"/></svg></div><h3>Layer-by-layer changes</h3><p>See which layers were added, deleted or edited, down to pixels, text, opacity, blend mode and order.</p></article>
-        <article class="feature"><div class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg></div><h3>Exact PSD versions</h3><p>Every version stores the full PSD, so you can always reopen precisely what you saved. Nothing is flattened or approximated.</p></article>
-        <article class="feature"><div class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="8" height="14"/><rect x="13" y="5" width="8" height="14"/></svg></div><h3>Before / after compare</h3><p>Put any saved version beside your open document and see what moved before you commit to it.</p></article>
-        <article class="feature"><div class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="5" r="2"/><circle cx="6" cy="19" r="2"/><circle cx="18" cy="8" r="2"/><path d="M6 7v10M18 10c0 4-6 3-12 7"/></svg></div><h3>Branches for big ideas</h3><p>Try a new direction on a branch and merge it back when the client picks it. Conflicting PSD edits are blocked, not silently overwritten.</p></article>
-        <article class="feature"><div class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div><h3>Local and private</h3><p>Your artwork lives in a folder on your machine. Nothing is uploaded unless you push to a remote you choose.</p></article>
-        <article class="feature"><div class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 9-4 3 4 3M16 9l4 3-4 3M13 6l-2 12"/></svg></div><h3>Real Git underneath</h3><p>Every version is an ordinary Git commit, so GitHub, backups and your team’s existing tools just work.</p></article>
+        <article class="feature"><h3>Layer-by-layer changes</h3><p>See which layers were added, deleted or edited, down to pixels, text, opacity, blend mode and order.</p></article>
+        <article class="feature"><h3>Exact PSD versions</h3><p>Every version stores the full PSD, so you can always reopen precisely what you saved. Nothing is flattened or approximated.</p></article>
+        <article class="feature"><h3>Before / after compare</h3><p>Put any saved version beside your open document and see what moved before you commit to it.</p></article>
+        <article class="feature"><h3>Branches for big ideas</h3><p>Try a new direction on a branch and merge it back when the client picks it. Conflicting PSD edits are blocked, not silently overwritten.</p></article>
+        <article class="feature"><h3>Local and private</h3><p>Your artwork lives in a folder on your machine. Nothing is uploaded unless you push to a remote you choose.</p></article>
+        <article class="feature"><h3>Real Git underneath</h3><p>Every version is an ordinary Git commit, so GitHub, backups and your team’s existing tools just work.</p></article>
       </div>
     </div>
   </section>
@@ -311,33 +303,6 @@
       var reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
       var title = document.querySelector('.title');
       title.disabled = false;
-      var letters = Array.from(title.querySelectorAll('.title-letter'));
-
-
-      var revealTimers = [];
-      var fullTitle = title.textContent;
-
-      function finishReveal() {
-        revealTimers.forEach(clearTimeout);
-        revealTimers = [];
-        // Render one ordinary text node permanently; no animated letter layers remain.
-        title.textContent = fullTitle;
-      }
-      if (reducedMotion.matches) {
-        finishReveal();
-      } else {
-        letters.forEach(function (letter, index) {
-          letter.style.visibility = 'hidden';
-          revealTimers.push(setTimeout(function () {
-            letter.style.visibility = 'visible';
-            if (index === letters.length - 1) finishReveal();
-          }, 150 + index * 150));
-        });
-      }
-      reducedMotion.addEventListener('change', function (event) {
-        if (event.matches) finishReveal();
-      });
-
       var ambientSky = document.querySelector('.fx');
       for (var extraLeafIndex = 0; extraLeafIndex < 36; extraLeafIndex++) {
         var extraLeaf = document.createElement('span');
@@ -541,7 +506,12 @@
           paint.restore();
         });
         if (elapsed < swarmDuration) frame = requestAnimationFrame(drawSwarm);
-        else { swarm = []; frame = 0; if (paint) paint.clearRect(0, 0, viewWidth, viewHeight); }
+        else {
+          swarm = [];
+          frame = 0;
+          document.documentElement.classList.toggle('show-landing-effects', false);
+          if (paint) paint.clearRect(0, 0, viewWidth, viewHeight);
+        }
       }
       function releaseLeaves() {
         disperseBirds();
@@ -549,6 +519,7 @@
         if (frame || now - lastBurst < 700) return;
         lastBurst = now;
         if (reducedMotion.matches || !paint || document.hidden) return;
+        document.documentElement.classList.toggle('show-landing-effects', true);
         cancelAnimationFrame(frame);
         var particleCount = window.innerWidth < 600 ? 200 : 420;
         if (navigator.connection && navigator.connection.saveData) particleCount = Math.min(particleCount, 140);
@@ -565,6 +536,7 @@
         if (event.matches) stopEffects();
       });
       function stopEffects() {
+        document.documentElement.classList.toggle('show-landing-effects', false);
         cloudAnimations.forEach(function (entry) { entry.animation.cancel(); });
         cloudAnimations = [];
         if (chirpPlayer) chirpPlayer.pause();
