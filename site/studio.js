@@ -26,4 +26,8 @@
   stage.addEventListener('pointercancel', reset);
   interactiveMotion.addEventListener('change', reset);
   window.addEventListener('blur', reset);
+
+  document.addEventListener('visibilitychange', () => {
+    document.documentElement.classList.toggle('page-hidden', document.hidden);
+  });
 })();

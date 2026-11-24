@@ -37,10 +37,7 @@ a, button, summary { touch-action: manipulation; }
 .landing::after { content: ""; position: absolute; inset: 0; z-index: -1; opacity: .42; pointer-events: none; background: linear-gradient(#a975f332 1px, transparent 1px), linear-gradient(90deg, #a975f332 1px, transparent 1px); background-size: 62px 62px; transform: perspective(330px) rotateX(59deg) translateY(45%) scale(1.5); mask-image: linear-gradient(transparent 52%, #000); }
 .landing-inner { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); align-items: center; gap: clamp(12px, 3vw, 54px); width: min(1330px, calc(100% - var(--gutter) * 2)); min-height: clamp(620px, 52vw, 820px); margin-inline: auto; padding: 55px 0 68px; }
 .content { position: relative; z-index: 3; }
-.title { display: inline-block; padding: 0; background: none; border: 0; color: var(--lavender); font: 600 12px/1.6 var(--mono); letter-spacing: .16em; text-transform: uppercase; cursor: pointer; }
-.title::before { content: ""; display: inline-block; width: 7px; height: 7px; vertical-align: 1px; margin-right: 10px; border-radius: 50%; background: var(--lime); box-shadow: 0 0 12px #dcfc6980; }
-.title:hover { color: var(--lime); }
-.tagline { margin: 17px 0 0; font: 800 clamp(46px, 6.1vw, 101px)/.94 var(--display); letter-spacing: -.065em; word-spacing: .035em; }
+.tagline { margin: 0; font: 800 clamp(46px, 6.1vw, 101px)/.94 var(--display); letter-spacing: -.065em; word-spacing: .035em; }
 .tagline span { display: block; }
 .tagline em { display: block; font-style: normal; color: var(--lime); text-shadow: 0 6px 27px #d7fa6224; }
 .subline { max-width: 380px; margin: 26px 0 28px; color: #cfc5dc; font-size: clamp(16px, 1.35vw, 19px); }
@@ -82,10 +79,6 @@ a, button, summary { touch-action: manipulation; }
 .studio-swatches { --depth: 56px; --angle: -6deg; --arrival: 340ms; --drift: 7px; top: 3%; left: 2%; width: 23%; padding: 1.5%; }
 .swatch-row { display: flex; gap: 5%; }
 .swatch-row i { flex: 1; aspect-ratio: 1; border: 1px solid #fff3; border-radius: 3px; background: var(--swatch); }
-.landing .fx { z-index: 1; opacity: .25; visibility: hidden; }
-.show-landing-effects .landing .fx { visibility: visible; }
-:root:not(.show-landing-effects) .landing .fx * { animation-play-state: paused; }
-.landing .sky-cloud { opacity: calc(var(--cloud-opacity) * .35); filter: grayscale(1) sepia(.3) hue-rotate(219deg); }
 
 .section { position: relative; isolation: isolate; padding: clamp(70px, 8.5vw, 132px) var(--edge); border-bottom: 1px solid #30283c; background: radial-gradient(ellipse at 94% 0, #20152e, transparent 57%), var(--background); }
 .section.alt { background: radial-gradient(ellipse at 50% 0, #2b1d41, transparent 77%), #14111b; }
@@ -146,8 +139,8 @@ a, button, summary { touch-action: manipulation; }
 .final-note { color: var(--muted); margin: 23px 0 0; font: 400 11px/1.5 var(--mono); }
 .site-footer { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 17px var(--edge); background: #100e16; color: var(--muted); }
 .footer-credit { font: 400 11px var(--mono); }
-.site-footer .chirp-toggle, .icon-bar a { display: inline-grid; place-items: center; min-height: 42px; background: #201a2c; border: 1px solid #453654; border-radius: 7px; color: var(--ink); box-shadow: 0 3px #09070e; }
-.site-footer .chirp-toggle:hover, .icon-bar a:hover { color: var(--lime); background: #302640; }
+.icon-bar a { display: inline-grid; place-items: center; min-height: 42px; background: #201a2c; border: 1px solid #453654; border-radius: 7px; color: var(--ink); box-shadow: 0 3px #09070e; }
+.icon-bar a:hover { color: var(--lime); background: #302640; }
 .icon-bar { display: flex; gap: 7px; }
 .icon-bar a { width: 42px; }
 .icon-bar svg { width: 17px; fill: currentColor; }
@@ -232,9 +225,4 @@ a, button, summary { touch-action: manipulation; }
   html { scroll-behavior: auto; }
   *, *::before, *::after { animation: none !important; transition: none !important; }
   .cta:hover, .feature:hover, .shot:hover, .step:hover { translate: none; }
-  .landing .petal { display: none; }
-  .sky-cloud:nth-child(1) { left: 8%; }
-  .sky-cloud:nth-child(2) { left: 62%; }
-  .sky-cloud:nth-child(3) { left: 38%; }
-  .sky-cloud:nth-child(4) { left: 74%; }
 }
