@@ -131,6 +131,29 @@ describe("real helper process filesystem bridge", () => {
     expect((await execute("git", ["log", "-1", "--format=%s"], { cwd: f.root })).stdout.trim()).toBe("Saved before verification failed");
   }, 15_000);
 
+  it.each(["changed", "unknown"] as const)("guides reconnection after first-save verification fails and HEAD is %s", async (headState) => {
+    const f = await fixture(true);
+    const verificationFlag = join(f.root, ".photogit", "bridge", "fail-verification");
+    const unknownHeadFlag = join(f.root, ".photogit", "bridge", "unknown-head");
+    await writeFile(verificationFlag, "enabled");
+    if (headState === "unknown") await writeFile(unknownHeadFlag, "enabled");
+
+    const result = await f.request("capture", { capture: f.capture, documentIdentity: f.identity, message: "First version before verification failed" });
+    expect(result).toMatchObject({
+      ok: false, error: {
+        code: "RECOVERY_REQUIRED",
+        message: expect.stringContaining("If your first version appears in history, reconnect its Photoshop document")
+      }
+    });
+    await unlink(verificationFlag);
+    if (headState === "unknown") await unlink(unknownHeadFlag);
+
+    expect(await f.request("history")).toMatchObject({ ok: true, result: { versions: [expect.objectContaining({ message: "First version before verification failed" })] } });
+    expect(await f.request("status")).toMatchObject({ ok: true, result: { baselineMissing: false, documentBinding: null } });
+    expect(await f.request("connectDocument", { documentIdentity: f.identity })).toMatchObject({ ok: true });
+    expect(await f.request("refresh", { capture: f.capture, documentIdentity: f.identity })).toMatchObject({ ok: true, result: { changeCount: 0 } });
+  }, 15_000);
+
   it.each(["omitted", "null"] as const)("warns when the current scan has a missing (%s) document rendering fingerprint", async (missing) => {
     const f = await fixture();
     f.capture.document.renderedFingerprint = "pixels-v1:64x64x4:aaaaaaaa";

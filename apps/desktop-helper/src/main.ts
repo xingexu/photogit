@@ -194,7 +194,10 @@ async function executeRequest(payload: HelperRequest, helperConfig: HelperConfig
     const recoveryMessage = gitChanged
       ? "Git history changed before the save finished reporting its result. Refresh history before trying Save version again."
       : "PhotoGit could not verify whether Git history changed. Refresh history before trying Save version again.";
-    throw Object.assign(coded(recoveryRequired ? "RECOVERY_REQUIRED" : "OPERATION_FAILED", `${safeMessage(error)}${recoveryRequired ? ` ${recoveryMessage}` : ""}`), {
+    const reconnectMessage = recoveryRequired && newBinding
+      ? " If your first version appears in history, reconnect its Photoshop document before scanning or saving again."
+      : "";
+    throw Object.assign(coded(recoveryRequired ? "RECOVERY_REQUIRED" : "OPERATION_FAILED", `${safeMessage(error)}${recoveryRequired ? ` ${recoveryMessage}` : ""}${reconnectMessage}`), {
       outcome: recoveryRequired ? "recovery_required" : "failure", branch, previousBranch,
       // An unreadable HEAD is unknown, never proof that no version was saved.
       ...(headKnown || gitChanged ? { gitChanged } : {}), ...(!headKnown ? { outcomeUnknown: true } : {})
