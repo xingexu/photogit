@@ -5,10 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>PhotoGit — Version control for Photoshop</title>
   <meta name="description" content="Free, open-source version control for Photoshop. Save exact PSD versions, see what changed layer by layer, and branch ideas from a panel inside Photoshop.">
-  <meta name="theme-color" content="#100e16">
+  <meta name="theme-color" content="#141518">
   <link rel="canonical" href="https://photogit-three.vercel.app/">
-  <link rel="icon" type="image/png" href="favicon.png">
-  <link rel="apple-touch-icon" href="logo.png">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="PhotoGit">
   <meta property="og:title" content="PhotoGit — Version control for Photoshop">
@@ -17,7 +15,7 @@
   <meta property="og:image" content="https://photogit-three.vercel.app/og.png">
   <meta property="og:image:width" content="1280">
   <meta property="og:image:height" content="640">
-  <meta property="og:image:alt" content="PhotoGit: version control for Photoshop, shown beside the History panel">
+  <meta property="og:image:alt" content="Version control for Photoshop alongside a screenshot of PhotoGit’s History tab">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="PhotoGit — Version control for Photoshop">
   <meta name="twitter:description" content="Save every PSD version, see what changed layer by layer, and branch your ideas without leaving Photoshop.">
@@ -33,45 +31,32 @@
 </head>
 <body>
   <header class="topbar">
-    <a class="brand" href="#top" aria-label="PhotoGit home"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5 9-5ZM3 12l9 5 9-5M3 16l9 5 9-5"/></svg></span><span>PhotoGit</span></a>
+    <a class="brand" href="#top" aria-label="PhotoGit home">PhotoGit</a>
     <nav class="topnav" aria-label="Main">
       <a href="#features">Features</a>
       <a href="#get-started">Get started</a>
       <a href="#faq">FAQ</a>
       <a href="https://github.com/xingexu/photogit/tree/main/docs">Docs</a>
-      <a class="gh-mini" href="https://github.com/xingexu/photogit" aria-label="PhotoGit on GitHub"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .3A12 12 0 0 0 8.21 23.69c.6.11.82-.26.82-.58v-2.04c-3.34.73-4.04-1.61-4.04-1.61-.55-1.39-1.33-1.76-1.33-1.76-1.09-.74.08-.73.08-.73 1.2.09 1.84 1.24 1.84 1.24 1.07 1.83 2.81 1.3 3.49.99.11-.77.42-1.3.76-1.6-2.66-.31-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.13-.3-.54-1.52.12-3.18 0 0 1.01-.32 3.3 1.23A11.5 11.5 0 0 1 12 6.2c1.02 0 2.04.14 3 .4 2.29-1.55 3.3-1.23 3.3-1.23.65 1.66.24 2.88.12 3.18.77.84 1.23 1.91 1.23 3.22 0 4.61-2.81 5.62-5.48 5.92.43.37.82 1.1.82 2.22v3.2c0 .32.22.7.83.58A12 12 0 0 0 12 .3Z"/></svg>GitHub<span class="star-count" data-star-count hidden></span></a>
+      <a class="nav-github" href="https://github.com/xingexu/photogit" aria-label="PhotoGit on GitHub">GitHub</a>
     </nav>
   </header>
   <main id="top">
   <section class="landing" aria-labelledby="hero-title">
     <div class="landing-inner">
-    <div class="content">
-      <h1 class="tagline" id="hero-title"><span>Version control</span><em>for Photoshop.</em></h1>
-      <p class="subline">Save every PSD version, see exactly what changed layer by layer, and branch your ideas without leaving Photoshop.</p>
-      <div class="actions">
-        <a class="cta cta-primary" href="#get-started">Get started <span aria-hidden="true">→</span></a>
-        <a class="cta cta-secondary" href="https://github.com/xingexu/photogit" data-gh-star><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6L2.5 9.4l6.6-.8z"/></svg>Star on GitHub<span class="star-count" data-star-count hidden></span></a>
+      <div class="content">
+        <h1 class="tagline" id="hero-title">Version control<br>for Photoshop.</h1>
+        <p class="subline">Save versions of your PSDs, see which layers changed, and try new directions on branches inside Photoshop.</p>
+        <div class="actions">
+          <a class="cta cta-primary" href="#get-started">Get started</a>
+          <a class="cta cta-secondary" href="https://github.com/xingexu/photogit">View on GitHub</a>
+        </div>
+        <p class="hero-meta">Free and open source. Versions stay on your computer.</p>
       </div>
-      <p class="hero-meta"><span>Free &amp; open source</span><span>Your files stay on your machine</span><span>Built on Git</span></p>
-    </div>
-      <div class="studio-stage" aria-hidden="true">
+      <div class="studio-stage">
         <div class="studio-scene">
-          <div class="studio-window">
-            <div class="window-bar"><span>eclipse-poster.psd</span><span class="window-saved">Version saved</span></div>
-            <div class="studio-art">
-              <img src="artwork/studio-canvas.webp" width="1200" height="800" alt="" fetchpriority="high" decoding="async">
-            </div>
-            <div class="window-foot"><span>66.7%</span><span>RGB / 8</span></div>
-          </div>
-          <div class="studio-float studio-swatches">
-            <div class="float-label">Swatches</div>
-            <div class="swatch-row"><i style="--swatch:#dcfc69"></i><i style="--swatch:#f49bc8"></i><i style="--swatch:#986cf5"></i><i style="--swatch:#4c2a72"></i><i style="--swatch:#16121e"></i></div>
-          </div>
-          <div class="studio-float studio-layers">
-            <div class="float-label">Layers</div>
-            <div class="layer-item selected"><i></i> Eclipse</div>
-            <div class="layer-item"><i></i> Mountains</div>
-            <div class="layer-item"><i></i> Atmosphere</div>
+          <img class="studio-window" src="screens/photoshop-history.webp" width="1300" height="860" alt="PhotoGit’s History tab in Photoshop, showing saved PSD versions and Git commit IDs" fetchpriority="high">
+          <div class="studio-float" aria-hidden="true">
+            <img src="screens/panel-branches.png" width="744" height="1180" alt="">
           </div>
         </div>
       </div>
@@ -81,9 +66,8 @@
   <section class="section" aria-labelledby="problem-title">
     <div class="wrap problem">
       <div>
-        <p class="eyebrow">Sound familiar?</p>
         <h2 id="problem-title">Stop naming files <span>final_v7_REAL.psd</span></h2>
-        <p class="lede">Designers have been versioning Photoshop work with “Save As” for thirty years. It eats disk space, hides what changed, and nobody remembers which copy the client approved. PhotoGit keeps one document and a complete, searchable history behind it, right in a Photoshop panel.</p>
+        <p class="lede">Keep one working PSD and a searchable version history. Give each version a name so you can find and reopen it in the PhotoGit panel.</p>
       </div>
       <ul class="files" aria-label="Before and after">
         <li><s>poster_final.psd</s></li>
@@ -98,9 +82,8 @@
   <section class="section alt" id="features" aria-labelledby="panel-title">
     <div class="wrap">
       <div class="center">
-        <p class="eyebrow">The panel</p>
-        <h2 id="panel-title">Your whole design history, docked in Photoshop</h2>
-        <p class="lede">No new app to learn. PhotoGit is a panel next to Layers and History, and it remembers every version you choose to save.</p>
+        <h2 id="panel-title">The PhotoGit panel</h2>
+        <p class="lede">Open PhotoGit next to your Layers and History panels to revisit saved versions, switch branches, or review changes.</p>
       </div>
       <div class="shots">
         <figure class="shot"><img src="screens/panel-history.png" width="744" height="1180" loading="lazy" alt="History tab listing saved versions with previews, and Compare and Restore buttons on the selected version"><figcaption><b>History</b>Every saved version with a preview. Compare any one with the open document, or restore it as a separate copy.</figcaption></figure>
@@ -113,15 +96,13 @@
   <section class="section" aria-labelledby="features-title">
     <div class="wrap">
       <div class="center">
-        <p class="eyebrow">Features</p>
-        <h2 id="features-title">Git’s safety net, without the Git</h2>
-        <p class="lede">Everything developers love about version control, rebuilt around layers, pixels and PSDs.</p>
+        <h2 id="features-title">What PhotoGit tracks</h2>
       </div>
       <div class="features">
         <article class="feature"><h3>Layer-by-layer changes</h3><p>See which layers were added, deleted or edited, down to pixels, text, opacity, blend mode and order.</p></article>
         <article class="feature"><h3>Exact PSD versions</h3><p>Every version stores the full PSD, so you can always reopen precisely what you saved. Nothing is flattened or approximated.</p></article>
         <article class="feature"><h3>Before / after compare</h3><p>Put any saved version beside your open document and see what moved before you commit to it.</p></article>
-        <article class="feature"><h3>Branches for big ideas</h3><p>Try a new direction on a branch and merge it back when the client picks it. Conflicting PSD edits are blocked, not silently overwritten.</p></article>
+        <article class="feature"><h3>Branches</h3><p>Try a new direction on a branch. PhotoGit flags conflicting PSD edits before merging.</p></article>
         <article class="feature"><h3>Local and private</h3><p>Your artwork lives in a folder on your machine. Nothing is uploaded unless you push to a remote you choose.</p></article>
         <article class="feature"><h3>Real Git underneath</h3><p>Every version is an ordinary Git commit, so GitHub, backups and your team’s existing tools just work.</p></article>
       </div>
@@ -131,8 +112,7 @@
   <section class="section dark" id="get-started" aria-labelledby="start-title">
     <div class="wrap">
       <div class="center">
-        <p class="eyebrow">Get started</p>
-        <h2 id="start-title">Up and running in three steps</h2>
+        <h2 id="start-title">Get started</h2>
         <p class="lede">You need Node.js 22+, Git with Git LFS, Photoshop 2024 (v25) or later, and Adobe UXP Developer Tools. The terminal is only used once, for setup.</p>
       </div>
       <div class="steps">
@@ -147,9 +127,7 @@
   <section class="section alt" aria-labelledby="compare-title">
     <div class="wrap">
       <div class="center">
-        <p class="eyebrow">Why PhotoGit</p>
-        <h2 id="compare-title">How designers version PSDs today</h2>
-        <p class="lede">Most version-control tools for designers were built for Sketch or Figma. Photoshop files were left with “Save As”.</p>
+        <h2 id="compare-title">Compare PSD versioning workflows</h2>
       </div>
       <div class="compare-scroll" tabindex="0" role="region" aria-label="Comparison table">
         <table class="compare">
@@ -171,8 +149,7 @@
   <section class="section" id="faq" aria-labelledby="faq-title">
     <div class="wrap">
       <div class="center">
-        <p class="eyebrow">FAQ</p>
-        <h2 id="faq-title">Questions, answered</h2>
+        <h2 id="faq-title">FAQ</h2>
       </div>
       <div class="faq">
         <details><summary>Is PhotoGit free?</summary><p>Yes. PhotoGit is open source under the MIT license. There is no account, subscription or usage limit.</p></details>
@@ -187,44 +164,23 @@
 
   <section class="section dark final" aria-labelledby="final-title">
     <div class="wrap">
-      <p class="eyebrow">Open source</p>
-      <h2 id="final-title">Help us give every designer a safety net</h2>
-      <p class="lede">PhotoGit is built in the open. A star helps more designers find it, and issues and pull requests shape what comes next.</p>
+      <h2 id="final-title">Contribute to PhotoGit</h2>
+      <p class="lede">Report a bug, suggest a feature, or contribute code on GitHub.</p>
       <div class="actions">
-        <a class="cta cta-primary" href="https://github.com/xingexu/photogit" data-gh-star><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6L2.5 9.4l6.6-.8z"/></svg>Star on GitHub<span class="star-count" data-star-count hidden></span></a>
+        <a class="cta cta-primary" href="https://github.com/xingexu/photogit">Star on GitHub</a>
         <a class="cta cta-secondary" href="https://github.com/xingexu/photogit/issues/new/choose">Request a feature</a>
       </div>
-      <p class="final-note">MIT licensed · Made for designers who have lost work to “Save As”</p>
+      <p class="final-note"><a href="https://github.com/xingexu/photogit/blob/main/LICENSE">MIT license</a></p>
     </div>
   </section>
   </main>
   <footer class="site-footer">
       <span class="footer-credit">© 2026 XINGE XU</span>
-      <nav class="icon-bar" aria-label="Connect with PhotoGit">
-        <a href="https://github.com/xingexu/photogit" target="_blank" rel="noopener noreferrer" aria-label="PhotoGit on GitHub"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .3A12 12 0 0 0 8.21 23.69c.6.11.82-.26.82-.58v-2.04c-3.34.73-4.04-1.61-4.04-1.61-.55-1.39-1.33-1.76-1.33-1.76-1.09-.74.08-.73.08-.73 1.2.09 1.84 1.24 1.84 1.24 1.07 1.83 2.81 1.3 3.49.99.11-.77.42-1.3.76-1.6-2.66-.31-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.13-.3-.54-1.52.12-3.18 0 0 1.01-.32 3.3 1.23A11.5 11.5 0 0 1 12 6.2c1.02 0 2.04.14 3 .4 2.29-1.55 3.3-1.23 3.3-1.23.65 1.66.24 2.88.12 3.18.77.84 1.23 1.91 1.23 3.22 0 4.61-2.81 5.62-5.48 5.92.43.37.82 1.1.82 2.22v3.2c0 .32.22.7.83.58A12 12 0 0 0 12 .3Z"/></svg></a>
-        <a href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fgithub.com%2Fxingexu%2Fphotogit" target="_blank" rel="noopener noreferrer" aria-label="Share PhotoGit on LinkedIn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.2 9h3.1v10.2H4.2V9Zm1.55-4.3a1.8 1.8 0 1 1 0 3.6 1.8 1.8 0 0 1 0-3.6ZM9.2 9h3v1.4h.04c.42-.8 1.45-1.64 3-1.64 3.2 0 3.8 2.1 3.8 4.83v5.61h-3.12v-4.97c0-1.19-.02-2.71-1.65-2.71-1.66 0-1.92 1.29-1.92 2.62v5.06H9.2V9Z"/></svg></a>
-        <a href="mailto:hello@photogit.app" aria-label="Email PhotoGit"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 4h20v16H2V4Zm2 2v1.2l8 6.1 8-6.1V6H4Zm16 12V9.7l-8 6.1-8-6.1V18h16Z"/></svg></a>
+      <nav class="footer-links" aria-label="Connect with PhotoGit">
+        <a href="https://github.com/xingexu/photogit" target="_blank" rel="noopener noreferrer">GitHub</a>
+        <a href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fgithub.com%2Fxingexu%2Fphotogit" target="_blank" rel="noopener noreferrer">Share on LinkedIn</a>
+        <a href="mailto:hello@photogit.app">Email</a>
       </nav>
   </footer>
-  <script>
-    // Show the live star count once it is large enough to read as social proof.
-    (function () {
-      var badges = document.querySelectorAll('[data-star-count]');
-      if (!badges.length || !window.fetch) return;
-      fetch('https://api.github.com/repos/xingexu/photogit', { headers: { Accept: 'application/vnd.github+json' } })
-        .then(function (response) { return response.ok ? response.json() : null; })
-        .then(function (repo) {
-          var stars = repo && repo.stargazers_count;
-          if (typeof stars !== 'number' || stars < 25) return;
-          var label = stars >= 1000 ? (stars / 1000).toFixed(stars >= 10000 ? 0 : 1).replace(/\.0$/, '') + 'k' : String(stars);
-          badges.forEach(function (badge) {
-            badge.textContent = '★ ' + label;
-            badge.hidden = false;
-            badge.parentElement.setAttribute('aria-label', badge.parentElement.textContent.replace('★ ' + label, '').trim() + ', ' + stars + ' stars');
-          });
-        })
-        .catch(function () { /* The buttons work without the count. */ });
-    })();
-  </script>
 </body>
 </html>

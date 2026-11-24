@@ -2,7 +2,7 @@
 
 Serve this directory with `python3 -m http.server 3000 --directory site` from the repository root.
 
-On load, the canvas settles into the workspace, light sweeps across the image, and the Layers and Swatches panels drift into place. Hover over the workspace with a mouse to tilt it. The artwork is a local WebP.
+The History and Branches screenshots settle into place on load. Move a mouse over the screenshots to tilt the scene. The hero and social preview use a cropped native History capture from `artifacts/editorial-ui-20260905/native-dark-history-753x800.png`.
 
 Reduced-motion settings disable the entrance animations and tilt.
 
