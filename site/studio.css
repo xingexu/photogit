@@ -81,25 +81,20 @@ body { margin: 0; isolation: isolate; }
 
 .ascii-toggle {
   position: fixed;
-  right: 16px;
-  bottom: 16px;
-  padding: 10px;
+  right: max(16px, env(safe-area-inset-right));
+  bottom: max(16px, env(safe-area-inset-bottom));
+  min-height: 44px;
+  padding: 0 12px;
   border: 1px solid #576477;
-  border-radius: 6px;
-  background: #101318;
+  border-radius: 999px;
+  background: rgb(16 19 24 / 85%);
   color: inherit;
   font: inherit;
+  font-size: 12px;
   cursor: pointer;
 }
 
-.ascii-toggle:not(:focus-visible) {
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  border: 0;
-  overflow: hidden;
-  clip-path: inset(50%);
-}
+.ascii-toggle:hover { background: #202936; }
 
 @media (prefers-reduced-motion: reduce) {
   .ascii-photo { transition: none; }
