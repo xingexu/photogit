@@ -120,6 +120,8 @@ body { margin: 0; isolation: isolate; }
   transition: transform .42s cubic-bezier(.24, .7, .3, 1), opacity .24s ease;
 }
 
+.wordmark-layer::before { content: attr(data-text); }
+
 .wordmark-layer--cyan {
   --order: 1;
   --offset-x: .07em;
