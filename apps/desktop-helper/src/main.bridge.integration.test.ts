@@ -1,6 +1,6 @@
 import { execFile, spawn, type ChildProcess } from "node:child_process";
 import { once } from "node:events";
-import { mkdir, mkdtemp, readFile, readdir, unlink, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, readdir, rmdir, unlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { promisify } from "node:util";
@@ -65,6 +65,43 @@ async function fixture(injectGitVerificationFailure = false) {
 }
 
 describe("real helper process filesystem bridge", () => {
+  it("leaves the document unbound after a rejected first save so another document can be saved", async () => {
+    const f = await fixture();
+    await writeFile(join(f.root, "unrelated.txt"), "user staged work");
+    await execute("git", ["add", "--", "unrelated.txt"], { cwd: f.root });
+
+    const rejected = await f.request("capture", { capture: f.capture, documentIdentity: f.identity, message: "Rejected first save" });
+    expect(rejected).toMatchObject({ ok: false, error: { code: "OPERATION_FAILED", gitChanged: false } });
+    expect(await f.request("status")).toMatchObject({ ok: true, result: { baselineMissing: true, documentBinding: null } });
+    expect((await execute("git", ["diff", "--cached", "--name-only"], { cwd: f.root })).stdout.trim()).toBe("unrelated.txt");
+
+    await execute("git", ["rm", "--cached", "--", "unrelated.txt"], { cwd: f.root });
+    const otherIdentity = { documentId: "second-document", name: "second.psd", sourcePath: join(f.root, "second.psd") };
+    const otherCapture = structuredClone(f.capture);
+    otherCapture.document.documentId = otherIdentity.documentId;
+    otherCapture.document.name = otherIdentity.name;
+    expect(await f.request("capture", { capture: otherCapture, documentIdentity: otherIdentity, message: "Save the second document" })).toMatchObject({ ok: true });
+    expect(await f.request("status")).toMatchObject({ ok: true, result: { baselineMissing: false, documentBinding: otherIdentity } });
+    expect(await f.request("refresh", { capture: f.capture, documentIdentity: f.identity })).toMatchObject({ ok: false, error: { code: "DOCUMENT_MISMATCH" } });
+  }, 15_000);
+
+  it("reports the saved version and accepts reconnection if writing its first binding fails", async () => {
+    const f = await fixture();
+    const bindingPath = join(f.root, ".photogit", "bridge", "document-binding.json");
+    const hookPath = join(f.root, ".git", "hooks", "post-commit");
+    await writeFile(hookPath, "#!/bin/sh\nmkdir .photogit/bridge/document-binding.json\n", { mode: 0o700 });
+    const result = await f.request("capture", { capture: f.capture, documentIdentity: f.identity, message: "Saved before binding failed" });
+    const version = (await execute("git", ["rev-parse", "--short=8", "HEAD"], { cwd: f.root })).stdout.trim();
+    expect(result).toMatchObject({ ok: false, error: { code: "RECOVERY_REQUIRED", outcome: "recovery_required", gitChanged: true, message: expect.stringContaining(`Version ${version} was saved`) } });
+    expect((await execute("git", ["log", "-1", "--format=%s"], { cwd: f.root })).stdout.trim()).toBe("Saved before binding failed");
+
+    await rmdir(bindingPath);
+    await unlink(hookPath);
+    expect(await f.request("status")).toMatchObject({ ok: true, result: { baselineMissing: false, documentBinding: null } });
+    expect(await f.request("connectDocument", { documentIdentity: f.identity })).toMatchObject({ ok: true });
+    expect(await f.request("refresh", { capture: f.capture, documentIdentity: f.identity })).toMatchObject({ ok: true, result: { changeCount: 0 } });
+  }, 15_000);
+
   it("reports an ordinary save failure without mutation and preserves unrelated staged work", async () => {
     const f = await fixture();
     expect(await f.request("capture", { capture: f.capture, documentIdentity: f.identity, message: "Before staged work" })).toMatchObject({ ok: true });
@@ -92,6 +129,29 @@ describe("real helper process filesystem bridge", () => {
     const after = (await execute("git", ["rev-parse", "HEAD"], { cwd: f.root })).stdout.trim();
     expect(after).not.toBe(before);
     expect((await execute("git", ["log", "-1", "--format=%s"], { cwd: f.root })).stdout.trim()).toBe("Saved before verification failed");
+  }, 15_000);
+
+  it.each(["changed", "unknown"] as const)("guides reconnection after first-save verification fails and HEAD is %s", async (headState) => {
+    const f = await fixture(true);
+    const verificationFlag = join(f.root, ".photogit", "bridge", "fail-verification");
+    const unknownHeadFlag = join(f.root, ".photogit", "bridge", "unknown-head");
+    await writeFile(verificationFlag, "enabled");
+    if (headState === "unknown") await writeFile(unknownHeadFlag, "enabled");
+
+    const result = await f.request("capture", { capture: f.capture, documentIdentity: f.identity, message: "First version before verification failed" });
+    expect(result).toMatchObject({
+      ok: false, error: {
+        code: "RECOVERY_REQUIRED",
+        message: expect.stringContaining("If your first version appears in history, reconnect its Photoshop document")
+      }
+    });
+    await unlink(verificationFlag);
+    if (headState === "unknown") await unlink(unknownHeadFlag);
+
+    expect(await f.request("history")).toMatchObject({ ok: true, result: { versions: [expect.objectContaining({ message: "First version before verification failed" })] } });
+    expect(await f.request("status")).toMatchObject({ ok: true, result: { baselineMissing: false, documentBinding: null } });
+    expect(await f.request("connectDocument", { documentIdentity: f.identity })).toMatchObject({ ok: true });
+    expect(await f.request("refresh", { capture: f.capture, documentIdentity: f.identity })).toMatchObject({ ok: true, result: { changeCount: 0 } });
   }, 15_000);
 
   it.each(["omitted", "null"] as const)("warns when the current scan has a missing (%s) document rendering fingerprint", async (missing) => {
