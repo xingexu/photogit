@@ -28,6 +28,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;family=Inter:wght@400;500;600;700&display=swap">
   <link rel="stylesheet" href="studio.css">
   <script src="studio.js" defer></script>
+  <script src="ascii-background.js" defer></script>
 </head>
 <body>
   <header class="topbar">
@@ -42,6 +43,10 @@
   </header>
   <main id="top">
   <section class="landing" aria-labelledby="hero-title">
+    <div class="ascii-background" aria-hidden="true">
+      <canvas></canvas>
+      <canvas></canvas>
+    </div>
     <div class="landing-inner">
       <div class="content">
         <h1 class="tagline" id="hero-title">Version control<br>for Photoshop.</h1>
@@ -61,6 +66,7 @@
         </div>
       </div>
     </div>
+    <button class="ascii-toggle" type="button" hidden>Pause background</button>
   </section>
 
   <section class="section" aria-labelledby="problem-title">
