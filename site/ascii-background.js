@@ -41,15 +41,6 @@
 
   const sources = ['photos/lake.webp', 'photos/ocean.webp', 'photos/stars.webp', 'photos/desert.webp'];
   const glyphs = ' .,:;-~+=!iltfrxvuznXYTLCJ0OZQwm#MW&8%B@$';
-  // Quantize the sampled colors for a small palette shared by every frame.
-  const palette = Array.from({ length: 4096 }, (_, index) => {
-    const red = (index >> 8) * 17;
-    const green = ((index >> 4) & 15) * 17;
-    const blue = (index & 15) * 17;
-    // Lift dark colors so sparse glyphs still read against the dark background.
-    const lift = 0.76 + 66 / Math.max(32, red, green, blue);
-    return `rgb(${Math.round(red * lift)} ${Math.round(green * lift)} ${Math.round(blue * lift)})`;
-  });
   const trail = [];
   const trailLifetime = 620;
   let trailFrame = 0;
@@ -75,6 +66,7 @@
     const fontSize = width < 680 ? 7 : 8;
     context.font = `${fontSize}px ui-monospace, monospace`;
     context.textBaseline = 'middle';
+    context.fillStyle = '#fff';
 
     const cellHeight = fontSize * 1.18;
     const cellWidth = context.measureText('M').width;
@@ -88,21 +80,34 @@
     const cropHeight = height / cover;
     sampler.drawImage(photo, (photo.naturalWidth - cropWidth) / 2, (photo.naturalHeight - cropHeight) / 2,
       cropWidth, cropHeight, 0, 0, columns, rows);
-    const pixels = sampler.getImageData(0, 0, columns, rows).data;
+    const colors = sampler.getImageData(0, 0, columns, rows);
+    const pixels = colors.data;
 
     for (let row = 0; row < rows; row++) {
+      let line = '';
       for (let column = 0; column < columns; column++) {
         const offset = (row * columns + column) * 4;
         const red = pixels[offset];
         const green = pixels[offset + 1];
         const blue = pixels[offset + 2];
         const luminance = (0.2126 * red + 0.7152 * green + 0.0722 * blue) / 255;
-        const glyph = glyphs[Math.round(luminance ** 0.9 * (glyphs.length - 1))];
-        if (glyph === ' ') continue;
-        context.fillStyle = palette[((red >> 4) << 8) | ((green >> 4) << 4) | (blue >> 4)];
-        context.fillText(glyph, column * cellWidth, (row + 0.5) * cellHeight);
+        line += glyphs[Math.round(luminance ** 0.9 * (glyphs.length - 1))];
+        // Lift dark colors so sparse glyphs remain visible against the backdrop.
+        const lift = 0.76 + 66 / Math.max(32, red, green, blue);
+        pixels[offset] = red * lift;
+        pixels[offset + 1] = green * lift;
+        pixels[offset + 2] = blue * lift;
       }
+      context.fillText(line, 0, (row + 0.5) * cellHeight);
     }
+
+    // Mask the enlarged color grid with the text, so each cell keeps its own color.
+    sampler.putImageData(colors, 0, 0);
+    context.save();
+    context.globalCompositeOperation = 'source-in';
+    context.imageSmoothingEnabled = false;
+    context.drawImage(sampler.canvas, 0, 0, columns * cellWidth, rows * cellHeight);
+    context.restore();
   }
 
   function showPhoto() {
