@@ -1,6 +1,34 @@
 (() => {
   const background = document.querySelector('.ascii-background');
   const toggle = document.querySelector('.ascii-toggle');
+  const wordmark = document.querySelector('.wordmark');
+  const tryLink = document.querySelector('.try-link');
+  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+
+  const resetTilt = () => {
+    wordmark.style.removeProperty('--tilt-x');
+    wordmark.style.removeProperty('--tilt-y');
+  };
+  wordmark.addEventListener('pointermove', ({ clientX, clientY, pointerType }) => {
+    if (pointerType === 'touch' || reducedMotion.matches) return;
+    const { left, top, width, height } = wordmark.getBoundingClientRect();
+    const x = (clientX - left) / width - 0.5;
+    const y = (clientY - top) / height - 0.5;
+    wordmark.style.setProperty('--tilt-x', `${-y * 44}deg`);
+    wordmark.style.setProperty('--tilt-y', `${x * 60}deg`);
+  });
+  wordmark.addEventListener('pointerleave', resetTilt);
+  wordmark.addEventListener('pointercancel', resetTilt);
+  window.addEventListener('blur', resetTilt);
+  reducedMotion.addEventListener('change', resetTilt);
+
+  tryLink.addEventListener('pointermove', ({ clientX, clientY, pointerType }) => {
+    if (pointerType === 'touch' || reducedMotion.matches) return;
+    const { left, top } = tryLink.getBoundingClientRect();
+    tryLink.style.setProperty('--glint-x', `${clientX - left}px`);
+    tryLink.style.setProperty('--glint-y', `${clientY - top}px`);
+  });
+
   const layers = Array.from(background.querySelectorAll('.ascii-photo'), (canvas) => ({
     canvas,
     context: canvas.getContext('2d'),
@@ -13,7 +41,15 @@
 
   const sources = ['photos/lake.webp', 'photos/ocean.webp', 'photos/stars.webp', 'photos/desert.webp'];
   const glyphs = ' .,:;-~+=!iltfrxvuznXYTLCJ0OZQwm#MW&8%B@$';
-  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+  // Quantize the sampled colors for a small palette shared by every frame.
+  const palette = Array.from({ length: 4096 }, (_, index) => {
+    const red = (index >> 8) * 17;
+    const green = ((index >> 4) & 15) * 17;
+    const blue = (index & 15) * 17;
+    // Lift dark colors so sparse glyphs still read against the dark background.
+    const lift = 0.76 + 66 / Math.max(32, red, green, blue);
+    return `rgb(${Math.round(red * lift)} ${Math.round(green * lift)} ${Math.round(blue * lift)})`;
+  });
   const trail = [];
   const trailLifetime = 620;
   let trailFrame = 0;
@@ -39,10 +75,10 @@
     const fontSize = width < 680 ? 7 : 8;
     context.font = `${fontSize}px ui-monospace, monospace`;
     context.textBaseline = 'middle';
-    context.fillStyle = '#a5bfdf';
 
     const cellHeight = fontSize * 1.18;
-    const columns = Math.ceil(width / context.measureText('M').width);
+    const cellWidth = context.measureText('M').width;
+    const columns = Math.ceil(width / cellWidth);
     const rows = Math.ceil(height / cellHeight);
     sampler.canvas.width = columns;
     sampler.canvas.height = rows;
@@ -55,13 +91,17 @@
     const pixels = sampler.getImageData(0, 0, columns, rows).data;
 
     for (let row = 0; row < rows; row++) {
-      let line = '';
       for (let column = 0; column < columns; column++) {
-        // The bundled photos are grayscale, so any one color channel gives the brightness.
-        const brightness = pixels[(row * columns + column) * 4] / 255;
-        line += glyphs[Math.round(brightness ** 1.25 * (glyphs.length - 1))];
+        const offset = (row * columns + column) * 4;
+        const red = pixels[offset];
+        const green = pixels[offset + 1];
+        const blue = pixels[offset + 2];
+        const luminance = (0.2126 * red + 0.7152 * green + 0.0722 * blue) / 255;
+        const glyph = glyphs[Math.round(luminance ** 0.9 * (glyphs.length - 1))];
+        if (glyph === ' ') continue;
+        context.fillStyle = palette[((red >> 4) << 8) | ((green >> 4) << 4) | (blue >> 4)];
+        context.fillText(glyph, column * cellWidth, (row + 0.5) * cellHeight);
       }
-      context.fillText(line, 0, (row + 0.5) * cellHeight);
     }
   }
 
