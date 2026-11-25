@@ -2,7 +2,7 @@
 
 Serve this directory with `python3 -m http.server 3000 --directory site` from the repository root.
 
-The site picks one of four nature photographs on each load and draws it as full-screen color ASCII. Moving a mouse or pen lights up characters along its path and tilts the PhotoGit title on hover. Reduced-motion settings disable the trail and tilt.
+The site picks one of four nature photographs on each load and draws it as full-screen color ASCII. Moving a mouse or pen lights up characters along its path. Hovering over the PhotoGit title lifts it into 3D and tilts it toward the pointer. Reduced-motion settings disable the trail and tilt.
 
 Background photo sources ([Unsplash License](https://unsplash.com/license)):
 

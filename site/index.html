@@ -17,6 +17,7 @@
   <meta property="og:image:alt" content="PhotoGit over a night sky and mountains rendered in color ASCII">
   <meta name="twitter:card" content="summary_large_image">
   <link rel="preload" href="fonts/instrument-serif-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/space-mono-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="studio.css">
   <script src="ascii-background.js" defer></script>
 </head>
@@ -27,7 +28,12 @@
   </div>
   <main class="preview" aria-labelledby="title">
     <div>
-      <div class="wordmark"><h1 id="title">PhotoGit</h1></div>
+      <div class="wordmark">
+        <div class="wordmark-object">
+          <span class="wordmark-depth" data-text="PhotoGit" aria-hidden="true"></span>
+          <h1 id="title">PhotoGit</h1>
+        </div>
+      </div>
       <p>Version control for Photoshop.</p>
       <a class="try-link" href="https://github.com/xingexu/photogit">Try it out</a>
     </div>

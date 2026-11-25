@@ -5,17 +5,21 @@
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
   const resetTilt = () => {
+    wordmark.classList.remove('is-tilted');
     wordmark.style.removeProperty('--tilt-x');
     wordmark.style.removeProperty('--tilt-y');
   };
-  wordmark.addEventListener('pointermove', ({ clientX, clientY, pointerType }) => {
+  const tilt = ({ clientX, clientY, pointerType }) => {
     if (pointerType === 'touch' || reducedMotion.matches) return;
     const { left, top, width, height } = wordmark.getBoundingClientRect();
     const x = (clientX - left) / width - 0.5;
     const y = (clientY - top) / height - 0.5;
-    wordmark.style.setProperty('--tilt-x', `${-y * 44}deg`);
-    wordmark.style.setProperty('--tilt-y', `${x * 60}deg`);
-  });
+    wordmark.style.setProperty('--tilt-x', `${12 - y * 48}deg`);
+    wordmark.style.setProperty('--tilt-y', `${-15 + x * 56}deg`);
+    wordmark.classList.add('is-tilted');
+  };
+  wordmark.addEventListener('pointerenter', tilt);
+  wordmark.addEventListener('pointermove', tilt);
   wordmark.addEventListener('pointerleave', resetTilt);
   wordmark.addEventListener('pointercancel', resetTilt);
   window.addEventListener('blur', resetTilt);
