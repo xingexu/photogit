@@ -97,9 +97,15 @@ body { margin: 0; isolation: isolate; }
 
 .wordmark h1 {
   position: relative;
-  color: #fcfaf6;
-  text-shadow: 0 4px 16px #080e1a, 0 12px 36px #020611b3;
+  color: #fff;
+  text-shadow: 0 4px 16px #000c, 0 12px 36px #000b;
   transform: translateZ(1px);
+  transition: text-shadow .32s ease;
+}
+
+.is-tilted h1 {
+  text-shadow: 0 4px 16px #0008, 0 12px 36px #0009,
+    0 0 .065em #fffc, 0 0 .24em #fff7, 0 0 .5em #fff3;
 }
 
 .wordmark-layers {
@@ -111,10 +117,9 @@ body { margin: 0; isolation: isolate; }
 .wordmark-layer {
   position: absolute;
   inset: 0;
-  color: transparent;
-  color: color-mix(in srgb, var(--ink) 18%, transparent);
-  -webkit-text-stroke: .006em var(--ink);
-  text-shadow: 0 0 24px color-mix(in srgb, var(--ink) 32%, transparent);
+  color: rgb(255 255 255 / 8%);
+  -webkit-text-stroke: .006em rgb(255 255 255 / var(--outline-opacity));
+  text-shadow: 0 0 .075em #fff6, 0 0 .23em #fff3;
   opacity: 0;
   transform: translateZ(-1px);
   transition: transform .42s cubic-bezier(.24, .7, .3, 1), opacity .24s ease;
@@ -122,22 +127,22 @@ body { margin: 0; isolation: isolate; }
 
 .wordmark-layer::before { content: attr(data-text); }
 
-.wordmark-layer--cyan {
+.wordmark-layer--near {
   --order: 1;
   --offset-x: .07em;
-  --ink: #70ebff;
+  --outline-opacity: .92;
 }
 
-.wordmark-layer--violet {
+.wordmark-layer--middle {
   --order: 2;
   --offset-x: -.05em;
-  --ink: #bba4ff;
+  --outline-opacity: .65;
 }
 
-.wordmark-layer--rose {
+.wordmark-layer--far {
   --order: 3;
   --offset-x: -.19em;
-  --ink: #ff9cc9;
+  --outline-opacity: .46;
 }
 
 .is-tilted .wordmark-layer {
@@ -263,6 +268,7 @@ body { margin: 0; isolation: isolate; }
 @media (prefers-reduced-motion: reduce) {
   .wordmark-object,
   .is-tilted .wordmark-object,
+  .wordmark h1,
   .wordmark-layer,
   .is-tilted .wordmark-layer,
   .try-link,
