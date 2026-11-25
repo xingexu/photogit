@@ -1,6 +1,5 @@
 (() => {
   const background = document.querySelector('.ascii-background');
-  const toggle = document.querySelector('.ascii-toggle');
   const wordmark = document.querySelector('.wordmark');
   const tryLink = document.querySelector('.try-link');
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
@@ -29,15 +28,12 @@
     tryLink.style.setProperty('--glint-y', `${clientY - top}px`);
   });
 
-  const layers = Array.from(background.querySelectorAll('.ascii-photo'), (canvas) => ({
-    canvas,
-    context: canvas.getContext('2d'),
-    photo: null,
-  }));
+  const photoCanvas = background.querySelector('.ascii-photo');
+  const context = photoCanvas.getContext('2d');
   const trailCanvas = background.querySelector('.ascii-trail');
   const trailContext = trailCanvas.getContext('2d');
   const sampler = document.createElement('canvas').getContext('2d', { willReadFrequently: true });
-  if (!sampler || layers.some(({ context }) => !context)) return;
+  if (!sampler || !context) return;
 
   const sources = ['photos/lake.webp', 'photos/ocean.webp', 'photos/stars.webp', 'photos/desert.webp'];
   const glyphs = ' .,:;-~+=!iltfrxvuznXYTLCJ0OZQwm#MW&8%B@$';
@@ -47,11 +43,7 @@
   let width = background.clientWidth;
   let height = background.clientHeight;
   let scale = Math.min(window.devicePixelRatio, 2);
-  let photos = [];
-  let photoIndex = 0;
-  let layerIndex = 0;
-  let paused = false;
-  let timer;
+  let photo;
 
   function sizeCanvas(canvas, context) {
     canvas.width = Math.round(width * scale);
@@ -59,10 +51,10 @@
     context.setTransform(scale, 0, 0, scale, 0, 0);
   }
 
-  function paint({ canvas, context, photo }) {
+  function paint() {
     if (!photo || !width || !height) return;
 
-    sizeCanvas(canvas, context);
+    sizeCanvas(photoCanvas, context);
     const fontSize = width < 680 ? 7 : 8;
     context.font = `${fontSize}px ui-monospace, monospace`;
     context.textBaseline = 'middle';
@@ -110,14 +102,6 @@
     context.restore();
   }
 
-  function showPhoto() {
-    const layer = layers[layerIndex];
-    layer.photo = photos[photoIndex];
-    paint(layer);
-    layer.canvas.classList.add('is-current');
-    layers[1 - layerIndex].canvas.classList.remove('is-current');
-  }
-
   function drawTrail(time) {
     trailFrame = 0;
     trailContext.clearRect(0, 0, width, height);
@@ -138,7 +122,7 @@
     // Keep the moving light inside the shapes of the photo's ASCII characters.
     trailContext.save();
     trailContext.globalCompositeOperation = 'destination-in';
-    trailContext.drawImage(layers[layerIndex].canvas, 0, 0, width, height);
+    trailContext.drawImage(photoCanvas, 0, 0, width, height);
 
     const tip = trail.at(-1);
     const remaining = Math.max(0, 1 - (time - tip.time) / trailLifetime);
@@ -160,34 +144,11 @@
     trailContext.clearRect(0, 0, width, height);
   }
 
-  function motionEnabled() {
-    return !paused && !reducedMotion.matches && !document.hidden;
-  }
-
-  function schedule() {
-    clearTimeout(timer);
-    toggle.hidden = !photos.length || reducedMotion.matches;
-    if (!motionEnabled()) clearTrail();
-    if (photos.length < 2 || !motionEnabled()) return;
-
-    timer = setTimeout(() => {
-      photoIndex = (photoIndex + 1) % photos.length;
-      layerIndex = 1 - layerIndex;
-      showPhoto();
-      schedule();
-    }, 8000);
-  }
-
-  toggle.addEventListener('click', () => {
-    paused = !paused;
-    toggle.textContent = paused ? 'Resume background' : 'Pause background';
-    schedule();
-  });
-  reducedMotion.addEventListener('change', schedule);
-  document.addEventListener('visibilitychange', schedule);
+  reducedMotion.addEventListener('change', clearTrail);
+  document.addEventListener('visibilitychange', clearTrail);
   window.addEventListener('blur', clearTrail);
   window.addEventListener('pointermove', ({ clientX, clientY, pointerType }) => {
-    if (!trailContext || pointerType === 'touch' || !photos.length || !motionEnabled()) return;
+    if (!trailContext || pointerType === 'touch' || !photo || reducedMotion.matches || document.hidden) return;
 
     const last = trail.at(-1);
     if (last && Math.hypot(clientX - last.x, clientY - last.y) < 8) return;
@@ -201,27 +162,27 @@
     scale = Math.min(window.devicePixelRatio, 2);
     clearTrail();
     if (trailContext) sizeCanvas(trailCanvas, trailContext);
-    for (const layer of layers) paint(layer);
+    paint();
   }).observe(background);
 
-  // Shuffle once per visit so every available photo appears before the sequence repeats.
+  // Choose one landscape per load, with fallbacks if a photo cannot be decoded.
   for (let i = sources.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [sources[i], sources[j]] = [sources[j], sources[i]];
   }
-  Promise.all(sources.map(async (source) => {
-    const photo = new Image();
-    photo.src = source;
-    try {
-      await photo.decode();
-      return photo;
-    } catch {
-      return null;
+  async function loadPhoto() {
+    for (const source of sources) {
+      const candidate = new Image();
+      candidate.src = source;
+      try {
+        await candidate.decode();
+      } catch {
+        continue;
+      }
+      photo = candidate;
+      paint();
+      return;
     }
-  })).then((loaded) => {
-    photos = loaded.filter(Boolean);
-    if (!photos.length) return;
-    showPhoto();
-    schedule();
-  });
+  }
+  loadPhoto();
 })();

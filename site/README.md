@@ -2,7 +2,7 @@
 
 Serve this directory with `python3 -m http.server 3000 --directory site` from the repository root.
 
-The site previews four real nature photographs drawn as full-screen color ASCII. The photos are shuffled on load and crossfade every eight seconds. Moving a mouse or pen lights up characters along its path and tilts the PhotoGit title on hover. Use the pause control in the lower-right corner to stop the rotation and trail. Reduced-motion settings show a still image and keep the title steady.
+The site picks one of four nature photographs on each load and draws it as full-screen color ASCII. Moving a mouse or pen lights up characters along its path and tilts the PhotoGit title on hover. Reduced-motion settings disable the trail and tilt.
 
 Background photo sources ([Unsplash License](https://unsplash.com/license)):
 
