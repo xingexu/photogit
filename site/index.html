@@ -31,6 +31,11 @@
   <script src="ascii-background.js" defer></script>
 </head>
 <body>
+  <div class="ascii-background" aria-hidden="true">
+    <canvas class="ascii-photo"></canvas>
+    <canvas class="ascii-photo"></canvas>
+    <canvas class="ascii-trail"></canvas>
+  </div>
   <header class="topbar">
     <a class="brand" href="#top" aria-label="PhotoGit home">PhotoGit</a>
     <nav class="topnav" aria-label="Main">
@@ -43,10 +48,6 @@
   </header>
   <main id="top">
   <section class="landing" aria-labelledby="hero-title">
-    <div class="ascii-background" aria-hidden="true">
-      <canvas></canvas>
-      <canvas></canvas>
-    </div>
     <div class="landing-inner">
       <div class="content">
         <h1 class="tagline" id="hero-title">Version control<br>for Photoshop.</h1>
