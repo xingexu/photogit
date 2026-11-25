@@ -60,6 +60,9 @@ body { margin: 0; isolation: isolate; }
 
 .wordmark {
   --layer-gap: clamp(10px, 5.3svh, 50px);
+  --layer-depth-step: 20px;
+  --fan-strength: 1;
+  --tilt-strength: 1;
   perspective: 680px;
 }
 
@@ -67,8 +70,10 @@ body { margin: 0; isolation: isolate; }
   position: relative;
   pointer-events: none;
   transform-style: preserve-3d;
-  transform: translateY(var(--lift, 0px)) rotateX(var(--tilt-x, 0deg))
-    rotateY(var(--tilt-y, 0deg)) translateZ(var(--depth, 0px));
+  transform: translateY(var(--lift, 0px))
+    rotateX(calc(var(--tilt-x, 0deg) * var(--tilt-strength)))
+    rotateY(calc(var(--tilt-y, 0deg) * var(--tilt-strength)))
+    translateZ(var(--depth, 0px));
   transition: transform .46s cubic-bezier(.2, .8, .2, 1);
 }
 
@@ -84,6 +89,7 @@ body { margin: 0; isolation: isolate; }
   padding: .05em .12em .1em;
   font-family: "Instrument Serif", Georgia, serif;
   font-size: clamp(68px, 15vw, 190px);
+  font-size: clamp(68px, min(15vw, 30svh), 190px);
   font-weight: 400;
   line-height: .85;
   letter-spacing: -.025em;
@@ -135,9 +141,9 @@ body { margin: 0; isolation: isolate; }
 .is-tilted .wordmark-layer {
   opacity: 1;
   transform: translate3d(
-    calc(var(--offset-x) + var(--fan-x, 0px) * var(--order)),
+    calc(var(--offset-x) + var(--fan-x, 0px) * var(--fan-strength) * var(--order)),
     calc(-1 * var(--layer-gap) * var(--order)),
-    calc(-20px * var(--order))
+    calc(-1 * var(--layer-depth-step) * var(--order))
   );
   transition-timing-function: cubic-bezier(.16, .82, .24, 1.13), ease;
   transition-delay: calc(var(--order) * 24ms), calc(var(--order) * 14ms);
@@ -224,9 +230,32 @@ body { margin: 0; isolation: isolate; }
   outline-offset: 5px;
 }
 
-@media (max-height: 400px) {
-  .wordmark { --layer-gap: clamp(7px, 3.2svh, 13px); }
-  .is-tilted .wordmark-object { --lift: -3px; --depth: 20px; }
+@media (max-height: 720px) {
+  .wordmark {
+    --layer-gap: clamp(10px, 4svh, 30px);
+    --layer-depth-step: 16px;
+    --tilt-strength: .65;
+  }
+}
+
+@media (max-height: 520px) {
+  .wordmark {
+    --layer-gap: clamp(6px, 3svh, 16px);
+    --layer-depth-step: 10px;
+    --tilt-strength: .37;
+  }
+  .is-tilted .wordmark-object { --lift: -3px; --depth: 18px; }
+}
+
+@media (max-width: 440px) {
+  .wordmark { --fan-strength: .45; }
+}
+
+@media (max-height: 260px) {
+  .wordmark {
+    --layer-gap: 2.2svh;
+    --tilt-strength: .29;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
