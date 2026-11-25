@@ -4,30 +4,19 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>PhotoGit — Version control for Photoshop</title>
-  <meta name="description" content="Free, open-source version control for Photoshop. Save exact PSD versions, see what changed layer by layer, and branch ideas from a panel inside Photoshop.">
-  <meta name="theme-color" content="#141518">
+  <meta name="description" content="Version control for Photoshop. Try PhotoGit on GitHub.">
+  <meta name="theme-color" content="#101318">
   <link rel="canonical" href="https://photogit-three.vercel.app/">
   <meta property="og:type" content="website">
-  <meta property="og:site_name" content="PhotoGit">
-  <meta property="og:title" content="PhotoGit — Version control for Photoshop">
-  <meta property="og:description" content="Save every PSD version, see what changed layer by layer, and branch your ideas without leaving Photoshop. Free and open source.">
+  <meta property="og:title" content="PhotoGit">
+  <meta property="og:description" content="Version control for Photoshop.">
   <meta property="og:url" content="https://photogit-three.vercel.app/">
   <meta property="og:image" content="https://photogit-three.vercel.app/og.png">
   <meta property="og:image:width" content="1280">
   <meta property="og:image:height" content="640">
-  <meta property="og:image:alt" content="Version control for Photoshop alongside a screenshot of PhotoGit’s History tab">
+  <meta property="og:image:alt" content="PhotoGit over a mountain landscape rendered in ASCII">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="PhotoGit — Version control for Photoshop">
-  <meta name="twitter:description" content="Save every PSD version, see what changed layer by layer, and branch your ideas without leaving Photoshop.">
-  <meta name="twitter:image" content="https://photogit-three.vercel.app/og.png">
-  <script type="application/ld+json">
-  {"@context":"https://schema.org","@type":"SoftwareApplication","name":"PhotoGit","applicationCategory":"DesignApplication","operatingSystem":"macOS","description":"Free, open-source version control for Photoshop documents, built on Git.","url":"https://photogit-three.vercel.app/","codeRepository":"https://github.com/xingexu/photogit","license":"https://opensource.org/licenses/MIT","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
-  </script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;family=Inter:wght@400;500;600;700&display=swap">
   <link rel="stylesheet" href="studio.css">
-  <script src="studio.js" defer></script>
   <script src="ascii-background.js" defer></script>
 </head>
 <body>
@@ -36,158 +25,13 @@
     <canvas class="ascii-photo"></canvas>
     <canvas class="ascii-trail"></canvas>
   </div>
-  <header class="topbar">
-    <a class="brand" href="#top" aria-label="PhotoGit home">PhotoGit</a>
-    <nav class="topnav" aria-label="Main">
-      <a href="#features">Features</a>
-      <a href="#get-started">Get started</a>
-      <a href="#faq">FAQ</a>
-      <a href="https://github.com/xingexu/photogit/tree/main/docs">Docs</a>
-      <a class="nav-github" href="https://github.com/xingexu/photogit" aria-label="PhotoGit on GitHub">GitHub</a>
-    </nav>
-  </header>
-  <main id="top">
-  <section class="landing" aria-labelledby="hero-title">
-    <div class="landing-inner">
-      <div class="content">
-        <h1 class="tagline" id="hero-title">Version control<br>for Photoshop.</h1>
-        <p class="subline">Save versions of your PSDs, see which layers changed, and try new directions on branches inside Photoshop.</p>
-        <div class="actions">
-          <a class="cta cta-primary" href="#get-started">Get started</a>
-          <a class="cta cta-secondary" href="https://github.com/xingexu/photogit">View on GitHub</a>
-        </div>
-        <p class="hero-meta">Free and open source. Versions stay on your computer.</p>
-      </div>
-      <div class="studio-stage">
-        <div class="studio-scene">
-          <img class="studio-window" src="screens/photoshop-history.webp" width="1300" height="860" alt="PhotoGit’s History tab in Photoshop, showing saved PSD versions and Git commit IDs" fetchpriority="high">
-          <div class="studio-float" aria-hidden="true">
-            <img src="screens/panel-branches.png" width="744" height="1180" alt="">
-          </div>
-        </div>
-      </div>
+  <main class="preview" aria-labelledby="title">
+    <div>
+      <h1 id="title">PhotoGit</h1>
+      <p>Version control for Photoshop.</p>
+      <a class="try-link" href="https://github.com/xingexu/photogit">Try it out</a>
     </div>
-    <button class="ascii-toggle" type="button" hidden>Pause background</button>
-  </section>
-
-  <section class="section" aria-labelledby="problem-title">
-    <div class="wrap problem">
-      <div>
-        <h2 id="problem-title">Stop naming files <span>final_v7_REAL.psd</span></h2>
-        <p class="lede">Keep one working PSD and a searchable version history. Give each version a name so you can find and reopen it in the PhotoGit panel.</p>
-      </div>
-      <ul class="files" aria-label="Before and after">
-        <li><s>poster_final.psd</s></li>
-        <li><s>poster_final_v2.psd</s></li>
-        <li><s>poster_final_v2_client-edits.psd</s></li>
-        <li><s>poster_final_v3_REAL_use-this.psd</s></li>
-        <li class="keep">poster.psd</li>
-      </ul>
-    </div>
-  </section>
-
-  <section class="section alt" id="features" aria-labelledby="panel-title">
-    <div class="wrap">
-      <div class="center">
-        <h2 id="panel-title">The PhotoGit panel</h2>
-        <p class="lede">Open PhotoGit next to your Layers and History panels to revisit saved versions, switch branches, or review changes.</p>
-      </div>
-      <div class="shots">
-        <figure class="shot"><img src="screens/panel-history.png" width="744" height="1180" loading="lazy" alt="History tab listing saved versions with previews, and Compare and Restore buttons on the selected version"><figcaption><b>History</b>Every saved version with a preview. Compare any one with the open document, or restore it as a separate copy.</figcaption></figure>
-        <figure class="shot"><img src="screens/panel-branches.png" width="744" height="1180" loading="lazy" alt="Branches tab showing each branch with its latest saved version"><figcaption><b>Branches</b>Explore a bold alternative without touching the original. Each branch shows the last version saved on it.</figcaption></figure>
-        <figure class="shot"><img src="screens/panel-reviews.png" width="744" height="1180" loading="lazy" alt="Reviews tab listing branches waiting to merge and any conflicts"><figcaption><b>Reviews</b>See which branches are ready to merge and which have conflicts to settle first.</figcaption></figure>
-      </div>
-    </div>
-  </section>
-
-  <section class="section" aria-labelledby="features-title">
-    <div class="wrap">
-      <div class="center">
-        <h2 id="features-title">What PhotoGit tracks</h2>
-      </div>
-      <div class="features">
-        <article class="feature"><h3>Layer-by-layer changes</h3><p>See which layers were added, deleted or edited, down to pixels, text, opacity, blend mode and order.</p></article>
-        <article class="feature"><h3>Exact PSD versions</h3><p>Every version stores the full PSD, so you can always reopen precisely what you saved. Nothing is flattened or approximated.</p></article>
-        <article class="feature"><h3>Before / after compare</h3><p>Put any saved version beside your open document and see what moved before you commit to it.</p></article>
-        <article class="feature"><h3>Branches</h3><p>Try a new direction on a branch. PhotoGit flags conflicting PSD edits before merging.</p></article>
-        <article class="feature"><h3>Local and private</h3><p>Your artwork lives in a folder on your machine. Nothing is uploaded unless you push to a remote you choose.</p></article>
-        <article class="feature"><h3>Real Git underneath</h3><p>Every version is an ordinary Git commit, so GitHub, backups and your team’s existing tools just work.</p></article>
-      </div>
-    </div>
-  </section>
-
-  <section class="section dark" id="get-started" aria-labelledby="start-title">
-    <div class="wrap">
-      <div class="center">
-        <h2 id="start-title">Get started</h2>
-        <p class="lede">You need Node.js 22+, Git with Git LFS, Photoshop 2024 (v25) or later, and Adobe UXP Developer Tools. The terminal is only used once, for setup.</p>
-      </div>
-      <div class="steps">
-        <div class="step"><h3>Install PhotoGit</h3><p>Clone the repository and build it.</p><code>git clone https://github.com/xingexu/photogit.git<br>cd photogit &amp;&amp; npm ci &amp;&amp; npm run build</code></div>
-        <div class="step"><h3>Create a project</h3><p>Point PhotoGit at a folder for your artwork and start the local helper.</p><code>npm run photogit -- init ~/Design/poster<br>npm run helper -- --approve-root ~/Design/poster</code></div>
-        <div class="step"><h3>Open the panel</h3><p>Load the plugin in UXP Developer Tools, then choose <b>Plugins → PhotoGit</b> in Photoshop and save your first version.</p><code>apps/photoshop-plugin/manifest.json</code></div>
-      </div>
-      <p class="steps-foot">Full walkthrough, pairing and troubleshooting in the <a href="https://github.com/xingexu/photogit/blob/main/docs/QUICK_START.md">setup guide</a>.</p>
-    </div>
-  </section>
-
-  <section class="section alt" aria-labelledby="compare-title">
-    <div class="wrap">
-      <div class="center">
-        <h2 id="compare-title">Compare PSD versioning workflows</h2>
-      </div>
-      <div class="compare-scroll" tabindex="0" role="region" aria-label="Comparison table">
-        <table class="compare">
-          <thead><tr><th scope="col"><span class="visually-hidden">Capability</span></th><th scope="col">“Save As” copies</th><th scope="col">Plain Git + LFS</th><th scope="col" class="us">PhotoGit</th></tr></thead>
-          <tbody>
-            <tr><th scope="row">Reopen any exact past PSD</th><td><span class="yes" aria-label="Yes">✓</span></td><td><span class="yes" aria-label="Yes">✓</span></td><td class="us"><span class="yes" aria-label="Yes">✓</span></td></tr>
-            <tr><th scope="row">See which layers changed</th><td><span class="no" aria-label="No">✕</span></td><td><span class="no" aria-label="No">✕</span></td><td class="us"><span class="yes" aria-label="Yes">✓</span></td></tr>
-            <tr><th scope="row">Visual before / after compare</th><td><span class="part">Manually</span></td><td><span class="no" aria-label="No">✕</span></td><td class="us"><span class="yes" aria-label="Yes">✓</span></td></tr>
-            <tr><th scope="row">Branch ideas without duplicate files</th><td><span class="no" aria-label="No">✕</span></td><td><span class="yes" aria-label="Yes">✓</span></td><td class="us"><span class="yes" aria-label="Yes">✓</span></td></tr>
-            <tr><th scope="row">Works inside Photoshop</th><td><span class="yes" aria-label="Yes">✓</span></td><td><span class="no" aria-label="No">✕</span></td><td class="us"><span class="yes" aria-label="Yes">✓</span></td></tr>
-            <tr><th scope="row">No command line day to day</th><td><span class="yes" aria-label="Yes">✓</span></td><td><span class="no" aria-label="No">✕</span></td><td class="us"><span class="yes" aria-label="Yes">✓</span></td></tr>
-            <tr><th scope="row">Sync to GitHub or any Git remote</th><td><span class="no" aria-label="No">✕</span></td><td><span class="yes" aria-label="Yes">✓</span></td><td class="us"><span class="yes" aria-label="Yes">✓</span></td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </section>
-
-  <section class="section" id="faq" aria-labelledby="faq-title">
-    <div class="wrap">
-      <div class="center">
-        <h2 id="faq-title">FAQ</h2>
-      </div>
-      <div class="faq">
-        <details><summary>Is PhotoGit free?</summary><p>Yes. PhotoGit is open source under the MIT license. There is no account, subscription or usage limit.</p></details>
-        <details><summary>Do I need to know Git?</summary><p>No. Day to day you scan, save, compare and branch from buttons in the panel. Git runs behind the scenes in a small local helper. You use the terminal once, to set up a project.</p></details>
-        <details><summary>Is my artwork uploaded anywhere?</summary><p>No. Versions are stored in a folder on your own computer. They only leave it if you choose to push to a Git remote such as GitHub.</p></details>
-        <details><summary>Which Photoshop versions and platforms are supported?</summary><p>The panel targets Photoshop 25 (2024) and later, and has been tested end to end on macOS with Photoshop 2026. Windows has not been verified yet. See the <a href="https://github.com/xingexu/photogit/blob/main/docs/COMPATIBILITY.md">compatibility notes</a>.</p></details>
-        <details><summary>Can two people work on the same PSD?</summary><p>Yes, through branches. PhotoGit splits each document into per-layer data, so it can tell when edits overlap. Changes that conflict are flagged for a decision rather than blended automatically.</p></details>
-        <details><summary>Is it ready for client work?</summary><p>PhotoGit is an early 0.2 development build. It works, but keep independent backups of important artwork while it matures. Star or watch the repository to hear about releases.</p></details>
-      </div>
-    </div>
-  </section>
-
-  <section class="section dark final" aria-labelledby="final-title">
-    <div class="wrap">
-      <h2 id="final-title">Contribute to PhotoGit</h2>
-      <p class="lede">Report a bug, suggest a feature, or contribute code on GitHub.</p>
-      <div class="actions">
-        <a class="cta cta-primary" href="https://github.com/xingexu/photogit">Star on GitHub</a>
-        <a class="cta cta-secondary" href="https://github.com/xingexu/photogit/issues/new/choose">Request a feature</a>
-      </div>
-      <p class="final-note"><a href="https://github.com/xingexu/photogit/blob/main/LICENSE">MIT license</a></p>
-    </div>
-  </section>
   </main>
-  <footer class="site-footer">
-      <span class="footer-credit">© 2026 XINGE XU</span>
-      <nav class="footer-links" aria-label="Connect with PhotoGit">
-        <a href="https://github.com/xingexu/photogit" target="_blank" rel="noopener noreferrer">GitHub</a>
-        <a href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fgithub.com%2Fxingexu%2Fphotogit" target="_blank" rel="noopener noreferrer">Share on LinkedIn</a>
-        <a href="mailto:hello@photogit.app">Email</a>
-      </nav>
-  </footer>
+  <button class="ascii-toggle" type="button" hidden>Pause background</button>
 </body>
 </html>

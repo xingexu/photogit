@@ -2,9 +2,7 @@
 
 Serve this directory with `python3 -m http.server 3000 --directory site` from the repository root.
 
-The History and Branches screenshots settle into place on load. Move a mouse over the screenshots to tilt the scene. The hero and social preview use a cropped native History capture from `artifacts/editorial-ui-20260905/native-dark-history-753x800.png`.
-
-The full-screen background draws ASCII characters from four locally bundled, grayscale photographs. It shuffles them when the page loads, then crossfades to the next photo every eight seconds. Moving a mouse or pen lights up characters along its path. The background can be paused, and reduced-motion settings keep one photo on screen and disable the trail, entrance animations, and tilt.
+The site previews four real photographs drawn as ASCII over the full viewport. The photos are shuffled on load and crossfade every eight seconds. Moving a mouse or pen lights up characters along its path. Press Tab after the GitHub link to reach the pause control. Reduced-motion settings show a still image without a trail.
 
 Background photo sources ([Unsplash License](https://unsplash.com/license)):
 

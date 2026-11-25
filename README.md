@@ -1,6 +1,6 @@
 <div align="center">
 
-<a href="https://photogit-three.vercel.app/"><img src="site/og.png" alt="PhotoGit: version control for Photoshop. Save every PSD version, see what changed layer by layer, and branch your ideas without leaving Photoshop." width="100%"></a>
+<a href="https://photogit-three.vercel.app/"><img src="site/og.png" alt="PhotoGit. Version control for Photoshop. Try it out." width="100%"></a>
 
 <h3>Version control for Photoshop.</h3>
 
