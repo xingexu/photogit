@@ -8,6 +8,7 @@
     wordmark.classList.remove('is-tilted');
     wordmark.style.removeProperty('--tilt-x');
     wordmark.style.removeProperty('--tilt-y');
+    wordmark.style.removeProperty('--fan-x');
   };
   const tilt = ({ clientX, clientY, pointerType }) => {
     if (pointerType === 'touch' || reducedMotion.matches) return;
@@ -16,6 +17,7 @@
     const y = (clientY - top) / height - 0.5;
     wordmark.style.setProperty('--tilt-x', `${12 - y * 48}deg`);
     wordmark.style.setProperty('--tilt-y', `${-15 + x * 56}deg`);
+    wordmark.style.setProperty('--fan-x', `${x * 44}px`);
     wordmark.classList.add('is-tilted');
   };
   wordmark.addEventListener('pointerenter', tilt);
