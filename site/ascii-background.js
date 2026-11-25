@@ -156,10 +156,15 @@
     if (trail.length > 16) trail.shift();
     if (!trailFrame) trailFrame = requestAnimationFrame(drawTrail);
   }, { passive: true });
+  if (trailContext) sizeCanvas(trailCanvas, trailContext);
   new ResizeObserver(() => {
-    width = background.clientWidth;
-    height = background.clientHeight;
-    scale = Math.min(window.devicePixelRatio, 2);
+    const nextWidth = background.clientWidth;
+    const nextHeight = background.clientHeight;
+    const nextScale = Math.min(window.devicePixelRatio, 2);
+    if (nextWidth === width && nextHeight === height && nextScale === scale) return;
+    width = nextWidth;
+    height = nextHeight;
+    scale = nextScale;
     clearTrail();
     if (trailContext) sizeCanvas(trailCanvas, trailContext);
     paint();

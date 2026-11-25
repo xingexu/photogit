@@ -5,7 +5,7 @@ const site = new URL('../site/', import.meta.url);
 const html = fs.readFileSync(new URL('index.html', site), 'utf8');
 test('all referenced local landing assets exist', () => {
   const background = fs.readFileSync(new URL('ascii-background.js', site), 'utf8');
-  const markupAssets = html.matchAll(/(?:src="|href="|url\(')([^'"]+\.(?:css|js|png|wav|webp))(?=["'])/g);
+  const markupAssets = html.matchAll(/(?:src="|href="|url\(')([^'"]+\.(?:css|js|png|wav|webp|woff2))(?=["'])/g);
   const photoAssets = background.matchAll(/'(photos\/[^']+\.webp)'/g);
   const assets = [...markupAssets, ...photoAssets]
     .map(match => match[1])
