@@ -70,6 +70,7 @@ jobs:
           - panel-reviews
           - panel-workspace
           - panel-manifest
+          - landing
           - helper
           - engine
           - protocol
