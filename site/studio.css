@@ -1,0 +1,280 @@
+@font-face {
+  font-family: "Instrument Serif";
+  src: url("fonts/instrument-serif-latin.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Space Mono";
+  src: url("fonts/space-mono-latin.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+:root {
+  color-scheme: dark;
+  background: #101318;
+  color: #f3f5f8;
+  font-family: system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; isolation: isolate; }
+
+.ascii-background {
+  position: fixed;
+  z-index: -1;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 65% 55%, #1c293a, #101318 80%);
+}
+
+.ascii-background canvas,
+.ascii-background::after {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.ascii-background::after {
+  content: "";
+  background: radial-gradient(ellipse min(470px, 92vw) 270px at center, #1013189e, #10131866 55%, transparent);
+}
+
+.ascii-photo { opacity: .96; }
+.ascii-trail { mix-blend-mode: screen; }
+
+.preview {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  min-height: 100svh;
+  padding: 32px 20px;
+  padding-block: clamp(14px, 5svh, 32px);
+  text-align: center;
+}
+
+.wordmark {
+  --layer-gap: clamp(10px, 5.3svh, 50px);
+  --layer-depth-step: 20px;
+  --fan-strength: 1;
+  --tilt-strength: 1;
+  perspective: 680px;
+}
+
+.wordmark-object {
+  position: relative;
+  pointer-events: none;
+  transform-style: preserve-3d;
+  transform: translateY(var(--lift, 0px))
+    rotateX(calc(var(--tilt-x, 0deg) * var(--tilt-strength)))
+    rotateY(calc(var(--tilt-y, 0deg) * var(--tilt-strength)))
+    translateZ(var(--depth, 0px));
+  transition: transform .46s cubic-bezier(.2, .8, .2, 1);
+}
+
+.is-tilted .wordmark-object {
+  --lift: -10px;
+  --depth: 38px;
+  transition-duration: .18s;
+}
+
+.wordmark h1,
+.wordmark-layer {
+  margin: 0;
+  padding: .05em .12em .1em;
+  font-family: "Instrument Serif", Georgia, serif;
+  font-size: clamp(68px, 15vw, 190px);
+  font-size: clamp(68px, min(15vw, 30svh), 190px);
+  font-weight: 400;
+  line-height: .85;
+  letter-spacing: -.025em;
+}
+
+.wordmark h1 {
+  position: relative;
+  color: #fff;
+  text-shadow: 0 4px 16px #000c, 0 12px 36px #000b;
+  transform: translateZ(1px);
+  transition: text-shadow .32s ease;
+}
+
+.is-tilted h1 {
+  text-shadow: 0 4px 16px #0008, 0 12px 36px #0009,
+    0 0 .065em #fffc, 0 0 .24em #fff7, 0 0 .5em #fff3;
+}
+
+.wordmark-layers {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+}
+
+.wordmark-layer {
+  position: absolute;
+  inset: 0;
+  color: rgb(255 255 255 / 8%);
+  -webkit-text-stroke: .006em rgb(255 255 255 / var(--outline-opacity));
+  text-shadow: 0 0 .075em #fff6, 0 0 .23em #fff3;
+  opacity: 0;
+  transform: translateZ(-1px);
+  transition: transform .42s cubic-bezier(.24, .7, .3, 1), opacity .24s ease;
+}
+
+.wordmark-layer::before { content: attr(data-text); }
+
+.wordmark-layer--near {
+  --order: 1;
+  --offset-x: .07em;
+  --outline-opacity: .92;
+}
+
+.wordmark-layer--middle {
+  --order: 2;
+  --offset-x: -.05em;
+  --outline-opacity: .65;
+}
+
+.wordmark-layer--far {
+  --order: 3;
+  --offset-x: -.19em;
+  --outline-opacity: .46;
+}
+
+.is-tilted .wordmark-layer {
+  opacity: 1;
+  transform: translate3d(
+    calc(var(--offset-x) + var(--fan-x, 0px) * var(--fan-strength) * var(--order)),
+    calc(-1 * var(--layer-gap) * var(--order)),
+    calc(-1 * var(--layer-depth-step) * var(--order))
+  );
+  transition-timing-function: cubic-bezier(.16, .82, .24, 1.13), ease;
+  transition-delay: calc(var(--order) * 24ms), calc(var(--order) * 14ms);
+}
+
+.preview p {
+  margin: 13px 0 27px;
+  color: #dcecff;
+  font-family: "Space Mono", ui-monospace, monospace;
+  font-size: clamp(12px, 1.2vw, 16px);
+  letter-spacing: .045em;
+  text-shadow: 0 1px 5px #000, 0 2px 16px #000;
+}
+
+.try-link {
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 158px;
+  min-height: 56px;
+  padding: 12px 27px;
+  overflow: hidden;
+  border: 1px solid rgb(231 244 255 / 35%);
+  border-radius: 999px;
+  background:
+    linear-gradient(165deg, #effbff48, #c9e2ff07 39%, #a9c7ff04 63%, #b4dcff3d),
+    rgb(28 40 58 / 20%);
+  -webkit-backdrop-filter: blur(7px) saturate(205%) brightness(145%);
+  backdrop-filter: blur(7px) saturate(205%) brightness(145%);
+  box-shadow: inset 0 1px 2px #ffffffc4, inset 0 -1px 5px #d2efff63,
+    inset 0 0 13px #cde9ff24, 0 9px 30px #020815a6;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  text-shadow: 0 1px 3px #000, 0 0 12px #020611c9;
+  text-decoration: none;
+  transition: border-color .2s ease, box-shadow .2s ease;
+}
+
+.try-link::before,
+.try-link::after {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  content: "";
+  transition: opacity .2s ease;
+}
+
+.try-link::before {
+  background: radial-gradient(97px 58px at var(--glint-x, 24%) var(--glint-y, 0%),
+    #fff9, #e2f1ff46 31%, #a3d1ff16 63%, transparent);
+  opacity: .68;
+}
+
+.try-link::after {
+  padding: 2px;
+  background: conic-gradient(from 215deg, #9bcaff4d, #bceaffb3, transparent 28%,
+    #fff 43%, #f3e7fff2, transparent 66%, #b8dfffca 82%, #9bcaff4d);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  opacity: .72;
+}
+
+.try-link:hover,
+.try-link:focus-visible {
+  border-color: #edfaff9c;
+  box-shadow: inset 0 1px 2px #fff, inset 0 -1px 6px #d3efff9e,
+    inset 0 0 17px #ddf0ff39, 0 8px 26px #a0ceff38;
+}
+
+.try-link:hover::before,
+.try-link:hover::after,
+.try-link:focus-visible::before,
+.try-link:focus-visible::after { opacity: 1; }
+
+.try-link:focus-visible {
+  outline: 2px solid #c5d9fb;
+  outline-offset: 5px;
+}
+
+@media (max-height: 720px) {
+  .wordmark {
+    --layer-gap: clamp(10px, 4svh, 30px);
+    --layer-depth-step: 16px;
+    --tilt-strength: .65;
+  }
+}
+
+@media (max-height: 520px) {
+  .wordmark {
+    --layer-gap: clamp(6px, 3svh, 16px);
+    --layer-depth-step: 10px;
+    --tilt-strength: .37;
+  }
+  .is-tilted .wordmark-object { --lift: -3px; --depth: 18px; }
+}
+
+@media (max-width: 440px) {
+  .wordmark { --fan-strength: .45; }
+}
+
+@media (max-height: 260px) {
+  .wordmark {
+    --layer-gap: 2.2svh;
+    --tilt-strength: .29;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wordmark-object,
+  .is-tilted .wordmark-object,
+  .wordmark h1,
+  .wordmark-layer,
+  .is-tilted .wordmark-layer,
+  .try-link,
+  .try-link::before,
+  .try-link::after { transition: none; }
+
+  .wordmark-object { transform: none; }
+  .is-tilted .wordmark-layer { opacity: 0; }
+}
