@@ -1423,6 +1423,19 @@ describe("PhotoGit production panel behavior — host mocked", () => {
     expect(refresh).toHaveBeenCalledOnce();
   });
 
+  it("keeps Docs search focused and available after reconnect succeeds", async () => {
+    const p = await panel(); p.connect();
+    p.evaluate('selectTab("docs", false)');
+    p.id("reconnect-helper").focus();
+    p.context.loadPairing = vi.fn(async () => undefined);
+    p.context.refreshWorkspace = vi.fn(async () => undefined);
+    await p.evaluate("reconnectHelper()");
+    expect(p.document.activeElement).toBe(p.id("docs-search"));
+    expect(p.id("result").textContent).toBe("Connected.");
+    const styles = await readFile(resolve(pluginRoot, "styles.css"), "utf8");
+    expect(styles).not.toContain("body.has-toast");
+  });
+
   it("captures leaf pixels plus the document composite, disposes images, and reports bounded batch progress", async () => {
     const p = await panel();
     const doc = syntheticDocument(1, Array.from({ length: 9 }, (_, index) => syntheticLayer(index + 1)));

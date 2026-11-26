@@ -168,8 +168,6 @@ body.is-busy [aria-disabled="true"], body.is-busy input:disabled { cursor: progr
    menu or dialog is open the fields beneath it are not drawn; their shells
    keep their size, so nothing moves. */
 body.has-surface .workspace input { display: none; }
-/* The same goes for the search field the status line floats over. */
-body.has-toast .workspace .search-field input { display: none; }
 
 /* Pills: filters and quick-fill suggestions. */
 .filter-bar { display: flex; flex-wrap: wrap; }

@@ -164,12 +164,11 @@ function bindPanelEvents() {
   document.getElementById("tools-menu").addEventListener("keydown", handleMenuKeyboard);
   document.addEventListener("keydown", handleGlobalKeyboard);
   document.addEventListener("click", handleOutsideClick);
-  // The status line floats over the screen; a press puts it away.
+  // A press dismisses the status message.
   document.getElementById("result").addEventListener("click", () => {
     clearTimeout(resultTimer);
     const result = document.getElementById("result");
     result.textContent = ""; result.className = "status-message";
-    syncToast();
   });
   document.addEventListener("click", (event) => {
     const control = event.target?.closest?.(".button");
@@ -2615,7 +2614,7 @@ function setHelper(label, ok) {
   // it clears here rather than waiting for the next message to replace it.
   if (ok) {
     const result = document.getElementById("result");
-    if (result.classList.contains("error") && /helper|background service|not responding|connection lost/i.test(result.textContent)) { result.textContent = ""; result.className = "status-message"; syncToast(); }
+    if (result.classList.contains("error") && /helper|background service|not responding|connection lost/i.test(result.textContent)) { result.textContent = ""; result.className = "status-message"; }
   }
   const notice = document.getElementById("connection-notice");
   notice.hidden = ok || !projectFolder;
@@ -2664,11 +2663,6 @@ function busy(active) {
     control.tabIndex = disabled ? -1 : 0;
   }
 }
-// Photoshop draws a text field above anything laid over it, so while the
-// status line is up the search field beneath it is not drawn.
-function syncToast() {
-  document.body.classList.toggle("has-toast", document.getElementById("result").textContent !== "");
-}
 function show(message, error) {
   // The connection notice already says the service is offline; repeating it
   // as a toast adds nothing.
@@ -2682,7 +2676,6 @@ function show(message, error) {
   restartAnimation(result);
   result.textContent = safeMessage;
   result.className = error ? "status-message error" : "status-message success";
-  syncToast();
   // The result of a press arrives the way a screen does.
   globalThis.PhotoGitMotion?.enter(result);
   // An error interrupts; a success waits its turn.
@@ -2692,7 +2685,7 @@ function show(message, error) {
   resultTimer = setTimeout(() => {
     if (error || busyNow || result.textContent !== safeMessage) return;
     // A success fades out, then clears; an error stays.
-    const clear = () => { if (result.textContent === safeMessage) result.textContent = ""; syncToast(); };
+    const clear = () => { if (result.textContent === safeMessage) result.textContent = ""; };
     const motion = globalThis.PhotoGitMotion;
     if (motion && typeof motion.exit === "function") motion.exit(result, clear); else clear();
   }, error ? 5200 : 3200);
