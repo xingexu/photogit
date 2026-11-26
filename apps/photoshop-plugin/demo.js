@@ -605,8 +605,9 @@ async function saveVersion() {
   renderChanges();
   renderHistory();
   addActivity(`Saved c84f2a7: ${message}`);
-  flashResult("Saved version c84f2a7.");
+  byId("result").textContent = "";
   selectTab("history");
+  byId("history-receipt").textContent = "Saved c84f2a7";
   byId("history-tab").focus();
 }
 
@@ -692,18 +693,29 @@ function selectTab(name) {
   const sections = ["changes", "history", "branches", "reviews", "activity", "docs"];
   if (!sections.includes(name)) return;
   closeToolsMenu(true);
-  sections.forEach((section) => {
-    const active = section === name;
-    byId(`${section}-view`).hidden = !active;
-    byId(`${section}-tab`).classList.toggle("active", active);
-    byId(`${section}-tab`).setAttribute("aria-selected", active ? "true" : "false");
-    byId(`${section}-tab`).tabIndex = active ? 0 : -1;
-  });
-  byId("workspace").dataset.view = name;
+  const workspace = byId("workspace");
+  const previous = workspace.dataset.view;
+  if (name !== previous) byId("history-receipt").textContent = "";
+  const change = () => {
+    for (const section of sections) {
+      const active = section === name;
+      const tab = byId(`${section}-tab`);
+      byId(`${section}-view`).hidden = !active;
+      tab.classList.toggle("active", active);
+      tab.setAttribute("aria-selected", active ? "true" : "false");
+      tab.tabIndex = active ? 0 : -1;
+    }
+  };
+  const motion = globalThis.PhotoGitMotion;
+  if (motion) motion.recolour(byId("section-nav").querySelectorAll('[role="tab"]:not([hidden])'), change);
+  else change();
+  workspace.dataset.view = name;
   byId("history-total").hidden = name !== "history";
+  motion?.slide(byId("tab-indicator"), byId(`${name}-tab`));
+  if (name === previous) return;
   const scroller = byId("view-scroll");
   if (scroller) scroller.scrollTop = 0;
-  globalThis.PhotoGitMotion?.enter(byId(`${name}-view`));
+  motion?.screen(byId(`${name}-view`), Math.sign(sections.indexOf(name) - sections.indexOf(previous)));
 }
 
 function setCaption(step, heading, copy) {

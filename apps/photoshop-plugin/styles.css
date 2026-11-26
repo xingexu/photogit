@@ -18,9 +18,8 @@
   --space: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
   --text-label: 11px; --text-secondary: 12px; --text-base: 13px; --text-title: 15px;
   --control: 32px; --control-tall: 32px; --radius: 8px; --radius-control: 16px; --radius-pill: 14px;
-  /* One stacking scale: a status toast, then the scrim, then what sits on the
-     scrim. The fade veil in motion.js is the only thing above these, at 50. */
-  --z-toast: 10; --z-scrim: 20; --z-surface: 30;
+  /* The scrim sits below the menu and dialog surfaces. */
+  --z-scrim: 20; --z-surface: 30;
   --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --mono: "SFMono-Regular", Menlo, Consolas, monospace;
   --motion-enabled: 1;
@@ -67,20 +66,17 @@ img { max-width: 100%; }
 /* Work in progress: a full line under the tabs, and an edge on the control
    that started it. Both appear with the click, before any result. */
 .workspace { position: relative; }
-/* Drawn over the tab strip's edge, so starting work never moves the layout. */
-.progress-track { position: absolute; top: 99px; right: 0; left: 0; z-index: var(--z-toast); height: 2px; background: var(--accent-line); }
-.button.is-working { border-color: var(--accent-line); }
+/* The operation track sits below the selected-tab underline. */
+.progress-track { flex: none; height: 2px; background: var(--accent-line); }
 .nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1 1 0; min-width: 0; height: 52px; border-bottom: 2px solid transparent; color: var(--text-tab); }
-.tab-mark { display: flex; align-items: center; height: 18px; }
+.tab-mark { display: flex; align-items: center; justify-content: center; height: 18px; max-width: 100%; }
 .tab-label { margin-top: 3px; overflow: hidden; font-size: var(--text-label); text-overflow: ellipsis; white-space: nowrap; }
 .nav-item b { min-width: 16px; height: 16px; margin-left: 4px; padding: 0 5px; border-radius: 8px; background: var(--bg-selected); color: var(--text-strong); font-size: 10px; line-height: 16px; text-align: center; white-space: nowrap; overflow-wrap: normal; font-variant-numeric: tabular-nums; }
 .nav-item b[data-empty="true"] { display: none; }
 .nav-item.active { background: var(--bg); color: var(--text-strong); }
 .nav-item.active .tab-label { font-weight: 600; }
 
-/* The History footer stays pinned. Changes and its composer share one scroll. */
 .view-footer { flex: none; display: flex; align-items: center; justify-content: flex-start; min-height: 36px; padding: 0 var(--space-3); border-top: 1px solid var(--edge-dark); background: var(--bg-bar); color: var(--text-muted); font-size: var(--text-secondary); }
-.history-footer { display: block; line-height: 35px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .composer { margin-bottom: var(--space-3); padding: var(--space-3); border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-bar); }
 .composer > * + * { margin-top: var(--space-2); }
 .capture-heading { display: flex; align-items: center; justify-content: space-between; }
@@ -91,8 +87,9 @@ img { max-width: 100%; }
 .capture-panel.is-busy .field-shell { border-color: var(--divider); }
 
 /* Headings and small text. */
-.view-heading { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: var(--space-3); }
-.view-heading > .button { flex: none; margin-left: var(--space-2); }
+.view-heading { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; margin-bottom: var(--space-3); }
+.view-heading > * { margin-bottom: var(--space); }
+.view-heading > .button { flex: none; }
 .view-title { font-size: var(--text-title); }
 .view-subtitle { margin-top: 2px; color: var(--text-2); font-size: var(--text-secondary); }
 .view-panel > .view-subtitle { margin-bottom: var(--space-3); }
@@ -119,19 +116,20 @@ img { max-width: 100%; }
 /* Controls. A control is a flat box with a 1px border; the one filled
    control on a screen is the primary action. */
 [role="button"], [role="tab"], [role="menuitem"] { cursor: pointer; }
-.button { display: inline-flex; align-items: center; justify-content: center; min-height: var(--control-tall); padding: 0 var(--space-4); border: 1px solid var(--border-strong); border-radius: var(--radius-control); background: transparent; color: var(--text-strong); font-weight: 600; white-space: nowrap; }
+.button { display: inline-flex; align-items: center; justify-content: center; min-width: 0; max-width: 100%; min-height: var(--control-tall); padding: 4px var(--space-3); border: 1px solid var(--border-strong); border-radius: var(--radius-control); background: var(--bg-raised); color: var(--text-strong); font-weight: 600; text-align: center; }
 .button svg { margin-right: 6px; }
 .button-primary { border-color: var(--accent); background: var(--accent); color: var(--text-strong); }
 .button-small { min-height: var(--control); padding: 0 10px; font-size: var(--text-secondary); }
 .button-wide { display: flex; width: 100%; }
 .button-wide + .button-wide { margin-top: var(--space-2); }
 .push-button { flex: none; min-height: var(--control); padding: 0 10px; }
-.text-link { display: inline-flex; align-items: center; color: var(--text-strong); font-size: var(--text-secondary); font-weight: 600; text-decoration: underline; }
+.text-link { display: inline-flex; align-items: center; border-radius: var(--radius); color: var(--text-strong); font-size: var(--text-secondary); font-weight: 600; text-decoration: underline; }
 .disclosure-chevron { width: 12px; height: 12px; margin-left: 2px; }
 .text-link[aria-expanded="true"] .disclosure-chevron, .activity-row[aria-expanded="true"] .disclosure-chevron { transform: rotate(90deg); }
-[role="button"]:not([aria-disabled="true"]):hover, [role="tab"]:hover, [role="menuitem"]:not([aria-disabled="true"]):hover { background-color: var(--bg-hover); }
+[role="button"]:not([aria-disabled="true"]):hover, [role="tab"]:hover, [role="menuitem"]:not([aria-disabled="true"]):hover, [role="radio"]:not([aria-checked="true"]):hover { background-color: var(--bg-hover); }
 .button-primary:not([aria-disabled="true"]):hover { background-color: var(--accent-hover); }
 .button-primary:not([aria-disabled="true"]):active { background-color: var(--accent-pressed); }
+.button-outline:not([aria-disabled="true"]):hover, .branch-switcher:hover { border-color: var(--text-muted); }
 [role="button"]:not(.button-primary):not([aria-disabled="true"]):active, [role="menuitem"]:not([aria-disabled="true"]):active { background-color: var(--bg-selected); }
 .nav-item.active:hover { background-color: var(--bg); }
 [role="button"]:focus, [role="tab"]:focus, [role="menuitem"]:focus, input:focus, [tabindex]:focus { outline: 2px solid var(--accent-line); outline-offset: -2px; }
@@ -141,6 +139,7 @@ img { max-width: 100%; }
 /* Unavailable: the same shape, drained of emphasis. */
 [aria-disabled="true"] { cursor: default; color: var(--text-muted); }
 .button[aria-disabled="true"], .button.button-disabled { border-color: var(--border); background: var(--bg-selected); color: var(--text-muted); }
+.button.is-working, .button.is-working[aria-disabled="true"] { border-color: var(--accent-line); }
 body.is-busy [aria-disabled="true"], body.is-busy input:disabled { cursor: progress; }
 /* The host runs no CSS transitions or keyframes and does not draw opacity, so
    nothing here eases by itself and no transition is declared: motion.js steps
@@ -164,6 +163,11 @@ body.is-busy [aria-disabled="true"], body.is-busy input:disabled { cursor: progr
 .inline-form { display: flex; align-items: center; }
 .inline-form .field-shell { flex: 1; margin-right: var(--space-2); }
 .search-field { margin-bottom: var(--space-2); }
+.history-toolbar { display: flex; align-items: center; margin-bottom: var(--space-2); }
+.history-toolbar .search-field { flex: 1; margin-bottom: 0; }
+.history-total, .history-receipt { flex: none; margin-left: var(--space-2); color: var(--text-muted); font-size: var(--text-secondary); font-variant-numeric: tabular-nums; }
+.history-receipt { padding: 2px 6px; border: 1px solid var(--border-strong); border-radius: var(--radius); color: var(--text-strong); }
+.history-receipt:empty, .history-receipt:not(:empty) + .history-total { display: none; }
 /* Photoshop draws a text field above everything, a dialog included. While a
    menu or dialog is open the fields beneath it are not drawn; their shells
    keep their size, so nothing moves. */
@@ -218,14 +222,17 @@ body.has-surface .workspace input { display: none; }
 .history-entry .history-row { border-bottom: 0; }
 .history-row { align-items: flex-start; }
 .history-row .row-copy strong { color: var(--text-strong); font-weight: 600; }
+.history-row-heading { display: flex; flex-wrap: wrap; align-items: baseline; }
 .history-meta { font-family: var(--mono); }
+.history-meta time { white-space: nowrap; }
 .history-marker, .history-thumbnail { display: flex; align-items: center; justify-content: center; flex: none; width: 40px; height: 40px; margin-right: var(--space-3); border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-recessed); color: var(--text-muted); }
 .history-thumbnail { display: block; object-fit: cover; }
 .history-row.has-thumbnail .history-marker { display: none; }
 .history-entry.selected { margin: var(--space) 0; padding: 0 var(--space-3) var(--space-3); border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--bg-selected); }
 .history-entry.selected .history-row { padding-top: var(--space-3); background: transparent; }
 .history-entry.selected .history-row .row-copy > span { color: var(--text-2); }
-.history-row .pill { margin-left: var(--space-2); }
+.history-row-heading strong { margin-right: var(--space); font-size: var(--text-base); }
+.history-row-heading .pill { height: auto; padding: 0 6px; line-height: 16px; }
 .history-actions { display: flex; }
 .history-details { margin-top: var(--space-2); }
 .history-actions .button { flex: 1 1 0; min-width: 0; }
@@ -339,16 +346,18 @@ body.has-surface .workspace input { display: none; }
 .tool-item { display: flex; align-items: center; min-height: 36px; padding: 0 var(--space-3); color: var(--text); }
 .tool-item svg { margin-right: var(--space-2); color: var(--text-muted); }
 .menu-rule { height: 1px; margin: var(--space) 0; background: var(--border); }
-.tool-sheet { position: fixed; top: var(--space-2); right: var(--space-2); bottom: var(--space-2); left: var(--space-2); z-index: var(--z-surface); display: flex; flex-direction: column; padding: var(--space-3); background: var(--bg); }
-#tag-sheet, #rename-sheet { bottom: auto; }
+.tool-sheet { --sheet-inset: var(--space-2); position: fixed; top: var(--sheet-inset); right: var(--space-2); bottom: var(--sheet-inset); left: var(--space-2); z-index: var(--z-surface); display: flex; flex-direction: column; padding: var(--space-3); background: var(--bg); }
+#tag-sheet, #rename-sheet, #export-sheet { bottom: auto; max-height: calc(100% - var(--sheet-inset) - var(--sheet-inset)); overflow-y: auto; }
+#tag-sheet > *, #rename-sheet > *, #export-sheet > * { flex: none; }
 #tag-sheet .field-shell, #tag-sheet-help, #rename-sheet .field-shell, #rename-sheet-help { margin-bottom: var(--space-2); }
 .tool-sheet .section-heading { flex: none; }
 .detail-content { flex: 1; min-height: 0; overflow-y: auto; white-space: pre-line; }
 .detail-content .version-inspector, .detail-content .review-inspector, .detail-content > div { white-space: normal; }
 #detail-action { flex: none; margin-top: var(--space-2); }
-#detail-sheet.is-compact { bottom: auto; max-height: calc(100% - 16px); }
-#detail-sheet.is-compact .detail-content { flex: none; }
+#detail-sheet.is-compact { bottom: auto; max-height: calc(100% - var(--sheet-inset) - var(--sheet-inset)); }
+#detail-sheet.is-compact .detail-content { flex: 0 1 auto; }
 .detail-error { flex: none; margin-top: var(--space-2); padding: var(--space-2) var(--space-3); border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--bg-recessed); color: var(--text-strong); white-space: pre-line; }
+#detail-error { max-height: 56px; overflow-y: auto; }
 
 /* Version details and branch comparison, shown in the dialog. */
 .version-inspector-header { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; }
@@ -416,24 +425,36 @@ body.has-surface .workspace input { display: none; }
   .branch-chevron { display: none; }
   .nav-item { height: 48px; }
   .tab-label { max-width: 100%; font-size: 10px; }
-  .progress-track { top: 95px; }
+  .tab-mark svg { width: 14px; }
+  .nav-item b { min-width: 14px; margin-left: 2px; padding: 0 2px; }
+  .view-heading > .button { text-align: left; }
 }
-@media (max-height: 300px) {
+@media (max-height: 360px) {
   .top-bar, .nav-item { height: 38px; }
   .tab-strip { min-height: 38px; }
-  .progress-track { top: 75px; }
   .view-scroll { padding: var(--space-2); }
-  .history-footer { min-height: 28px; line-height: 27px; }
   .notice, .onboarding, .status-message:not(:empty) { margin: var(--space) var(--space-2); padding: var(--space-2); }
-  .notice { max-height: 30%; }
+  .notice { max-height: 28%; }
   .status-message:not(:empty) { padding-top: var(--space); padding-bottom: var(--space); }
+  .onboarding > .state-icon { display: none; }
+  .onboarding > * + * { margin-top: var(--space-2); }
+  .onboarding > h2 { margin-top: 0; }
+  .history-row { padding-top: var(--space); padding-bottom: var(--space); }
+  .history-entry.selected { padding: 0 var(--space-2) var(--space-2); }
+  .history-entry.selected .history-row { padding-top: var(--space); }
+  .row-copy > .history-meta { font-size: var(--text-label); }
+  .history-marker, .history-thumbnail { width: 32px; height: 32px; margin-right: var(--space-2); }
+  .tools-menu { top: 38px; max-height: calc(100% - 46px); }
+  .tool-sheet { padding: var(--space-2); }
 }
 
 /* A wider panel is the same single column with room to breathe. */
 @media (min-width: 560px) {
   .view-scroll { padding-left: var(--space-4); padding-right: var(--space-4); }
-  .tool-sheet { top: 48px; bottom: 48px; left: 50%; right: auto; width: 520px; margin-left: -260px; }
-  #tag-sheet { bottom: auto; }
+  .tool-sheet { left: 50%; right: auto; width: 520px; margin-left: -260px; }
+}
+@media (min-width: 560px) and (min-height: 361px) {
+  .tool-sheet { --sheet-inset: 48px; }
 }
 @media (prefers-reduced-motion: reduce) {
   :root { --motion-enabled: 0; }

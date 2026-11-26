@@ -4,12 +4,12 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>PhotoGit</title>
-    <script src="motion.js?v=157"></script>
-    <script src="appearance.js?v=157"></script>
-    <script src="counter.js?v=157"></script>
-    <script src="reveal.js?v=157"></script>
-    <link rel="stylesheet" href="styles.css?v=157">
-    <script src="index.js?v=157"></script>
+    <script src="motion.js?v=160"></script>
+    <script src="appearance.js?v=160"></script>
+    <script src="counter.js?v=160"></script>
+    <script src="reveal.js?v=160"></script>
+    <link rel="stylesheet" href="styles.css?v=160">
+    <script src="index.js?v=160"></script>
   </head>
   <body class="is-initializing">
     <main class="panel-root">
@@ -107,7 +107,7 @@
           <div class="scan-panel">
             <div class="scan-heading">
               <h2 id="change-summary">Waiting for a scan</h2>
-              <div id="scan-now" class="button button-outline button-small" role="button" tabindex="0">Scan now</div>
+              <div id="scan-now" class="button button-outline button-small" role="button" tabindex="0"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5m6 0h5v5m0 6v5h-5m-6 0H4v-5M4 12h16"/></svg><span>Scan now</span></div>
             </div>
             <div id="watch-status" class="watch-status ready" role="status" aria-live="polite" aria-atomic="true"><i aria-hidden="true"></i><span>Watching Photoshop</span></div>
             <p id="last-scan" class="scan-state">Scanning this document automatically.</p>
@@ -141,9 +141,13 @@
         </section>
 
         <section id="history-view" class="view-panel" role="tabpanel" aria-labelledby="history-tab" hidden>
-          <div class="field-shell search-field">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 4.5 4.5"/></svg>
-            <input id="history-search" type="search" maxlength="200" placeholder="Search versions" aria-label="Search version history" spellcheck="false" uxp-quiet="true">
+          <div class="history-toolbar">
+            <div class="field-shell search-field">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 4.5 4.5"/></svg>
+              <input id="history-search" type="search" maxlength="200" placeholder="Search versions" aria-label="Search version history" spellcheck="false" uxp-quiet="true">
+            </div>
+            <span id="history-receipt" class="history-receipt" role="status" aria-live="polite"></span>
+            <span id="history-total" class="history-total" hidden>0 versions</span>
           </div>
           <div id="history" class="list history-list"></div>
           <section id="history-empty" class="empty-state" role="status" hidden><strong id="history-empty-title">No saved versions yet</strong><p id="history-empty-copy">Save a version from Changes.</p><div id="history-empty-action" class="text-link" role="button" tabindex="0">Go to Changes</div></section>
@@ -159,7 +163,7 @@
               <div class="field-shell">
                 <input id="new-branch-name" type="text" maxlength="200" placeholder="e.g. cover-option-b" aria-describedby="branch-help" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" uxp-quiet="true">
               </div>
-              <div id="new-branch" class="button button-primary" role="button" tabindex="0">Create</div>
+              <div id="new-branch" class="button button-primary" role="button" tabindex="0"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Create</span></div>
             </div>
           </section>
         </section>
@@ -198,7 +202,6 @@
         </section>
         </div>
 
-        <footer id="history-total" class="view-footer history-footer" hidden>0 versions</footer>
         </div>
       </section>
 

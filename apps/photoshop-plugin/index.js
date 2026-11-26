@@ -93,7 +93,10 @@ function bindPanelEvents() {
   });
   bind("change-project", "click", chooseProject);
   bind("tool-change-project", "click", () => { closeToolsMenu(); return chooseProject(); });
-  bind("tool-docs", "click", () => { closeToolsMenu(); selectTab("docs"); });
+  bind("tool-docs", "click", () => {
+    selectTab("docs");
+    document.getElementById("docs-search").focus();
+  });
   bind("reconnect-helper", "click", reconnectHelper);
   bind("connect-document", "click", connectDocument);
   bind("open-project-document", "click", () => run("Opening project document…", () => openSnapshot()));
@@ -165,11 +168,7 @@ function bindPanelEvents() {
   document.addEventListener("keydown", handleGlobalKeyboard);
   document.addEventListener("click", handleOutsideClick);
   // A press dismisses the status message.
-  document.getElementById("result").addEventListener("click", () => {
-    clearTimeout(resultTimer);
-    const result = document.getElementById("result");
-    result.textContent = ""; result.className = "status-message";
-  });
+  document.getElementById("result").addEventListener("click", dismissResult);
   document.addEventListener("click", (event) => {
     const control = event.target?.closest?.(".button");
     if (control) { pressedControl = control; pressedAt = Date.now(); }
@@ -732,7 +731,8 @@ function renderHistory(versions) {
       row.dataset.version = version.id;
       const message = escapeHtml(version.message);
       const shortId = escapeHtml(version.shortId);
-      row.innerHTML = `<span class="history-marker" aria-hidden="true">${historyIcon()}</span><span class="row-copy"><strong>${message}</strong><span class="history-meta"><time datetime="${escapeHtml(version.date)}" title="${escapeHtml(versionInspector.formatDate(version.date))}">${escapeHtml(versionInspector.formatDate(version.date, true))}</time>  ${shortId}</span></span>${selected && version.id === latestId ? '<span class="pill">Latest</span>' : ""}`;
+      const badge = selected && version.id === latestId ? '<span class="pill">Latest</span>' : "";
+      row.innerHTML = `<span class="history-marker" aria-hidden="true">${historyIcon()}</span><span class="row-copy"><span class="history-row-heading"><strong>${message}</strong>${badge}</span><span class="history-meta"><time datetime="${escapeHtml(version.date)}" title="${escapeHtml(versionInspector.formatDate(version.date))}">${escapeHtml(versionInspector.formatDate(version.date, true))}</time> ${shortId}</span></span>`;
       versionInspector.historyPreview(row, { preview: historyPreviews[version.id] });
       row.setAttribute("role", "button");
       row.setAttribute("aria-pressed", String(selected));
@@ -1081,12 +1081,12 @@ async function saveVersion() {
     renderChanges([]);
     setWatchStatus("Watching Photoshop", "ready");
     log(`Saved ${result.shortId}: ${message}`);
-    show(`Saved version ${result.shortId}.`, false);
+    const confirmation = `Saved version ${result.shortId}.`;
+    show(confirmation, false);
     await Promise.all([loadStatus(), loadBranches(), loadHistory(), loadReviews()]);
-    // The version just saved heads History; it glows once as the section
-    // opens so the eye lands on it.
-    document.querySelector("#history .history-row")?.classList.add("is-new");
+    if (document.getElementById("result").textContent === confirmation) dismissResult();
     selectTab("history");
+    document.getElementById("history-receipt").textContent = `Saved ${result.shortId}`;
     document.getElementById("history-tab").focus();
   });
 }
@@ -1213,7 +1213,9 @@ function toggleToolsMenu(event) {
     if (reveal && typeof reveal.stagger === "function") reveal.stagger(menu.querySelectorAll(".tool-item:not([hidden])"));
     document.body.classList.add("has-surface");
     setToolsExpanded(true);
-    setTimeout(() => menu.querySelector(".tool-item")?.focus(), 0);
+    setTimeout(() => {
+      if (!menu.hidden && !menu.classList.contains("is-closing")) menu.querySelector(".tool-item")?.focus();
+    }, 0);
   } else {
     closeToolsMenu(false, true);
   }
@@ -1244,7 +1246,7 @@ async function openConflicts() {
 }
 
 function openTagSheet() {
-  closeToolsMenu();
+  closeToolsMenu(true);
   openBackdrop();
   openSurface(document.getElementById("tag-sheet"));
   document.getElementById("tag-name").focus();
@@ -2299,10 +2301,13 @@ async function executeCommand(input) {
 }
 
 function selectTab(name, animate = true) {
-  closeToolsMenu();
+  closeToolsMenu(true);
   // A press both focuses a tab and clicks it; the screen it is already
   // showing does not arrive a second time.
-  if (animate && document.getElementById("workspace").dataset.view === name && !document.getElementById(`${name}-view`)?.hidden) animate = false;
+  const workspace = document.getElementById("workspace");
+  const previous = workspace.dataset.view;
+  if (name !== previous) document.getElementById("history-receipt").textContent = "";
+  if (animate && previous === name && !document.getElementById(`${name}-view`)?.hidden) animate = false;
   if (!projectFolder || !helperToken) {
     document.getElementById("workspace").hidden = name !== "docs";
     document.getElementById("onboarding").hidden = name === "docs";
@@ -2325,14 +2330,14 @@ function selectTab(name, animate = true) {
   if (motion && typeof motion.recolour === "function") motion.recolour(document.querySelectorAll("#section-nav .nav-item:not([hidden])"), choose);
   else choose();
   try { localStorage.setItem("photogit.section", name); } catch { /* Session only. */ }
-  // The stylesheet uses the active section to decide which pane scrolls.
-  document.getElementById("workspace").dataset.view = name;
+  workspace.dataset.view = name;
   applyShellState();
   placeTabIndicator();
   if (!animate || !target) return;
   const scroller = document.getElementById("view-scroll");
   if (scroller && scroller.scrollTop) scroller.scrollTop = 0;
-  globalThis.PhotoGitMotion?.screen(target);
+  const direction = Math.sign(SECTIONS.indexOf(name) - SECTIONS.indexOf(previous));
+  globalThis.PhotoGitMotion?.screen(target, direction);
 }
 
 async function run(label, action) {
@@ -2663,6 +2668,14 @@ function busy(active) {
     control.tabIndex = disabled ? -1 : 0;
   }
 }
+function dismissResult() {
+  clearTimeout(resultTimer);
+  const result = document.getElementById("result");
+  globalThis.PhotoGitMotion?.cancel(result);
+  result.textContent = "";
+  result.className = "status-message";
+}
+
 function show(message, error) {
   // The connection notice already says the service is offline; repeating it
   // as a toast adds nothing.

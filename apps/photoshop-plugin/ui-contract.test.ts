@@ -193,6 +193,16 @@ describe("PhotoGit command palette — production behavior with mocked host", ()
     expect(p.id("docs-view").hidden).toBe(false);
     expect(p.id("onboarding").hidden).toBe(true);
   });
+  it("moves focus from the Tools menu directly to Docs search", async () => {
+    const p = await panel(); p.connect(); p.evaluate("bindPanelEvents()");
+    p.evaluate("toggleToolsMenu()");
+    p.id("tool-docs").focus();
+    p.id("tool-docs").click();
+    expect(p.id("tools-menu").hidden).toBe(true);
+    expect(p.id("docs-view").hidden).toBe(false);
+    expect(p.document.body.classList.contains("has-surface")).toBe(false);
+    expect(p.document.activeElement).toBe(p.id("docs-search"));
+  });
   it("marks overlay state to suppress background native fields without losing their values", async () => {
     const p = await panel(); p.connect(); p.id<HTMLInputElement>("message").value = "Keep my draft";
     p.evaluate("openCommandPalette()");
@@ -1364,6 +1374,11 @@ describe("PhotoGit production panel behavior — host mocked", () => {
     // The message was consumed; the History filter is the user's and stays.
     expect(p.id<HTMLInputElement>("message").value).toBe("");
     expect(p.id<HTMLInputElement>("history-search").value).toBe("cover");
+    expect(p.id("history-view").contains(p.id("history-receipt"))).toBe(true);
+    expect(p.id("history-receipt").textContent).toBe("Saved aaaaaaaa");
+    expect(p.id("result").textContent).toBe("");
+    p.evaluate('selectTab("changes", false)');
+    expect(p.id("history-receipt").textContent).toBe("");
   });
 
   it.each(["document during cancellation", "project during cancellation", "document during preparation", "project during preparation"])("keeps the clicked first-save target fixed: %s", async (scenario) => {
