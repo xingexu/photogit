@@ -2618,7 +2618,7 @@ function setHelper(label, ok) {
   }
   const notice = document.getElementById("connection-notice");
   notice.hidden = ok || !projectFolder;
-  // The toast moves clear of the notice so it never covers Reconnect.
+  // The connection notice already explains helper failures.
   document.body.classList.toggle("has-connection-notice", !notice.hidden);
   // Only a lost connection earns the warning treatment; setup states stay calm.
   notice.classList.toggle("is-warning", !ok && Boolean(projectFolder));

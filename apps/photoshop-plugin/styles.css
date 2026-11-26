@@ -302,15 +302,13 @@ body.has-surface .workspace input { display: none; }
 .notice strong { color: var(--text-strong); }
 .notice p { margin: 4px 0 var(--space-2); color: var(--text-2); font-size: var(--text-secondary); }
 .notice > .text-link, .notice > .setup-command { margin-bottom: var(--space-2); }
-/* The status line floats under the tab strip, so a result arriving or
-   leaving never pushes the screen down or up. Pressing it dismisses it. */
-.status-message { position: fixed; top: 108px; right: var(--space-3); left: var(--space-3); z-index: var(--z-toast); font-size: var(--text-secondary); cursor: pointer; }
-.status-message:not(:empty) { padding: var(--space-2) var(--space-3); border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--bg-raised); color: var(--text); }
+/* Status messages reserve their own space, keeping retry controls reachable.
+   Long messages scroll within the available panel height. */
+.status-message { flex: none; max-height: 30%; overflow-y: auto; font-size: var(--text-secondary); cursor: pointer; }
+.status-message:not(:empty) { margin: var(--space-2) var(--space-3); padding: var(--space-2) var(--space-3); border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--bg-raised); color: var(--text); }
 .status-message.error:not(:empty) { border-left: 2px solid var(--text-strong); color: var(--text-strong); }
 /* With nothing to say it takes no room. */
 .status-message:empty { display: none; }
-/* The connection notice owns the top of the panel; the toast sits above the footer instead. */
-body.has-connection-notice .status-message { top: auto; bottom: 48px; }
 .startup-card, .onboarding { flex: none; margin: var(--space-3); padding: var(--space-4); border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-raised); }
 .startup-card p { margin-top: var(--space); color: var(--text-muted); }
 .startup-skeleton { margin-top: var(--space-3); }
@@ -427,7 +425,6 @@ body.has-connection-notice .status-message { top: auto; bottom: 48px; }
   .view-scroll { padding: var(--space-2); }
   .history-footer { min-height: 28px; line-height: 27px; }
   .notice { max-height: 30%; margin: var(--space-2); padding: var(--space-2); }
-  .status-message { top: auto; bottom: var(--space-2); max-height: 30%; overflow-y: auto; }
 }
 
 /* A wider panel is the same single column with room to breathe. */

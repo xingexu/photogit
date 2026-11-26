@@ -1213,6 +1213,19 @@ describe("PhotoGit production panel behavior — host mocked", () => {
     expect(p.id("changes-empty").textContent).not.toContain("matches the last saved version");
   });
 
+  it("reserves shell space for scan errors so retry controls stay reachable", async () => {
+    const p = await panel(); p.connect();
+    p.evaluate('show("Could not read pixels. Scan again.", true)');
+    expect(p.id("result").parentElement).toBe(p.document.querySelector(".panel-root"));
+    expect(p.id("result").nextElementSibling).toBe(p.id("workspace"));
+    const styles = await readFile(resolve(pluginRoot, "styles.css"), "utf8");
+    const statusStyle = styles.match(/\.status-message \{([^}]+)\}/)![1];
+    expect(statusStyle).toContain("flex: none");
+    expect(statusStyle).toContain("overflow-y: auto");
+    expect(statusStyle).not.toMatch(/position:\s*(fixed|absolute)/);
+    expect(styles).not.toContain("body.has-connection-notice .status-message");
+  });
+
   it("scans pixels inside Photoshop modal scope and suppresses its own notifications", async () => {
     const p = await panel();
     p.connect();
