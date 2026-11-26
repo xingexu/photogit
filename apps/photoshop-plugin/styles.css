@@ -296,7 +296,7 @@ body.has-surface .workspace input { display: none; }
 .docs-setup { margin-top: var(--space-3); }
 
 /* Notices, status line, startup and full-screen states. */
-.notice { flex: none; max-height: 48%; overflow-y: auto; margin: var(--space-3); padding: var(--space-3); border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--bg-raised); }
+.notice { flex: none; max-height: 36%; overflow-y: auto; margin: var(--space-3); padding: var(--space-3); border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--bg-raised); }
 .notice-heading { display: flex; align-items: center; justify-content: space-between; }
 .notice-heading > .button { flex: none; margin-left: var(--space-2); }
 .notice strong { color: var(--text-strong); }
@@ -315,7 +315,7 @@ body.has-surface .workspace input { display: none; }
 .startup-skeleton span, .inspector-skeleton span { display: block; height: 10px; margin-top: var(--space-2); border-radius: var(--radius); background: var(--bg-selected); }
 .startup-skeleton span:nth-child(2), .inspector-skeleton span:nth-child(2) { width: 72%; }
 .startup-skeleton span:nth-child(3), .inspector-skeleton span:nth-child(3) { width: 48%; }
-.onboarding { max-height: calc(100% - 24px); overflow-y: auto; }
+.onboarding { flex: 0 1 auto; min-height: 0; max-height: calc(100% - 24px); overflow-y: auto; }
 .onboarding > * + * { margin-top: var(--space-3); }
 #setup-instructions > * + * { margin-top: var(--space-2); }
 .state-icon { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-recessed); color: var(--text-strong); }
@@ -424,7 +424,9 @@ body.has-surface .workspace input { display: none; }
   .progress-track { top: 75px; }
   .view-scroll { padding: var(--space-2); }
   .history-footer { min-height: 28px; line-height: 27px; }
-  .notice { max-height: 30%; margin: var(--space-2); padding: var(--space-2); }
+  .notice, .onboarding, .status-message:not(:empty) { margin: var(--space) var(--space-2); padding: var(--space-2); }
+  .notice { max-height: 30%; }
+  .status-message:not(:empty) { padding-top: var(--space); padding-bottom: var(--space); }
 }
 
 /* A wider panel is the same single column with room to breathe. */
