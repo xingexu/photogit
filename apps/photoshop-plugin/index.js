@@ -48,6 +48,7 @@ let historyEntries = [];
 let branchTips = {};
 let historyPreviews = {};
 let historyPreviewGeneration = 0;
+let branchPreviewGeneration = 0;
 let selectedVersionId = null;
 let newestVersionId = null;
 let pressedControl = null;
@@ -96,6 +97,7 @@ function bindPanelEvents() {
   bind("reconnect-helper", "click", reconnectHelper);
   bind("connect-document", "click", connectDocument);
   bind("open-project-document", "click", () => run("Opening project document…", () => openSnapshot()));
+  bind("scan-now", "click", () => scanChanges({ automatic: false }));
   bind("cancel-scan", "click", cancelScan);
   bind("close-detail", "click", () => closeDetail(false));
   bind("detail-action", "click", () => detailAction?.());
@@ -129,14 +131,13 @@ function bindPanelEvents() {
   bind("history-search", "input", filterHistory);
   moveIntoList("history-search", "#history .history-row");
   bind("clear-activity", "click", clearActivity);
-  // Every empty state names its way out.
-  bind("empty-scan", "click", () => scanChanges({ automatic: false }));
+  // Give empty History and Reviews a next action.
   bind("reviews-empty-action", "click", openNewBranch);
   bind("history-empty-action", "click", () => {
     const search = document.getElementById("history-search");
     if (search.value.trim() && historyEntries.length) { search.value = ""; filterHistory(); return search.focus(); }
     selectTab("changes");
-    document.getElementById("message").focus();
+    if (documentAllowed()) document.getElementById("message").focus();
   });
   bind("new-pull-request", "click", openPullRequest);
   bind("tool-new-branch", "click", openNewBranch);
@@ -374,7 +375,10 @@ function handleGlobalKeyboard(event) {
     const controls = Array.from(sheet.querySelectorAll('[tabindex="0"], input:not([disabled])')).filter(control => !control.hidden && control.getAttribute("aria-disabled") !== "true");
     const first = controls[0];
     const last = controls[controls.length - 1];
-    if (event.shiftKey && event.target === first) {
+    if (!sheet.contains(event.target)) {
+      event.preventDefault();
+      (event.shiftKey ? last : first)?.focus();
+    } else if (event.shiftKey && event.target === first) {
       event.preventDefault();
       last?.focus();
     } else if (!event.shiftKey && event.target === last) {
@@ -432,21 +436,42 @@ async function chooseProject() {
   if (busyNow) return show(`Still working on “${runningLabel.replace(/…$/, "")}”. Choose the project again when it finishes.`, true);
   const folder = await storage.localFileSystem.getFolder();
   if (!folder) return;
+  if (busyNow) return show("Wait for the current operation, then choose the project again.", true);
   savePanelState();
-  cancelScan();
+  cancelScan(false);
   workspaceGeneration += 1;
   projectStatus = null;
-  lastScanCount = null;
   helperToken = null;
   projectFolder = folder;
+  setHelper("Connecting…", false);
+  document.getElementById("connection-message").textContent = "Checking the helper for this project.";
+  document.getElementById("setup-command-live").textContent = helperStartCommand(folder);
   document.getElementById("message").value = "";
   document.getElementById("history-search").value = "";
+  document.getElementById("changes-search").value = "";
+  resetChanges();
   branchPreviews = {};
+  branchTips = {};
+  branchPreviewGeneration++;
+  setCount("branches-count", 0);
+  document.getElementById("branch-name").textContent = "—";
+  branchView.render(document.getElementById("branch-list"));
+  historyEntries = [];
   historyPreviews = {};
   historyPreviewGeneration++;
-  branchView.render(document.getElementById("branch-list"));
   selectedVersionId = null;
+  newestVersionId = null;
+  filterHistory();
+  setCount("history-count", 0);
+  document.getElementById("history-total").textContent = "0 versions";
+  reviewEntries = [];
   expandedReview = null;
+  repositoryDetails = null;
+  setCount("reviews-count", 0);
+  for (const id of ["new-pull-request", "tool-new-pr"]) document.getElementById(id).hidden = true;
+  document.getElementById("reviews-heading").textContent = "Reviews";
+  document.getElementById("review-provider").textContent = "Reviewing local branches";
+  renderReviews([], []);
   runningLabel = "Opening project…";
   busy(true);
   try {
@@ -457,6 +482,7 @@ async function chooseProject() {
     log(`Opened project ${folder.name}.`);
   } catch (error) {
     helperToken = null;
+    document.getElementById("connection-message").textContent = "Start the PhotoGit helper for the selected project, then reconnect.";
     show(`${error.message} Run PhotoGit setup for this folder, then choose it again.`, true);
   }
   await refreshWorkspace();
@@ -562,8 +588,9 @@ async function loadStatus(existingResult) {
 
 async function loadBranches(existingResult) {
   const folder = projectFolder;
+  const generation = ++branchPreviewGeneration;
   const result = existingResult || await callHelper("branches");
-  if (folder !== projectFolder) return;
+  if (folder !== projectFolder || generation !== branchPreviewGeneration) return;
   setTextWithFlash(document.getElementById("branch-name"), result.current);
   branchTips = Object.fromEntries(result.branches.filter(branch => branch.tip).map(branch => [branch.name, branch.tip]));
   setCount("branches-count", result.branches.length);
@@ -574,16 +601,16 @@ async function loadBranches(existingResult) {
   branchView.render(document.getElementById("branch-list"), { branches: result.branches, current: result.current, previews: branchPreviews, onSwitch, onRename: renameBranch, dateLabel: historyDateLabel });
   // Previews are decorative. Load them in the background so the branch list stays
   // immediately usable and a slow or missing preview never delays switching.
-  void loadBranchPreviews(folder, result, onSwitch);
+  void loadBranchPreviews(folder, generation, result, onSwitch);
 }
 
-async function loadBranchPreviews(folder, result, onSwitch) {
+async function loadBranchPreviews(folder, generation, result, onSwitch) {
   const pending = result.branches.filter(branch => /^[a-f0-9]{40,64}$/.test(branch.tip || "") && !(branch.name in branchPreviews)).slice(0, MAX_BRANCH_PREVIEWS);
   if (!pending.length) return;
   let loaded = 0;
   for (const branch of pending) {
     const preview = await readVersionPreview(branch.tip);
-    if (folder !== projectFolder) return;
+    if (folder !== projectFolder || generation !== branchPreviewGeneration) return;
     branchPreviews[branch.name] = preview ? preview.src : null;
     if (preview) loaded += 1;
   }
@@ -855,6 +882,9 @@ async function scanChanges({ automatic = false, eventName = "manual" } = {}) {
       setWatchStatus("Scan incomplete · Retry", "error");
       document.getElementById("change-summary").textContent = "Scan needs attention";
       document.getElementById("last-scan").textContent = error.message || String(error);
+      if (!document.getElementById("changes-empty").hidden) {
+        setChangesEmpty("No fresh scan result", "Scan again to check for edits.");
+      }
       runtimeLog("error", "scan_failed", { source: automatic ? "automatic" : "manual", eventName, message: error.message || String(error) });
       show(error.message || String(error), true);
     } finally {
@@ -878,8 +908,7 @@ function documentAllowed() {
   return projectStatus.baselineMissing && !projectStatus.documentBinding || panelModel.sameDocument(projectStatus.documentBinding, panelModel.documentIdentity(app.activeDocument));
 }
 
-// A document that is not the project's takes over the panel below the top
-// bar: there is nothing to list, save or review until that is settled.
+// Changes and Save belong to the open document. The other tabs describe the project.
 function renderDocumentBinding() {
   const allowed = documentAllowed();
   document.getElementById("workspace").classList.toggle("is-unlinked", !allowed);
@@ -899,24 +928,25 @@ function renderDocumentBinding() {
   document.getElementById("connect-document").hidden = !open;
   document.getElementById("open-project-document").hidden = !projectStatus || projectStatus.baselineMissing;
   if (!allowed) {
-    lastScanCount = null;
-    document.getElementById("changes").innerHTML = "";
+    resetChanges();
     document.getElementById("change-summary").textContent = "Connect a document";
     document.getElementById("last-scan").textContent = "No scan result for this document.";
-    // The card says why it is empty rather than standing blank.
-    setChangesEmpty("No document connected", "Connect this document to see its edits here.");
-    document.getElementById("changes-empty").hidden = false;
-    setCount("changes-count", 0);
-    // The filter bar describes the list that was just cleared; leaving it up
-    // reported the previous document's counts against this one.
-    workspaceUI.refreshChanges(document);
   }
 }
 
-// Which parts of the shell are showing follows from two facts: the section
-// in view and whether the open document is the project's. They are set as
-// `hidden` here because the host does not reliably restyle descendants when
-// only an ancestor's attribute changes.
+function resetChanges() {
+  lastScanCount = null;
+  setWatchStatus("Waiting for a scan", "ready");
+  document.getElementById("changes").textContent = "";
+  document.getElementById("change-summary").textContent = "Waiting for a scan";
+  document.getElementById("last-scan").textContent = "PhotoGit scans automatically.";
+  document.querySelector("#save-version span").textContent = "Save version";
+  setChangesEmpty("Waiting for a scan", "PhotoGit will compare this document with the latest saved version.");
+  document.getElementById("changes-empty").hidden = false;
+  setCount("changes-count", 0);
+  workspaceUI.refreshChanges(document);
+}
+
 // The underline belongs to the strip, not to a tab, so it can travel.
 function placeTabIndicator() {
   const indicator = document.getElementById("tab-indicator");
@@ -931,18 +961,16 @@ function applyShellState() {
   const workspace = document.getElementById("workspace");
   const view = workspace.dataset.view;
   const unlinked = workspace.classList.contains("is-unlinked");
-  // Docs stay readable from the menu whatever document is open.
-  const takeover = unlinked && view !== "docs";
+  const takeover = unlinked && view === "changes";
   const state = document.getElementById("document-connection");
   const changed = state.hidden === takeover;
   state.hidden = !takeover;
-  document.getElementById("section-nav").hidden = takeover;
-  document.querySelector(".workspace-content").hidden = takeover;
-  document.getElementById("push").hidden = unlinked;
-  document.querySelector(".capture-panel").hidden = view !== "changes";
+  document.getElementById("linked-changes").hidden = takeover;
   document.getElementById("history-total").hidden = view !== "history";
-  // Linked to not linked and back is a change of screen like any other.
-  if (changed && !document.body.classList.contains("is-initializing")) globalThis.PhotoGitMotion?.screen(takeover ? state : document.querySelector(".workspace-content"));
+  if (changed && view === "changes" && !document.body.classList.contains("is-initializing")) {
+    document.getElementById("view-scroll").scrollTop = 0;
+    globalThis.PhotoGitMotion?.screen(takeover ? state : document.getElementById("linked-changes"));
+  }
 }
 
 function connectDocument() {
@@ -979,8 +1007,16 @@ async function reconnectWhenIdle(quiet) {
     if (!folder) return;
     await loadPairing();
     if (projectFolder !== folder) return;
+    const restoreFocus = document.activeElement === document.getElementById("reconnect-helper");
     await refreshWorkspace(!quiet);
-    if (helperOnline) { show("Connected.", false); queueAutomaticScan("reconnected", 100); }
+    if (helperOnline) {
+      if (restoreFocus && (!document.activeElement || document.activeElement === document.body || document.activeElement.id === "reconnect-helper")) {
+        const view = document.getElementById("workspace").dataset.view;
+        document.getElementById(view === "docs" ? "docs-search" : `${view}-tab`).focus();
+      }
+      show("Connected.", false);
+      queueAutomaticScan("reconnected", 100);
+    }
   }
   catch (error) { if (error.name !== "StaleScanError" && !quiet) show(`${error.message} Finish setup for this project, then choose Reconnect.`, true); }
   finally { status.classList.remove("is-reconnecting"); }
@@ -1052,6 +1088,7 @@ async function saveVersion() {
     // opens so the eye lands on it.
     document.querySelector("#history .history-row")?.classList.add("is-new");
     selectTab("history");
+    document.getElementById("history-tab").focus();
   });
 }
 
@@ -1113,7 +1150,8 @@ async function createBranch() {
     await callHelper("createBranch", { branch: name });
     input.value = "";
     log(`Created and switched to ${name}.`);
-    await Promise.all([loadStatus(), loadBranches(), loadReviews()]);
+    await loadStatus();
+    await Promise.all([loadBranches(), loadHistory(), loadReviews()]);
     show(`Created branch ${name}.`, false);
   });
 }
@@ -2013,7 +2051,9 @@ function renderChanges(changes, { baselineMissing = false, changeCount = changes
   document.getElementById("last-scan").textContent = `Scanned ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} · Updates automatically${warnings.length ? `\n${warnings.join("\n")}` : ""}`;
   document.querySelector("#save-version span").textContent = changeCount && !baselineMissing ? `Save version · ${changeCount} ${changeCount === 1 ? "edit" : "edits"}` : baselineMissing ? "Save first version" : "Save version";
   empty.hidden = changes.length > 0;
-  setChangesEmpty(baselineMissing ? "Nothing saved yet" : "No unsaved edits", baselineMissing ? "Save a first version to start tracking edits." : "This document matches the last saved version. Edits appear here as you make them.");
+  if (baselineMissing) setChangesEmpty("Nothing saved yet", "Save a first version to start tracking edits.");
+  else if (warnings.length) setChangesEmpty("No edits detected in the scanned data", "Review the scan limits above before relying on this result.");
+  else setChangesEmpty("No unsaved edits", "This document matches the last saved version. Edits appear here as you make them.");
   // Document-wide edits come first under their own header, then the layers,
   // top of the stack first. The counts beside the headers are filled in by
   // the filter, which knows how many rows are showing.
@@ -2303,7 +2343,10 @@ async function run(label, action) {
   // A helper that is still starting gets a few seconds to appear.
   if (!helperOnline && projectFolder && helperToken) {
     const folder = projectFolder;
-    if (await helperAlive(folder) || await waitForHelper(folder, HELPER_START_GRACE_MS, label)) await reconnectHelper({ quiet: true });
+    const available = await helperAlive(folder) || await waitForHelper(folder, HELPER_START_GRACE_MS, label);
+    if (folder !== projectFolder) return show("The project changed. Start the operation again on the intended project.", true);
+    if (available) await reconnectHelper({ quiet: true });
+    if (folder !== projectFolder) return show("The project changed. Start the operation again on the intended project.", true);
     if (!helperOnline) return show(`${helperOfflineError(folder).message}\nStart it with: ${helperStartCommand(folder)}`, true);
   }
   if (busyNow) return;
@@ -2490,14 +2533,9 @@ function syncDocumentLabel() {
   clearTimeout(autoScanTimer);
   observedDocumentId = nextDocumentId;
   observedHistoryState = historyState;
+  if (documentAllowed()) resetChanges();
   renderDocumentBinding();
   if (doc) queueAutomaticScan("active-document-changed", 200);
-  else {
-    renderChanges([]);
-    document.getElementById("change-summary").textContent = "Open a document";
-    document.getElementById("last-scan").textContent = "PhotoGit will scan when a Photoshop document opens.";
-    setWatchStatus("Waiting for Photoshop", "warning");
-  }
 }
 
 function activateOnKeyboard(element, handler) {
@@ -2613,7 +2651,7 @@ function busy(active) {
   }
   // A menu item keeps its roving tabindex; only its availability changes.
   renderPushState();
-  for (const id of ["refresh", "rescan", "show-status"]) document.getElementById(id).setAttribute("aria-disabled", active ? "true" : "false");
+  for (const id of ["refresh", "rescan", "scan-now", "show-status"]) document.getElementById(id).setAttribute("aria-disabled", active ? "true" : "false");
   for (const id of ["message", "new-branch-name", "tag-name"]) document.getElementById(id).disabled = active;
   for (const control of document.querySelectorAll("[data-message-preset],.branch-row.is-switchable,.history-actions .button,.review-toggle")) {
     control.setAttribute("aria-disabled", String(active)); control.tabIndex = active ? -1 : 0;

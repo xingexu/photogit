@@ -78,9 +78,10 @@ img { max-width: 100%; }
 .nav-item.active { background: var(--bg); color: var(--text-strong); }
 .nav-item.active .tab-label { font-weight: 600; }
 
-/* Bars pinned under the scrolling view. */
+/* The History footer stays pinned. Changes and its composer share one scroll. */
 .view-footer { flex: none; display: flex; align-items: center; justify-content: flex-start; min-height: 36px; padding: 0 var(--space-3); border-top: 1px solid var(--edge-dark); background: var(--bg-bar); color: var(--text-muted); font-size: var(--text-secondary); }
-.composer { flex: none; padding: var(--space-3); border-top: 1px solid var(--edge-dark); background: var(--bg-bar); }
+.history-footer { display: block; line-height: 35px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.composer { margin-bottom: var(--space-3); padding: var(--space-3); border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-bar); }
 .composer > * + * { margin-top: var(--space-2); }
 .capture-heading { display: flex; align-items: center; justify-content: space-between; }
 .version-label { color: var(--text-strong); font-weight: 600; }
@@ -168,7 +169,7 @@ body.is-busy [aria-disabled="true"], body.is-busy input:disabled { cursor: progr
    keep their size, so nothing moves. */
 body.has-surface .workspace input { display: none; }
 /* The same goes for the search field the status line floats over. */
-body.has-toast .search-field input { display: none; }
+body.has-toast .workspace .search-field input { display: none; }
 
 /* Pills: filters and quick-fill suggestions. */
 .filter-bar { display: flex; flex-wrap: wrap; }
@@ -181,11 +182,14 @@ body.has-toast .search-field input { display: none; }
 #change-filters { margin-bottom: var(--space-2); }
 
 /* Changes. */
-.scan-state { display: none; }
+.scan-panel { margin-bottom: var(--space-3); }
+.scan-heading { display: flex; align-items: center; justify-content: space-between; }
+.scan-heading > .button { flex: none; margin-left: var(--space-2); }
+.scan-state { margin-top: var(--space); white-space: pre-line; }
 .watch-status { display: none; }
-.watch-status.warning, .watch-status.error { display: flex; align-items: center; margin-bottom: var(--space-2); color: var(--text-strong); font-size: var(--text-secondary); }
+.watch-status.scanning, .watch-status.warning, .watch-status.error { display: flex; align-items: center; margin-top: var(--space); color: var(--text-strong); font-size: var(--text-secondary); }
 .watch-status i { width: 6px; height: 6px; margin-right: 6px; border: 1px solid var(--text-strong); border-radius: 3px; }
-#cancel-scan { margin-bottom: var(--space-2); }
+#cancel-scan { margin-top: var(--space-2); }
 .list-row { display: flex; align-items: center; min-width: 0; padding: var(--space-2) 0; border-bottom: 1px solid var(--divider); }
 .row-copy { display: flex; flex-direction: column; flex: 1; min-width: 0; }
 .row-copy strong { color: var(--text); font-weight: 400; }
@@ -294,7 +298,9 @@ body.has-toast .search-field input { display: none; }
 .docs-setup { margin-top: var(--space-3); }
 
 /* Notices, status line, startup and full-screen states. */
-.notice { flex: none; margin: var(--space-3); padding: var(--space-3); border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--bg-raised); }
+.notice { flex: none; max-height: 48%; overflow-y: auto; margin: var(--space-3); padding: var(--space-3); border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--bg-raised); }
+.notice-heading { display: flex; align-items: center; justify-content: space-between; }
+.notice-heading > .button { flex: none; margin-left: var(--space-2); }
 .notice strong { color: var(--text-strong); }
 .notice p { margin: 4px 0 var(--space-2); color: var(--text-2); font-size: var(--text-secondary); }
 .notice > .text-link, .notice > .setup-command { margin-bottom: var(--space-2); }
@@ -319,10 +325,9 @@ body.has-connection-notice .status-message { top: auto; bottom: 48px; }
 .state-icon { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-recessed); color: var(--text-strong); }
 .state-icon svg { width: 20px; height: 20px; }
 .state-copy { color: var(--text-2); }
-/* A document that is not the project's takes over the panel: there is
-   nothing to list, save or review until that is settled. */
-.unlinked-state { flex: 1; display: flex; flex-direction: column; min-height: 0; }
-.unlinked-body { flex: 1; display: flex; flex-direction: column; justify-content: center; min-height: 0; overflow-y: auto; padding: var(--space-4); }
+/* Document recovery lives in Changes, alongside project navigation. */
+.unlinked-state { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.unlinked-body { padding: var(--space-3); }
 .unlinked-body > * + * { margin-top: var(--space-3); }
 .unlinked-body h2 { font-size: 17px; }
 .unlinked-files { padding: 0 var(--space-3); border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-recessed); }
@@ -410,12 +415,26 @@ body.has-connection-notice .status-message { top: auto; bottom: 48px; }
 .comparison-status.merge-blocked { border-color: var(--border-strong); }
 
 @media (max-width: 299px) {
-  .top-project, .tab-label { display: none; }
-  .nav-item { height: 40px; }
+  .top-project { display: none; }
+  .top-bar, .branch-switcher { padding-right: var(--space-2); padding-left: var(--space-2); }
+  .branch-chevron { display: none; }
+  .nav-item { height: 48px; }
+  .tab-label { max-width: 100%; font-size: 10px; }
+  .progress-track { top: 95px; }
 }
+@media (max-height: 300px) {
+  .top-bar, .nav-item { height: 38px; }
+  .tab-strip { min-height: 38px; }
+  .progress-track { top: 75px; }
+  .view-scroll { padding: var(--space-2); }
+  .history-footer { min-height: 28px; line-height: 27px; }
+  .notice { max-height: 30%; margin: var(--space-2); padding: var(--space-2); }
+  .status-message { top: auto; bottom: var(--space-2); max-height: 30%; overflow-y: auto; }
+}
+
 /* A wider panel is the same single column with room to breathe. */
 @media (min-width: 560px) {
-  .view-scroll, .composer { padding-left: var(--space-4); padding-right: var(--space-4); }
+  .view-scroll { padding-left: var(--space-4); padding-right: var(--space-4); }
   .tool-sheet { top: 48px; bottom: 48px; left: 50%; right: auto; width: 520px; margin-left: -260px; }
   #tag-sheet { bottom: auto; }
 }

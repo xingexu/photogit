@@ -208,7 +208,9 @@ describe("real helper process filesystem bridge", () => {
     await unlink(join(f.root, ".photogit", "bridge", "document-binding.json"));
     expect(await f.request("refresh", { capture: edited, documentIdentity: f.identity })).toMatchObject({ ok: false, error: { code: "DOCUMENT_CONNECTION_REQUIRED" } });
     expect(await f.request("connectDocument", { documentIdentity: f.identity })).toMatchObject({ ok: true });
-    expect(await readdir(f.requests)).toEqual([]); expect(await readdir(f.responses)).toEqual([]);
+    // Replies become readable before the helper finishes removing request markers.
+    await expect.poll(() => readdir(f.requests), { timeout: 5_000 }).toEqual([]);
+    expect(await readdir(f.responses)).toEqual([]);
   }, 15_000);
 
   it("bounds a first-version response for a large layer list and reports its full count", async () => {

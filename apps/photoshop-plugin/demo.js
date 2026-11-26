@@ -19,6 +19,8 @@ let changes = [
 let activityEntries = 0;
 let surfaceReturnFocus = null;
 let selectedDemoVersion = null;
+const demoBranches = ["live-option-b", "master", "homepage-experiment"];
+let currentDemoBranch = demoBranches[0];
 const surfaceTimers = new Map();
 const demoReviews = [
   { branch: "campaign-type-b", ahead: 3, changeCount: 8, mergeable: true },
@@ -37,17 +39,22 @@ async function boot() {
   mount.appendChild(document.importNode(parsed.querySelector(".panel-root"), true));
   setupDemoPanel();
   document.documentElement.setAttribute("data-theme", "dark");
-  const badge = document.createElement("p"); badge.className = "simulation-label"; badge.textContent = "Simulated preview · no Photoshop or Git operations";
+  const badge = document.createElement("p"); badge.className = "simulation-label"; badge.textContent = "Simulation · no Photoshop or Git";
   mount.prepend(badge);
   if (demoParams.get("state") === "empty") { changes = []; renderChanges(); }
   if (demoParams.get("state") === "long") { changes = Array.from({ length: 500 }, (_, i) => ({ domain: "content", layerName: "Campaign-direction-with-a-very-long-layer-name-".repeat(3) + i, photoshopId: i + 1, summary: "Rendered appearance changed" })); renderChanges(); }
-  if (demoParams.get("state") === "error") flashResult("The helper is disconnected. Reconnect before saving a version.", true);
+  if (demoParams.get("state") === "error") {
+    byId("connection-notice").hidden = false;
+    byId("helper-status").className = "repo-state warning";
+    byId("repo-sync-status").textContent = "Not connected";
+    document.body.classList.add("has-connection-notice");
+  }
   if (demoParams.get("state") === "setup") { byId("workspace").hidden = true; byId("onboarding").hidden = false; }
   if (demoParams.get("state") === "loading") {
     byId("workspace").hidden = true; byId("onboarding").hidden = true; byId("startup-state").hidden = false;
     for (const id of ["global-search", "header-menu"]) byId(id).setAttribute("aria-disabled", "true");
   }
-  if (demoParams.has("view")) selectTab(demoParams.get("view"));
+  selectTab(demoParams.get("view") || "changes");
   if (demoParams.has("panel")) openPhotoGit();
   if (demoParams.has("autoplay")) autoplay();
   else document.querySelector(".demo-caption").classList.add("visible");
@@ -61,16 +68,11 @@ function setupDemoPanel() {
   byId("workspace").hidden = false;
   byId("project-status").textContent = "photogit-demo";
   byId("document-name").textContent = "document.psd";
-  byId("branch-name").textContent = "live-option-b";
-  byId("branch-name-detail").textContent = "live-option-b";
+  byId("branch-name").textContent = currentDemoBranch;
   byId("helper-status").className = "repo-state ok";
   byId("helper-status").setAttribute("title", "Simulated project data");
   byId("repo-sync-status").textContent = "Updated just now";
-  const railLabel = byId("rail-sync-label");
-  if (railLabel) { railLabel.textContent = "Updated just now"; byId("rail-sync").className = "rail-sync ok"; }
-  renderDemoDocumentPreview();
   byId("sync-status").textContent = "Status";
-  replaceDemoDropdown();
   renderDemoBranches();
   renderChanges();
   renderHistory();
@@ -88,7 +90,23 @@ function setupDemoPanel() {
   byId("docs-search").addEventListener("input", renderCommandDocs);
   renderCommandDocs();
   bind("setup-toggle", () => { byId("setup-instructions").hidden = !byId("setup-instructions").hidden; byId("setup-toggle").setAttribute("aria-expanded", String(!byId("setup-instructions").hidden)); });
-  bind("rescan", scan);
+  bind("setup-command-toggle", () => {
+    const command = byId("setup-command-live");
+    command.hidden = !command.hidden;
+    byId("setup-command-toggle").setAttribute("aria-expanded", String(!command.hidden));
+  });
+  bind("reconnect-helper", () => {
+    byId("connection-notice").hidden = true;
+    document.body.classList.remove("has-connection-notice");
+    byId("helper-status").className = "repo-state ok";
+    byId("repo-sync-status").textContent = "Updated just now";
+    const view = byId("workspace").dataset.view;
+    byId(view === "docs" ? "docs-search" : `${view}-tab`).focus();
+    flashResult("Simulation: helper reconnected.");
+  });
+  bind("scan-now", scan);
+  bind("result", () => { byId("result").textContent = ""; });
+  bind("rescan", () => { closeToolsMenu(); return scan(); });
   bind("save-version", saveVersion);
   bind("pull", () => sync("Pulled live-option-b successfully.", "Pulled just now"));
   bind("push", () => sync("Changes shared successfully.", "Pushed just now"));
@@ -98,7 +116,7 @@ function setupDemoPanel() {
   bind("clear-activity", clearActivity);
   bind("global-search", () => openCommandPalette());
   bind("header-menu", toggleToolsMenu);
-  bind("tools-toggle", toggleToolsMenu);
+  bind("tool-docs", () => { selectTab("docs"); byId("docs-search").focus(); });
   bind("tool-new-branch", () => { closeToolsMenu(); selectTab("branches"); byId("new-branch-name").focus(); });
   bind("tool-new-pr", () => { closeToolsMenu(); selectTab("reviews"); });
   bind("tool-conflicts", () => { closeToolsMenu(); selectTab("reviews"); flashResult("Review the conflicting files before merging.", true); });
@@ -108,7 +126,6 @@ function setupDemoPanel() {
   bind("surface-backdrop", () => { closeTagSheet(false, true); closeDetail(false); });
   bind("create-tag", createTag);
   bind("new-pull-request", () => flashResult("Pull-request review opened in GitHub."));
-  byId("branch-picker").addEventListener("change", switchBranch);
   byId("history-search").addEventListener("input", renderHistory);
   byId("tools-menu").addEventListener("keydown", handleMenuKeyboard);
   byId("section-nav").addEventListener("keydown", handleTabKeyboard);
@@ -133,12 +150,12 @@ function openDetail(title) {
   byId("detail-title").textContent = title;
   byId("detail-content").innerHTML = "";
   openBackdrop(); openSurface(byId("detail-sheet"));
+  byId("close-detail").focus();
 }
 function closeDetail(immediate = true) {
   closeSurface(byId("detail-sheet"), immediate); closeBackdrop(immediate);
   surfaceReturnFocus?.focus();
 }
-function show(message) { flashResult(message, true); }
 async function executeCommand(input) {
   const parsed = commandDirectory.parse(input);
   if (!parsed) { byId("command-error").textContent = "Unknown command. Nothing was run."; return; }
@@ -165,7 +182,7 @@ function renderCommandDocs() {
 }
 
 function openCommandPalette(initial = "") {
-  if (busyNow) return show("PhotoGit is busy. Try again in a moment.", false);
+  if (busyNow) return flashResult("PhotoGit is busy. Try again in a moment.");
   openDetail("Go to or run a command", "");
   const content = document.getElementById("detail-content");
   const field = document.createElement("input");
@@ -215,7 +232,7 @@ function handleTabKeyboard(event) {
   // move through it; a rail that answered only Left and Right was a dead end
   // for the keys a vertical list is expected to take.
   if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End"].includes(event.key)) return;
-  const tabs = Array.from(byId("section-nav").querySelectorAll('[role="tab"]'));
+  const tabs = Array.from(byId("section-nav").querySelectorAll('[role="tab"]:not([hidden])'));
   const current = Math.max(0, tabs.indexOf(event.target));
   const forward = event.key === "ArrowRight" || event.key === "ArrowDown";
   const next = event.key === "Home"
@@ -239,13 +256,11 @@ function toggleToolsMenu(event) {
     setTimeout(() => menu.querySelector(".tool-item")?.focus(), 0);
   } else closeToolsMenu(false, true);
   byId("header-menu").setAttribute("aria-expanded", opening ? "true" : "false");
-  byId("tools-toggle").setAttribute("aria-expanded", opening ? "true" : "false");
 }
 
 function closeToolsMenu(immediate = false, returnFocus = false) {
   closeSurface(byId("tools-menu"), immediate);
   byId("header-menu").setAttribute("aria-expanded", "false");
-  byId("tools-toggle").setAttribute("aria-expanded", "false");
   if (returnFocus && surfaceReturnFocus?.focus) surfaceReturnFocus.focus();
 }
 
@@ -321,7 +336,7 @@ function handleMenuKeyboard(event) {
     return closeToolsMenu(false, true);
   }
   if (!["ArrowUp", "ArrowDown", "Home", "End"].includes(event.key)) return;
-  const items = Array.from(byId("tools-menu").querySelectorAll(".tool-item"));
+  const items = Array.from(byId("tools-menu").querySelectorAll('.tool-item:not([hidden]):not([aria-disabled="true"])'));
   const current = Math.max(0, items.indexOf(event.target));
   const next = event.key === "Home" ? 0 : event.key === "End" ? items.length - 1 : (current + (event.key === "ArrowDown" ? 1 : -1) + items.length) % items.length;
   event.preventDefault();
@@ -331,10 +346,13 @@ function handleMenuKeyboard(event) {
 function handleGlobalKeyboard(event) {
   const sheet = !byId("detail-sheet").hidden ? byId("detail-sheet") : byId("tag-sheet");
   if (!sheet.hidden && event.key === "Tab") {
-    const controls = Array.from(sheet.querySelectorAll('[tabindex="0"], input:not([disabled])'));
+    const controls = Array.from(sheet.querySelectorAll('[tabindex="0"], input:not([disabled])')).filter(control => !control.hidden && control.getAttribute("aria-disabled") !== "true");
     const first = controls[0];
     const last = controls[controls.length - 1];
-    if (event.shiftKey && event.target === first) {
+    if (!sheet.contains(event.target)) {
+      event.preventDefault();
+      (event.shiftKey ? last : first)?.focus();
+    } else if (event.shiftKey && event.target === first) {
       event.preventDefault();
       last?.focus();
     } else if (!event.shiftKey && event.target === last) {
@@ -383,27 +401,12 @@ function openPhotoGit() {
   document.getElementById("right-rail").classList.remove("panel-closed");
 }
 
-function replaceDemoDropdown() {
-  const original = byId("branch-picker");
-  const select = document.createElement("select");
-  select.id = "branch-picker";
-  select.className = "demo-select";
-  ["live-option-b", "master", "homepage-experiment"].forEach((branch) => {
-    const option = document.createElement("option");
-    option.value = branch;
-    option.textContent = branch;
-    select.appendChild(option);
-  });
-  original.replaceWith(select);
-}
-
 function renderDemoBranches() {
-  const picker = byId("branch-picker");
   window.PhotoGitBranches.render(byId("branch-list"), {
-    branches: Array.from(picker.options, option => ({ name: option.value })), current: picker.value,
+    branches: demoBranches.map(name => ({ name })), current: currentDemoBranch,
     // Representative artwork for the labelled prototype; production reads each
     // branch tip's committed preview.
-    demoPreviews: Object.fromEntries(Array.from(picker.options, (option, index) => [option.value, DEMO_POSTERS[index % DEMO_POSTERS.length]])),
+    demoPreviews: Object.fromEntries(demoBranches.map((name, index) => [name, DEMO_POSTERS[index % DEMO_POSTERS.length]])),
     onSwitch: name => {
       openDetail("Switch branch?");
       const description = document.createElement("p");
@@ -411,7 +414,7 @@ function renderDemoBranches() {
       const confirm = document.createElement("div");
       confirm.className = "button button-primary"; confirm.setAttribute("role", "button"); confirm.tabIndex = 0;
       confirm.textContent = "Switch branch";
-      confirm.addEventListener("click", () => { picker.value = name; switchBranch({ target: picker }); closeDetail(); });
+      confirm.addEventListener("click", () => { switchBranch(name); closeDetail(); byId("branches-tab").focus(); });
       confirm.addEventListener("keydown", activateOnKeyboard);
       byId("detail-content").append(description, confirm); confirm.focus();
     }
@@ -426,7 +429,8 @@ function renderChanges() {
   summary.textContent = changes.length ? `${changes.length} unsaved ${changes.length === 1 ? "edit" : "edits"}` : "Your canvas is clean";
   byId("last-scan").textContent = "Scanned just now · Updates automatically";
   byId("changes-empty").hidden = changes.length > 0;
-  renderDemoTally();
+  byId("changes-empty").querySelector("strong").textContent = "No unsaved edits";
+  byId("changes-empty").querySelector("p").textContent = "This simulated document matches its last saved version.";
   changes.forEach((change, index) => {
     const row = document.createElement("div");
     row.className = "list-row change-row";
@@ -489,8 +493,8 @@ function renderHistory() {
       row.addEventListener("click", () => {
         selectedDemoVersion = version.shortId;
         for (const entry of container.querySelectorAll(".history-row")) { entry.classList.toggle("selected", entry.dataset.version === version.shortId); entry.setAttribute("aria-pressed", String(entry.dataset.version === version.shortId)); }
-        if (matchMedia("(min-width: 900px)").matches) renderDemoVersion(byId("history-inspector"), version);
-        else { openDetail(`Version ${version.shortId}`); renderDemoVersion(byId("detail-content"), version); }
+        openDetail(`Version ${version.shortId}`);
+        renderDemoVersion(byId("detail-content"), version);
       });
       row.addEventListener("keydown", activateOnKeyboard);
       entries.appendChild(row);
@@ -508,44 +512,6 @@ function demoPosterFor(version) {
   let hash = 0;
   for (let index = 0; index < key.length; index++) hash = (hash * 31 + key.charCodeAt(index)) >>> 0;
   return { demo: true, src: DEMO_POSTERS[hash % DEMO_POSTERS.length], alt: "Representative demo poster artwork" };
-}
-
-// Simulated document facts and artwork for the labelled prototype only.
-// Production fills these from the real scan and the newest saved version.
-// Simulated tallies for the labelled prototype; production counts the real
-// categories reported by the scan.
-function renderDemoTally() {
-  const tally = byId("change-tally");
-  if (!tally) return;
-  const counts = { "tally-changed": changes.filter(c => !["added", "removed"].includes(c.category)).length,
-                   "tally-added": changes.filter(c => c.category === "added").length,
-                   "tally-removed": changes.filter(c => c.category === "removed").length };
-  for (const [id, value] of Object.entries(counts)) { const el = byId(id); if (el) { el.textContent = String(value); el.dataset.value = String(value); } }
-  const arriving = tally.hidden && changes.length > 0;
-  tally.hidden = changes.length === 0;
-  if (arriving) globalThis.PhotoGitReveal?.stagger(tally.querySelectorAll(".tally-tile"));
-}
-
-function renderDemoDocumentPreview() {
-  const section = byId("document-preview");
-  const list = byId("document-facts");
-  if (!section || !list) return;
-  list.textContent = "";
-  for (const [label, value] of [["Size", "3456 × 5184 px"], ["Resolution", "300 ppi"], ["Mode", "RGB"], ["Depth", "16 bpc"], ["Document", "document.psd"]]) {
-    const row = document.createElement("div");
-    if (label === "Document") row.className = "document-filename";
-    const term = document.createElement("dt"); term.textContent = label;
-    const detail = document.createElement("dd"); detail.textContent = value;
-    row.append(term, detail); list.appendChild(row);
-  }
-  section.hidden = false;
-  globalThis.PhotoGitReveal?.stagger(list.children);
-  const figure = byId("document-preview-figure");
-  const image = byId("document-preview-image");
-  if (!figure || !image) return;
-  image.addEventListener("error", () => { figure.hidden = true; }, { once: true });
-  figure.hidden = false;
-  image.src = DEMO_POSTERS[0];
 }
 
 function renderDemoVersion(container, version) {
@@ -585,17 +551,14 @@ function renderReviews() {
   container.innerHTML = "";
   setCount("reviews-count", demoReviews.length);
   byId("review-provider").textContent = `Simulated local reviews · merging into ${byId("branch-name").textContent}`;
-  for (const review of demoReviews) container.appendChild(window.PhotoGitReviewInspector.row(document, { ...review, changeCount: 2 }, { destination: byId("branch-name").textContent, onCompare: () => showDemoComparison(review) }));
-  globalThis.PhotoGitReveal?.stagger(container.querySelectorAll(".review-row"));
+  for (const review of demoReviews) container.appendChild(window.PhotoGitReviewInspector.card(document, review, { onToggle: () => showDemoComparison(review) }));
+  globalThis.PhotoGitReveal?.stagger(container.querySelectorAll(".review-card"));
   byId("reviews-empty").hidden = demoReviews.length > 0;
 }
 
 function showDemoComparison(review) {
-  window.PhotoGitReviewInspector.select(byId("reviews"), review.branch);
-  let container;
-  if (matchMedia("(min-width: 900px)").matches) { selectTab("reviews"); container = byId("review-inspector"); }
-  else { openDetail("Compare branches"); container = byId("detail-content"); }
-  window.PhotoGitReviewInspector.render(container, {
+  openDetail("Compare branches");
+  window.PhotoGitReviewInspector.render(byId("detail-content"), {
     comparison: {
       incomingBranch: review.branch, baseBranch: byId("branch-name").textContent,
       ahead: review.ahead, behind: 1, gitMergeable: review.mergeable,
@@ -622,6 +585,7 @@ function confirmDemoMerge(review) {
 
 async function scan() {
   if (busyNow) return;
+  if (!byId("connection-notice").hidden) return flashResult("Reconnect before scanning.", true);
   await simulateBusy("Reviewing Photoshop layers…", 420);
   renderChanges();
   addActivity(`Found ${changes.length} semantic layer changes.`);
@@ -630,6 +594,7 @@ async function scan() {
 
 async function saveVersion() {
   if (busyNow) return;
+  if (!byId("connection-notice").hidden) return flashResult("Reconnect before saving.", true);
   const message = byId("message").value.trim();
   if (!message) return flashResult("Describe what changed before saving.", true);
   await simulateBusy("Saving exact PSD, preview, and semantic data…", 620);
@@ -642,35 +607,29 @@ async function saveVersion() {
   addActivity(`Saved c84f2a7: ${message}`);
   flashResult("Saved version c84f2a7.");
   selectTab("history");
+  byId("history-tab").focus();
 }
 
 function createBranch() {
   const input = byId("new-branch-name");
   const name = input.value.trim();
   if (!name) return flashResult("Enter a new branch name.", true);
-  const option = document.createElement("option");
-  option.value = name;
-  option.textContent = name;
-  byId("branch-picker").appendChild(option);
-  byId("branch-picker").value = name;
-  byId("branch-name").textContent = name;
-  byId("branch-name-detail").textContent = name;
-  renderDemoBranches();
-  renderReviews();
-  setCount("branches-count", byId("branch-picker").options.length);
+  if (demoBranches.includes(name)) return flashResult(`Branch ${name} already exists.`, true);
+  demoBranches.push(name);
+  switchBranch(name);
+  setCount("branches-count", demoBranches.length);
   input.value = "";
   addActivity(`Created and switched to ${name}.`);
   flashResult(`Created branch ${name}.`);
 }
 
-function switchBranch(event) {
-  byId("branch-name").textContent = event.target.value;
-  byId("branch-name-detail").textContent = event.target.value;
+function switchBranch(name) {
+  currentDemoBranch = name;
+  byId("branch-name").textContent = name;
   renderDemoBranches();
   renderReviews();
-  window.PhotoGitReviewInspector.render(byId("review-inspector"));
-  addActivity(`Switched to ${event.target.value}.`);
-  flashResult(`Switched to ${event.target.value}.`);
+  addActivity(`Switched to ${name}.`);
+  flashResult(`Switched to ${name}.`);
 }
 
 function sync(message, status) {
@@ -730,7 +689,10 @@ function setCount(id, value) {
 }
 
 function selectTab(name) {
-  ["changes", "history", "branches", "reviews", "activity", "docs"].forEach((section) => {
+  const sections = ["changes", "history", "branches", "reviews", "activity", "docs"];
+  if (!sections.includes(name)) return;
+  closeToolsMenu(true);
+  sections.forEach((section) => {
     const active = section === name;
     byId(`${section}-view`).hidden = !active;
     byId(`${section}-tab`).classList.toggle("active", active);
@@ -738,6 +700,7 @@ function selectTab(name) {
     byId(`${section}-tab`).tabIndex = active ? 0 : -1;
   });
   byId("workspace").dataset.view = name;
+  byId("history-total").hidden = name !== "history";
   const scroller = byId("view-scroll");
   if (scroller) scroller.scrollTop = 0;
   globalThis.PhotoGitMotion?.enter(byId(`${name}-view`));
@@ -798,7 +761,7 @@ async function autoplay() {
   setCaption("01", "Review live layer changes", "Readable content, appearance, and structure edits map back to Photoshop layers.");
   await clickWithCursor(mount.querySelector(".change-row"));
   await wait(450);
-  await clickWithCursor(byId("rescan"));
+  await clickWithCursor(byId("scan-now"));
   await wait(650);
 
   setCaption("02", "Save a complete checkpoint", "One version stores the PSD, preview, semantic data, and design intent.");
@@ -816,10 +779,7 @@ async function autoplay() {
   await typeInto(byId("new-branch-name"), "campaign-type-b");
   await clickWithCursor(byId("new-branch"));
   await wait(450);
-  const select = byId("branch-picker");
-  await moveCursor(select);
-  select.value = "homepage-experiment";
-  select.dispatchEvent(new Event("change", { bubbles: true }));
+  switchBranch("homepage-experiment");
   await wait(600);
 
   setCaption("05", "Sync with the remote", "Check status, pull shared work, and push the current branch without leaving Photoshop.");
