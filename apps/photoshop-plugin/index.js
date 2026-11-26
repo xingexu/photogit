@@ -461,7 +461,9 @@ async function chooseProject() {
   newestVersionId = null;
   filterHistory();
   setCount("history-count", 0);
-  document.getElementById("history-total").textContent = "0 versions";
+  const total = document.getElementById("history-total");
+  total.textContent = "0 versions";
+  total.removeAttribute("title");
   reviewEntries = [];
   expandedReview = null;
   repositoryDetails = null;
@@ -621,7 +623,9 @@ async function loadHistory(existingResult) {
   historyEntries = result.versions;
   setCount("history-count", historyEntries.length);
   const branch = safeInlineText(document.getElementById("branch-name").textContent, 200);
-  document.getElementById("history-total").textContent = `${historyEntries.length} ${historyEntries.length === 1 ? "version" : "versions"}${branch && branch !== "—" ? ` on ${branch}` : ""}`;
+  const total = document.getElementById("history-total");
+  total.textContent = `${historyEntries.length} ${historyEntries.length === 1 ? "version" : "versions"}${branch && branch !== "—" ? ` on ${branch}` : ""}`;
+  total.setAttribute("title", total.textContent);
   // The newest version is selected until another is chosen, and again
   // whenever a newer one arrives.
   const newest = historyEntries.length ? historyEntries[0].id : null;

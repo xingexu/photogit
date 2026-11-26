@@ -749,6 +749,16 @@ describe("PhotoGit production panel behavior — host mocked", () => {
     expect(p.document.querySelector<HTMLElement>(".history-entry.selected .history-row")!.dataset.version).toBe(newer.id);
   });
 
+  it("keeps the full History label available when a branch name is long", async () => {
+    const p = await panel(); p.connect();
+    const branch = "feature/" + "wide-artwork-".repeat(12) + "preview";
+    p.id("branch-name").textContent = branch;
+    await p.evaluate("loadHistory({ versions: [] })");
+    const total = p.id("history-total");
+    expect(total.textContent).toBe(`0 versions on ${branch}`);
+    expect(total.getAttribute("title")).toBe(total.textContent);
+  });
+
   it("keeps a version-opening action inert after the connected project changes", async () => {
     const p = await panel(); p.connect(); p.evaluate("bindPanelEvents()");
     p.document.body.classList.remove("is-initializing");
