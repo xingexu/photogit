@@ -4,12 +4,12 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>PhotoGit</title>
-    <script src="motion.js?v=154"></script>
-    <script src="appearance.js?v=154"></script>
-    <script src="counter.js?v=154"></script>
-    <script src="reveal.js?v=154"></script>
-    <link rel="stylesheet" href="styles.css?v=154">
-    <script src="index.js?v=154"></script>
+    <script src="motion.js?v=161"></script>
+    <script src="appearance.js?v=161"></script>
+    <script src="counter.js?v=161"></script>
+    <script src="reveal.js?v=161"></script>
+    <link rel="stylesheet" href="styles.css?v=161">
+    <script src="index.js?v=161"></script>
   </head>
   <body class="is-initializing">
     <main class="panel-root">
@@ -32,11 +32,13 @@
       </section>
 
       <section id="connection-notice" class="notice" role="alert" hidden>
-        <strong>Connection lost</strong>
+        <div class="notice-heading">
+          <strong>Helper offline</strong>
+          <div id="reconnect-helper" class="button button-outline button-small" role="button" tabindex="0">Reconnect</div>
+        </div>
         <p id="connection-message">The PhotoGit helper isn’t responding. Saved versions are safe. Start the helper, then Reconnect.</p>
         <div id="setup-command-toggle" class="text-link" role="button" tabindex="0" aria-expanded="false" aria-controls="setup-command-live">Show setup command<svg class="disclosure-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></div>
         <p id="setup-command-live" class="setup-command" tabindex="0" hidden>npm run helper -- --approve-root "/path/to/project"</p>
-        <div id="reconnect-helper" class="button button-outline" role="button" tabindex="0">Reconnect</div>
       </section>
 
       <p id="result" class="status-message" role="status" aria-live="polite" title="Dismiss"></p>
@@ -83,7 +85,10 @@
 
         <div id="progress" class="progress-track" role="progressbar" aria-label="PhotoGit operation in progress" hidden></div>
 
-        <section id="document-connection" class="unlinked-state" role="status" hidden>
+        <div class="workspace-content">
+        <div id="view-scroll" class="view-scroll">
+        <section id="changes-view" class="view-panel" role="tabpanel" aria-labelledby="changes-tab">
+        <section id="document-connection" class="unlinked-state" aria-labelledby="document-connection-title" hidden>
           <div class="unlinked-body">
             <div class="state-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9.5 14.5 8 16a3 3 0 0 1-4.2-4.2L6 9.6M14.5 9.5 16 8a3 3 0 0 1 4.2 4.2L18 14.4M4 4l16 16"/></svg></div>
             <h2 id="document-connection-title">This document isn’t linked to this project</h2>
@@ -98,15 +103,24 @@
           <footer class="view-footer unlinked-footer"><span>Wrong project?</span><div id="change-project" class="text-link" role="button" tabindex="0">Change project</div></footer>
         </section>
 
-        <div class="workspace-content">
-        <div id="view-scroll" class="view-scroll">
-        <section id="changes-view" class="view-panel" role="tabpanel" aria-labelledby="changes-tab">
+        <div id="linked-changes">
           <div class="scan-panel">
+            <div class="scan-heading">
+              <h2 id="change-summary">Waiting for a scan</h2>
+              <div id="scan-now" class="button button-outline button-small" role="button" tabindex="0"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5m6 0h5v5m0 6v5h-5m-6 0H4v-5M4 12h16"/></svg><span>Scan now</span></div>
+            </div>
             <div id="watch-status" class="watch-status ready" role="status" aria-live="polite" aria-atomic="true"><i aria-hidden="true"></i><span>Watching Photoshop</span></div>
-            <p id="change-summary" class="scan-state">Waiting for a scan</p>
             <p id="last-scan" class="scan-state">Scanning this document automatically.</p>
             <div id="cancel-scan" class="button button-outline button-small" role="button" tabindex="0" hidden>Cancel scan</div>
           </div>
+          <section class="capture-panel composer" aria-label="Save version">
+            <div class="capture-heading"><label class="version-label" for="message">Version message</label><span id="message-count" class="composer-count" aria-live="off">0/500</span></div>
+            <div class="field-shell">
+              <input id="message" type="text" maxlength="500" placeholder="Describe what changed" autocomplete="off" aria-describedby="message-count" uxp-quiet="true">
+            </div>
+            <div class="message-presets" role="toolbar" aria-label="Version message suggestions"><div class="preset" role="button" tabindex="0" data-message-preset="Minor refinement">Minor refinement</div><div class="preset" role="button" tabindex="0" data-message-preset="Color grade update">Color grade</div><div class="preset" role="button" tabindex="0" data-message-preset="Retouching details">Retouch</div></div>
+            <div id="save-version" class="button button-primary button-wide" role="button" tabindex="0"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10v16l-5-4-5 4z"/></svg><span>Save version</span></div>
+          </section>
           <div id="change-filters">
             <div class="field-shell search-field"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 4.5 4.5"/></svg><input id="changes-search" type="search" maxlength="200" placeholder="Find a layer or an edit" aria-label="Search changed layers" spellcheck="false" uxp-quiet="true"></div>
             <div class="filter-bar" role="toolbar" aria-label="Filter changes by type">
@@ -120,16 +134,20 @@
           <section id="change-filter-empty" class="empty-state" role="status" hidden><strong>No matching edits</strong><p>Try another layer name or change type.</p><div id="reset-change-filters" class="text-link" role="button" tabindex="0">Clear filters</div></section>
           <div id="changes" class="list change-list"></div>
           <section id="changes-empty" class="empty-state" role="status">
-            <strong>No unsaved edits</strong>
-            <p>This document matches the last saved version. Edits appear here as you make them.</p>
-            <div id="empty-scan" class="text-link" role="button" tabindex="0">Scan now</div>
+            <strong>Waiting for a scan</strong>
+            <p>PhotoGit will compare this document with the latest saved version.</p>
           </section>
+        </div>
         </section>
 
         <section id="history-view" class="view-panel" role="tabpanel" aria-labelledby="history-tab" hidden>
-          <div class="field-shell search-field">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 4.5 4.5"/></svg>
-            <input id="history-search" type="search" maxlength="200" placeholder="Search versions" aria-label="Search version history" spellcheck="false" uxp-quiet="true">
+          <div class="history-toolbar">
+            <div class="field-shell search-field">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 4.5 4.5"/></svg>
+              <input id="history-search" type="search" maxlength="200" placeholder="Search versions" aria-label="Search version history" spellcheck="false" uxp-quiet="true">
+            </div>
+            <span id="history-receipt" class="history-receipt" role="status" aria-live="polite"></span>
+            <span id="history-total" class="history-total" hidden>0 versions</span>
           </div>
           <div id="history" class="list history-list"></div>
           <section id="history-empty" class="empty-state" role="status" hidden><strong id="history-empty-title">No saved versions yet</strong><p id="history-empty-copy">Save a version from Changes.</p><div id="history-empty-action" class="text-link" role="button" tabindex="0">Go to Changes</div></section>
@@ -145,7 +163,7 @@
               <div class="field-shell">
                 <input id="new-branch-name" type="text" maxlength="200" placeholder="e.g. cover-option-b" aria-describedby="branch-help" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" uxp-quiet="true">
               </div>
-              <div id="new-branch" class="button button-primary" role="button" tabindex="0">Create</div>
+              <div id="new-branch" class="button button-primary" role="button" tabindex="0"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Create</span></div>
             </div>
           </section>
         </section>
@@ -184,15 +202,6 @@
         </section>
         </div>
 
-        <section class="capture-panel composer" aria-label="Save version">
-          <div class="capture-heading"><label class="version-label" for="message">What changed?</label><span id="message-count" class="composer-count" aria-live="off">0/500</span></div>
-          <div class="field-shell">
-            <input id="message" type="text" maxlength="500" placeholder="Describe this version" autocomplete="off" aria-describedby="message-count" uxp-quiet="true">
-          </div>
-          <div class="message-presets" role="toolbar" aria-label="Version message suggestions"><div class="preset" role="button" tabindex="0" data-message-preset="Minor refinement">Minor refinement</div><div class="preset" role="button" tabindex="0" data-message-preset="Color grade update">Color grade</div><div class="preset" role="button" tabindex="0" data-message-preset="Retouching details">Retouch</div></div>
-          <div id="save-version" class="button button-primary button-wide" role="button" tabindex="0"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10v16l-5-4-5 4z"/></svg><span>Save version</span></div>
-        </section>
-        <footer id="history-total" class="view-footer history-footer">0 versions</footer>
         </div>
       </section>
 

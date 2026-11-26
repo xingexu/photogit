@@ -24,7 +24,7 @@
   const BASE_MS = 180;
   const SCREEN_SHIFT = 6;
   const CARD_SHIFT = -4;
-  const CONTROLS = '[role="button"], [role="tab"], [role="menuitem"]';
+  const CONTROLS = '[role="button"], [role="tab"], [role="menuitem"], [role="radio"]';
 
   // cubic-bezier(0.2, 0, 0, 1): solve the curve's x for t, return its y.
   const X1 = 0.2, Y1 = 0, X2 = 0, Y2 = 1;
@@ -155,9 +155,7 @@
     return veil;
   }
 
-  // Fade and move. `shift` is where the element starts, in pixels: positive
-  // starts below and rises, negative starts above and settles down.
-  function animate(element, { duration, shift = 0, leaving = false, complete = () => {} }) {
+  function animate(element, { duration, shift = 0, axis = "Y", leaving = false, complete = () => {} }) {
     const previous = running.get(element);
     // A reversal starts from what is on screen now, not from the resting value.
     const current = previous && typeof previous.value === "number" ? previous.value : null;
@@ -172,15 +170,18 @@
     const style = element.style;
     const original = { opacity: style.opacity || "", transform: style.transform || "" };
     const resting = original.opacity === "" ? 1 : Number(original.opacity);
-    const veil = veilFor(element);
-    const from = current ?? (leaving ? resting : 0);
+    // Tab changes keep the new view legible and avoid a native veil over its inputs.
+    const directional = axis === "X";
+    const fade = !directional || !nativeHost();
+    const veil = directional ? null : veilFor(element);
+    const from = current ?? (leaving ? resting : directional ? resting * 0.65 : 0);
     const target = leaving ? 0 : resting;
     const state = tween(element, duration, progress => {
       const value = from + (target - from) * progress;
       state_value(value);
       if (veil) veil.style.backgroundColor = `rgba(${veilColour()}, ${resting > 0 ? Number((1 - value / resting).toFixed(3)) : 0})`;
-      else style.opacity = String(Number(value.toFixed(3)));
-      if (shift) style.transform = `translateY(${Number((shift * (leaving ? progress : 1 - progress)).toFixed(2))}px)`;
+      else if (fade) style.opacity = String(Number(value.toFixed(3)));
+      if (shift) style.transform = `translate${axis}(${Number((shift * (leaving ? progress : 1 - progress)).toFixed(2))}px)`;
     }, () => {
       veil?.remove();
       style.opacity = original.opacity;
@@ -192,11 +193,11 @@
     state.guard = () => unavailable(element) || reduced();
   }
 
-  // 1 and 4 · a new screen or state: fades in and rises 6px. Whatever was
-  // still arriving is finished at once, so the newest request always wins.
-  function screen(element) {
+  // Adjacent views enter from their side of the tab strip. A state change
+  // in the current view rises instead. Only the latest view animates.
+  function screen(element, direction = 0) {
     for (const [key, state] of [...running]) if (state.veil !== undefined && key !== element) stop(key, true);
-    animate(element, { duration: BASE_MS, shift: SCREEN_SHIFT });
+    animate(element, { duration: BASE_MS, shift: SCREEN_SHIFT * (direction || 1), axis: direction ? "X" : "Y" });
   }
   // A surface (menu, dialog, status line) arriving: the same fade and rise.
   function enter(element) { animate(element, { duration: BASE_MS, shift: SCREEN_SHIFT }); }
@@ -243,6 +244,7 @@
   function recolour(elements, change) {
     const list = [...elements].filter(Boolean);
     const before = list.map(snapshot);
+    for (const element of list) stop(`tint:${tintId(element)}`);
     change();
     list.forEach((element, index) => blend(element, before[index], snapshot(element)));
   }
@@ -314,7 +316,9 @@
     stop(`tint:${tintId(element)}`);
     held = { element, background: element.style.backgroundColor || "", transform: element.style.transform || "" };
     element.style.backgroundColor = `rgba(${tone[0]}, ${tone[1]}, ${tone[2]}, ${tone[3]})`;
-    element.style.transform = "translateY(1px)";
+    if (element.classList.contains("button") || element.classList.contains("icon-button")) {
+      element.style.transform = "translateY(1px)";
+    }
   }
   function release(animate = true) {
     if (!held) return;

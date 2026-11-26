@@ -88,6 +88,22 @@ describe("PhotoGit motion · one helper, two durations, one easing", () => {
     p.advance(180); expect(body.style.transform || "").toBe("");
   });
 
+  it("slides in a tab from its navigation direction without installing a native veil", async () => {
+    const p = await nativeFixture();
+    p.context.PhotoGitMotion.screen(p.view, 1);
+    expect(p.view.style.transform).toBe("translateX(6px)");
+    expect(p.veil()).toBeNull();
+    p.advance(32);
+    const history = p.id("history-view");
+    history.hidden = false;
+    p.context.PhotoGitMotion.screen(history, -1);
+    expect(p.view.style.transform || "").toBe("");
+    expect(history.style.transform).toBe("translateX(-6px)");
+    p.advance(192);
+    expect(history.style.transform || "").toBe("");
+    expect(p.timers.size).toBe(0);
+  });
+
   it("in the Photoshop host fades with a background veil, because the host does not draw opacity", async () => {
     const p = await nativeFixture();
     p.context.PhotoGitMotion.screen(p.view);
